@@ -1,0 +1,187 @@
+import { Switch, Route, useLocation } from "wouter";
+import { queryClient } from "./lib/queryClient";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider, useAuth } from "@/components/auth/auth-context";
+import { Sidebar } from "@/components/layout/sidebar";
+import { MobileHeader } from "@/components/layout/mobile-header";
+import NotFound from "@/pages/not-found";
+import Login from "@/pages/login";
+import Register from "@/pages/register";
+import ProfileSetup from "@/pages/profile-setup";
+import Dashboard from "@/pages/dashboard";
+import Statistics from "@/pages/statistics";
+import AddMatch from "@/pages/add-match";
+import Teams from "@/pages/teams";
+import Invitations from "@/pages/invitations";
+import { useEffect, useState } from "react";
+
+function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  return (
+    <div className="flex h-screen bg-background">
+      {/* Desktop Sidebar */}
+      <div className="hidden lg:block">
+        <Sidebar />
+      </div>
+
+      {/* Mobile Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 lg:hidden transition-transform duration-300 ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <Sidebar onNavigate={() => setIsMobileMenuOpen(false)} />
+      </div>
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto">
+        <MobileHeader
+          isMenuOpen={isMobileMenuOpen}
+          onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        />
+        {children}
+      </main>
+    </div>
+  );
+}
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user) {
+        setLocation("/login");
+      } else if (!user.profileComplete) {
+        setLocation("/profile-setup");
+      }
+    }
+  }, [user, isLoading, setLocation]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  if (!user.profileComplete) {
+    return null;
+  }
+
+  return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+}
+
+function Router() {
+  const { user, isLoading } = useAuth();
+  const [location] = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Redirect logic
+  if (user && location === "/") {
+    if (user.profileComplete) {
+      window.history.replaceState({}, "", "/dashboard");
+    } else {
+      window.history.replaceState({}, "", "/profile-setup");
+    }
+  } else if (!user && location !== "/login" && location !== "/register") {
+    window.history.replaceState({}, "", "/login");
+  }
+
+  return (
+    <Switch>
+      {/* Public routes */}
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      
+      {/* Profile setup route */}
+      <Route path="/profile-setup">
+        {user && !user.profileComplete ? <ProfileSetup /> : <Login />}
+      </Route>
+
+      {/* Protected routes */}
+      <Route path="/dashboard">
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/statistics">
+        <ProtectedRoute>
+          <Statistics />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/add-match">
+        <ProtectedRoute>
+          <AddMatch />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/teams">
+        <ProtectedRoute>
+          <Teams />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/invitations">
+        <ProtectedRoute>
+          <Invitations />
+        </ProtectedRoute>
+      </Route>
+
+      {/* Default redirect */}
+      <Route path="/">
+        {user?.profileComplete ? (
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        ) : user ? (
+          <ProfileSetup />
+        ) : (
+          <Login />
+        )}
+      </Route>
+
+      {/* 404 */}
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <Router />
+          <Toaster />
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
