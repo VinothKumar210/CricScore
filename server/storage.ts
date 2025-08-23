@@ -1,6 +1,20 @@
-import { type User, type InsertUser, type CareerStats, type InsertCareerStats, type Team, type InsertTeam, type TeamMember, type InsertTeamMember, type TeamInvitation, type InsertTeamInvitation, type Match, type InsertMatch, type ProfileSetup } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { prisma } from "./db";
 import bcrypt from "bcryptjs";
+import type {
+  User,
+  CareerStats,
+  Team,
+  TeamMember,
+  TeamInvitation,
+  Match,
+  InsertUser,
+  InsertCareerStats,
+  InsertTeam,
+  InsertTeamMember,
+  InsertTeamInvitation,
+  InsertMatch,
+  ProfileSetup,
+} from "@shared/schema";
 
 export interface IStorage {
   // User operations
@@ -31,7 +45,7 @@ export interface IStorage {
   getTeamInvitations(userId: string): Promise<(TeamInvitation & { team: Team, inviter: User })[]>;
   getSentInvitations(teamId: string): Promise<(TeamInvitation & { user: User })[]>;
   createTeamInvitation(invitation: InsertTeamInvitation): Promise<TeamInvitation>;
-  updateInvitationStatus(id: string, status: "accepted" | "rejected"): Promise<TeamInvitation | undefined>;
+  updateInvitationStatus(id: string, status: "ACCEPTED" | "REJECTED"): Promise<TeamInvitation | undefined>;
   
   // Match operations
   getMatches(userId: string): Promise<Match[]>;
@@ -41,242 +55,295 @@ export interface IStorage {
   validatePassword(email: string, password: string): Promise<User | null>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User> = new Map();
-  private careerStats: Map<string, CareerStats> = new Map();
-  private teams: Map<string, Team> = new Map();
-  private teamMembers: Map<string, TeamMember> = new Map();
-  private teamInvitations: Map<string, TeamInvitation> = new Map();
-  private matches: Map<string, Match> = new Map();
-
+export class PrismaStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id }
+      });
+      return user || undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email }
+      });
+      return user || undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
+    try {
+      const user = await prisma.user.findUnique({
+        where: { username }
+      });
+      return user || undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
     const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-    const user: User = {
-      ...insertUser,
-      id,
-      password: hashedPassword,
-      profileComplete: false,
-      createdAt: new Date(),
-    };
-    this.users.set(id, user);
+    
+    const user = await prisma.user.create({
+      data: {
+        ...insertUser,
+        password: hashedPassword,
+        profileComplete: false,
+      }
+    });
     
     // Create initial career stats
-    await this.createCareerStats({ userId: id });
+    await this.createCareerStats({ userId: user.id });
     
     return user;
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+    try {
+      const user = await prisma.user.update({
+        where: { id },
+        data: updates
+      });
+      return user;
+    } catch {
+      return undefined;
+    }
   }
 
   async updateUserProfile(id: string, profile: ProfileSetup): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = {
-      ...user,
-      username: profile.username,
-      role: profile.role,
-      battingHand: profile.battingHand,
-      bowlingStyle: profile.bowlingStyle,
-      profileComplete: true,
-    };
-    this.users.set(id, updatedUser);
-    return updatedUser;
+    try {
+      const user = await prisma.user.update({
+        where: { id },
+        data: {
+          username: profile.username,
+          role: profile.role,
+          battingHand: profile.battingHand,
+          bowlingStyle: profile.bowlingStyle,
+          profileComplete: true,
+        }
+      });
+      return user;
+    } catch {
+      return undefined;
+    }
   }
 
   async getCareerStats(userId: string): Promise<CareerStats | undefined> {
-    return Array.from(this.careerStats.values()).find(stats => stats.userId === userId);
+    try {
+      const stats = await prisma.careerStats.findUnique({
+        where: { userId }
+      });
+      return stats || undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   async createCareerStats(stats: InsertCareerStats): Promise<CareerStats> {
-    const id = randomUUID();
-    const careerStat: CareerStats = {
-      ...stats,
-      id,
-      matchesPlayed: 0,
-      totalRuns: 0,
-      ballsFaced: 0,
-      strikeRate: "0",
-      oversBowled: "0",
-      runsConceded: 0,
-      wicketsTaken: 0,
-      economy: "0",
-      catchesTaken: 0,
-      updatedAt: new Date(),
-    };
-    this.careerStats.set(id, careerStat);
-    return careerStat;
+    return await prisma.careerStats.create({
+      data: {
+        userId: stats.userId,
+        matchesPlayed: 0,
+        totalRuns: 0,
+        ballsFaced: 0,
+        strikeRate: 0,
+        oversBowled: 0,
+        runsConceded: 0,
+        wicketsTaken: 0,
+        economy: 0,
+        catchesTaken: 0,
+      }
+    });
   }
 
   async updateCareerStats(userId: string, updates: Partial<CareerStats>): Promise<CareerStats | undefined> {
-    const stats = Array.from(this.careerStats.values()).find(s => s.userId === userId);
-    if (!stats) return undefined;
-    
-    const updatedStats = { ...stats, ...updates, updatedAt: new Date() };
-    this.careerStats.set(stats.id, updatedStats);
-    return updatedStats;
+    try {
+      const stats = await prisma.careerStats.update({
+        where: { userId },
+        data: updates
+      });
+      return stats;
+    } catch {
+      return undefined;
+    }
   }
 
   async getTeam(id: string): Promise<Team | undefined> {
-    return this.teams.get(id);
+    try {
+      const team = await prisma.team.findUnique({
+        where: { id }
+      });
+      return team || undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   async getTeamsByUser(userId: string): Promise<Team[]> {
-    const userTeams = Array.from(this.teamMembers.values())
-      .filter(member => member.userId === userId)
-      .map(member => this.teams.get(member.teamId))
-      .filter(Boolean) as Team[];
-    
-    const captainTeams = Array.from(this.teams.values())
-      .filter(team => team.captainId === userId);
-    
-    // Combine and deduplicate
-    const allTeams = [...userTeams, ...captainTeams];
-    return Array.from(new Set(allTeams.map(t => t.id))).map(id => allTeams.find(t => t.id === id)!);
+    try {
+      const teams = await prisma.team.findMany({
+        where: {
+          OR: [
+            { captainId: userId },
+            { viceCaptainId: userId },
+            {
+              members: {
+                some: { userId }
+              }
+            }
+          ]
+        }
+      });
+      return teams;
+    } catch {
+      return [];
+    }
   }
 
   async createTeam(team: InsertTeam): Promise<Team> {
-    const id = randomUUID();
-    const newTeam: Team = {
-      ...team,
-      id,
-      createdAt: new Date(),
-    };
-    this.teams.set(id, newTeam);
-    return newTeam;
+    return await prisma.team.create({
+      data: team
+    });
   }
 
   async updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
-    const team = this.teams.get(id);
-    if (!team) return undefined;
-    
-    const updatedTeam = { ...team, ...updates };
-    this.teams.set(id, updatedTeam);
-    return updatedTeam;
+    try {
+      const team = await prisma.team.update({
+        where: { id },
+        data: updates
+      });
+      return team;
+    } catch {
+      return undefined;
+    }
   }
 
   async getTeamMembers(teamId: string): Promise<(TeamMember & { user: User })[]> {
-    const members = Array.from(this.teamMembers.values())
-      .filter(member => member.teamId === teamId);
-    
-    return members.map(member => ({
-      ...member,
-      user: this.users.get(member.userId)!,
-    })).filter(m => m.user);
+    try {
+      const members = await prisma.teamMember.findMany({
+        where: { teamId },
+        include: { user: true }
+      });
+      return members;
+    } catch {
+      return [];
+    }
   }
 
   async addTeamMember(member: InsertTeamMember): Promise<TeamMember> {
-    const id = randomUUID();
-    const teamMember: TeamMember = {
-      ...member,
-      id,
-      joinedAt: new Date(),
-    };
-    this.teamMembers.set(id, teamMember);
-    return teamMember;
+    return await prisma.teamMember.create({
+      data: member
+    });
   }
 
   async removeTeamMember(teamId: string, userId: string): Promise<boolean> {
-    const member = Array.from(this.teamMembers.values())
-      .find(m => m.teamId === teamId && m.userId === userId);
-    
-    if (member) {
-      this.teamMembers.delete(member.id);
+    try {
+      await prisma.teamMember.delete({
+        where: {
+          teamId_userId: {
+            teamId,
+            userId
+          }
+        }
+      });
       return true;
+    } catch {
+      return false;
     }
-    return false;
   }
 
   async getTeamInvitations(userId: string): Promise<(TeamInvitation & { team: Team, inviter: User })[]> {
-    const invitations = Array.from(this.teamInvitations.values())
-      .filter(invite => invite.invitedUser === userId && invite.status === "pending");
-    
-    return invitations.map(invite => ({
-      ...invite,
-      team: this.teams.get(invite.teamId)!,
-      inviter: this.users.get(invite.invitedBy)!,
-    })).filter(i => i.team && i.inviter);
+    try {
+      const invitations = await prisma.teamInvitation.findMany({
+        where: {
+          invitedUser: userId,
+          status: "PENDING"
+        },
+        include: {
+          team: true,
+          inviter: true
+        }
+      });
+      return invitations;
+    } catch {
+      return [];
+    }
   }
 
   async getSentInvitations(teamId: string): Promise<(TeamInvitation & { user: User })[]> {
-    const invitations = Array.from(this.teamInvitations.values())
-      .filter(invite => invite.teamId === teamId);
-    
-    return invitations.map(invite => ({
-      ...invite,
-      user: this.users.get(invite.invitedUser)!,
-    })).filter(i => i.user);
+    try {
+      const invitations = await prisma.teamInvitation.findMany({
+        where: { teamId },
+        include: { invited: true }
+      });
+      return invitations.map(inv => ({
+        ...inv,
+        user: inv.invited
+      }));
+    } catch {
+      return [];
+    }
   }
 
   async createTeamInvitation(invitation: InsertTeamInvitation): Promise<TeamInvitation> {
-    const id = randomUUID();
-    const teamInvitation: TeamInvitation = {
-      ...invitation,
-      id,
-      status: "pending",
-      createdAt: new Date(),
-    };
-    this.teamInvitations.set(id, teamInvitation);
-    return teamInvitation;
+    return await prisma.teamInvitation.create({
+      data: {
+        ...invitation,
+        status: "PENDING"
+      }
+    });
   }
 
-  async updateInvitationStatus(id: string, status: "accepted" | "rejected"): Promise<TeamInvitation | undefined> {
-    const invitation = this.teamInvitations.get(id);
-    if (!invitation) return undefined;
-    
-    const updatedInvitation = { ...invitation, status };
-    this.teamInvitations.set(id, updatedInvitation);
-    
-    // If accepted, add user to team
-    if (status === "accepted") {
-      await this.addTeamMember({
-        teamId: invitation.teamId,
-        userId: invitation.invitedUser,
+  async updateInvitationStatus(id: string, status: "ACCEPTED" | "REJECTED"): Promise<TeamInvitation | undefined> {
+    try {
+      const invitation = await prisma.teamInvitation.update({
+        where: { id },
+        data: { status }
       });
+      
+      // If accepted, add user to team
+      if (status === "ACCEPTED") {
+        await this.addTeamMember({
+          teamId: invitation.teamId,
+          userId: invitation.invitedUser,
+        });
+      }
+      
+      return invitation;
+    } catch {
+      return undefined;
     }
-    
-    return updatedInvitation;
   }
 
   async getMatches(userId: string): Promise<Match[]> {
-    return Array.from(this.matches.values())
-      .filter(match => match.userId === userId)
-      .sort((a, b) => b.createdAt!.getTime() - a.createdAt!.getTime());
+    try {
+      const matches = await prisma.match.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' }
+      });
+      return matches;
+    } catch {
+      return [];
+    }
   }
 
   async createMatch(match: InsertMatch): Promise<Match> {
-    const id = randomUUID();
-    const newMatch: Match = {
-      ...match,
-      id,
-      createdAt: new Date(),
-    };
-    this.matches.set(id, newMatch);
+    const createdMatch = await prisma.match.create({
+      data: match
+    });
     
     // Update career stats
     await this.updateCareerStatsFromMatch(match.userId, match);
     
-    return newMatch;
+    return createdMatch;
   }
 
   private async updateCareerStatsFromMatch(userId: string, match: InsertMatch) {
@@ -286,23 +353,23 @@ export class MemStorage implements IStorage {
     const newMatchesPlayed = (stats.matchesPlayed || 0) + 1;
     const newTotalRuns = (stats.totalRuns || 0) + match.runsScored;
     const newBallsFaced = (stats.ballsFaced || 0) + match.ballsFaced;
-    const newOversBowled = parseFloat(stats.oversBowled || "0") + parseFloat(match.oversBowled.toString());
+    const newOversBowled = (stats.oversBowled || 0) + match.oversBowled;
     const newRunsConceded = (stats.runsConceded || 0) + match.runsConceded;
     const newWicketsTaken = (stats.wicketsTaken || 0) + match.wicketsTaken;
     const newCatchesTaken = (stats.catchesTaken || 0) + match.catchesTaken;
 
-    const strikeRate = newBallsFaced > 0 ? ((newTotalRuns / newBallsFaced) * 100).toFixed(2) : "0";
-    const economy = newOversBowled > 0 ? (newRunsConceded / newOversBowled).toFixed(2) : "0";
+    const strikeRate = newBallsFaced > 0 ? (newTotalRuns / newBallsFaced) * 100 : 0;
+    const economy = newOversBowled > 0 ? newRunsConceded / newOversBowled : 0;
 
     await this.updateCareerStats(userId, {
       matchesPlayed: newMatchesPlayed,
       totalRuns: newTotalRuns,
       ballsFaced: newBallsFaced,
-      strikeRate,
-      oversBowled: newOversBowled.toFixed(1),
+      strikeRate: parseFloat(strikeRate.toFixed(2)),
+      oversBowled: parseFloat(newOversBowled.toFixed(1)),
       runsConceded: newRunsConceded,
       wicketsTaken: newWicketsTaken,
-      economy,
+      economy: parseFloat(economy.toFixed(2)),
       catchesTaken: newCatchesTaken,
     });
   }
@@ -316,4 +383,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new PrismaStorage();
