@@ -61,6 +61,11 @@ export const insertMatchSchema = z.object({
   catchesTaken: z.number().int().min(0),
 });
 
+// Frontend form schema for match input
+export const matchFormSchema = insertMatchSchema.omit({ userId: true }).extend({
+  matchDate: z.string(),
+});
+
 // Profile setup schema
 export const profileSetupSchema = z.object({
   username: z.string().min(3).max(30),
@@ -96,12 +101,5 @@ export type ProfileSetup = z.infer<typeof profileSetupSchema>;
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type RegisterRequest = z.infer<typeof registerSchema>;
 
-// Prisma model types will be imported from generated client
-export type {
-  User,
-  CareerStats,
-  Team,
-  TeamMember,
-  TeamInvitation,
-  Match,
-} from "@prisma/client";
+// Re-export Prisma model types
+export type { User, CareerStats, Team, TeamMember, TeamInvitation, Match } from "@prisma/client";

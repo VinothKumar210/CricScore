@@ -7,13 +7,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertMatchSchema } from "@shared/schema";
+import { matchFormSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
-
-const matchFormSchema = insertMatchSchema.omit({ userId: true }).extend({
-  matchDate: z.string(),
-});
 
 type MatchFormData = z.infer<typeof matchFormSchema>;
 
@@ -28,7 +24,7 @@ export default function AddMatch() {
       matchDate: new Date().toISOString().split('T')[0],
       runsScored: 0,
       ballsFaced: 0,
-      oversBowled: "0.0",
+      oversBowled: 0,
       runsConceded: 0,
       wicketsTaken: 0,
       catchesTaken: 0,

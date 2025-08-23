@@ -284,7 +284,7 @@ export class PrismaStorage implements IStorage {
         where: { teamId },
         include: { invited: true }
       });
-      return invitations.map(inv => ({
+      return invitations.map((inv: any) => ({
         ...inv,
         user: inv.invited
       }));

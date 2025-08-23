@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertTeamSchema } from "@shared/schema";
+import { insertTeamSchema, type Team } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, Users, Crown, LogOut } from "lucide-react";
 import { z } from "zod";
@@ -25,7 +25,7 @@ export default function Teams() {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const { data: teams, isLoading } = useQuery({
+  const { data: teams, isLoading } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
   });
 

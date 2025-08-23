@@ -5,19 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useAuth } from "@/components/auth/auth-context";
 import { Gamepad, TrendingUp, Zap, Target, Users, Crown } from "lucide-react";
+import type { CareerStats, Match, Team } from "@shared/schema";
 
 export default function Dashboard() {
   const { user } = useAuth();
 
-  const { data: stats } = useQuery({
+  const { data: stats } = useQuery<CareerStats>({
     queryKey: ["/api/stats"],
   });
 
-  const { data: recentMatches } = useQuery({
+  const { data: recentMatches } = useQuery<Match[]>({
     queryKey: ["/api/matches"],
   });
 
-  const { data: teams } = useQuery({
+  const { data: teams } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
   });
 
@@ -112,7 +113,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="space-y-3">
               {recentMatches && recentMatches.length > 0 ? (
-                recentMatches.slice(0, 3).map((match: any) => (
+                recentMatches.slice(0, 3).map((match: Match) => (
                   <div
                     key={match.id}
                     className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
@@ -159,7 +160,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="space-y-3">
               {teams && teams.length > 0 ? (
-                teams.slice(0, 3).map((team: any) => (
+                teams.slice(0, 3).map((team: Team) => (
                   <div
                     key={team.id}
                     className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
