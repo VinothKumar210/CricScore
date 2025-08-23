@@ -45,10 +45,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         token 
       });
     } catch (error) {
+      console.error('Registration error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Internal server error", details: error.message });
     }
   });
 
