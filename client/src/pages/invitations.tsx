@@ -24,7 +24,7 @@ export default function Invitations() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: invitations, isLoading: invitationsLoading } = useQuery({
+  const { data: invitations, isLoading: invitationsLoading } = useQuery<any[]>({
     queryKey: ["/api/invitations"],
   });
 

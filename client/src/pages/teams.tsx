@@ -7,23 +7,33 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertTeamSchema, type Team } from "@shared/schema";
+import { insertTeamSchema, type Team, type User } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Users, Crown, LogOut } from "lucide-react";
+import { Plus, Users, Crown, LogOut, Search, UserPlus, CheckCircle, XCircle } from "lucide-react";
 import { z } from "zod";
 
 const teamFormSchema = insertTeamSchema.omit({ captainId: true });
 type TeamFormData = z.infer<typeof teamFormSchema>;
+
+const userSearchSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+});
+type UserSearchData = z.infer<typeof userSearchSchema>;
 
 export default function Teams() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [searchedUser, setSearchedUser] = useState<User | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   const { data: teams, isLoading } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
@@ -34,6 +44,13 @@ export default function Teams() {
     defaultValues: {
       name: "",
       description: "",
+    },
+  });
+
+  const searchForm = useForm<UserSearchData>({
+    resolver: zodResolver(userSearchSchema),
+    defaultValues: {
+      username: "",
     },
   });
 
@@ -60,8 +77,80 @@ export default function Teams() {
     },
   });
 
+  const searchUserMutation = useMutation({
+    mutationFn: async (username: string) => {
+      const response = await fetch(`/api/users/search?username=${encodeURIComponent(username)}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error);
+      }
+      return response.json();
+    },
+    onSuccess: (userData: User) => {
+      setSearchedUser(userData);
+      setIsSearching(false);
+    },
+    onError: (error: any) => {
+      setSearchedUser(null);
+      setIsSearching(false);
+      toast({
+        title: "User not found",
+        description: error.message || "Could not find user with that username",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendInvitationMutation = useMutation({
+    mutationFn: async ({ teamId, username }: { teamId: string; username: string }) => {
+      const response = await apiRequest('POST', '/api/invitations', { teamId, username });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Invitation sent!",
+        description: "The player will receive your team invitation.",
+      });
+      setSearchedUser(null);
+      searchForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to send invitation",
+        description: error.message || "Could not send invitation",
+        variant: "destructive",
+      });
+    },
+  });
+
   function onSubmit(values: TeamFormData) {
     createTeamMutation.mutate(values);
+  }
+
+  function onSearchUser(values: UserSearchData) {
+    setIsSearching(true);
+    setSearchedUser(null);
+    searchUserMutation.mutate(values.username);
+  }
+
+  function handleManageTeam(team: Team) {
+    setSelectedTeam(team);
+    setIsManageModalOpen(true);
+    setSearchedUser(null);
+    searchForm.reset();
+  }
+
+  function handleSendInvitation() {
+    if (selectedTeam && searchedUser) {
+      sendInvitationMutation.mutate({
+        teamId: selectedTeam.id,
+        username: searchedUser.username!,
+      });
+    }
   }
 
   if (isLoading) {
@@ -161,6 +250,118 @@ export default function Teams() {
         </Dialog>
       </div>
 
+      {/* Manage Team Dialog */}
+      <Dialog open={isManageModalOpen} onOpenChange={setIsManageModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Team: {selectedTeam?.name}</DialogTitle>
+            <DialogDescription>
+              Search for players by username and send them team invitations.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* User Search Section */}
+            <div className="space-y-4">
+              <h4 className="font-semibold flex items-center">
+                <Search className="mr-2 h-4 w-4" />
+                Find Player
+              </h4>
+              
+              <Form {...searchForm}>
+                <form onSubmit={searchForm.handleSubmit(onSearchUser)} className="space-y-4">
+                  <FormField
+                    control={searchForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <div className="flex space-x-2">
+                          <FormControl>
+                            <Input
+                              placeholder="Enter username to search"
+                              data-testid="input-search-username"
+                              {...field}
+                            />
+                          </FormControl>
+                          <Button
+                            type="submit"
+                            size="sm"
+                            disabled={isSearching || searchUserMutation.isPending}
+                            data-testid="button-search-user"
+                          >
+                            {isSearching || searchUserMutation.isPending ? "Searching..." : "Search"}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </form>
+              </Form>
+            </div>
+
+            {/* Search Results */}
+            {searchedUser && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <h4 className="font-semibold flex items-center">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Player Found
+                  </h4>
+                  
+                  <Card>
+                    <CardContent className="pt-4">
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Username</span>
+                          <span className="font-medium">{searchedUser.username}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Email</span>
+                          <span className="font-medium">{searchedUser.email}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Role</span>
+                          <Badge variant="outline">{searchedUser.role || "Not specified"}</Badge>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Batting Hand</span>
+                          <span className="font-medium">{searchedUser.battingHand || "Not specified"}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-muted-foreground">Bowling Style</span>
+                          <span className="font-medium">{searchedUser.bowlingStyle || "Not specified"}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-4 flex space-x-2">
+                        <Button
+                          onClick={handleSendInvitation}
+                          disabled={sendInvitationMutation.isPending}
+                          className="flex-1"
+                          data-testid="button-send-invitation"
+                        >
+                          {sendInvitationMutation.isPending ? "Sending..." : "Send Invitation"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setSearchedUser(null)}
+                          data-testid="button-clear-search"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Teams Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {teams && teams.length > 0 ? (
@@ -209,7 +410,11 @@ export default function Teams() {
 
                 <div className="flex space-x-2">
                   {team.captainId === user?.id ? (
-                    <Button className="flex-1" data-testid={`button-manage-${team.id}`}>
+                    <Button 
+                      className="flex-1" 
+                      onClick={() => handleManageTeam(team)}
+                      data-testid={`button-manage-${team.id}`}
+                    >
                       <Users className="mr-2 h-4 w-4" />
                       Manage Team
                     </Button>
