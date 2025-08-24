@@ -54,9 +54,14 @@ async function verifyDatabaseConnection() {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     log(`✗ MongoDB connection failed: ${errorMessage}`);
     
-    // Check if it's an authentication error
+    // Check for specific MongoDB errors
     if (errorMessage.includes('authentication failed') || errorMessage.includes('bad auth')) {
       log("Error: MongoDB authentication failed. Please verify your DATABASE_URL credentials.");
+    } else if (errorMessage.includes('empty database name not allowed')) {
+      log("Error: DATABASE_URL is missing database name. Please add '/database_name' to your connection string.");
+      log("Example: mongodb+srv://user:pass@cluster.mongodb.net/your_database_name?options");
+    } else if (errorMessage.includes('ConnectorError')) {
+      log("Error: MongoDB connection error. Please check your DATABASE_URL configuration.");
     }
     
     log("Warning: Starting server without database connection. Some features may not work.");
