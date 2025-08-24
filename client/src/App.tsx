@@ -89,7 +89,22 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function Router() {
   const { user, isLoading } = useAuth();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+
+  // Handle redirects in useEffect to avoid state updates during render
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (user && location === "/") {
+      if (user.profileComplete) {
+        setLocation("/dashboard");
+      } else {
+        setLocation("/profile-setup");
+      }
+    } else if (!user && location !== "/login" && location !== "/register") {
+      setLocation("/login");
+    }
+  }, [user, isLoading, location, setLocation]);
 
   if (isLoading) {
     return (
@@ -97,17 +112,6 @@ function Router() {
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
       </div>
     );
-  }
-
-  // Redirect logic
-  if (user && location === "/") {
-    if (user.profileComplete) {
-      window.history.replaceState({}, "", "/dashboard");
-    } else {
-      window.history.replaceState({}, "", "/profile-setup");
-    }
-  } else if (!user && location !== "/login" && location !== "/register") {
-    window.history.replaceState({}, "", "/login");
   }
 
   return (

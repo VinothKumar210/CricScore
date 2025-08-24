@@ -7,6 +7,23 @@ import { z } from "zod";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
+// Helper function to handle database errors consistently
+function handleDatabaseError(error: unknown, res: any) {
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  
+  // Check if it's a database connection error
+  if (errorMessage.includes('authentication failed') || 
+      errorMessage.includes('ConnectorError') || 
+      errorMessage.includes('SCRAM failure')) {
+    return res.status(503).json({ 
+      message: "Database connection unavailable. Please try again later.",
+      details: "Database authentication failed"
+    });
+  }
+  
+  return res.status(500).json({ message: "Internal server error", details: errorMessage });
+}
+
 // Middleware to verify JWT token
 const authenticateToken = async (req: any, res: any, next: any) => {
   const authHeader = req.headers['authorization'];
@@ -49,7 +66,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
-      res.status(500).json({ message: "Internal server error", details: error.message });
+      
+      return handleDatabaseError(error, res);
     }
   });
 
@@ -72,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
-      res.status(500).json({ message: "Internal server error" });
+      return handleDatabaseError(error, res);
     }
   });
 
@@ -85,7 +103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ ...user, password: undefined });
     } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
+      return handleDatabaseError(error, res);
     }
   });
 
