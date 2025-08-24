@@ -6,11 +6,18 @@ export const BattingHandSchema = z.enum(["RIGHT", "LEFT"]);
 export const BowlingStyleSchema = z.enum(["FAST", "MEDIUM_FAST", "SPIN"]);
 export const InvitationStatusSchema = z.enum(["PENDING", "ACCEPTED", "REJECTED"]);
 
+// Username validation - only ASCII letters, numbers, and symbols
+const usernameRegex = /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/;
+
 // Create insert schemas for validation
 export const insertUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
-  username: z.string().optional(),
+  username: z.string()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be at most 30 characters")
+    .regex(usernameRegex, "Username can only contain ASCII letters, numbers, and symbols")
+    .optional(),
   role: RoleSchema.optional(),
   battingHand: BattingHandSchema.optional(),
   bowlingStyle: BowlingStyleSchema.optional(),
@@ -68,7 +75,10 @@ export const matchFormSchema = insertMatchSchema.omit({ userId: true }).extend({
 
 // Profile setup schema
 export const profileSetupSchema = z.object({
-  username: z.string().min(3).max(30),
+  username: z.string()
+    .min(3, "Username must be at least 3 characters")
+    .max(30, "Username must be at most 30 characters")
+    .regex(usernameRegex, "Username can only contain ASCII letters, numbers, and symbols"),
   role: z.enum(["BATSMAN", "BOWLER", "ALL_ROUNDER"]),
   battingHand: z.enum(["RIGHT", "LEFT"]),
   bowlingStyle: z.enum(["FAST", "MEDIUM_FAST", "SPIN"]).optional(),
