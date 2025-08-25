@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,12 +11,22 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { profileSetupSchema, type ProfileSetup } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+import { Check, X, Loader2 } from "lucide-react";
 
 export default function ProfileSetup() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [usernameStatus, setUsernameStatus] = useState<{
+    checking: boolean;
+    available: boolean | null;
+    message: string;
+  }>({
+    checking: false,
+    available: null,
+    message: ""
+  });
 
   const form = useForm<ProfileSetup>({
     resolver: zodResolver(profileSetupSchema),
@@ -29,6 +39,45 @@ export default function ProfileSetup() {
   });
 
   const selectedRole = form.watch("role");
+  const watchedUsername = form.watch("username");
+
+  // Debounced username availability check
+  const checkUsernameAvailability = useCallback(async (username: string) => {
+    if (!username || username.length < 3) {
+      setUsernameStatus({ checking: false, available: null, message: "" });
+      return;
+    }
+
+    setUsernameStatus({ checking: true, available: null, message: "" });
+    
+    try {
+      const response = await fetch(`/api/users/check-username?username=${encodeURIComponent(username)}`);
+      const data = await response.json();
+      
+      setUsernameStatus({
+        checking: false,
+        available: data.available,
+        message: data.message
+      });
+    } catch (error) {
+      setUsernameStatus({
+        checking: false,
+        available: null,
+        message: "Unable to check username availability"
+      });
+    }
+  }, []);
+
+  // Effect to debounce username checking
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (watchedUsername) {
+        checkUsernameAvailability(watchedUsername);
+      }
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [watchedUsername, checkUsernameAvailability]);
 
   async function onSubmit(values: ProfileSetup) {
     setIsLoading(true);
@@ -73,13 +122,49 @@ export default function ProfileSetup() {
                         <FormItem>
                           <FormLabel>Username *</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="Choose a unique username"
-                              data-testid="input-username"
-                              {...field}
-                            />
+                            <div className="relative">
+                              <Input
+                                placeholder="Choose a unique username"
+                                data-testid="input-username"
+                                className={
+                                  usernameStatus.available === true 
+                                    ? "border-green-500 focus:border-green-500" 
+                                    : usernameStatus.available === false 
+                                    ? "border-red-500 focus:border-red-500" 
+                                    : ""
+                                }
+                                {...field}
+                              />
+                              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                {usernameStatus.checking && (
+                                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                )}
+                                {!usernameStatus.checking && usernameStatus.available === true && (
+                                  <Check className="h-4 w-4 text-green-500" />
+                                )}
+                                {!usernameStatus.checking && usernameStatus.available === false && (
+                                  <X className="h-4 w-4 text-red-500" />
+                                )}
+                              </div>
+                            </div>
                           </FormControl>
-                          <p className="text-xs text-muted-foreground">This will be your unique identifier</p>
+                          <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">This will be your unique identifier</p>
+                            {usernameStatus.message && (
+                              <p 
+                                className={`text-xs ${
+                                  usernameStatus.available === true 
+                                    ? "text-green-600" 
+                                    : usernameStatus.available === false 
+                                    ? "text-red-600" 
+                                    : "text-muted-foreground"
+                                }`}
+                                data-testid="username-status-message"
+                              >
+                                {usernameStatus.message}
+                              </p>
+                            )}
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}

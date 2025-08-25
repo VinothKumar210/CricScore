@@ -230,6 +230,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Username availability check route (public - no auth required)
+  app.get("/api/users/check-username", async (req, res) => {
+    try {
+      const { username } = req.query;
+      
+      if (!username || typeof username !== 'string') {
+        return res.status(400).json({ message: "Username parameter required" });
+      }
+      
+      // Validate username format first
+      const usernameRegex = /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/;
+      if (username.length < 3 || username.length > 30 || !usernameRegex.test(username)) {
+        return res.json({ 
+          available: false, 
+          message: "Username must be 3-30 characters and contain only ASCII letters, numbers, and symbols" 
+        });
+      }
+      
+      const existingUser = await storage.getUserByUsername(username);
+      const available = !existingUser;
+      
+      res.json({ 
+        available,
+        message: available ? "Username is available" : "Username is already taken"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Team invitation routes
   app.get("/api/invitations", authenticateToken, async (req: any, res) => {
     try {
