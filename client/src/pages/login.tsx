@@ -27,12 +27,20 @@ export default function Login() {
   async function onSubmit(values: LoginRequest) {
     setIsLoading(true);
     try {
-      await login(values.email, values.password);
+      const user = await login(values.email, values.password);
       toast({
         title: "Success",
         description: "Logged in successfully",
       });
-      // Let the Router component handle the redirect automatically
+      
+      // Small delay to ensure auth state is updated, then redirect
+      setTimeout(() => {
+        if (user.profileComplete) {
+          setLocation("/dashboard");
+        } else {
+          setLocation("/profile-setup");
+        }
+      }, 100);
     } catch (error: any) {
       toast({
         title: "Error",
