@@ -27,17 +27,12 @@ export default function Login() {
   async function onSubmit(values: LoginRequest) {
     setIsLoading(true);
     try {
-      const user = await login(values.email, values.password);
+      await login(values.email, values.password);
       toast({
         title: "Success",
         description: "Logged in successfully",
       });
-      
-      if (user.profileComplete) {
-        setLocation("/dashboard");
-      } else {
-        setLocation("/profile-setup");
-      }
+      // Let the Router component handle the redirect automatically
     } catch (error: any) {
       toast({
         title: "Error",
