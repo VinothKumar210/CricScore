@@ -15,6 +15,7 @@ model User {
   email           String   @unique
   password        String
   username        String?  @unique
+  profileName     String?
   role            Role?
   battingHand     BattingHand?
   bowlingStyle    BowlingStyle?

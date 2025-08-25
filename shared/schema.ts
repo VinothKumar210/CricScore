@@ -18,6 +18,7 @@ export const insertUserSchema = z.object({
     .max(30, "Username must be at most 30 characters")
     .regex(usernameRegex, "Username can only contain ASCII letters, numbers, and symbols")
     .optional(),
+  profileName: z.string().optional(),
   role: RoleSchema.optional(),
   battingHand: BattingHandSchema.optional(),
   bowlingStyle: BowlingStyleSchema.optional(),
@@ -79,6 +80,7 @@ export const profileSetupSchema = z.object({
     .min(3, "Username must be at least 3 characters")
     .max(30, "Username must be at most 30 characters")
     .regex(usernameRegex, "Username can only contain ASCII letters, numbers, and symbols"),
+  profileName: z.string().optional(),
   role: z.enum(["BATSMAN", "BOWLER", "ALL_ROUNDER"]),
   battingHand: z.enum(["RIGHT", "LEFT"]),
   bowlingStyle: z.enum(["FAST", "MEDIUM_FAST", "SPIN"]).optional(),
