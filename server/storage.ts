@@ -21,6 +21,7 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  searchUsers(query: string): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   updateUserProfile(id: string, profile: ProfileSetup): Promise<User | undefined>;
@@ -374,6 +375,46 @@ export class PrismaStorage implements IStorage {
       economy: parseFloat(economy.toFixed(2)),
       catchesTaken: newCatchesTaken,
     });
+  }
+
+  async searchUsers(query: string): Promise<User[]> {
+    try {
+      const users = await prisma.user.findMany({
+        where: {
+          OR: [
+            {
+              username: {
+                contains: query,
+                mode: 'insensitive'
+              }
+            },
+            {
+              profileName: {
+                contains: query,
+                mode: 'insensitive'
+              }
+            }
+          ],
+          profileComplete: true
+        },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          profileName: true,
+          description: true,
+          role: true,
+          battingHand: true,
+          bowlingStyle: true,
+          profileComplete: true,
+          createdAt: true
+        },
+        take: 20
+      });
+      return users as User[];
+    } catch {
+      return [];
+    }
   }
 
   async validatePassword(email: string, password: string): Promise<User | null> {

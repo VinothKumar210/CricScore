@@ -248,19 +248,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User search route
   app.get("/api/users/search", authenticateToken, async (req, res) => {
     try {
-      const { username } = req.query;
+      const { q } = req.query;
       
-      if (!username || typeof username !== 'string') {
-        return res.status(400).json({ message: "Username parameter required" });
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ message: "Search query parameter 'q' required" });
       }
       
-      const user = await storage.getUserByUsername(username);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
+      if (q.trim().length < 2) {
+        return res.status(400).json({ message: "Search query must be at least 2 characters" });
       }
       
-      // Return user without password
-      res.json({ ...user, password: undefined });
+      const users = await storage.searchUsers(q.trim());
+      
+      // Remove passwords from all results
+      const safeUsers = users.map(user => ({ ...user, password: undefined }));
+      res.json(safeUsers);
     } catch (error) {
       return handleDatabaseError(error, res);
     }

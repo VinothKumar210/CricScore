@@ -16,6 +16,7 @@ import Statistics from "@/pages/statistics";
 import AddMatch from "@/pages/add-match";
 import Teams from "@/pages/teams";
 import Invitations from "@/pages/invitations";
+import SearchPlayers from "@/pages/search";
 import { useEffect, useState } from "react";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -149,6 +150,12 @@ function Router() {
       <Route path="/invitations">
         <ProtectedRoute>
           <Invitations />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/search">
+        <ProtectedRoute>
+          <SearchPlayers />
         </ProtectedRoute>
       </Route>
 
