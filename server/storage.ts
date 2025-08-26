@@ -124,7 +124,8 @@ export class PrismaStorage implements IStorage {
         where: { id },
         data: {
           username: profile.username,
-          profileName: profile.profileName || "Cricketer",
+          profileName: profile.profileName || "Player",
+          description: profile.description,
           role: profile.role,
           battingHand: profile.battingHand,
           bowlingStyle: profile.bowlingStyle,
