@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Calendar, Trophy, Edit, Save, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -60,7 +60,7 @@ export default function Profile() {
   };
 
   const form = useForm({
-    resolver: zodResolver(profileSetupSchema.omit({ username: true })),
+    resolver: zodResolver(profileSetupSchema.omit({ username: true }).partial()),
     defaultValues: {
       profileName: user.profileName || "",
       description: user.description || "",
@@ -69,6 +69,17 @@ export default function Profile() {
       bowlingStyle: user.bowlingStyle || undefined,
     },
   });
+
+  // Sync form with user data changes
+  useEffect(() => {
+    form.reset({
+      profileName: user.profileName || "",
+      description: user.description || "",
+      role: user.role || undefined,
+      battingHand: user.battingHand || undefined,
+      bowlingStyle: user.bowlingStyle || undefined,
+    });
+  }, [user, form]);
 
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -97,14 +108,19 @@ export default function Profile() {
   };
 
   const handleCancel = () => {
-    form.reset({
-      profileName: user.profileName || "",
-      description: user.description || "",
-      role: user.role || undefined,
-      battingHand: user.battingHand || undefined,
-      bowlingStyle: user.bowlingStyle || undefined,
-    });
-    setIsEditing(false);
+    try {
+      form.reset({
+        profileName: user.profileName || "",
+        description: user.description || "",
+        role: user.role || undefined,
+        battingHand: user.battingHand || undefined,
+        bowlingStyle: user.bowlingStyle || undefined,
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error during cancel operation:", error);
+      setIsEditing(false);
+    }
   };
 
   return (
