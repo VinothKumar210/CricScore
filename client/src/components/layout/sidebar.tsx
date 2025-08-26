@@ -23,15 +23,17 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
   return (
     <aside className={cn("w-64 bg-card border-r border-border", className)}>
       <div className="p-6 border-b border-border">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-            <span className="text-primary-foreground font-bold">C</span>
+        <Link href="/profile" onClick={onNavigate}>
+          <div className="flex items-center space-x-3 cursor-pointer hover:bg-accent rounded-md p-2 transition-colors" data-testid="nav-profile">
+            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-primary-foreground font-bold">C</span>
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-foreground">CricketScore Pro</h1>
+              <p className="text-xs text-muted-foreground">@{user?.username || 'user'}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-foreground">CricketScore Pro</h1>
-            <p className="text-xs text-muted-foreground">@{user?.username || 'user'}</p>
-          </div>
-        </div>
+        </Link>
       </div>
 
       <nav className="p-4 space-y-2">

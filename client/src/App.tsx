@@ -10,6 +10,7 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import ProfileSetup from "@/pages/profile-setup";
+import Profile from "@/pages/profile";
 import Dashboard from "@/pages/dashboard";
 import Statistics from "@/pages/statistics";
 import AddMatch from "@/pages/add-match";
@@ -148,6 +149,12 @@ function Router() {
       <Route path="/invitations">
         <ProtectedRoute>
           <Invitations />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/profile">
+        <ProtectedRoute>
+          <Profile />
         </ProtectedRoute>
       </Route>
 

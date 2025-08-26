@@ -4,10 +4,12 @@ export interface User {
   id: string;
   email: string;
   username?: string;
+  profileName?: string;
   role?: string;
   battingHand?: string;
   bowlingStyle?: string;
   profileComplete: boolean;
+  createdAt?: string;
 }
 
 export interface AuthResponse {
