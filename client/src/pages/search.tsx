@@ -13,17 +13,10 @@ export default function SearchPlayers() {
   const [searchInput, setSearchInput] = useState("");
 
   const { data: searchResults, isLoading, isError } = useQuery<UserType[]>({
-    queryKey: ["/api/users/search", searchTerm],
+    queryKey: ["search-users", searchTerm],
     enabled: searchTerm.length >= 2,
     queryFn: async () => {
-      const response = await fetch(`/api/users/search?q=${encodeURIComponent(searchTerm)}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (!response.ok) {
-        throw new Error('Failed to search users');
-      }
+      const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchTerm)}`);
       return response.json();
     },
   });
