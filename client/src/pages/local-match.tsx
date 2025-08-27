@@ -12,6 +12,7 @@ export default function LocalMatch() {
     Array(11).fill(null).map((_, index) => ({
       name: "",
       hasAccount: false,
+      username: undefined,
       userId: undefined,
     }))
   );
@@ -19,6 +20,7 @@ export default function LocalMatch() {
     Array(11).fill(null).map((_, index) => ({
       name: "",
       hasAccount: false,
+      username: undefined,
       userId: undefined,
     }))
   );
@@ -60,6 +62,7 @@ export default function LocalMatch() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Player Name</TableHead>
+                  <TableHead>Username</TableHead>
                   <TableHead className="text-center">Has Account</TableHead>
                 </TableRow>
               </TableHeader>
@@ -74,10 +77,27 @@ export default function LocalMatch() {
                         data-testid={`input-my-team-player-${index + 1}`}
                       />
                     </TableCell>
+                    <TableCell>
+                      {player.hasAccount ? (
+                        <Input
+                          placeholder="@username"
+                          value={player.username || ""}
+                          onChange={(e) => updateMyTeamPlayer(index, "username", e.target.value)}
+                          data-testid={`input-my-team-username-${index + 1}`}
+                        />
+                      ) : (
+                        <span className="text-muted-foreground text-sm">No account</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-center">
                       <Switch
                         checked={player.hasAccount}
-                        onCheckedChange={(checked) => updateMyTeamPlayer(index, "hasAccount", checked)}
+                        onCheckedChange={(checked) => {
+                          updateMyTeamPlayer(index, "hasAccount", checked);
+                          if (!checked) {
+                            updateMyTeamPlayer(index, "username", undefined);
+                          }
+                        }}
                         data-testid={`switch-my-team-account-${index + 1}`}
                       />
                     </TableCell>
@@ -101,6 +121,7 @@ export default function LocalMatch() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Player Name</TableHead>
+                  <TableHead>Username</TableHead>
                   <TableHead className="text-center">Has Account</TableHead>
                 </TableRow>
               </TableHeader>
@@ -115,10 +136,27 @@ export default function LocalMatch() {
                         data-testid={`input-opponent-team-player-${index + 1}`}
                       />
                     </TableCell>
+                    <TableCell>
+                      {player.hasAccount ? (
+                        <Input
+                          placeholder="@username"
+                          value={player.username || ""}
+                          onChange={(e) => updateOpponentTeamPlayer(index, "username", e.target.value)}
+                          data-testid={`input-opponent-team-username-${index + 1}`}
+                        />
+                      ) : (
+                        <span className="text-muted-foreground text-sm">No account</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-center">
                       <Switch
                         checked={player.hasAccount}
-                        onCheckedChange={(checked) => updateOpponentTeamPlayer(index, "hasAccount", checked)}
+                        onCheckedChange={(checked) => {
+                          updateOpponentTeamPlayer(index, "hasAccount", checked);
+                          if (!checked) {
+                            updateOpponentTeamPlayer(index, "username", undefined);
+                          }
+                        }}
                         data-testid={`switch-opponent-team-account-${index + 1}`}
                       />
                     </TableCell>
