@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-context";
-import { Users, BarChart3, Plus, Mail, LogOut, Gauge, Search } from "lucide-react";
+import { Users, BarChart3, Plus, Mail, LogOut, Gauge, Search, UserPlus } from "lucide-react";
 
 interface SidebarProps {
   className?: string;
@@ -16,6 +16,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
     { name: "Dashboard", href: "/dashboard", icon: Gauge },
     { name: "My Statistics", href: "/statistics", icon: BarChart3 },
     { name: "Add Match", href: "/add-match", icon: Plus },
+    { name: "Local Match", href: "/local-match", icon: UserPlus },
     { name: "My Teams", href: "/teams", icon: Users },
     { name: "Search Players", href: "/search", icon: Search },
     { name: "Invitations", href: "/invitations", icon: Mail },
