@@ -22,7 +22,7 @@ export default function Dashboard() {
     queryKey: ["/api/teams"],
   });
 
-  const { data: invitations } = useQuery({
+  const { data: invitations } = useQuery<any[]>({
     queryKey: ["/api/invitations"],
   });
 
@@ -161,11 +161,11 @@ export default function Dashboard() {
             <div className="space-y-3">
               {teams && teams.length > 0 ? (
                 teams.slice(0, 3).map((team: Team) => (
-                  <div
-                    key={team.id}
-                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                    data-testid={`team-${team.id}`}
-                  >
+                  <Link key={team.id} href={`/teams/${team.id}`}>
+                    <div
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
+                      data-testid={`team-${team.id}`}
+                    >
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                         <Users className="text-primary-foreground text-sm" />
@@ -180,7 +180,8 @@ export default function Dashboard() {
                     {team.captainId === user?.id && (
                       <Crown className="text-yellow-500 h-5 w-5" />
                     )}
-                  </div>
+                    </div>
+                  </Link>
                 ))
               ) : (
                 <div className="text-center py-4 text-muted-foreground">
@@ -188,9 +189,6 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-            <Button variant="link" asChild className="w-full mt-4" data-testid="link-teams">
-              <Link href="/teams">Manage Teams →</Link>
-            </Button>
           </CardContent>
         </Card>
       </div>

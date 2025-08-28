@@ -236,10 +236,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get specific team by ID
+  app.get("/api/teams/:id", authenticateToken, async (req, res) => {
+    try {
+      const team = await storage.getTeam(req.params.id);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+      res.json(team);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/teams/:id/members", authenticateToken, async (req, res) => {
     try {
       const members = await storage.getTeamMembers(req.params.id);
       res.json(members);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Remove team member
+  app.delete("/api/teams/:id/members/:memberId", authenticateToken, async (req: any, res) => {
+    try {
+      const { id: teamId, memberId } = req.params;
+      
+      // Get team to check permissions
+      const team = await storage.getTeam(teamId);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      // Check if user has permission to remove members
+      const isCaptain = team.captainId === req.userId;
+      const isViceCaptain = team.viceCaptainId === req.userId;
+      
+      if (!isCaptain && !isViceCaptain) {
+        return res.status(403).json({ message: "Only captain and vice captain can remove members" });
+      }
+
+      // Vice captain cannot remove captain or vice captain
+      if (isViceCaptain && !isCaptain) {
+        if (memberId === team.captainId || memberId === team.viceCaptainId) {
+          return res.status(403).json({ message: "Vice captain cannot remove captain or vice captain" });
+        }
+      }
+
+      // Captain cannot remove themselves
+      if (isCaptain && memberId === team.captainId) {
+        return res.status(400).json({ message: "Captain cannot remove themselves" });
+      }
+
+      const success = await storage.removeTeamMember(teamId, memberId);
+      if (!success) {
+        return res.status(404).json({ message: "Member not found in team" });
+      }
+
+      // If removing vice captain, update team
+      if (memberId === team.viceCaptainId) {
+        await storage.updateTeam(teamId, { viceCaptainId: null });
+      }
+
+      res.json({ message: "Member removed successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Promote member to vice captain
+  app.put("/api/teams/:id/promote-vice-captain", authenticateToken, async (req: any, res) => {
+    try {
+      const { id: teamId } = req.params;
+      const { memberId } = req.body;
+      
+      // Get team to check permissions
+      const team = await storage.getTeam(teamId);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      // Only captain can promote to vice captain
+      if (team.captainId !== req.userId) {
+        return res.status(403).json({ message: "Only captain can promote members" });
+      }
+
+      // Update team with new vice captain
+      const updatedTeam = await storage.updateTeam(teamId, { viceCaptainId: memberId });
+      if (!updatedTeam) {
+        return res.status(404).json({ message: "Failed to update team" });
+      }
+
+      res.json({ message: "Member promoted to vice captain successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Demote vice captain to member
+  app.put("/api/teams/:id/demote-vice-captain", authenticateToken, async (req: any, res) => {
+    try {
+      const { id: teamId } = req.params;
+      
+      // Get team to check permissions
+      const team = await storage.getTeam(teamId);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      // Only captain can demote vice captain
+      if (team.captainId !== req.userId) {
+        return res.status(403).json({ message: "Only captain can demote vice captain" });
+      }
+
+      // Update team to remove vice captain
+      const updatedTeam = await storage.updateTeam(teamId, { viceCaptainId: null });
+      if (!updatedTeam) {
+        return res.status(404).json({ message: "Failed to update team" });
+      }
+
+      res.json({ message: "Vice captain demoted successfully" });
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
