@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { apiRequest } from "@/lib/queryClient";
-import { Crown, Users, Shield, UserMinus, ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
+import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Team, User } from "@shared/schema";
 
 interface TeamMember extends User {
@@ -188,8 +189,14 @@ export default function TeamDetail() {
                   (isCaptain && !isMemberCaptain) || 
                   (isViceCaptain && !isMemberCaptain && !isMemberViceCaptain)
                 );
-                const canPromote = isCaptain && !isMemberCaptain && !isMemberViceCaptain;
-                const canDemote = isCaptain && isMemberViceCaptain;
+                const canPromote = !isMemberCaptain && !isMemberViceCaptain && (
+                  (isCaptain) || 
+                  (isViceCaptain)
+                );
+                const canDemote = isMemberViceCaptain && (
+                  (isCaptain) || 
+                  (isViceCaptain)
+                );
 
                 return (
                   <div
@@ -238,63 +245,73 @@ export default function TeamDetail() {
                         <Badge variant="outline">Member</Badge>
                       )}
 
-                      {/* Action buttons */}
+                      {/* Action dropdown */}
                       {canManageMembers && !isCurrentUser && (
-                        <div className="flex items-center space-x-1">
-                          {canPromote && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handlePromoteToViceCaptain(member.id)}
-                              disabled={promoteToViceCaptainMutation.isPending}
-                              data-testid={`button-promote-${member.id}`}
+                              data-testid={`dropdown-actions-${member.id}`}
                             >
-                              <TrendingUp className="h-4 w-4" />
+                              <MoreVertical className="h-4 w-4" />
                             </Button>
-                          )}
-                          {canDemote && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={handleDemoteViceCaptain}
-                              disabled={demoteViceCaptainMutation.isPending}
-                              data-testid={`button-demote-${member.id}`}
-                            >
-                              <TrendingDown className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {canRemove && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  data-testid={`button-remove-${member.id}`}
-                                >
-                                  <UserMinus className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to remove {member.profileName || member.username} from the team? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleRemoveMember(member.id)}
-                                    disabled={removeMemberMutation.isPending}
-                                    data-testid={`confirm-remove-${member.id}`}
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {canPromote && (
+                              <DropdownMenuItem
+                                onClick={() => handlePromoteToViceCaptain(member.id)}
+                                disabled={promoteToViceCaptainMutation.isPending}
+                                data-testid={`action-promote-${member.id}`}
+                              >
+                                <TrendingUp className="mr-2 h-4 w-4" />
+                                Promote to Vice Captain
+                              </DropdownMenuItem>
+                            )}
+                            {canDemote && (
+                              <DropdownMenuItem
+                                onClick={handleDemoteViceCaptain}
+                                disabled={demoteViceCaptainMutation.isPending}
+                                data-testid={`action-demote-${member.id}`}
+                              >
+                                <TrendingDown className="mr-2 h-4 w-4" />
+                                Demote to Member
+                              </DropdownMenuItem>
+                            )}
+                            {canRemove && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => e.preventDefault()}
+                                    className="text-destructive focus:text-destructive"
+                                    data-testid={`action-remove-${member.id}`}
                                   >
-                                    {removeMemberMutation.isPending ? "Removing..." : "Remove Member"}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                        </div>
+                                    <UserMinus className="mr-2 h-4 w-4" />
+                                    Remove from Team
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to remove {member.profileName || member.username} from the team? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleRemoveMember(member.id)}
+                                      disabled={removeMemberMutation.isPending}
+                                      data-testid={`confirm-remove-${member.id}`}
+                                    >
+                                      {removeMemberMutation.isPending ? "Removing..." : "Remove Member"}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </div>
                   </div>

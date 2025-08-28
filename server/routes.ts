@@ -317,9 +317,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Team not found" });
       }
 
-      // Only captain can promote to vice captain
-      if (team.captainId !== req.userId) {
-        return res.status(403).json({ message: "Only captain can promote members" });
+      // Only captain and vice captain can promote members
+      const isCaptain = team.captainId === req.userId;
+      const isViceCaptain = team.viceCaptainId === req.userId;
+      
+      if (!isCaptain && !isViceCaptain) {
+        return res.status(403).json({ message: "Only captain and vice captain can promote members" });
       }
 
       // Update team with new vice captain
@@ -345,9 +348,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Team not found" });
       }
 
-      // Only captain can demote vice captain
-      if (team.captainId !== req.userId) {
-        return res.status(403).json({ message: "Only captain can demote vice captain" });
+      // Only captain and vice captain can demote vice captain
+      const isCaptain = team.captainId === req.userId;
+      const isViceCaptain = team.viceCaptainId === req.userId;
+      
+      if (!isCaptain && !isViceCaptain) {
+        return res.status(403).json({ message: "Only captain and vice captain can demote vice captain" });
       }
 
       // Update team to remove vice captain
