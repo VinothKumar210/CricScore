@@ -7,21 +7,38 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { User, Mail, Calendar, Trophy, Edit, Save, X } from "lucide-react";
+import { User, Mail, Calendar, Trophy, Edit, Save, X, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { profileSetupSchema } from "@shared/schema";
+import { useParams, useLocation } from "wouter";
+import type { User as UserType } from "@shared/schema";
 
 export default function Profile() {
-  const { user, refreshUser } = useAuth();
+  const { id } = useParams();
+  const [, setLocation] = useLocation();
+  const { user: currentUser, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // Determine if we're viewing another player's profile or our own
+  const isOwnProfile = !id;
+  
+  // Query for the profile user if viewing another player
+  const { data: profileUser, isLoading: isProfileLoading } = useQuery<UserType>({
+    queryKey: ["/api/users", id],
+    enabled: !!id,
+  });
+  
+  // Use current user if own profile, otherwise use queried profile user
+  const user = isOwnProfile ? currentUser : profileUser;
+  const isLoading = isOwnProfile ? false : isProfileLoading;
 
-  if (!user) {
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -127,49 +144,68 @@ export default function Profile() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="space-y-6">
           {/* Header */}
+          {!isOwnProfile && (
+            <div className="flex items-center space-x-4 mb-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setLocation("/dashboard")}
+                data-testid="button-back-dashboard"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+            </div>
+          )}
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">Player Profile</h1>
-            <p className="text-muted-foreground">Your cricket profile and playing details</p>
+            <h1 className="text-3xl font-bold text-foreground">
+              {isOwnProfile ? "Your Profile" : `${user.profileName || user.username}'s Profile`}
+            </h1>
+            <p className="text-muted-foreground">
+              {isOwnProfile ? "Your cricket profile and playing details" : "Player cricket profile and playing details"}
+            </p>
           </div>
 
           {/* Profile Card */}
           <Card>
             <CardHeader className="text-center relative">
-              <div className="absolute top-4 right-4">
-                {!isEditing ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsEditing(true)}
-                    data-testid="button-edit-profile"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Button>
-                ) : (
-                  <div className="flex space-x-2">
+              {isOwnProfile && (
+                <div className="absolute top-4 right-4">
+                  {!isEditing ? (
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleCancel}
-                      data-testid="button-cancel-edit"
-                      disabled={updateProfileMutation.isPending}
+                      onClick={() => setIsEditing(true)}
+                      data-testid="button-edit-profile"
                     >
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Profile
                     </Button>
-                    <Button
-                      size="sm"
-                      onClick={form.handleSubmit(handleSave)}
-                      data-testid="button-save-profile"
-                      disabled={updateProfileMutation.isPending}
-                    >
-                      <Save className="w-4 h-4 mr-2" />
-                      {updateProfileMutation.isPending ? "Saving..." : "Save"}
-                    </Button>
-                  </div>
-                )}
-              </div>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancel}
+                        data-testid="button-cancel-edit"
+                        disabled={updateProfileMutation.isPending}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={form.handleSubmit(handleSave)}
+                        data-testid="button-save-profile"
+                        disabled={updateProfileMutation.isPending}
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {updateProfileMutation.isPending ? "Saving..." : "Save"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="mx-auto w-20 h-20 bg-primary rounded-full flex items-center justify-center mb-4">
                 <User className="w-10 h-10 text-primary-foreground" />
               </div>
@@ -177,7 +213,7 @@ export default function Profile() {
               <CardDescription className="text-lg">@{user.username}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {!isEditing ? (
+              {!isEditing || !isOwnProfile ? (
                 <>
                   {/* Basic Information */}
                   <div className="space-y-4">
