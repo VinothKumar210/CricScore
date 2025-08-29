@@ -368,6 +368,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Transfer captaincy to another member
+  app.put("/api/teams/:id/transfer-captaincy", authenticateToken, async (req: any, res) => {
+    try {
+      const { id: teamId } = req.params;
+      const { memberId } = req.body;
+      
+      // Get team to check permissions
+      const team = await storage.getTeam(teamId);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      // Only captain can transfer captaincy
+      if (team.captainId !== req.userId) {
+        return res.status(403).json({ message: "Only captain can transfer captaincy" });
+      }
+
+      // Cannot transfer to current captain
+      if (memberId === team.captainId) {
+        return res.status(400).json({ message: "Cannot transfer captaincy to current captain" });
+      }
+
+      // Update team: new member becomes captain, old captain becomes vice captain
+      const updatedTeam = await storage.updateTeam(teamId, { 
+        captainId: memberId, 
+        viceCaptainId: req.userId 
+      });
+      
+      if (!updatedTeam) {
+        return res.status(404).json({ message: "Failed to transfer captaincy" });
+      }
+
+      res.json({ message: "Captaincy transferred successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // User search route
   app.get("/api/users/search", authenticateToken, async (req, res) => {
     try {
