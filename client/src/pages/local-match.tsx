@@ -26,21 +26,17 @@ export default function LocalMatch() {
   );
 
   const updateMyTeamPlayer = (index: number, field: keyof LocalPlayer, value: any) => {
-    console.log(`Updating my team player ${index + 1}, field: ${field}, value:`, value);
     setMyTeamPlayers(prev => {
       const updatedPlayers = [...prev];
       updatedPlayers[index] = { ...updatedPlayers[index], [field]: value };
-      console.log("Updated my team players:", updatedPlayers[index]);
       return updatedPlayers;
     });
   };
 
   const updateOpponentTeamPlayer = (index: number, field: keyof LocalPlayer, value: any) => {
-    console.log(`Updating opponent team player ${index + 1}, field: ${field}, value:`, value);
     setOpponentTeamPlayers(prev => {
       const updatedPlayers = [...prev];
       updatedPlayers[index] = { ...updatedPlayers[index], [field]: value };
-      console.log("Updated opponent team players:", updatedPlayers[index]);
       return updatedPlayers;
     });
   };
@@ -175,7 +171,6 @@ export default function LocalMatch() {
       <div className="mt-6 flex justify-center">
         <Button 
           onClick={() => {
-            console.log("Saving local match with teams:", { myTeamPlayers, opponentTeamPlayers });
           }}
           data-testid="button-save-local-match"
           className="px-8"

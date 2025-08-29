@@ -118,7 +118,6 @@ export default function Profile() {
       });
       setIsEditing(false);
     } catch (error) {
-      console.error("Error during cancel operation:", error);
       setIsEditing(false);
     }
   };
