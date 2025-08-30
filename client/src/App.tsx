@@ -58,16 +58,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (!user) {
-        setLocation("/login");
-      } else if (!user.profileComplete) {
-        setLocation("/profile-setup");
-      }
-    }
-  }, [user, isLoading, setLocation]);
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -77,10 +67,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
+    setLocation("/login");
     return null;
   }
 
   if (!user.profileComplete) {
+    setLocation("/profile-setup");
     return null;
   }
 
@@ -95,14 +87,15 @@ function Router() {
   useEffect(() => {
     if (isLoading) return;
 
-    if (user && location === "/") {
-      if (user.profileComplete) {
+    // Only handle root path redirects automatically
+    if (location === "/") {
+      if (user?.profileComplete) {
         setLocation("/dashboard");
-      } else {
+      } else if (user && !user.profileComplete) {
         setLocation("/profile-setup");
+      } else if (!user) {
+        setLocation("/login");
       }
-    } else if (!user && location !== "/login" && location !== "/register") {
-      setLocation("/login");
     }
   }, [user, isLoading, location, setLocation]);
 
