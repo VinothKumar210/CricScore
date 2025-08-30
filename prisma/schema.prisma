@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  email           String   @unique
+  password        String
+  username        String?  @unique
+  role            Role?
+  battingHand     BattingHand?
+  bowlingStyle    BowlingStyle?
+  profileComplete Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  // Relations
+  careerStats     CareerStats?
+  captainOfTeams  Team[]       @relation("TeamCaptain")
+  viceCaptainOfTeams Team[]    @relation("TeamViceCaptain")
+  teamMemberships TeamMember[]
+  sentInvitations TeamInvitation[] @relation("InvitationSender")
+  receivedInvitations TeamInvitation[] @relation("InvitationReceiver")
+  matches         Match[]
+
+  @@map("users")
+}
+
+model CareerStats {
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String  @unique @db.ObjectId
+  matchesPlayed  Int     @default(0)
+  // Batting stats
+  totalRuns      Int     @default(0)
+  ballsFaced     Int     @default(0)
+  strikeRate     Float   @default(0)
+  // Bowling stats
+  oversBowled    Float   @default(0)
+  runsConceded   Int     @default(0)
+  wicketsTaken   Int     @default(0)
+  economy        Float   @default(0)
+  // Fielding stats
+  catchesTaken   Int     @default(0)
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  // Relations
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("career_stats")
+}
+
+model Team {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  description    String?
+  captainId      String   @db.ObjectId
+  viceCaptainId  String?  @db.ObjectId
+  createdAt      DateTime @default(now())
+
+  // Relations
+  captain        User     @relation("TeamCaptain", fields: [captainId], references: [id])
+  viceCaptain    User?    @relation("TeamViceCaptain", fields: [viceCaptainId], references: [id])
+  members        TeamMember[]
+  invitations    TeamInvitation[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  teamId   String   @db.ObjectId
+  userId   String   @db.ObjectId
+  joinedAt DateTime @default(now())
+
+  // Relations
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+model TeamInvitation {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  teamId      String            @db.ObjectId
+  invitedBy   String            @db.ObjectId
+  invitedUser String            @db.ObjectId
+  status      InvitationStatus  @default(PENDING)
+  createdAt   DateTime          @default(now())
+
+  // Relations
+  team        Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  inviter     User              @relation("InvitationSender", fields: [invitedBy], references: [id])
+  invited     User              @relation("InvitationReceiver", fields: [invitedUser], references: [id])
+
+  @@map("team_invitations")
+}
+
+model Match {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  opponent     String
+  matchDate    DateTime
+  // Batting performance
+  runsScored   Int
+  ballsFaced   Int
+  // Bowling performance
+  oversBowled  Float
+  runsConceded Int
+  wicketsTaken Int
+  // Fielding performance
+  catchesTaken Int
+  createdAt    DateTime @default(now())
+
+  // Relations
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("matches")
+}
+
+enum Role {
+  BATSMAN     @map("batsman")
+  BOWLER      @map("bowler")
+  ALL_ROUNDER @map("all-rounder")
+}
+
+enum BattingHand {
+  RIGHT @map("right")
+  LEFT  @map("left")
+}
+
+enum BowlingStyle {
+  FAST        @map("fast")
+  MEDIUM_FAST @map("medium-fast")
+  SPIN        @map("spin")
+}
+
+enum InvitationStatus {
+  PENDING  @map("pending")
+  ACCEPTED @map("accepted")
+  REJECTED @map("rejected")
+}

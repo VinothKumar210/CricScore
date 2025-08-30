@@ -1,117 +1,72 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, decimal, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
-  username: text("username").unique(),
-  role: text("role", { enum: ["batsman", "bowler", "all-rounder"] }),
-  battingHand: text("batting_hand", { enum: ["right", "left"] }),
-  bowlingStyle: text("bowling_style", { enum: ["fast", "medium-fast", "spin"] }),
-  profileComplete: boolean("profile_complete").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
+// Prisma enums as Zod schemas for validation
+export const RoleSchema = z.enum(["BATSMAN", "BOWLER", "ALL_ROUNDER"]);
+export const BattingHandSchema = z.enum(["RIGHT", "LEFT"]);
+export const BowlingStyleSchema = z.enum(["FAST", "MEDIUM_FAST", "SPIN"]);
+export const InvitationStatusSchema = z.enum(["PENDING", "ACCEPTED", "REJECTED"]);
+
+// Create insert schemas for validation
+export const insertUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  username: z.string().optional(),
+  role: RoleSchema.optional(),
+  battingHand: BattingHandSchema.optional(),
+  bowlingStyle: BowlingStyleSchema.optional(),
+  profileComplete: z.boolean().optional(),
 });
 
-export const careerStats = pgTable("career_stats", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  matchesPlayed: integer("matches_played").default(0),
-  // Batting stats
-  totalRuns: integer("total_runs").default(0),
-  ballsFaced: integer("balls_faced").default(0),
-  strikeRate: decimal("strike_rate", { precision: 5, scale: 2 }).default("0"),
-  // Bowling stats
-  oversBowled: decimal("overs_bowled", { precision: 8, scale: 1 }).default("0"),
-  runsConceded: integer("runs_conceded").default(0),
-  wicketsTaken: integer("wickets_taken").default(0),
-  economy: decimal("economy", { precision: 5, scale: 2 }).default("0"),
-  // Fielding stats
-  catchesTaken: integer("catches_taken").default(0),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export const insertCareerStatsSchema = z.object({
+  userId: z.string(),
+  matchesPlayed: z.number().int().min(0).optional(),
+  totalRuns: z.number().int().min(0).optional(),
+  ballsFaced: z.number().int().min(0).optional(),
+  strikeRate: z.number().min(0).optional(),
+  oversBowled: z.number().min(0).optional(),
+  runsConceded: z.number().int().min(0).optional(),
+  wicketsTaken: z.number().int().min(0).optional(),
+  economy: z.number().min(0).optional(),
+  catchesTaken: z.number().int().min(0).optional(),
 });
 
-export const teams = pgTable("teams", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
-  description: text("description"),
-  captainId: varchar("captain_id").references(() => users.id).notNull(),
-  viceCaptainId: varchar("vice_captain_id").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
+export const insertTeamSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+  captainId: z.string(),
+  viceCaptainId: z.string().optional(),
 });
 
-export const teamMembers = pgTable("team_members", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  teamId: varchar("team_id").references(() => teams.id).notNull(),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  joinedAt: timestamp("joined_at").defaultNow(),
+export const insertTeamMemberSchema = z.object({
+  teamId: z.string(),
+  userId: z.string(),
 });
 
-export const teamInvitations = pgTable("team_invitations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  teamId: varchar("team_id").references(() => teams.id).notNull(),
-  invitedBy: varchar("invited_by").references(() => users.id).notNull(),
-  invitedUser: varchar("invited_user").references(() => users.id).notNull(),
-  status: text("status", { enum: ["pending", "accepted", "rejected"] }).default("pending"),
-  createdAt: timestamp("created_at").defaultNow(),
+export const insertTeamInvitationSchema = z.object({
+  teamId: z.string(),
+  invitedBy: z.string(),
+  invitedUser: z.string(),
+  status: InvitationStatusSchema.optional(),
 });
 
-export const matches = pgTable("matches", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id).notNull(),
-  opponent: text("opponent").notNull(),
-  matchDate: timestamp("match_date").notNull(),
-  // Batting performance
-  runsScored: integer("runs_scored").notNull(),
-  ballsFaced: integer("balls_faced").notNull(),
-  // Bowling performance
-  oversBowled: decimal("overs_bowled", { precision: 4, scale: 1 }).notNull(),
-  runsConceded: integer("runs_conceded").notNull(),
-  wicketsTaken: integer("wickets_taken").notNull(),
-  // Fielding performance
-  catchesTaken: integer("catches_taken").notNull(),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-// Insert schemas
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertCareerStatsSchema = createInsertSchema(careerStats).omit({
-  id: true,
-  updatedAt: true,
-});
-
-export const insertTeamSchema = createInsertSchema(teams).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({
-  id: true,
-  joinedAt: true,
-});
-
-export const insertTeamInvitationSchema = createInsertSchema(teamInvitations).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertMatchSchema = createInsertSchema(matches).omit({
-  id: true,
-  createdAt: true,
+export const insertMatchSchema = z.object({
+  userId: z.string(),
+  opponent: z.string().min(1),
+  matchDate: z.date(),
+  runsScored: z.number().int().min(0),
+  ballsFaced: z.number().int().min(0),
+  oversBowled: z.number().min(0),
+  runsConceded: z.number().int().min(0),
+  wicketsTaken: z.number().int().min(0),
+  catchesTaken: z.number().int().min(0),
 });
 
 // Profile setup schema
 export const profileSetupSchema = z.object({
   username: z.string().min(3).max(30),
-  role: z.enum(["batsman", "bowler", "all-rounder"]),
-  battingHand: z.enum(["right", "left"]),
-  bowlingStyle: z.enum(["fast", "medium-fast", "spin"]).optional(),
+  role: z.enum(["BATSMAN", "BOWLER", "ALL_ROUNDER"]),
+  battingHand: z.enum(["RIGHT", "LEFT"]),
+  bowlingStyle: z.enum(["FAST", "MEDIUM_FAST", "SPIN"]).optional(),
 });
 
 // Auth schemas
@@ -125,19 +80,28 @@ export const registerSchema = z.object({
   password: z.string().min(6),
 });
 
-// Types
+// Types - these will be generated by Prisma, but we define them for TypeScript compatibility
+export type Role = z.infer<typeof RoleSchema>;
+export type BattingHand = z.infer<typeof BattingHandSchema>;
+export type BowlingStyle = z.infer<typeof BowlingStyleSchema>;
+export type InvitationStatus = z.infer<typeof InvitationStatusSchema>;
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
 export type InsertCareerStats = z.infer<typeof insertCareerStatsSchema>;
-export type CareerStats = typeof careerStats.$inferSelect;
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
-export type Team = typeof teams.$inferSelect;
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
-export type TeamMember = typeof teamMembers.$inferSelect;
 export type InsertTeamInvitation = z.infer<typeof insertTeamInvitationSchema>;
-export type TeamInvitation = typeof teamInvitations.$inferSelect;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
-export type Match = typeof matches.$inferSelect;
 export type ProfileSetup = z.infer<typeof profileSetupSchema>;
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type RegisterRequest = z.infer<typeof registerSchema>;
+
+// Prisma model types will be imported from generated client
+export type {
+  User,
+  CareerStats,
+  Team,
+  TeamMember,
+  TeamInvitation,
+  Match,
+} from "@prisma/client";

@@ -98,9 +98,9 @@ export default function ProfileSetup() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="batsman">Batsman</SelectItem>
-                              <SelectItem value="bowler">Bowler</SelectItem>
-                              <SelectItem value="all-rounder">All-rounder</SelectItem>
+                              <SelectItem value="BATSMAN">Batsman</SelectItem>
+                              <SelectItem value="BOWLER">Bowler</SelectItem>
+                              <SelectItem value="ALL_ROUNDER">All-rounder</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -128,8 +128,8 @@ export default function ProfileSetup() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="right">Right Hand</SelectItem>
-                              <SelectItem value="left">Left Hand</SelectItem>
+                              <SelectItem value="RIGHT">Right Hand</SelectItem>
+                              <SelectItem value="LEFT">Left Hand</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -137,13 +137,13 @@ export default function ProfileSetup() {
                       )}
                     />
                     
-                    {(selectedRole === "bowler" || selectedRole === "all-rounder") && (
+                    {(selectedRole === "BOWLER" || selectedRole === "ALL_ROUNDER") && (
                       <FormField
                         control={form.control}
                         name="bowlingStyle"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Bowling Style {selectedRole === "bowler" ? "*" : ""}</FormLabel>
+                            <FormLabel>Bowling Style {selectedRole === "BOWLER" ? "*" : ""}</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-bowling-style">
@@ -151,9 +151,9 @@ export default function ProfileSetup() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                <SelectItem value="fast">Fast</SelectItem>
-                                <SelectItem value="medium-fast">Medium Fast</SelectItem>
-                                <SelectItem value="spin">Spin</SelectItem>
+                                <SelectItem value="FAST">Fast</SelectItem>
+                                <SelectItem value="MEDIUM_FAST">Medium Fast</SelectItem>
+                                <SelectItem value="SPIN">Spin</SelectItem>
                               </SelectContent>
                             </Select>
                             <p className="text-xs text-muted-foreground">Required for Bowlers and All-rounders</p>

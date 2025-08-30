@@ -86,11 +86,11 @@ export default function Invitations() {
   }
 
   function acceptInvitation(id: string) {
-    respondToInviteMutation.mutate({ id, status: "accepted" });
+    respondToInviteMutation.mutate({ id, status: "ACCEPTED" });
   }
 
   function rejectInvitation(id: string) {
-    respondToInviteMutation.mutate({ id, status: "rejected" });
+    respondToInviteMutation.mutate({ id, status: "REJECTED" });
   }
 
   if (invitationsLoading || teamsLoading) {

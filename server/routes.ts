@@ -226,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { status } = req.body;
       
-      if (!["accepted", "rejected"].includes(status)) {
+      if (!["ACCEPTED", "REJECTED"].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
 
