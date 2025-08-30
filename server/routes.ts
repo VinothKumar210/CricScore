@@ -227,6 +227,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const team = await storage.createTeam(validatedData);
+      
+      // Automatically add the team creator as a team member
+      await storage.addTeamMember({
+        teamId: team.id,
+        userId: req.userId
+      });
+      
       res.status(201).json(team);
     } catch (error) {
       if (error instanceof z.ZodError) {
