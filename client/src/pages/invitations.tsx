@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { apiRequest } from "@/lib/queryClient";
 import { Users, Mail, Check, X, Send } from "lucide-react";
 import { z } from "zod";
+import type { Team } from "@shared/schema";
 
 const inviteFormSchema = z.object({
   teamId: z.string().min(1, "Please select a team"),
@@ -27,7 +28,7 @@ export default function Invitations() {
     queryKey: ["/api/invitations"],
   });
 
-  const { data: teams, isLoading: teamsLoading } = useQuery({
+  const { data: teams, isLoading: teamsLoading } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
   });
 
@@ -60,7 +61,7 @@ export default function Invitations() {
   });
 
   const respondToInviteMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: "accepted" | "rejected" }) => {
+    mutationFn: async ({ id, status }: { id: string; status: "ACCEPTED" | "REJECTED" }) => {
       const response = await apiRequest('PUT', `/api/invitations/${id}`, { status });
       return response.json();
     },
@@ -108,7 +109,7 @@ export default function Invitations() {
     );
   }
 
-  const captainTeams = teams?.filter((team: any) => team.captainId === teams[0]?.captainId) || [];
+  const captainTeams = teams?.filter((team: Team) => team.captainId === team.captainId) || [];
 
   return (
     <div className="p-6 space-y-6">

@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Target, Hand, TrendingUp } from "lucide-react";
+import type { CareerStats } from "@shared/schema";
 
 export default function Statistics() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<CareerStats>({
     queryKey: ["/api/stats"],
   });
 
