@@ -209,6 +209,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User search route
+  app.get("/api/users/search", authenticateToken, async (req, res) => {
+    try {
+      const { username } = req.query;
+      
+      if (!username || typeof username !== 'string') {
+        return res.status(400).json({ message: "Username parameter required" });
+      }
+      
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return user without password
+      res.json({ ...user, password: undefined });
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
   // Team invitation routes
   app.get("/api/invitations", authenticateToken, async (req: any, res) => {
     try {
