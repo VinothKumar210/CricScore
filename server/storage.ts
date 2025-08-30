@@ -36,6 +36,7 @@ export interface IStorage {
   getTeamsByUser(userId: string): Promise<Team[]>;
   createTeam(team: InsertTeam): Promise<Team>;
   updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined>;
+  deleteTeam(id: string): Promise<boolean>;
   
   // Team member operations
   getTeamMembers(teamId: string): Promise<(TeamMember & { user: User })[]>;
@@ -226,6 +227,29 @@ export class PrismaStorage implements IStorage {
       return team;
     } catch {
       return undefined;
+    }
+  }
+
+  async deleteTeam(id: string): Promise<boolean> {
+    try {
+      // Delete team members first (if not handled by cascade)
+      await prisma.teamMember.deleteMany({
+        where: { teamId: id }
+      });
+      
+      // Delete team invitations
+      await prisma.teamInvitation.deleteMany({
+        where: { teamId: id }
+      });
+      
+      // Delete the team
+      await prisma.team.delete({
+        where: { id }
+      });
+      
+      return true;
+    } catch {
+      return false;
     }
   }
 

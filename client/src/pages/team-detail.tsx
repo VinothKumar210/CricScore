@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { apiRequest } from "@/lib/queryClient";
-import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search } from "lucide-react";
+import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Team, User } from "@shared/schema";
@@ -97,6 +97,28 @@ export default function TeamDetail() {
       toast({
         title: "Error",
         description: error.message || "Failed to demote vice captain",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteTeamMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('DELETE', `/api/teams/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Team deleted",
+        description: "The team has been permanently deleted.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      setLocation("/dashboard");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete team",
         variant: "destructive",
       });
     },
@@ -199,6 +221,10 @@ export default function TeamDetail() {
 
   const handleDemoteViceCaptain = () => {
     demoteViceCaptainMutation.mutate();
+  };
+
+  const handleDeleteTeam = () => {
+    deleteTeamMutation.mutate();
   };
 
   const handleTransferCaptaincy = (memberId: string) => {
@@ -403,10 +429,43 @@ export default function TeamDetail() {
         </div>
         <div className="flex items-center space-x-2">
           {isCaptain && (
-            <Badge variant="default" className="flex items-center space-x-1">
-              <Crown className="h-3 w-3" />
-              <span>Captain</span>
-            </Badge>
+            <>
+              <Badge variant="default" className="flex items-center space-x-1">
+                <Crown className="h-3 w-3" />
+                <span>Captain</span>
+              </Badge>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    data-testid="button-delete-team"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Team
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Team</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to permanently delete "{team.name}"? This action cannot be undone. All team members, invitations, and team data will be permanently removed.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteTeam}
+                      disabled={deleteTeamMutation.isPending}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      data-testid="confirm-delete-team"
+                    >
+                      {deleteTeamMutation.isPending ? "Deleting..." : "Delete Team"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
           )}
           {isViceCaptain && (
             <Badge variant="secondary" className="flex items-center space-x-1">
