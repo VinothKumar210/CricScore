@@ -15,7 +15,7 @@ import { Check, X, Loader2 } from "lucide-react";
 
 export default function ProfileSetup() {
   const [, setLocation] = useLocation();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [usernameStatus, setUsernameStatus] = useState<{
@@ -83,6 +83,8 @@ export default function ProfileSetup() {
     setIsLoading(true);
     try {
       await apiRequest('PUT', '/api/profile', values);
+      // Refresh user data to get updated profileComplete status
+      await refreshUser();
       toast({
         title: "Success",
         description: "Profile completed successfully",
