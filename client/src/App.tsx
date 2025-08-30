@@ -58,6 +58,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
 
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setLocation("/login");
+    } else if (!isLoading && user && !user.profileComplete) {
+      setLocation("/profile-setup");
+    }
+  }, [user, isLoading, setLocation]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -66,13 +74,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
-    setLocation("/login");
-    return null;
-  }
-
-  if (!user.profileComplete) {
-    setLocation("/profile-setup");
+  if (!user || !user.profileComplete) {
     return null;
   }
 
