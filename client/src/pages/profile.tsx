@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { User, Mail, Calendar, Trophy, Edit, Save, X, ArrowLeft } from "lucide-react";
+import { User, Mail, Calendar, Trophy, Edit, Save, X, ArrowLeft, Target, TrendingUp, Award, BarChart3 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +15,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { profileSetupSchema } from "@shared/schema";
 import { useParams, useLocation } from "wouter";
-import type { User as UserType } from "@shared/schema";
+import type { User as UserType, CareerStats, Match } from "@shared/schema";
 
 export default function Profile() {
   const { id } = useParams();
@@ -33,10 +33,22 @@ export default function Profile() {
     queryKey: ["/api/users", id],
     enabled: !!id,
   });
-  
+
   // Use current user if own profile, otherwise use queried profile user
   const user = isOwnProfile ? currentUser : profileUser;
   const isLoading = isOwnProfile ? false : isProfileLoading;
+  
+  // Query for player statistics
+  const { data: playerStats, isLoading: isStatsLoading } = useQuery<CareerStats>({
+    queryKey: isOwnProfile ? ["/api/stats"] : ["/api/users", id, "stats"],
+    enabled: !!user,
+  });
+
+  // Query for player matches for performance analysis
+  const { data: playerMatches, isLoading: isMatchesLoading } = useQuery<Match[]>({
+    queryKey: isOwnProfile ? ["/api/matches"] : ["/api/users", id, "matches"],
+    enabled: !!user,
+  });
 
   const formatRole = (role: string) => {
     switch (role) {
@@ -135,6 +147,41 @@ export default function Profile() {
       setIsEditing(false);
     }
   };
+
+  // Calculate performance metrics
+  const calculatePerformanceMetrics = () => {
+    if (!playerStats || !playerMatches) return null;
+
+    const recentMatches = playerMatches.slice(-10); // Last 10 matches
+    const totalMatches = playerMatches.length;
+
+    const battingAverage = playerStats.battingRuns && playerStats.battingInnings
+      ? (playerStats.battingRuns / playerStats.battingInnings).toFixed(2)
+      : '0.00';
+
+    const strikeRate = playerStats.battingRuns && playerStats.ballsFaced
+      ? ((playerStats.battingRuns / playerStats.ballsFaced) * 100).toFixed(2)
+      : '0.00';
+
+    const bowlingAverage = playerStats.bowlingWickets && playerStats.bowlingRuns
+      ? (playerStats.bowlingRuns / playerStats.bowlingWickets).toFixed(2)
+      : '0.00';
+
+    const economyRate = playerStats.bowlingRuns && playerStats.bowlingOvers
+      ? (playerStats.bowlingRuns / playerStats.bowlingOvers).toFixed(2)
+      : '0.00';
+
+    return {
+      battingAverage,
+      strikeRate,
+      bowlingAverage,
+      economyRate,
+      totalMatches,
+      recentMatches: recentMatches.length
+    };
+  };
+
+  const performanceMetrics = calculatePerformanceMetrics();
 
   if (isLoading || !user) {
     return (
@@ -422,6 +469,202 @@ export default function Profile() {
               )}
             </CardContent>
           </Card>
+
+          {/* Statistics Section */}
+          {playerStats && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <BarChart3 className="h-5 w-5" />
+                  <span>Career Statistics</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Batting Stats */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Batting</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Runs</span>
+                        <span className="font-medium">{playerStats.battingRuns || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Innings</span>
+                        <span className="font-medium">{playerStats.battingInnings || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">High Score</span>
+                        <span className="font-medium">{playerStats.highestScore || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Sixes</span>
+                        <span className="font-medium">{playerStats.sixes || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Fours</span>
+                        <span className="font-medium">{playerStats.fours || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Bowling Stats */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Bowling</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Wickets</span>
+                        <span className="font-medium">{playerStats.bowlingWickets || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Runs Given</span>
+                        <span className="font-medium">{playerStats.bowlingRuns || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Overs</span>
+                        <span className="font-medium">{playerStats.bowlingOvers || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Best Figures</span>
+                        <span className="font-medium">{playerStats.bestBowlingFigures || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Fielding Stats */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Fielding</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Catches</span>
+                        <span className="font-medium">{playerStats.catches || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Stumpings</span>
+                        <span className="font-medium">{playerStats.stumpings || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Run Outs</span>
+                        <span className="font-medium">{playerStats.runOuts || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Match Summary */}
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Matches</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm">Total Matches</span>
+                        <span className="font-medium">{performanceMetrics?.totalMatches || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Recent Matches</span>
+                        <span className="font-medium">{performanceMetrics?.recentMatches || 0}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Performance Analysis Section */}
+          {performanceMetrics && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <TrendingUp className="h-5 w-5" />
+                  <span>Performance Analysis</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* Batting Performance */}
+                  <div className="text-center p-4 bg-muted/30 rounded-lg">
+                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1">Batting Average</h3>
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{performanceMetrics.battingAverage}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Runs per innings</p>
+                  </div>
+
+                  {/* Strike Rate */}
+                  <div className="text-center p-4 bg-muted/30 rounded-lg">
+                    <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1">Strike Rate</h3>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{performanceMetrics.strikeRate}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Runs per 100 balls</p>
+                  </div>
+
+                  {/* Bowling Average */}
+                  <div className="text-center p-4 bg-muted/30 rounded-lg">
+                    <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Award className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1">Bowling Average</h3>
+                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{performanceMetrics.bowlingAverage}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Runs per wicket</p>
+                  </div>
+
+                  {/* Economy Rate */}
+                  <div className="text-center p-4 bg-muted/30 rounded-lg">
+                    <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <BarChart3 className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1">Economy Rate</h3>
+                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{performanceMetrics.economyRate}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Runs per over</p>
+                  </div>
+                </div>
+
+                {/* Performance Insights */}
+                <div className="mt-6 p-4 bg-muted/20 rounded-lg">
+                  <h3 className="font-semibold mb-3 flex items-center space-x-2">
+                    <Trophy className="h-4 w-4" />
+                    <span>Performance Insights</span>
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <h4 className="font-medium mb-2">Batting Performance</h4>
+                      <p className="text-muted-foreground">
+                        {parseFloat(performanceMetrics.battingAverage) > 30 
+                          ? "Excellent batting consistency with strong average" 
+                          : parseFloat(performanceMetrics.battingAverage) > 20
+                          ? "Good batting performance with room for improvement"
+                          : "Focus on building innings and improving shot selection"}
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-2">Bowling Performance</h4>
+                      <p className="text-muted-foreground">
+                        {parseFloat(performanceMetrics.economyRate) < 6 
+                          ? "Excellent bowling economy, keeping runs under control" 
+                          : parseFloat(performanceMetrics.economyRate) < 8
+                          ? "Good bowling control with competitive economy rate"
+                          : "Focus on bowling in good areas to reduce run flow"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Loading State for Statistics */}
+          {(isStatsLoading || isMatchesLoading) && (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading player statistics...</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
