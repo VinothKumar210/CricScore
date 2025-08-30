@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { prisma } from "./db";
 
 const app = express();
 app.use(express.json());
@@ -36,7 +37,40 @@ app.use((req, res, next) => {
   next();
 });
 
+// Function to verify database connection
+async function verifyDatabaseConnection() {
+  try {
+    log("Verifying MongoDB connection...");
+    
+    // Test connection by connecting to Prisma
+    await prisma.$connect();
+    
+    // For MongoDB, we can test by trying to count documents or find first
+    // This is a lightweight operation that tests the connection
+    const result = await prisma.user.count();
+    log(`✓ MongoDB connection successful - found ${result} users`);
+    return true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    log(`✗ MongoDB connection failed: ${errorMessage}`);
+    
+    // Check if it's an authentication error
+    if (errorMessage.includes('authentication failed') || errorMessage.includes('bad auth')) {
+      log("Error: MongoDB authentication failed. Please verify your DATABASE_URL credentials.");
+    }
+    
+    log("Warning: Starting server without database connection. Some features may not work.");
+    return false;
+  } finally {
+    // Always disconnect after testing to avoid hanging connections
+    await prisma.$disconnect().catch(() => {});
+  }
+}
+
 (async () => {
+  // Verify database connection before starting the server
+  await verifyDatabaseConnection();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
