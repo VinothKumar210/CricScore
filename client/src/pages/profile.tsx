@@ -38,14 +38,6 @@ export default function Profile() {
   const user = isOwnProfile ? currentUser : profileUser;
   const isLoading = isOwnProfile ? false : isProfileLoading;
 
-  if (isLoading || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   const formatRole = (role: string) => {
     switch (role) {
       case "BATSMAN":
@@ -76,26 +68,29 @@ export default function Profile() {
     }
   };
 
+  // Initialize form with empty defaults, will be synced in useEffect
   const form = useForm({
     resolver: zodResolver(profileSetupSchema.omit({ username: true }).partial()),
     defaultValues: {
-      profileName: user.profileName || "",
-      description: user.description || "",
-      role: user.role || undefined,
-      battingHand: user.battingHand || undefined,
-      bowlingStyle: user.bowlingStyle || undefined,
+      profileName: "",
+      description: "",
+      role: undefined as any,
+      battingHand: undefined as any,
+      bowlingStyle: undefined as any,
     },
   });
 
   // Sync form with user data changes
   useEffect(() => {
-    form.reset({
-      profileName: user.profileName || "",
-      description: user.description || "",
-      role: user.role || undefined,
-      battingHand: user.battingHand || undefined,
-      bowlingStyle: user.bowlingStyle || undefined,
-    });
+    if (user) {
+      form.reset({
+        profileName: user.profileName || "",
+        description: user.description || "",
+        role: user.role || undefined,
+        battingHand: user.battingHand || undefined,
+        bowlingStyle: user.bowlingStyle || undefined,
+      });
+    }
   }, [user, form]);
 
   const updateProfileMutation = useMutation({
@@ -126,18 +121,28 @@ export default function Profile() {
 
   const handleCancel = () => {
     try {
-      form.reset({
-        profileName: user.profileName || "",
-        description: user.description || "",
-        role: user.role || undefined,
-        battingHand: user.battingHand || undefined,
-        bowlingStyle: user.bowlingStyle || undefined,
-      });
+      if (user) {
+        form.reset({
+          profileName: user.profileName || "",
+          description: user.description || "",
+          role: user.role || undefined,
+          battingHand: user.battingHand || undefined,
+          bowlingStyle: user.bowlingStyle || undefined,
+        });
+      }
       setIsEditing(false);
     } catch (error) {
       setIsEditing(false);
     }
   };
+
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
