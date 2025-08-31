@@ -75,6 +75,28 @@ export const matchFormSchema = insertMatchSchema.omit({ userId: true }).extend({
   matchDate: z.string(),
 });
 
+// Local match player schema
+export const localPlayerSchema = z.object({
+  name: z.string().min(1, "Player name is required"),
+  hasAccount: z.boolean().default(false),
+  userId: z.string().optional(), // Only present if hasAccount is true
+});
+
+// Local match schema
+export const insertLocalMatchSchema = z.object({
+  creatorId: z.string(),
+  matchName: z.string().min(1, "Match name is required"),
+  venue: z.string().min(1, "Venue is required"),
+  matchDate: z.date(),
+  myTeamPlayers: z.array(localPlayerSchema).length(11, "Each team must have exactly 11 players"),
+  opponentTeamPlayers: z.array(localPlayerSchema).length(11, "Each team must have exactly 11 players"),
+});
+
+// Frontend form schema for local match
+export const localMatchFormSchema = insertLocalMatchSchema.omit({ creatorId: true }).extend({
+  matchDate: z.string(),
+});
+
 // Profile setup schema
 export const profileSetupSchema = z.object({
   username: z.string()
@@ -111,6 +133,9 @@ export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 export type InsertTeamInvitation = z.infer<typeof insertTeamInvitationSchema>;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
+export type LocalPlayer = z.infer<typeof localPlayerSchema>;
+export type InsertLocalMatch = z.infer<typeof insertLocalMatchSchema>;
+export type LocalMatchForm = z.infer<typeof localMatchFormSchema>;
 export type ProfileSetup = z.infer<typeof profileSetupSchema>;
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type RegisterRequest = z.infer<typeof registerSchema>;
