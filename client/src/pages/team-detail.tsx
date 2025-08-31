@@ -4,10 +4,12 @@ import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { apiRequest } from "@/lib/queryClient";
-import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck } from "lucide-react";
+import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Team, User } from "@shared/schema";
@@ -22,6 +24,9 @@ export default function TeamDetail() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<User[]>([]);
 
   const { data: team } = useQuery<Team>({
     queryKey: ["/api/teams", id],
@@ -118,6 +123,52 @@ export default function TeamDetail() {
       });
     },
   });
+
+  const sendInviteMutation = useMutation({
+    mutationFn: async (username: string) => {
+      const response = await apiRequest('POST', '/api/invitations', {
+        teamId: id,
+        username: username
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Invitation sent",
+        description: "Player invitation sent successfully!",
+      });
+      setIsInviteDialogOpen(false);
+      setSearchTerm("");
+      setSearchResults([]);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send invitation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Search for players
+  const handleSearch = async () => {
+    if (searchTerm.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    
+    try {
+      const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchTerm.trim())}`);
+      const users = await response.json();
+      setSearchResults(users);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to search players",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (!team || isLoading) {
     return (
@@ -422,6 +473,107 @@ export default function TeamDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Floating Invite Button */}
+      {canManageMembers && (
+        <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              className="fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg"
+              size="lg"
+              data-testid="button-invite-player"
+            >
+              <UserPlus className="h-6 w-6" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Invite Player to Team</DialogTitle>
+              <DialogDescription>
+                Search for a player by username and send them an invitation to join {team.name}.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Search Input */}
+              <div className="flex space-x-2">
+                <Input
+                  placeholder="Search by username..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                  data-testid="input-search-username"
+                />
+                <Button onClick={handleSearch} variant="outline" data-testid="button-search">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {/* Search Results */}
+              {searchResults.length > 0 && (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {searchResults.map((player) => {
+                    // Check if player is already a member
+                    const isAlreadyMember = members?.some(member => member.id === player.id);
+                    
+                    return (
+                      <div
+                        key={player.id}
+                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                        data-testid={`search-result-${player.id}`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                            <span className="text-primary-foreground text-sm font-medium">
+                              {player.username?.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">
+                              {player.profileName || player.username}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              @{player.username}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {isAlreadyMember ? (
+                          <Badge variant="outline" className="text-xs">
+                            Already member
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => sendInviteMutation.mutate(player.username || "")}
+                            disabled={sendInviteMutation.isPending}
+                            data-testid={`button-invite-${player.id}`}
+                          >
+                            {sendInviteMutation.isPending ? "Sending..." : "Invite"}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
+              {searchTerm.length >= 2 && searchResults.length === 0 && (
+                <div className="text-center py-4 text-muted-foreground">
+                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No players found</p>
+                </div>
+              )}
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+                Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
