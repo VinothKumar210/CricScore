@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -366,71 +367,86 @@ export default function Teams() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {teams && teams.length > 0 ? (
           teams.map((team: any) => (
-            <Card key={team.id} className="hover:shadow-lg transition-shadow" data-testid={`card-team-${team.id}`}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{team.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      Created {new Date(team.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={team.captainId === user?.id ? "default" : "secondary"}
-                    className="flex items-center space-x-1"
-                  >
-                    {team.captainId === user?.id ? (
-                      <>
-                        <Crown className="h-3 w-3" />
-                        <span>Captain</span>
-                      </>
-                    ) : (
-                      <span>Member</span>
-                    )}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {team.description && (
-                  <p className="text-sm text-muted-foreground mb-4">{team.description}</p>
-                )}
-
-                <div className="space-y-3 mb-4">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Team ID</span>
-                    <span className="font-medium text-foreground">{team.id.substring(0, 8)}...</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Role</span>
-                    <span className="font-medium text-foreground">
-                      {team.captainId === user?.id ? "Captain" : "Member"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex space-x-2">
-                  {team.captainId === user?.id ? (
-                    <Button 
-                      className="flex-1" 
-                      onClick={() => handleManageTeam(team)}
-                      data-testid={`button-manage-${team.id}`}
+            <Link key={team.id} href={`/teams/${team.id}`}>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid={`card-team-${team.id}`}>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{team.name}</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Created {new Date(team.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={team.captainId === user?.id ? "default" : "secondary"}
+                      className="flex items-center space-x-1"
                     >
-                      <Users className="mr-2 h-4 w-4" />
-                      Manage Team
-                    </Button>
-                  ) : (
-                    <>
-                      <Button variant="secondary" className="flex-1" data-testid={`button-view-${team.id}`}>
-                        View Team
-                      </Button>
-                      <Button variant="destructive" size="sm" data-testid={`button-leave-${team.id}`}>
-                        <LogOut className="h-4 w-4" />
-                      </Button>
-                    </>
+                      {team.captainId === user?.id ? (
+                        <>
+                          <Crown className="h-3 w-3" />
+                          <span>Captain</span>
+                        </>
+                      ) : (
+                        <span>Member</span>
+                      )}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {team.description && (
+                    <p className="text-sm text-muted-foreground mb-4">{team.description}</p>
                   )}
-                </div>
-              </CardContent>
-            </Card>
+
+                  <div className="space-y-3 mb-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Team ID</span>
+                      <span className="font-medium text-foreground">{team.id.substring(0, 8)}...</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Role</span>
+                      <span className="font-medium text-foreground">
+                        {team.captainId === user?.id ? "Captain" : "Member"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex space-x-2">
+                    {team.captainId === user?.id ? (
+                      <Button 
+                        className="flex-1" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleManageTeam(team);
+                        }}
+                        data-testid={`button-manage-${team.id}`}
+                      >
+                        <Users className="mr-2 h-4 w-4" />
+                        Manage Team
+                      </Button>
+                    ) : (
+                      <>
+                        <Button 
+                          variant="secondary" 
+                          className="flex-1" 
+                          onClick={(e) => e.preventDefault()}
+                          data-testid={`button-view-${team.id}`}
+                        >
+                          View Team
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={(e) => e.preventDefault()}
+                          data-testid={`button-leave-${team.id}`}
+                        >
+                          <LogOut className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))
         ) : (
           <div className="col-span-2 text-center py-12">
