@@ -26,15 +26,23 @@ export default function LocalMatch() {
   );
 
   const updateMyTeamPlayer = (index: number, field: keyof LocalPlayer, value: any) => {
-    const updatedPlayers = [...myTeamPlayers];
-    updatedPlayers[index] = { ...updatedPlayers[index], [field]: value };
-    setMyTeamPlayers(updatedPlayers);
+    console.log(`Updating my team player ${index + 1}, field: ${field}, value:`, value);
+    setMyTeamPlayers(prev => {
+      const updatedPlayers = [...prev];
+      updatedPlayers[index] = { ...updatedPlayers[index], [field]: value };
+      console.log("Updated my team players:", updatedPlayers[index]);
+      return updatedPlayers;
+    });
   };
 
   const updateOpponentTeamPlayer = (index: number, field: keyof LocalPlayer, value: any) => {
-    const updatedPlayers = [...opponentTeamPlayers];
-    updatedPlayers[index] = { ...updatedPlayers[index], [field]: value };
-    setOpponentTeamPlayers(updatedPlayers);
+    console.log(`Updating opponent team player ${index + 1}, field: ${field}, value:`, value);
+    setOpponentTeamPlayers(prev => {
+      const updatedPlayers = [...prev];
+      updatedPlayers[index] = { ...updatedPlayers[index], [field]: value };
+      console.log("Updated opponent team players:", updatedPlayers[index]);
+      return updatedPlayers;
+    });
   };
 
   return (
