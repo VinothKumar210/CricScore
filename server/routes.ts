@@ -252,7 +252,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/teams/:id/members", authenticateToken, async (req, res) => {
     try {
       const members = await storage.getTeamMembers(req.params.id);
-      res.json(members);
+      // Flatten the user data for frontend compatibility
+      const flattenedMembers = members.map(member => ({
+        ...member.user,
+        password: undefined, // Remove password from response
+        teamMemberId: member.id // Keep team member ID if needed
+      }));
+      res.json(flattenedMembers);
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
