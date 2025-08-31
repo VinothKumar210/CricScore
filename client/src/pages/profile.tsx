@@ -621,35 +621,6 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {/* Performance Insights */}
-                <div className="mt-6 p-4 bg-muted/20 rounded-lg">
-                  <h3 className="font-semibold mb-3 flex items-center space-x-2">
-                    <Trophy className="h-4 w-4" />
-                    <span>Performance Insights</span>
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <h4 className="font-medium mb-2">Batting Performance</h4>
-                      <p className="text-muted-foreground">
-                        {parseFloat(performanceMetrics.battingAverage) > 30 
-                          ? "Excellent batting consistency with strong average" 
-                          : parseFloat(performanceMetrics.battingAverage) > 20
-                          ? "Good batting performance with room for improvement"
-                          : "Focus on building innings and improving shot selection"}
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-2">Bowling Performance</h4>
-                      <p className="text-muted-foreground">
-                        {parseFloat(performanceMetrics.economyRate) < 6 
-                          ? "Excellent bowling economy, keeping runs under control" 
-                          : parseFloat(performanceMetrics.economyRate) < 8
-                          ? "Good bowling control with competitive economy rate"
-                          : "Focus on bowling in good areas to reduce run flow"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           )}
