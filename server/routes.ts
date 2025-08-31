@@ -256,6 +256,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete team by ID (only captain can delete)
+  app.delete("/api/teams/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const team = await storage.getTeam(req.params.id);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      // Check if user is the captain
+      if (team.captainId !== req.userId) {
+        return res.status(403).json({ message: "Only the team captain can delete the team" });
+      }
+
+      // Delete the team (this should cascade delete team members and invitations)
+      const deleted = await storage.deleteTeam(req.params.id);
+      if (!deleted) {
+        return res.status(500).json({ message: "Failed to delete team" });
+      }
+
+      res.json({ message: "Team deleted successfully" });
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
   app.get("/api/teams/:id/members", authenticateToken, async (req, res) => {
     try {
       const members = await storage.getTeamMembers(req.params.id);
