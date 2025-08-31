@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,11 @@ import { User as UserType } from "@shared/schema";
 export default function SearchPlayers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeSuggestion, setActiveSuggestion] = useState(-1);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
+  // Query for search results (when user clicks search or presses enter)
   const { data: searchResults, isLoading, isError } = useQuery<UserType[]>({
     queryKey: ["search-users", searchTerm],
     enabled: searchTerm.length >= 2,
@@ -21,13 +25,52 @@ export default function SearchPlayers() {
     },
   });
 
+  // Query for live suggestions (as user types)
+  const { data: suggestions, isLoading: isSuggestionsLoading } = useQuery<UserType[]>({
+    queryKey: ["suggestions", searchInput],
+    enabled: searchInput.length >= 1 && showSuggestions,
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchInput)}&limit=10`);
+      return response.json();
+    },
+    staleTime: 300, // Cache for 300ms to avoid too many requests
+  });
+
   const handleSearch = () => {
     setSearchTerm(searchInput.trim());
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSearch();
+    if (!showSuggestions || !suggestions) {
+      if (e.key === "Enter") {
+        handleSearch();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setActiveSuggestion(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setActiveSuggestion(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (activeSuggestion >= 0 && suggestions[activeSuggestion]) {
+          selectSuggestion(suggestions[activeSuggestion]);
+        } else {
+          handleSearch();
+        }
+        break;
+      case "Escape":
+        setShowSuggestions(false);
+        setActiveSuggestion(-1);
+        break;
     }
   };
 
@@ -61,6 +104,47 @@ export default function SearchPlayers() {
     }
   };
 
+  const selectSuggestion = (user: UserType) => {
+    setSearchInput(user.username || "");
+    setSearchTerm(user.username || "");
+    setShowSuggestions(false);
+    setActiveSuggestion(-1);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchInput(value);
+    setShowSuggestions(value.length >= 1);
+    setActiveSuggestion(-1);
+  };
+
+  const handleInputFocus = () => {
+    if (searchInput.length >= 1) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleInputBlur = () => {
+    // Delay hiding suggestions to allow clicking on them
+    setTimeout(() => {
+      setShowSuggestions(false);
+      setActiveSuggestion(-1);
+    }, 200);
+  };
+
+  // Click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+        setActiveSuggestion(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -75,14 +159,78 @@ export default function SearchPlayers() {
           <Card>
             <CardContent className="p-6">
               <div className="flex space-x-4">
-                <div className="flex-1">
+                <div className="flex-1 relative" ref={suggestionsRef}>
                   <Input
                     placeholder="Search by username..."
                     value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyPress}
+                    onFocus={handleInputFocus}
+                    onBlur={handleInputBlur}
                     data-testid="input-search-players"
+                    autoComplete="off"
                   />
+                  
+                  {/* Live Suggestions Dropdown */}
+                  {showSuggestions && searchInput.length >= 1 && (
+                    <div className="absolute top-full left-0 right-0 bg-card border border-border rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
+                      {isSuggestionsLoading && (
+                        <div className="p-3 text-center text-muted-foreground">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto"></div>
+                        </div>
+                      )}
+                      
+                      {!isSuggestionsLoading && suggestions && suggestions.length > 0 && (
+                        <div className="py-1">
+                          {suggestions.slice(0, 10).map((user, index) => (
+                            <div
+                              key={user.id}
+                              className={`px-3 py-2 cursor-pointer hover:bg-accent transition-colors ${
+                                activeSuggestion === index ? 'bg-accent' : ''
+                              }`}
+                              onClick={() => selectSuggestion(user)}
+                              data-testid={`suggestion-${user.id}`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                                  <span className="text-primary-foreground text-sm font-medium">
+                                    {user.username?.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate">
+                                    {user.profileName || user.username}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    @{user.username}
+                                  </p>
+                                </div>
+                                {user.role && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {formatRole(user.role)}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {!isSuggestionsLoading && suggestions && suggestions.length === 0 && (
+                        <div className="p-3 text-center text-muted-foreground text-sm">
+                          No players found starting with "{searchInput}"
+                        </div>
+                      )}
+                      
+                      {!isSuggestionsLoading && suggestions && suggestions.length > 0 && (
+                        <div className="px-3 py-2 border-t border-border">
+                          <p className="text-xs text-muted-foreground text-center">
+                            Press Enter to search or use arrow keys to navigate
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <Button 
                   onClick={handleSearch}
@@ -93,8 +241,8 @@ export default function SearchPlayers() {
                   Search
                 </Button>
               </div>
-              {searchInput.trim().length > 0 && searchInput.trim().length < 2 && (
-                <p className="text-sm text-muted-foreground mt-2">Enter at least 2 characters to search</p>
+              {searchInput.trim().length > 0 && searchInput.trim().length < 1 && (
+                <p className="text-sm text-muted-foreground mt-2">Start typing to see suggestions</p>
               )}
             </CardContent>
           </Card>
