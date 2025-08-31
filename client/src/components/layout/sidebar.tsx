@@ -38,41 +38,43 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         </Link>
       </div>
 
-      <nav className="p-4 space-y-2">
-        {navigation.map((item) => {
-          const Icon = item.icon;
-          const isActive = location === item.href;
-          
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={onNavigate}
-              data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
-              className={cn(
-                "flex items-center space-x-3 px-3 py-2 rounded-md transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              )}
-            >
-              <Icon className="w-5 h-5" />
-              <span>{item.name}</span>
-            </Link>
-          );
-        })}
+      <nav className="p-4 space-y-2 flex flex-col h-full">
+        <div className="space-y-2">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            const isActive = location === item.href;
+            
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={onNavigate}
+                data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                className={cn(
+                  "flex items-center space-x-3 px-3 py-2 rounded-md transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                )}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+        
+        <div className="mt-auto">
+          <button
+            onClick={logout}
+            data-testid="button-logout"
+            className="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors h-10"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
       </nav>
-
-      <div className="absolute bottom-4 left-4 right-4">
-        <button
-          onClick={logout}
-          data-testid="button-logout"
-          className="flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors h-10"
-        >
-          <LogOut className="w-5 h-5" />
-          <span>Sign Out</span>
-        </button>
-      </div>
     </aside>
   );
 }
