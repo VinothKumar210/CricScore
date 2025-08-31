@@ -67,7 +67,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         <button
           onClick={logout}
           data-testid="button-logout"
-          className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
+          className="w-full flex items-center space-x-3 px-3 py-2 rounded-md text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors h-10"
         >
           <LogOut className="w-5 h-5" />
           <span>Sign Out</span>
