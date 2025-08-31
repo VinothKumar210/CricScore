@@ -32,6 +32,7 @@ export default function ProfileSetup() {
     resolver: zodResolver(profileSetupSchema),
     defaultValues: {
       username: "",
+      profileName: "",
       role: undefined,
       battingHand: undefined,
       bowlingStyle: undefined,
@@ -195,6 +196,25 @@ export default function ProfileSetup() {
                       )}
                     />
                   </div>
+                  
+                  <FormField
+                    control={form.control}
+                    name="profileName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Profile Name (Optional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Cricketer"
+                            data-testid="input-profile-name"
+                            {...field}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">Display name for your profile (defaults to "Cricketer" if left empty)</p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
                 {/* Playing Style */}
