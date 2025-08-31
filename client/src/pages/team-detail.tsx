@@ -154,6 +154,178 @@ export default function TeamDetail() {
     transferCaptaincyMutation.mutate(memberId);
   };
 
+  // Group members by role
+  const captain = members?.find(member => member.id === team.captainId);
+  const viceCaptain = members?.find(member => member.id === team.viceCaptainId);
+  const regularMembers = members?.filter(member => 
+    member.id !== team.captainId && member.id !== team.viceCaptainId
+  ) || [];
+
+  const renderMemberCard = (member: TeamMember, role: 'captain' | 'vice-captain' | 'member') => {
+    const isMemberCaptain = member.id === team.captainId;
+    const isMemberViceCaptain = member.id === team.viceCaptainId;
+    const isCurrentUser = member.id === user?.id;
+    
+    // Determine what actions the current user can perform
+    const canRemove = !isCurrentUser && (
+      (isCaptain && !isMemberCaptain) || 
+      (isViceCaptain && !isMemberCaptain && !isMemberViceCaptain)
+    );
+    const canPromote = !isMemberCaptain && !isMemberViceCaptain && (isCaptain || isViceCaptain);
+    const canDemote = isMemberViceCaptain && (isCaptain || isViceCaptain);
+    const canTransferCaptaincy = isCaptain && !isMemberCaptain;
+
+    return (
+      <div
+        key={member.id}
+        className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
+        data-testid={`member-${member.id}`}
+      >
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+            <span className="text-primary-foreground font-medium">
+              {member.username?.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div>
+            <p className="font-medium text-foreground">
+              {member.profileName || member.username}
+            </p>
+            <div className="flex items-center space-x-2">
+              <p className="text-sm text-muted-foreground">
+                @{member.username}
+              </p>
+              {member.role && (
+                <Badge variant="outline" className="text-xs">
+                  {member.role}
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          {/* Role badges */}
+          {isMemberCaptain && (
+            <Badge variant="default" className="flex items-center space-x-1">
+              <Crown className="h-3 w-3" />
+              <span>Captain</span>
+            </Badge>
+          )}
+          {isMemberViceCaptain && (
+            <Badge variant="secondary" className="flex items-center space-x-1">
+              <Shield className="h-3 w-3" />
+              <span>Vice Captain</span>
+            </Badge>
+          )}
+          {!isMemberCaptain && !isMemberViceCaptain && (
+            <Badge variant="outline">Member</Badge>
+          )}
+
+          {/* Action dropdown */}
+          {canManageMembers && !isCurrentUser && (canTransferCaptaincy || canPromote || canDemote || canRemove) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-testid={`dropdown-actions-${member.id}`}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {canTransferCaptaincy && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        data-testid={`action-transfer-captaincy-${member.id}`}
+                      >
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        Transfer Captaincy
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Transfer Team Captaincy</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to transfer captaincy to {member.profileName || member.username}? You will become the vice captain and lose captain privileges.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleTransferCaptaincy(member.id)}
+                          disabled={transferCaptaincyMutation.isPending}
+                          data-testid={`confirm-transfer-${member.id}`}
+                        >
+                          {transferCaptaincyMutation.isPending ? "Transferring..." : "Transfer Captaincy"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                {canPromote && (
+                  <DropdownMenuItem
+                    onClick={() => handlePromoteToViceCaptain(member.id)}
+                    disabled={promoteToViceCaptainMutation.isPending}
+                    data-testid={`action-promote-${member.id}`}
+                  >
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Promote to Vice Captain
+                  </DropdownMenuItem>
+                )}
+                {canDemote && (
+                  <DropdownMenuItem
+                    onClick={handleDemoteViceCaptain}
+                    disabled={demoteViceCaptainMutation.isPending}
+                    data-testid={`action-demote-${member.id}`}
+                  >
+                    <TrendingDown className="mr-2 h-4 w-4" />
+                    Demote to Member
+                  </DropdownMenuItem>
+                )}
+                {canRemove && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        className="text-destructive focus:text-destructive"
+                        data-testid={`action-remove-${member.id}`}
+                      >
+                        <UserMinus className="mr-2 h-4 w-4" />
+                        Remove from Team
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to remove {member.profileName || member.username} from the team? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleRemoveMember(member.id)}
+                          disabled={removeMemberMutation.isPending}
+                          data-testid={`confirm-remove-${member.id}`}
+                        >
+                          {removeMemberMutation.isPending ? "Removing..." : "Remove Member"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -203,192 +375,44 @@ export default function TeamDetail() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-6">
             {members && members.length > 0 ? (
-              members
-                .sort((a, b) => {
-                  // Sort order: captain first, then vice captain, then members
-                  const aIsCaptain = a.id === team.captainId;
-                  const aIsViceCaptain = a.id === team.viceCaptainId;
-                  const bIsCaptain = b.id === team.captainId;
-                  const bIsViceCaptain = b.id === team.viceCaptainId;
-                  
-                  if (aIsCaptain) return -1;
-                  if (bIsCaptain) return 1;
-                  if (aIsViceCaptain) return -1;
-                  if (bIsViceCaptain) return 1;
-                  return 0;
-                })
-                .map((member) => {
-                const isMemberCaptain = member.id === team.captainId;
-                const isMemberViceCaptain = member.id === team.viceCaptainId;
-                const isCurrentUser = member.id === user?.id;
-                
-                // Determine what actions the current user can perform
-                const canRemove = !isCurrentUser && (
-                  (isCaptain && !isMemberCaptain) || 
-                  (isViceCaptain && !isMemberCaptain && !isMemberViceCaptain)
-                );
-                const canPromote = !isMemberCaptain && !isMemberViceCaptain && (
-                  (isCaptain) || 
-                  (isViceCaptain)
-                );
-                const canDemote = isMemberViceCaptain && (
-                  (isCaptain) || 
-                  (isViceCaptain)
-                );
-                const canTransferCaptaincy = isCaptain && !isMemberCaptain;
+              <>
+                {/* Captain Section */}
+                {captain && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center">
+                      <Crown className="mr-2 h-5 w-5 text-yellow-500" />
+                      Captain
+                    </h3>
+                    {renderMemberCard(captain, 'captain')}
+                  </div>
+                )}
 
-                return (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
-                    data-testid={`member-${member.id}`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                        <span className="text-primary-foreground font-medium">
-                          {member.username?.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {member.profileName || member.username}
-                        </p>
-                        <div className="flex items-center space-x-2">
-                          <p className="text-sm text-muted-foreground">
-                            @{member.username}
-                          </p>
-                          {member.role && (
-                            <Badge variant="outline" className="text-xs">
-                              {member.role}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      {/* Role badges */}
-                      {isMemberCaptain && (
-                        <Badge variant="default" className="flex items-center space-x-1">
-                          <Crown className="h-3 w-3" />
-                          <span>Captain</span>
-                        </Badge>
-                      )}
-                      {isMemberViceCaptain && (
-                        <Badge variant="secondary" className="flex items-center space-x-1">
-                          <Shield className="h-3 w-3" />
-                          <span>Vice Captain</span>
-                        </Badge>
-                      )}
-                      {!isMemberCaptain && !isMemberViceCaptain && (
-                        <Badge variant="outline">Member</Badge>
-                      )}
+                {/* Vice Captain Section */}
+                {viceCaptain && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center">
+                      <Shield className="mr-2 h-5 w-5 text-blue-500" />
+                      Vice Captain
+                    </h3>
+                    {renderMemberCard(viceCaptain, 'vice-captain')}
+                  </div>
+                )}
 
-                      {/* Action dropdown */}
-                      {canManageMembers && !isCurrentUser && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              data-testid={`dropdown-actions-${member.id}`}
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {canTransferCaptaincy && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem
-                                    onSelect={(e) => e.preventDefault()}
-                                    data-testid={`action-transfer-captaincy-${member.id}`}
-                                  >
-                                    <UserCheck className="mr-2 h-4 w-4" />
-                                    Transfer Captaincy
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Transfer Team Captaincy</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to transfer captaincy to {member.profileName || member.username}? You will become the vice captain and lose captain privileges.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleTransferCaptaincy(member.id)}
-                                      disabled={transferCaptaincyMutation.isPending}
-                                      data-testid={`confirm-transfer-${member.id}`}
-                                    >
-                                      {transferCaptaincyMutation.isPending ? "Transferring..." : "Transfer Captaincy"}
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
-                            {canPromote && (
-                              <DropdownMenuItem
-                                onClick={() => handlePromoteToViceCaptain(member.id)}
-                                disabled={promoteToViceCaptainMutation.isPending}
-                                data-testid={`action-promote-${member.id}`}
-                              >
-                                <TrendingUp className="mr-2 h-4 w-4" />
-                                Promote to Vice Captain
-                              </DropdownMenuItem>
-                            )}
-                            {canDemote && (
-                              <DropdownMenuItem
-                                onClick={handleDemoteViceCaptain}
-                                disabled={demoteViceCaptainMutation.isPending}
-                                data-testid={`action-demote-${member.id}`}
-                              >
-                                <TrendingDown className="mr-2 h-4 w-4" />
-                                Demote to Member
-                              </DropdownMenuItem>
-                            )}
-                            {canRemove && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem
-                                    onSelect={(e) => e.preventDefault()}
-                                    className="text-destructive focus:text-destructive"
-                                    data-testid={`action-remove-${member.id}`}
-                                  >
-                                    <UserMinus className="mr-2 h-4 w-4" />
-                                    Remove from Team
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to remove {member.profileName || member.username} from the team? This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleRemoveMember(member.id)}
-                                      disabled={removeMemberMutation.isPending}
-                                      data-testid={`confirm-remove-${member.id}`}
-                                    >
-                                      {removeMemberMutation.isPending ? "Removing..." : "Remove Member"}
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
+                {/* Members Section */}
+                {regularMembers.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center">
+                      <Users className="mr-2 h-5 w-5 text-gray-500" />
+                      Members ({regularMembers.length})
+                    </h3>
+                    <div className="space-y-3">
+                      {regularMembers.map((member) => renderMemberCard(member, 'member'))}
                     </div>
                   </div>
-                );
-              })
+                )}
+              </>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
