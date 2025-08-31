@@ -202,8 +202,15 @@ export default function TeamDetail() {
       try {
         const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchTerm.trim())}`);
         const users = await response.json();
-        setSearchResults(users.slice(0, 10)); // Limit to 10 results
-        setShowDropdown(users.length > 0);
+        
+        // Filter out current user and already team members
+        const filteredUsers = users.filter((player: any) => 
+          player.id !== user?.id && // Exclude current user
+          !members?.some(member => member.id === player.id) // Exclude existing members
+        );
+        
+        setSearchResults(filteredUsers.slice(0, 10)); // Limit to 10 results
+        setShowDropdown(filteredUsers.length > 0);
         setSearchError("");
       } catch (error) {
         setSearchResults([]);
@@ -214,7 +221,7 @@ export default function TeamDetail() {
 
     const delayedSearch = setTimeout(performLiveSearch, 300); // Debounce search
     return () => clearTimeout(delayedSearch);
-  }, [searchTerm]);
+  }, [searchTerm, user?.id, members]);
 
   // Handle user selection from dropdown
   const handleUserSelect = (player: User) => {
@@ -235,14 +242,21 @@ export default function TeamDetail() {
       const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchTerm.trim())}`);
       const users = await response.json();
       
-      if (users.length === 0) {
+      // Filter out current user and already team members
+      const filteredUsers = users.filter((player: any) => 
+        player.id !== user?.id && // Exclude current user
+        !members?.some(member => member.id === player.id) // Exclude existing members
+      );
+      
+      if (filteredUsers.length === 0) {
         setSearchError("No users found with that username");
         setSelectedUser(null);
+        setShowDropdown(false);
         return;
       }
       
       // If exact match found, select it
-      const exactMatch = users.find((u: User) => 
+      const exactMatch = filteredUsers.find((u: User) => 
         u.username?.toLowerCase() === searchTerm.trim().toLowerCase() ||
         u.profileName?.toLowerCase() === searchTerm.trim().toLowerCase()
       );
@@ -250,13 +264,14 @@ export default function TeamDetail() {
       if (exactMatch) {
         handleUserSelect(exactMatch);
       } else {
-        setSearchResults(users.slice(0, 10));
+        setSearchResults(filteredUsers.slice(0, 10));
         setShowDropdown(true);
         setSearchError("");
       }
     } catch (error) {
       setSearchError("Failed to search players");
       setSelectedUser(null);
+      setShowDropdown(false);
     }
   };
 
@@ -671,48 +686,51 @@ export default function TeamDetail() {
                         setSelectedUser(null); // Clear selection when typing
                       }}
                       onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-                      onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                      onFocus={() => {
+                        if (searchResults.length > 0 && !selectedUser) {
+                          setShowDropdown(true);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // Only hide dropdown if not clicking on dropdown items
+                        const relatedTarget = e.relatedTarget as HTMLElement;
+                        if (!relatedTarget || !relatedTarget.closest('[data-dropdown]')) {
+                          setTimeout(() => setShowDropdown(false), 150);
+                        }
+                      }}
                       data-testid="input-search-username"
                       className={searchError ? "border-red-500" : ""}
                     />
                     
                     {/* Live Search Dropdown */}
                     {showDropdown && searchResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                        {searchResults.map((player) => {
-                          const isAlreadyMember = members?.some(member => member.id === player.id);
-                          
-                          return (
-                            <div
-                              key={player.id}
-                              className="flex items-center justify-between p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
-                              onClick={() => !isAlreadyMember && handleUserSelect(player)}
-                              data-testid={`dropdown-item-${player.id}`}
-                            >
-                              <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                                  <span className="text-primary-foreground text-sm font-medium">
-                                    {(player.profileName || player.username)?.charAt(0).toUpperCase()}
-                                  </span>
-                                </div>
-                                <div>
-                                  <p className="font-medium text-sm">
-                                    {player.profileName || player.username}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    @{player.username}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              {isAlreadyMember && (
-                                <Badge variant="outline" className="text-xs">
-                                  Already member
-                                </Badge>
-                              )}
+                      <div 
+                        data-dropdown
+                        className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto"
+                        onMouseDown={(e) => e.preventDefault()} // Prevent input from losing focus
+                      >
+                        {searchResults.map((player) => (
+                          <div
+                            key={player.id}
+                            className="flex items-center space-x-3 p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                            onClick={() => handleUserSelect(player)}
+                            data-testid={`dropdown-item-${player.id}`}
+                          >
+                            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                              <span className="text-primary-foreground text-sm font-medium">
+                                {(player.profileName || player.username)?.charAt(0).toUpperCase()}
+                              </span>
                             </div>
-                          );
-                        })}
+                            <div>
+                              <p className="font-medium text-sm">
+                                {player.profileName || player.username}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                @{player.username}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
