@@ -229,8 +229,9 @@ export default function TeamDetail() {
     return (
       <div
         key={member.id}
-        className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
+        className="flex items-center justify-between p-4 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
         data-testid={`member-${member.id}`}
+        onClick={() => setLocation(`/player/${member.id}`)}
       >
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
@@ -430,39 +431,54 @@ export default function TeamDetail() {
             {members && members.length > 0 ? (
               <>
                 {/* Captain Section */}
-                {captain && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center">
-                      <Crown className="mr-2 h-5 w-5 text-yellow-500" />
-                      Captain
-                    </h3>
-                    {renderMemberCard(captain, 'captain')}
-                  </div>
-                )}
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center">
+                    <Crown className="mr-2 h-5 w-5 text-yellow-500" />
+                    Captain {captain ? '(1)' : '(0)'}
+                  </h3>
+                  {captain ? (
+                    renderMemberCard(captain, 'captain')
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      <Crown className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No captain assigned</p>
+                    </div>
+                  )}
+                </div>
 
                 {/* Vice Captain Section */}
-                {viceCaptain && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center">
-                      <Shield className="mr-2 h-5 w-5 text-blue-500" />
-                      Vice Captain
-                    </h3>
-                    {renderMemberCard(viceCaptain, 'vice-captain')}
-                  </div>
-                )}
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center">
+                    <Shield className="mr-2 h-5 w-5 text-blue-500" />
+                    Vice Captain {viceCaptain ? '(1)' : '(0)'}
+                  </h3>
+                  {viceCaptain ? (
+                    renderMemberCard(viceCaptain, 'vice-captain')
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      <Shield className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No vice captain assigned</p>
+                    </div>
+                  )}
+                </div>
 
                 {/* Members Section */}
-                {regularMembers.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center">
-                      <Users className="mr-2 h-5 w-5 text-gray-500" />
-                      Members ({regularMembers.length})
-                    </h3>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center">
+                    <Users className="mr-2 h-5 w-5 text-gray-500" />
+                    Members ({regularMembers.length})
+                  </h3>
+                  {regularMembers.length > 0 ? (
                     <div className="space-y-3">
                       {regularMembers.map((member) => renderMemberCard(member, 'member'))}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="text-center py-4 text-muted-foreground">
+                      <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No members yet</p>
+                    </div>
+                  )}
+                </div>
               </>
             ) : (
               <div className="text-center py-8 text-muted-foreground">

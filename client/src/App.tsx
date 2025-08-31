@@ -178,6 +178,12 @@ function Router() {
           <Profile />
         </ProtectedRoute>
       </Route>
+      
+      <Route path="/player/:id">
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      </Route>
 
       {/* Default redirect */}
       <Route path="/">
