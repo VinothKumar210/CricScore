@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { apiRequest } from "@/lib/queryClient";
-import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown } from "lucide-react";
+import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Team, User } from "@shared/schema";
@@ -97,6 +97,28 @@ export default function TeamDetail() {
     },
   });
 
+  const transferCaptaincyMutation = useMutation({
+    mutationFn: async (memberId: string) => {
+      const response = await apiRequest('PUT', `/api/teams/${id}/transfer-captaincy`, { memberId });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Captaincy transferred",
+        description: "The captaincy has been transferred successfully.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", id, "members"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to transfer captaincy",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!team || isLoading) {
     return (
       <div className="p-6">
@@ -126,6 +148,10 @@ export default function TeamDetail() {
 
   const handleDemoteViceCaptain = () => {
     demoteViceCaptainMutation.mutate();
+  };
+
+  const handleTransferCaptaincy = (memberId: string) => {
+    transferCaptaincyMutation.mutate(memberId);
   };
 
   return (
@@ -179,7 +205,21 @@ export default function TeamDetail() {
         <CardContent>
           <div className="space-y-3">
             {members && members.length > 0 ? (
-              members.map((member) => {
+              members
+                .sort((a, b) => {
+                  // Sort order: captain first, then vice captain, then members
+                  const aIsCaptain = a.id === team.captainId;
+                  const aIsViceCaptain = a.id === team.viceCaptainId;
+                  const bIsCaptain = b.id === team.captainId;
+                  const bIsViceCaptain = b.id === team.viceCaptainId;
+                  
+                  if (aIsCaptain) return -1;
+                  if (bIsCaptain) return 1;
+                  if (aIsViceCaptain) return -1;
+                  if (bIsViceCaptain) return 1;
+                  return 0;
+                })
+                .map((member) => {
                 const isMemberCaptain = member.id === team.captainId;
                 const isMemberViceCaptain = member.id === team.viceCaptainId;
                 const isCurrentUser = member.id === user?.id;
@@ -197,6 +237,7 @@ export default function TeamDetail() {
                   (isCaptain) || 
                   (isViceCaptain)
                 );
+                const canTransferCaptaincy = isCaptain && !isMemberCaptain;
 
                 return (
                   <div
@@ -258,6 +299,37 @@ export default function TeamDetail() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            {canTransferCaptaincy && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => e.preventDefault()}
+                                    data-testid={`action-transfer-captaincy-${member.id}`}
+                                  >
+                                    <UserCheck className="mr-2 h-4 w-4" />
+                                    Transfer Captaincy
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Transfer Team Captaincy</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to transfer captaincy to {member.profileName || member.username}? You will become the vice captain and lose captain privileges.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleTransferCaptaincy(member.id)}
+                                      disabled={transferCaptaincyMutation.isPending}
+                                      data-testid={`confirm-transfer-${member.id}`}
+                                    >
+                                      {transferCaptaincyMutation.isPending ? "Transferring..." : "Transfer Captaincy"}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
                             {canPromote && (
                               <DropdownMenuItem
                                 onClick={() => handlePromoteToViceCaptain(member.id)}
