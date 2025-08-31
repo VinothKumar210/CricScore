@@ -161,7 +161,11 @@ export default function Dashboard() {
             <div className="space-y-3">
               {teams && teams.length > 0 ? (
                 teams.slice(0, 3).map((team: Team) => (
-                  <Link key={team.id} href={`/teams/${team.id}`}>
+                  <Link 
+                    key={team.id} 
+                    href={`/teams/${team.id}`}
+                    onClick={() => sessionStorage.setItem("teamDetailReferrer", "/dashboard")}
+                  >
                     <div
                       className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
                       data-testid={`team-${team.id}`}
