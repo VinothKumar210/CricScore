@@ -61,8 +61,7 @@ export default function LocalMatch() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Player Name</TableHead>
-                  <TableHead>Username</TableHead>
+                  <TableHead>Player Details</TableHead>
                   <TableHead className="text-center">Has Account</TableHead>
                 </TableRow>
               </TableHeader>
@@ -70,24 +69,23 @@ export default function LocalMatch() {
                 {myTeamPlayers.map((player, index) => (
                   <TableRow key={index}>
                     <TableCell>
-                      <Input
-                        placeholder={`Player ${index + 1}`}
-                        value={player.name}
-                        onChange={(e) => updateMyTeamPlayer(index, "name", e.target.value)}
-                        data-testid={`input-my-team-player-${index + 1}`}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {player.hasAccount ? (
+                      <div className="space-y-2">
                         <Input
-                          placeholder="@username"
-                          value={player.username || ""}
-                          onChange={(e) => updateMyTeamPlayer(index, "username", e.target.value)}
-                          data-testid={`input-my-team-username-${index + 1}`}
+                          placeholder={`Player ${index + 1}`}
+                          value={player.name}
+                          onChange={(e) => updateMyTeamPlayer(index, "name", e.target.value)}
+                          data-testid={`input-my-team-player-${index + 1}`}
                         />
-                      ) : (
-                        <span className="text-muted-foreground text-sm">No account</span>
-                      )}
+                        {player.hasAccount && (
+                          <Input
+                            placeholder="@username"
+                            value={player.username || ""}
+                            onChange={(e) => updateMyTeamPlayer(index, "username", e.target.value)}
+                            data-testid={`input-my-team-username-${index + 1}`}
+                            className="text-sm"
+                          />
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-center">
                       <Switch
@@ -120,8 +118,7 @@ export default function LocalMatch() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Player Name</TableHead>
-                  <TableHead>Username</TableHead>
+                  <TableHead>Player Details</TableHead>
                   <TableHead className="text-center">Has Account</TableHead>
                 </TableRow>
               </TableHeader>
@@ -129,24 +126,23 @@ export default function LocalMatch() {
                 {opponentTeamPlayers.map((player, index) => (
                   <TableRow key={index}>
                     <TableCell>
-                      <Input
-                        placeholder={`Player ${index + 1}`}
-                        value={player.name}
-                        onChange={(e) => updateOpponentTeamPlayer(index, "name", e.target.value)}
-                        data-testid={`input-opponent-team-player-${index + 1}`}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {player.hasAccount ? (
+                      <div className="space-y-2">
                         <Input
-                          placeholder="@username"
-                          value={player.username || ""}
-                          onChange={(e) => updateOpponentTeamPlayer(index, "username", e.target.value)}
-                          data-testid={`input-opponent-team-username-${index + 1}`}
+                          placeholder={`Player ${index + 1}`}
+                          value={player.name}
+                          onChange={(e) => updateOpponentTeamPlayer(index, "name", e.target.value)}
+                          data-testid={`input-opponent-team-player-${index + 1}`}
                         />
-                      ) : (
-                        <span className="text-muted-foreground text-sm">No account</span>
-                      )}
+                        {player.hasAccount && (
+                          <Input
+                            placeholder="@username"
+                            value={player.username || ""}
+                            onChange={(e) => updateOpponentTeamPlayer(index, "username", e.target.value)}
+                            data-testid={`input-opponent-team-username-${index + 1}`}
+                            className="text-sm"
+                          />
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-center">
                       <Switch
