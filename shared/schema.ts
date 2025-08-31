@@ -79,6 +79,7 @@ export const matchFormSchema = insertMatchSchema.omit({ userId: true }).extend({
 export const localPlayerSchema = z.object({
   name: z.string().min(1, "Player name is required"),
   hasAccount: z.boolean().default(false),
+  username: z.string().optional(), // Username if player has account
   userId: z.string().optional(), // Only present if hasAccount is true
 });
 
