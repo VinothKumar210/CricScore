@@ -182,6 +182,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get career stats by user ID (for viewing other players)
+  app.get("/api/users/:id/stats", authenticateToken, async (req, res) => {
+    try {
+      const stats = await storage.getCareerStats(req.params.id);
+      if (!stats) {
+        return res.status(404).json({ message: "Stats not found" });
+      }
+      
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get matches by user ID (for viewing other players)
+  app.get("/api/users/:id/matches", authenticateToken, async (req, res) => {
+    try {
+      const matches = await storage.getMatches(req.params.id);
+      res.json(matches);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Match routes
   app.get("/api/matches", authenticateToken, async (req: any, res) => {
     try {
