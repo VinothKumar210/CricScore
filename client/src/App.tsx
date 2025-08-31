@@ -15,6 +15,7 @@ import Dashboard from "@/pages/dashboard";
 import Statistics from "@/pages/statistics";
 import AddMatch from "@/pages/add-match";
 import Teams from "@/pages/teams";
+import TeamDetail from "@/pages/team-detail";
 import Invitations from "@/pages/invitations";
 import SearchPlayers from "@/pages/search";
 import LocalMatch from "@/pages/local-match";
@@ -145,6 +146,12 @@ function Router() {
       <Route path="/teams">
         <ProtectedRoute>
           <Teams />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/teams/:id">
+        <ProtectedRoute>
+          <TeamDetail />
         </ProtectedRoute>
       </Route>
       
