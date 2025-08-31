@@ -29,7 +29,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               <span className="text-primary-foreground font-bold">C</span>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">CricketScore Pro</h1>
+              <h1 className="text-lg font-bold text-foreground">{user?.profileName || 'Player'}</h1>
               <p className="text-xs text-muted-foreground">@{user?.username || 'user'}</p>
             </div>
           </div>

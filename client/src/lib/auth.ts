@@ -5,6 +5,7 @@ export interface User {
   email: string;
   username?: string;
   profileName?: string;
+  description?: string;
   role?: string;
   battingHand?: string;
   bowlingStyle?: string;

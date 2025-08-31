@@ -60,7 +60,7 @@ export default function Profile() {
               <div className="mx-auto w-20 h-20 bg-primary rounded-full flex items-center justify-center mb-4">
                 <User className="w-10 h-10 text-primary-foreground" />
               </div>
-              <CardTitle className="text-2xl">{user.profileName || "Cricketer"}</CardTitle>
+              <CardTitle className="text-2xl">{user.profileName || "Player"}</CardTitle>
               <CardDescription className="text-lg">@{user.username}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -86,7 +86,7 @@ export default function Profile() {
                     <Trophy className="w-5 h-5 text-muted-foreground" />
                     <div>
                       <p className="text-sm text-muted-foreground">Profile Name</p>
-                      <p className="font-medium" data-testid="profile-name">{user.profileName || "Cricketer"}</p>
+                      <p className="font-medium" data-testid="profile-name">{user.profileName || "Player"}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -125,6 +125,16 @@ export default function Profile() {
                   </div>
                 </div>
               </div>
+
+              {/* Description */}
+              {user.description && (
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold border-b border-border pb-2">About</h2>
+                  <p className="text-muted-foreground leading-relaxed" data-testid="profile-description">
+                    {user.description}
+                  </p>
+                </div>
+              )}
 
               {/* Profile Status */}
               <div className="space-y-4">

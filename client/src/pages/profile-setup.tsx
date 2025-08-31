@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
@@ -33,6 +34,7 @@ export default function ProfileSetup() {
     defaultValues: {
       username: "",
       profileName: "",
+      description: "",
       role: undefined,
       battingHand: undefined,
       bowlingStyle: undefined,
@@ -205,12 +207,33 @@ export default function ProfileSetup() {
                         <FormLabel>Profile Name (Optional)</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Cricketer"
+                            placeholder="Player"
                             data-testid="input-profile-name"
                             {...field}
                           />
                         </FormControl>
-                        <p className="text-xs text-muted-foreground">Display name for your profile (defaults to "Cricketer" if left empty)</p>
+                        <p className="text-xs text-muted-foreground">Display name for your profile (defaults to "Player" if left empty)</p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description (Optional)</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Tell us about yourself, your cricket experience, favorite position, or anything else you'd like to share..."
+                            className="resize-none"
+                            rows={3}
+                            data-testid="input-description"
+                            {...field}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">Brief description about yourself or your cricket journey</p>
                         <FormMessage />
                       </FormItem>
                     )}
