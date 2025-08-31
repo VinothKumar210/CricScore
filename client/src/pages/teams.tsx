@@ -15,7 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTeamSchema, type Team, type User } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Users, Crown, LogOut, Search, UserPlus, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Users, Crown, LogOut, Search, UserPlus, CheckCircle, XCircle, Shield } from "lucide-react";
 import { z } from "zod";
 
 const teamFormSchema = insertTeamSchema.omit({ captainId: true });
@@ -35,6 +35,17 @@ export default function Teams() {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [searchedUser, setSearchedUser] = useState<User | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Helper function to determine user's role in a team
+  const getUserRole = (team: any) => {
+    if (team.captainId === user?.id) {
+      return { role: "Captain", icon: Crown, variant: "default" as const };
+    } else if (team.viceCaptainId === user?.id) {
+      return { role: "Vice Captain", icon: Shield, variant: "secondary" as const };
+    } else {
+      return { role: "Member", icon: Users, variant: "outline" as const };
+    }
+  };
 
   const { data: teams, isLoading } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
@@ -366,92 +377,56 @@ export default function Teams() {
       {/* Teams Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {teams && teams.length > 0 ? (
-          teams.map((team: any) => (
-            <Link 
-              key={team.id} 
-              href={`/teams/${team.id}`}
-              onClick={() => sessionStorage.setItem("teamDetailReferrer", "/teams")}
-            >
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid={`card-team-${team.id}`}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{team.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        Created {new Date(team.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={team.captainId === user?.id ? "default" : "secondary"}
-                      className="flex items-center space-x-1"
-                    >
-                      {team.captainId === user?.id ? (
-                        <>
-                          <Crown className="h-3 w-3" />
-                          <span>Captain</span>
-                        </>
-                      ) : (
-                        <span>Member</span>
-                      )}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {team.description && (
-                    <p className="text-sm text-muted-foreground mb-4">{team.description}</p>
-                  )}
-
-                  <div className="space-y-3 mb-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Team ID</span>
-                      <span className="font-medium text-foreground">{team.id.substring(0, 8)}...</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Role</span>
-                      <span className="font-medium text-foreground">
-                        {team.captainId === user?.id ? "Captain" : "Member"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-2">
-                    {team.captainId === user?.id ? (
-                      <Button 
-                        className="flex-1" 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleManageTeam(team);
-                        }}
-                        data-testid={`button-manage-${team.id}`}
+          teams.map((team: any) => {
+            const userRole = getUserRole(team);
+            const RoleIcon = userRole.icon;
+            
+            return (
+              <Link 
+                key={team.id} 
+                href={`/teams/${team.id}`}
+                onClick={() => sessionStorage.setItem("teamDetailReferrer", "/teams")}
+              >
+                <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid={`card-team-${team.id}`}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{team.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          Created {new Date(team.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={userRole.variant}
+                        className="flex items-center space-x-1"
                       >
-                        <Users className="mr-2 h-4 w-4" />
-                        Manage Team
-                      </Button>
-                    ) : (
-                      <>
-                        <Button 
-                          variant="secondary" 
-                          className="flex-1" 
-                          onClick={(e) => e.preventDefault()}
-                          data-testid={`button-view-${team.id}`}
-                        >
-                          View Team
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="sm" 
-                          onClick={(e) => e.preventDefault()}
-                          data-testid={`button-leave-${team.id}`}
-                        >
-                          <LogOut className="h-4 w-4" />
-                        </Button>
-                      </>
+                        <RoleIcon className="h-3 w-3" />
+                        <span>{userRole.role}</span>
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {team.description && (
+                      <p className="text-sm text-muted-foreground mb-4">{team.description}</p>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Team ID</span>
+                        <span className="font-medium text-foreground">{team.id.substring(0, 8)}...</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Role</span>
+                        <span className="font-medium text-foreground">
+                          {userRole.role}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })
         ) : (
           <div className="col-span-2 text-center py-12">
             <Users className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
