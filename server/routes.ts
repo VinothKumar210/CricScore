@@ -132,6 +132,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/profile", authenticateToken, async (req: any, res) => {
+    try {
+      // Use a partial profile schema for updating (without username)
+      const updateSchema = profileSetupSchema.omit({ username: true }).partial();
+      const validatedData = updateSchema.parse(req.body);
+      
+      // Get current user to preserve unchanged fields
+      const currentUser = await storage.getUser(req.userId);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Create a profile update object with username preserved
+      const profileData = {
+        username: currentUser.username!,
+        profileName: validatedData.profileName !== undefined ? validatedData.profileName : currentUser.profileName || undefined,
+        description: validatedData.description !== undefined ? validatedData.description : (currentUser as any).description || undefined,
+        role: validatedData.role !== undefined ? validatedData.role : currentUser.role!,
+        battingHand: validatedData.battingHand !== undefined ? validatedData.battingHand : currentUser.battingHand!,
+        bowlingStyle: validatedData.bowlingStyle !== undefined ? validatedData.bowlingStyle : currentUser.bowlingStyle || undefined,
+      };
+
+      const user = await storage.updateUserProfile(req.userId, profileData);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ ...user, password: undefined });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      return handleDatabaseError(error, res);
+    }
+  });
+
   // Career stats routes
   app.get("/api/stats", authenticateToken, async (req: any, res) => {
     try {
