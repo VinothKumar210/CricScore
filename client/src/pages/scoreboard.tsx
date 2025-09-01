@@ -66,7 +66,7 @@ export default function Scoreboard() {
   const [showWicketDialog, setShowWicketDialog] = useState(false);
   const [showBatsmanDialog, setShowBatsmanDialog] = useState(false);
   const [showExtrasDialog, setShowExtrasDialog] = useState(false);
-  const [extrasType, setExtrasType] = useState<'nb' | 'wd' | null>(null);
+  const [extrasType, setExtrasType] = useState<'nb' | 'wd' | 'lb' | null>(null);
   const [pendingWicket, setPendingWicket] = useState<DismissalType | null>(null);
 
   useEffect(() => {
@@ -255,34 +255,60 @@ export default function Scoreboard() {
     }
   };
 
-  const handleExtra = (type: 'nb' | 'wd', additionalRuns: number = 0) => {
-    const totalRuns = 1 + additionalRuns; // 1 for the extra + additional runs
-    
-    // Update team score (no legal ball)
-    updateTeamScore(totalRuns, false);
-    
-    // Update extras
-    setBattingTeamScore(prev => ({
-      ...prev,
-      extras: {
-        ...prev.extras,
-        noBalls: prev.extras.noBalls + (type === 'nb' ? 1 : 0),
-        wides: prev.extras.wides + (type === 'wd' ? 1 : 0)
-      }
-    }));
-    
-    // For no ball with runs, update striker's stats
-    if (type === 'nb' && additionalRuns > 0) {
-      updateBatsmanStats(matchState.strikeBatsman, additionalRuns, false);
+  const handleExtra = (type: 'nb' | 'wd' | 'lb', additionalRuns: number = 0) => {
+    if (type === 'lb') {
+      // Leg bye: runs go to team only, striker faces ball, legal delivery
+      updateTeamScore(additionalRuns, true); // Legal ball
+      updateBatsmanStats(matchState.strikeBatsman, 0, true); // No runs to batsman, but ball faced
+      updateBowlerStats(additionalRuns, true, false); // Runs given, legal ball, no wicket
       
-      // Rotate strike for odd additional runs
+      // Update leg byes in extras
+      setBattingTeamScore(prev => ({
+        ...prev,
+        extras: {
+          ...prev.extras,
+          legByes: prev.extras.legByes + additionalRuns
+        }
+      }));
+      
+      // Rotate strike for odd runs
       if (shouldRotateStrike(additionalRuns)) {
         rotateStrike();
       }
+      
+      // Check for end of over
+      if ((battingTeamScore.balls + 1) % 6 === 0) {
+        setTimeout(() => rotateStrike(), 500);
+      }
+    } else {
+      const totalRuns = 1 + additionalRuns; // 1 for the extra + additional runs
+      
+      // Update team score (no legal ball)
+      updateTeamScore(totalRuns, false);
+      
+      // Update extras
+      setBattingTeamScore(prev => ({
+        ...prev,
+        extras: {
+          ...prev.extras,
+          noBalls: prev.extras.noBalls + (type === 'nb' ? 1 : 0),
+          wides: prev.extras.wides + (type === 'wd' ? 1 : 0)
+        }
+      }));
+      
+      // For no ball with runs, update striker's stats
+      if (type === 'nb' && additionalRuns > 0) {
+        updateBatsmanStats(matchState.strikeBatsman, additionalRuns, false);
+        
+        // Rotate strike for odd additional runs
+        if (shouldRotateStrike(additionalRuns)) {
+          rotateStrike();
+        }
+      }
+      
+      // Update bowler stats (runs but no legal ball)
+      updateBowlerStats(totalRuns, false);
     }
-    
-    // Update bowler stats (runs but no legal ball)
-    updateBowlerStats(totalRuns, false);
   };
 
   const handleWicket = (dismissalType: DismissalType) => {
@@ -387,7 +413,7 @@ export default function Scoreboard() {
           </div>
 
           {/* Wicket and Extras */}
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-4 gap-4">
             <Button
               onClick={() => setShowWicketDialog(true)}
               variant="destructive"
@@ -419,6 +445,18 @@ export default function Scoreboard() {
               data-testid="button-wide"
             >
               Wide (WD)
+            </Button>
+            
+            <Button
+              onClick={() => {
+                setExtrasType('lb');
+                setShowExtrasDialog(true);
+              }}
+              variant="secondary"
+              className="h-12"
+              data-testid="button-leg-bye"
+            >
+              Leg Bye (LB)
             </Button>
           </div>
         </CardContent>
@@ -533,21 +571,25 @@ export default function Scoreboard() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {extrasType === 'nb' ? 'No Ball + Additional Runs' : 'Wide + Additional Runs'}
+              {extrasType === 'nb' ? 'No Ball + Additional Runs' : 
+               extrasType === 'wd' ? 'Wide + Additional Runs' : 
+               'Leg Bye Runs'}
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-4 gap-3">
-            <Button
-              onClick={() => {
-                handleExtra(extrasType!, 0);
-                setShowExtrasDialog(false);
-              }}
-              variant="outline"
-              data-testid={`button-${extrasType}-0`}
-            >
-              {extrasType?.toUpperCase()}
-            </Button>
-            {[1, 2, 3, 4, 6].map(runs => (
+            {extrasType !== 'lb' && (
+              <Button
+                onClick={() => {
+                  handleExtra(extrasType!, 0);
+                  setShowExtrasDialog(false);
+                }}
+                variant="outline"
+                data-testid={`button-${extrasType}-0`}
+              >
+                {extrasType?.toUpperCase()}
+              </Button>
+            )}
+            {(extrasType === 'lb' ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 6]).map(runs => (
               <Button
                 key={runs}
                 onClick={() => {
@@ -557,7 +599,7 @@ export default function Scoreboard() {
                 variant="outline"
                 data-testid={`button-${extrasType}-${runs}`}
               >
-                {extrasType?.toUpperCase()}+{runs}
+                {extrasType === 'lb' ? `LB ${runs}` : `${extrasType?.toUpperCase()}+${runs}`}
               </Button>
             ))}
           </div>
