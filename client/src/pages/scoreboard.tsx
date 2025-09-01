@@ -377,37 +377,52 @@ export default function Scoreboard() {
     if (!matchState) return;
     
     if (matchState.currentInnings === 1) {
-      // First innings complete
+      // First innings complete - just store the score and show dialog
       const target = finalScore.runs + 1;
       
-      // Update match state for second innings
+      // Only update the first innings completion, don't start second innings yet
       setMatchState(prev => prev ? {
         ...prev,
-        currentInnings: 2,
         firstInningsComplete: true,
         firstInningsScore: finalScore,
-        target: target,
-        // Switch teams
-        userTeamRole: prev.userTeamRole.includes('batting') ? prev.userTeamRole.replace('batting', 'bowling') : prev.userTeamRole.replace('bowling', 'batting'),
-        opponentTeamRole: prev.opponentTeamRole.includes('batting') ? prev.opponentTeamRole.replace('batting', 'bowling') : prev.opponentTeamRole.replace('bowling', 'batting')
+        target: target
       } : null);
       
-      // Reset score for second innings
-      setBattingTeamScore({
-        runs: 0,
-        wickets: 0,
-        overs: 0,
-        balls: 0,
-        extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0 }
-      });
-      
-      // Clear previous stats as new teams are batting/bowling
-      setBatsmanStats([]);
-      setBowlerStats([]);
-      
-      // Show innings transition dialog
+      // Show innings transition dialog - user must choose to start second innings
       setShowInningsTransition(true);
     }
+  };
+  
+  const startSecondInnings = () => {
+    if (!matchState) return;
+    
+    // Now actually transition to second innings
+    setMatchState(prev => prev ? {
+      ...prev,
+      currentInnings: 2,
+      // Switch teams
+      userTeamRole: prev.userTeamRole.includes('batting') ? prev.userTeamRole.replace('batting', 'bowling') : prev.userTeamRole.replace('bowling', 'batting'),
+      opponentTeamRole: prev.opponentTeamRole.includes('batting') ? prev.opponentTeamRole.replace('batting', 'bowling') : prev.opponentTeamRole.replace('bowling', 'batting')
+    } : null);
+    
+    // Reset score for second innings
+    setBattingTeamScore({
+      runs: 0,
+      wickets: 0,
+      overs: 0,
+      balls: 0,
+      extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0 }
+    });
+    
+    // Clear previous stats as new teams are batting/bowling
+    setBatsmanStats([]);
+    setBowlerStats([]);
+    
+    // Close the transition dialog
+    setShowInningsTransition(false);
+    
+    // Start selecting players for second innings
+    setShowBatsmanDialog(true);
   };
 
   const saveStateForUndo = () => {
@@ -1593,11 +1608,7 @@ export default function Scoreboard() {
                   {userTeamBatsFirst ? 'Opponent team' : 'Your team'} needs {matchState.target} runs to win in {matchState.matchOvers} overs
                 </div>
                 <Button
-                  onClick={() => {
-                    setShowInningsTransition(false);
-                    // Need to select new batsmen and bowler for second innings
-                    setShowBatsmanDialog(true);
-                  }}
+                  onClick={startSecondInnings}
                   className="mt-6"
                   data-testid="button-start-second-innings"
                 >
