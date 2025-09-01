@@ -255,8 +255,29 @@ export default function Scoreboard() {
     }
   };
 
-  const handleExtra = (type: 'nb' | 'wd' | 'lb', additionalRuns: number = 0) => {
-    if (type === 'lb') {
+  const handleExtra = (type: 'nb' | 'wd' | 'lb', additionalRuns: number = 0, isLegBye: boolean = false) => {
+    if (type === 'nb' && isLegBye) {
+      // No Ball + Leg Bye: 1 run penalty + leg bye runs, no legal ball
+      const totalRuns = 1 + additionalRuns; // 1 for no ball + leg bye runs
+      updateTeamScore(totalRuns, false); // Not a legal ball
+      updateBatsmanStats(matchState.strikeBatsman, 0, false); // No runs to batsman, no ball faced
+      updateBowlerStats(totalRuns, false, false); // Runs given, no legal ball
+      
+      // Update extras
+      setBattingTeamScore(prev => ({
+        ...prev,
+        extras: {
+          ...prev.extras,
+          noBalls: prev.extras.noBalls + 1,
+          legByes: prev.extras.legByes + additionalRuns
+        }
+      }));
+      
+      // Rotate strike for odd leg bye runs
+      if (shouldRotateStrike(additionalRuns)) {
+        rotateStrike();
+      }
+    } else if (type === 'lb') {
       // Leg bye: runs go to team only, striker faces ball, legal delivery
       updateTeamScore(additionalRuns, true); // Legal ball
       updateBatsmanStats(matchState.strikeBatsman, 0, true); // No runs to batsman, but ball faced
@@ -571,38 +592,95 @@ export default function Scoreboard() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {extrasType === 'nb' ? 'No Ball + Additional Runs' : 
+              {extrasType === 'nb' ? 'No Ball Options' : 
                extrasType === 'wd' ? 'Wide + Additional Runs' : 
                'Leg Bye Runs'}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-4 gap-3">
-            {extrasType !== 'lb' && (
-              <Button
-                onClick={() => {
-                  handleExtra(extrasType!, 0);
-                  setShowExtrasDialog(false);
-                }}
-                variant="outline"
-                data-testid={`button-${extrasType}-0`}
-              >
-                {extrasType?.toUpperCase()}
-              </Button>
-            )}
-            {(extrasType === 'lb' ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 6]).map(runs => (
-              <Button
-                key={runs}
-                onClick={() => {
-                  handleExtra(extrasType!, runs);
-                  setShowExtrasDialog(false);
-                }}
-                variant="outline"
-                data-testid={`button-${extrasType}-${runs}`}
-              >
-                {extrasType === 'lb' ? `LB ${runs}` : `${extrasType?.toUpperCase()}+${runs}`}
-              </Button>
-            ))}
-          </div>
+          {extrasType === 'nb' ? (
+            <div className="space-y-4">
+              {/* Regular No Ball Options */}
+              <div>
+                <h4 className="font-semibold mb-2 text-sm">No Ball + Batsman Runs</h4>
+                <div className="grid grid-cols-4 gap-2">
+                  <Button
+                    onClick={() => {
+                      handleExtra('nb', 0);
+                      setShowExtrasDialog(false);
+                    }}
+                    variant="outline"
+                    data-testid="button-nb-0"
+                    className="text-xs"
+                  >
+                    NB
+                  </Button>
+                  {[1, 2, 3, 4, 6].map(runs => (
+                    <Button
+                      key={runs}
+                      onClick={() => {
+                        handleExtra('nb', runs);
+                        setShowExtrasDialog(false);
+                      }}
+                      variant="outline"
+                      data-testid={`button-nb-${runs}`}
+                      className="text-xs"
+                    >
+                      NB+{runs}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* No Ball + Leg Bye Options */}
+              <div>
+                <h4 className="font-semibold mb-2 text-sm">No Ball + Leg Bye</h4>
+                <div className="grid grid-cols-4 gap-2">
+                  {[1, 2, 3, 4, 5, 6].map(runs => (
+                    <Button
+                      key={`lb-${runs}`}
+                      onClick={() => {
+                        handleExtra('nb', runs, true);
+                        setShowExtrasDialog(false);
+                      }}
+                      variant="outline"
+                      data-testid={`button-nb-lb-${runs}`}
+                      className="text-xs"
+                    >
+                      NB+LB{runs}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-3">
+              {extrasType !== 'lb' && (
+                <Button
+                  onClick={() => {
+                    handleExtra(extrasType!, 0);
+                    setShowExtrasDialog(false);
+                  }}
+                  variant="outline"
+                  data-testid={`button-${extrasType}-0`}
+                >
+                  {extrasType?.toUpperCase()}
+                </Button>
+              )}
+              {(extrasType === 'lb' ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 6]).map(runs => (
+                <Button
+                  key={runs}
+                  onClick={() => {
+                    handleExtra(extrasType!, runs);
+                    setShowExtrasDialog(false);
+                  }}
+                  variant="outline"
+                  data-testid={`button-${extrasType}-${runs}`}
+                >
+                  {extrasType === 'lb' ? `LB ${runs}` : `${extrasType?.toUpperCase()}+${runs}`}
+                </Button>
+              ))}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
