@@ -475,11 +475,14 @@ export default function Scoreboard() {
       } : null);
     }
     
-    // Now apply strike rotation if needed (after replacement)
-    if (pendingWicket === 'Run Out' && runOutRuns > 0 && shouldRotateStrike(runOutRuns)) {
+    // For Run Out: apply strike rotation after replacement based on runs completed
+    if (pendingWicket === 'Run Out') {
+      // Use a longer timeout to ensure replacement happens first
       setTimeout(() => {
-        rotateStrike();
-      }, 100); // Small delay to ensure state updates
+        if (runOutRuns > 0 && shouldRotateStrike(runOutRuns)) {
+          rotateStrike();
+        }
+      }, 100);
     }
     
     // Check for end of over (after all updates)
@@ -487,7 +490,7 @@ export default function Scoreboard() {
       setTimeout(() => {
         rotateStrike();
         setCurrentOverBalls([]);
-      }, 200);
+      }, 100);
     }
     
     setShowBatsmanDialog(false);
