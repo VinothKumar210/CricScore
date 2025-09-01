@@ -240,6 +240,9 @@ export default function LocalMatch() {
       <div className="mt-6 flex justify-center">
         <Button 
           onClick={() => {
+            // Store team data for coin toss and scoring
+            localStorage.setItem('myTeamPlayers', JSON.stringify(myTeamPlayers));
+            localStorage.setItem('opponentTeamPlayers', JSON.stringify(opponentTeamPlayers));
             setLocation('/coin-toss');
           }}
           disabled={!bothTeamsHavePlayers || !teamsEqual}

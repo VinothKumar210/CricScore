@@ -262,11 +262,15 @@ export function CoinToss() {
               <div className="space-y-3">
                 <Button 
                   onClick={() => {
-                    // TODO: Navigate to match scoring page
-                    console.log('Starting match with roles:', {
-                      userTeam: getUserTeamRole(),
-                      opponentTeam: getOpponentTeamRole()
-                    });
+                    // Store match data for scoring page
+                    const matchData = {
+                      userTeamRole: getUserTeamRole(),
+                      opponentTeamRole: getOpponentTeamRole(),
+                      myTeamPlayers: JSON.parse(localStorage.getItem('myTeamPlayers') || '[]'),
+                      opponentTeamPlayers: JSON.parse(localStorage.getItem('opponentTeamPlayers') || '[]')
+                    };
+                    localStorage.setItem('matchData', JSON.stringify(matchData));
+                    setLocation('/match-scoring');
                   }}
                   className="w-full py-3 text-lg"
                   data-testid="button-start-match"
