@@ -738,8 +738,10 @@ export default function Scoreboard() {
                 <tr className="border-b bg-sky-50 dark:bg-slate-800" data-testid="striker-row">
                   <td className="py-3 px-3">
                     <div className="flex items-center space-x-2">
+                      <span className={`font-semibold ${matchState.strikeBatsman.name.length > 12 ? 'text-sm' : 'text-lg'}`}>
+                        {matchState.strikeBatsman.name}
+                      </span>
                       <Badge variant="default" className="text-xs">*</Badge>
-                      <span className="font-semibold text-lg">{matchState.strikeBatsman.name}</span>
                     </div>
                   </td>
                   <td className="text-center py-3 px-3 font-medium" data-testid="striker-runs">
@@ -761,7 +763,9 @@ export default function Scoreboard() {
                 {/* Non-striker second */}
                 <tr data-testid="non-striker-row">
                   <td className="py-3 px-3">
-                    <span className="font-semibold text-lg">{matchState.nonStrikeBatsman.name}</span>
+                    <span className={`font-semibold ${matchState.nonStrikeBatsman.name.length > 12 ? 'text-sm' : 'text-lg'}`}>
+                      {matchState.nonStrikeBatsman.name}
+                    </span>
                   </td>
                   <td className="text-center py-3 px-3 font-medium" data-testid="non-striker-runs">
                     {getCurrentBatsmanStats(false).runs}
