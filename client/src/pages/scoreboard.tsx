@@ -715,12 +715,12 @@ export default function Scoreboard() {
         </CardContent>
       </Card>
 
-      {/* Current Players */}
+      {/* Current Players and Bowler */}
       <Card>
         <CardHeader>
           <CardTitle>Current Batsmen</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
@@ -786,22 +786,43 @@ export default function Scoreboard() {
               </tbody>
             </table>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Bowler Stats */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Bowler</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <p className="font-semibold text-lg">{matchState.currentBowler.name}</p>
-            <div className="grid grid-cols-4 gap-4 text-sm">
-              <div>Overs: {getCurrentBowlerStats().overs}</div>
-              <div>Runs: {getCurrentBowlerStats().runs}</div>
-              <div>Wickets: {getCurrentBowlerStats().wickets}</div>
-              <div>Economy: {getCurrentBowlerStats().economy}</div>
+          {/* Current Bowler */}
+          <div>
+            <h3 className="font-semibold text-lg mb-3">Current Bowler</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2 px-3 font-semibold w-2/5">Name</th>
+                    <th className="text-center py-2 px-3 font-semibold w-3/20">Overs</th>
+                    <th className="text-center py-2 px-3 font-semibold w-3/20">Runs</th>
+                    <th className="text-center py-2 px-3 font-semibold w-3/20">Wickets</th>
+                    <th className="text-center py-2 px-3 font-semibold w-3/20">Economy</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr data-testid="bowler-row">
+                    <td className="py-3 px-3">
+                      <span className={`font-semibold ${matchState.currentBowler.name.length > 12 ? 'text-sm' : 'text-lg'}`}>
+                        {matchState.currentBowler.name}
+                      </span>
+                    </td>
+                    <td className="text-center py-3 px-3 font-medium" data-testid="bowler-overs">
+                      {getCurrentBowlerStats().overs}
+                    </td>
+                    <td className="text-center py-3 px-3" data-testid="bowler-runs">
+                      {getCurrentBowlerStats().runs}
+                    </td>
+                    <td className="text-center py-3 px-3" data-testid="bowler-wickets">
+                      {getCurrentBowlerStats().wickets}
+                    </td>
+                    <td className="text-center py-3 px-3" data-testid="bowler-economy">
+                      {getCurrentBowlerStats().economy}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </CardContent>
