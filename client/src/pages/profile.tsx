@@ -604,7 +604,7 @@ export default function Profile() {
                     </div>
                     <h3 className="font-semibold text-lg mb-1">Strike Rate</h3>
                     <p className="text-2xl font-bold text-green-600 dark:text-green-400">{performanceMetrics.strikeRate}</p>
-                    <p className="text-sm text-muted-foreground mt-1">Runs per 100 balls</p>
+                    <p className="text-sm text-muted-foreground mt-1">(Runs scored / Balls faced) × 100</p>
                   </div>
 
                   {/* Bowling Average */}
