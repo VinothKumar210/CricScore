@@ -367,7 +367,11 @@ export default function Teams() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {teams && teams.length > 0 ? (
           teams.map((team: any) => (
-            <Link key={team.id} href={`/teams/${team.id}`}>
+            <Link 
+              key={team.id} 
+              href={`/teams/${team.id}`}
+              onClick={() => sessionStorage.setItem("teamDetailReferrer", "/teams")}
+            >
               <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid={`card-team-${team.id}`}>
                 <CardHeader>
                   <div className="flex items-start justify-between">

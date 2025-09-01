@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,17 @@ export default function TeamDetail() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [referrerPage, setReferrerPage] = useState<string>("/dashboard");
+
+  // Detect where the user came from
+  useEffect(() => {
+    const stored = sessionStorage.getItem("teamDetailReferrer");
+    if (stored) {
+      setReferrerPage(stored);
+      // Clear it after use
+      sessionStorage.removeItem("teamDetailReferrer");
+    }
+  }, []);
 
   const { data: team } = useQuery<Team>({
     queryKey: ["/api/teams", id],
@@ -412,11 +423,11 @@ export default function TeamDetail() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setLocation("/dashboard")}
-            data-testid="button-back-dashboard"
+            onClick={() => setLocation(referrerPage)}
+            data-testid="button-back"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
+            {referrerPage === "/teams" ? "Back to Teams" : "Back to Dashboard"}
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-foreground" data-testid="title-team-name">
