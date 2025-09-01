@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Users, AlertTriangle, Clock } from "lucide-react";
 import { type LocalPlayer } from "@shared/schema";
 
 export default function LocalMatch() {
+  const [, setLocation] = useLocation();
   const [overs, setOvers] = useState<string>("20");
   const [myTeamPlayers, setMyTeamPlayers] = useState<LocalPlayer[]>(
     Array(11).fill(null).map((_, index) => ({
@@ -238,7 +240,7 @@ export default function LocalMatch() {
       <div className="mt-6 flex justify-center">
         <Button 
           onClick={() => {
-            // TODO: Implement save functionality
+            setLocation('/coin-toss');
           }}
           disabled={!bothTeamsHavePlayers || !teamsEqual}
           data-testid="button-save-local-match"

@@ -19,6 +19,7 @@ import TeamDetail from "@/pages/team-detail";
 import Invitations from "@/pages/invitations";
 import SearchPlayers from "@/pages/search";
 import LocalMatch from "@/pages/local-match";
+import { CoinToss } from "@/pages/coin-toss";
 import { useEffect, useState } from "react";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -170,6 +171,12 @@ function Router() {
       <Route path="/local-match">
         <ProtectedRoute>
           <LocalMatch />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/coin-toss">
+        <ProtectedRoute>
+          <CoinToss />
         </ProtectedRoute>
       </Route>
 
