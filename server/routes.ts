@@ -758,6 +758,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
 
             const match = await storage.createMatch(matchData);
+            
+            // Update career statistics for this player
+            await storage.updateCareerStatsFromMatch(userId, matchData);
+            
             results.push({
               playerName,
               userId,

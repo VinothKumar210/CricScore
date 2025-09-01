@@ -30,6 +30,7 @@ export interface IStorage {
   getCareerStats(userId: string): Promise<CareerStats | undefined>;
   createCareerStats(stats: InsertCareerStats): Promise<CareerStats>;
   updateCareerStats(userId: string, stats: Partial<CareerStats>): Promise<CareerStats | undefined>;
+  updateCareerStatsFromMatch(userId: string, match: InsertMatch): Promise<void>;
   
   // Team operations
   getTeam(id: string): Promise<Team | undefined>;
@@ -373,7 +374,7 @@ export class PrismaStorage implements IStorage {
     return createdMatch;
   }
 
-  private async updateCareerStatsFromMatch(userId: string, match: InsertMatch) {
+  async updateCareerStatsFromMatch(userId: string, match: InsertMatch) {
     const stats = await this.getCareerStats(userId);
     if (!stats) return;
 
