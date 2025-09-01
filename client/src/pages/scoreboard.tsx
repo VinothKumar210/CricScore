@@ -504,18 +504,32 @@ export default function Scoreboard() {
   };
 
   const selectNewBowler = (newBowler: LocalPlayer) => {
-    // Add new bowler stats
-    setBowlerStats(prev => [
-      ...prev,
-      {
-        player: newBowler,
-        overs: 0,
-        balls: 0,
-        runs: 0,
-        wickets: 0,
-        economy: 0
+    // Check if bowler already exists in stats, if not add them
+    setBowlerStats(prev => {
+      const existingBowler = prev.find(stat => stat.player.name === newBowler.name);
+      if (existingBowler) {
+        // Bowler already exists, just return existing stats
+        return prev;
+      } else {
+        // New bowler, add to stats
+        return [
+          ...prev,
+          {
+            player: newBowler,
+            overs: 0,
+            balls: 0,
+            runs: 0,
+            wickets: 0,
+            economy: 0
+          }
+        ];
       }
-    ]);
+    });
+    
+    // Store the current bowler as previous before changing
+    if (matchState?.currentBowler) {
+      setPreviousBowler(matchState.currentBowler);
+    }
     
     // Update match state with new bowler
     setMatchState(prev => prev ? {
@@ -596,9 +610,18 @@ export default function Scoreboard() {
   
   const bowlingTeamPlayers = userTeamBatsFirst ? matchState.opponentTeamPlayers : matchState.myTeamPlayers;
   
-  const availableBowlers = bowlingTeamPlayers.filter((player: LocalPlayer) => 
-    player.name !== matchState?.currentBowler.name
-  );
+  // Store the previous bowler to prevent consecutive overs
+  const [previousBowler, setPreviousBowler] = useState<LocalPlayer | null>(null);
+
+  const availableBowlers = bowlingTeamPlayers.filter((player: LocalPlayer) => {
+    // Exclude current bowler
+    if (player.name === matchState?.currentBowler.name) return false;
+    
+    // Exclude previous bowler to prevent consecutive overs (unless it's the first over)
+    if (previousBowler && player.name === previousBowler.name && battingTeamScore.balls > 0) return false;
+    
+    return true;
+  });
 
   const formatOvers = (balls: number) => {
     const overs = Math.floor(balls / 6);
