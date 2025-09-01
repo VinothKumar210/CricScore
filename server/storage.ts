@@ -1,5 +1,5 @@
+import { prisma } from "./db";
 import bcrypt from "bcryptjs";
-import { nanoid } from "nanoid";
 import type {
   User,
   CareerStats,
@@ -57,68 +57,104 @@ export interface IStorage {
   validatePassword(email: string, password: string): Promise<User | null>;
 }
 
-export class MemoryStorage implements IStorage {
-  private users: Map<string, User> = new Map();
-  private careerStats: Map<string, CareerStats> = new Map();
-  private teams: Map<string, Team> = new Map();
-  private teamMembers: Map<string, TeamMember> = new Map();
-  private teamInvitations: Map<string, TeamInvitation> = new Map();
-  private matches: Map<string, Match> = new Map();
-
-  constructor() {
-    this.initializeTestData();
+export class PrismaStorage implements IStorage {
+  async getUser(id: string): Promise<User | undefined> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id }
+      });
+      return user || undefined;
+    } catch {
+      return undefined;
+    }
   }
 
-  private initializeTestData() {
-    // Create some test users
-    const testUsers = [
-      {
-        id: "68b2c19643dc182fbd13f273",
-        email: "player1@test.com",
-        password: "$2a$10$KqGGGzYbfGGXlxLxJJq7rO7RQvQzJYqJYqJYqJYqJYqJYqJYqJYqJ", // "password123"
-        username: "player1",
-        profileName: "Test Player 1",
-        description: "A cricket enthusiast",
-        role: "ALL_ROUNDER" as const,
-        battingHand: "RIGHT" as const,
-        bowlingStyle: "MEDIUM_FAST" as const,
-        profileComplete: true,
-        createdAt: new Date(),
-      },
-      {
-        id: "68b2c19643dc182fbd13f274",
-        email: "player2@test.com",
-        password: "$2a$10$KqGGGzYbfGGXlxLxJJq7rO7RQvQzJYqJYqJYqJYqJYqJYqJYqJYqJ", // "password123"
-        username: "player2",
-        profileName: "Test Player 2",
-        description: "Fast bowler",
-        role: "BOWLER" as const,
-        battingHand: "RIGHT" as const,
-        bowlingStyle: "FAST" as const,
-        profileComplete: true,
-        createdAt: new Date(),
-      },
-      {
-        id: "68b2c19643dc182fbd13f275",
-        email: "player3@test.com",
-        password: "$2a$10$KqGGGzYbfGGXlxLxJJq7rO7RQvQzJYqJYqJYqJYqJYqJYqJYqJYqJ", // "password123"
-        username: "player3",
-        profileName: "Test Player 3",
-        description: "Opening batsman",
-        role: "BATSMAN" as const,
-        battingHand: "LEFT" as const,
-        bowlingStyle: "SPIN" as const,
-        profileComplete: true,
-        createdAt: new Date(),
-      },
-    ];
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { email }
+      });
+      return user || undefined;
+    } catch {
+      return undefined;
+    }
+  }
 
-    testUsers.forEach(user => {
-      this.users.set(user.id, user);
-      // Create initial career stats
-      const stats: CareerStats = {
-        id: nanoid(),
-        userId: user.id,
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { username }
+      });
+      return user || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    
+    const user = await prisma.user.create({
+      data: {
+        ...insertUser,
+        password: hashedPassword,
+        profileComplete: false,
+      }
+    });
+    
+    // Create initial career stats
+    await this.createCareerStats({ userId: user.id });
+    
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
+    try {
+      const user = await prisma.user.update({
+        where: { id },
+        data: updates
+      });
+      return user;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async updateUserProfile(id: string, profile: ProfileSetup): Promise<User | undefined> {
+    try {
+      const user = await prisma.user.update({
+        where: { id },
+        data: {
+          username: profile.username,
+          profileName: profile.profileName || "Player",
+          description: profile.description,
+          role: profile.role,
+          battingHand: profile.battingHand,
+          bowlingStyle: profile.bowlingStyle,
+          profileComplete: true,
+        }
+      });
+      return user;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getCareerStats(userId: string): Promise<CareerStats | undefined> {
+    try {
+      const stats = await prisma.careerStats.findUnique({
+        where: { userId }
+      });
+      return stats || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async createCareerStats(stats: InsertCareerStats): Promise<CareerStats> {
+    return await prisma.careerStats.create({
+      data: {
+        userId: stats.userId,
         matchesPlayed: 0,
         totalRuns: 0,
         ballsFaced: 0,
@@ -128,345 +164,213 @@ export class MemoryStorage implements IStorage {
         wicketsTaken: 0,
         economy: 0,
         catchesTaken: 0,
-        updatedAt: new Date(),
-      };
-      this.careerStats.set(user.id, stats);
+      }
     });
-
-    // Create a test team
-    const testTeam: Team = {
-      id: "68b2c2de43dc182fbd13f275",
-      name: "kovai busters",
-      description: "Test team for cricket",
-      captainId: "68b2c19643dc182fbd13f273",
-      viceCaptainId: "68b2c19643dc182fbd13f274",
-      createdAt: new Date(),
-    };
-    this.teams.set(testTeam.id, testTeam);
-
-    // Add team members
-    const teamMember1: TeamMember = {
-      id: nanoid(),
-      teamId: testTeam.id,
-      userId: "68b2c19643dc182fbd13f273",
-      joinedAt: new Date(),
-    };
-    const teamMember2: TeamMember = {
-      id: nanoid(),
-      teamId: testTeam.id,
-      userId: "68b2c19643dc182fbd13f274",
-      joinedAt: new Date(),
-    };
-    this.teamMembers.set(teamMember1.id, teamMember1);
-    this.teamMembers.set(teamMember2.id, teamMember2);
-  }
-
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.email === email);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
-  }
-
-  async searchUsers(query: string): Promise<User[]> {
-    const queryLower = query.toLowerCase();
-    return Array.from(this.users.values())
-      .filter(user => 
-        user.profileComplete && (
-          user.username?.toLowerCase().includes(queryLower) ||
-          user.profileName?.toLowerCase().includes(queryLower)
-        )
-      )
-      .slice(0, 20)
-      .map(user => ({
-        ...user,
-        password: "" // Don't return password in search results
-      }));
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-    
-    const user: User = {
-      id: nanoid(),
-      email: insertUser.email,
-      password: hashedPassword,
-      username: insertUser.username,
-      profileName: insertUser.profileName,
-      description: insertUser.description,
-      role: insertUser.role,
-      battingHand: insertUser.battingHand,
-      bowlingStyle: insertUser.bowlingStyle,
-      profileComplete: insertUser.profileComplete || false,
-      createdAt: new Date(),
-    };
-    
-    this.users.set(user.id, user);
-    
-    // Create initial career stats
-    await this.createCareerStats({ userId: user.id });
-    
-    return user;
-  }
-
-  async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = { ...user, ...updates };
-    this.users.set(id, updatedUser);
-    return updatedUser;
-  }
-
-  async updateUserProfile(id: string, profile: ProfileSetup): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser: User = {
-      ...user,
-      username: profile.username,
-      profileName: profile.profileName || "Player",
-      description: profile.description,
-      role: profile.role,
-      battingHand: profile.battingHand,
-      bowlingStyle: profile.bowlingStyle,
-      profileComplete: true,
-    };
-    
-    this.users.set(id, updatedUser);
-    return updatedUser;
-  }
-
-  async getCareerStats(userId: string): Promise<CareerStats | undefined> {
-    return this.careerStats.get(userId);
-  }
-
-  async createCareerStats(stats: InsertCareerStats): Promise<CareerStats> {
-    const careerStats: CareerStats = {
-      id: nanoid(),
-      userId: stats.userId,
-      matchesPlayed: 0,
-      totalRuns: 0,
-      ballsFaced: 0,
-      strikeRate: 0,
-      oversBowled: 0,
-      runsConceded: 0,
-      wicketsTaken: 0,
-      economy: 0,
-      catchesTaken: 0,
-      updatedAt: new Date(),
-    };
-    
-    this.careerStats.set(stats.userId, careerStats);
-    return careerStats;
   }
 
   async updateCareerStats(userId: string, updates: Partial<CareerStats>): Promise<CareerStats | undefined> {
-    const stats = this.careerStats.get(userId);
-    if (!stats) return undefined;
-    
-    const updatedStats = { ...stats, ...updates, updatedAt: new Date() };
-    this.careerStats.set(userId, updatedStats);
-    return updatedStats;
+    try {
+      const stats = await prisma.careerStats.update({
+        where: { userId },
+        data: updates
+      });
+      return stats;
+    } catch {
+      return undefined;
+    }
   }
 
   async getTeam(id: string): Promise<Team | undefined> {
-    return this.teams.get(id);
+    try {
+      const team = await prisma.team.findUnique({
+        where: { id }
+      });
+      return team || undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   async getTeamsByUser(userId: string): Promise<Team[]> {
-    return Array.from(this.teams.values()).filter(team => 
-      team.captainId === userId || 
-      team.viceCaptainId === userId ||
-      Array.from(this.teamMembers.values()).some(member => 
-        member.teamId === team.id && member.userId === userId
-      )
-    );
+    try {
+      const teams = await prisma.team.findMany({
+        where: {
+          OR: [
+            { captainId: userId },
+            { viceCaptainId: userId },
+            {
+              members: {
+                some: { userId }
+              }
+            }
+          ]
+        }
+      });
+      return teams;
+    } catch {
+      return [];
+    }
   }
 
   async createTeam(team: InsertTeam): Promise<Team> {
-    const newTeam: Team = {
-      id: nanoid(),
-      name: team.name,
-      description: team.description,
-      captainId: team.captainId,
-      viceCaptainId: team.viceCaptainId,
-      createdAt: new Date(),
-    };
-    
-    this.teams.set(newTeam.id, newTeam);
-    return newTeam;
+    return await prisma.team.create({
+      data: team
+    });
   }
 
   async updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined> {
-    const team = this.teams.get(id);
-    if (!team) return undefined;
-    
-    const updatedTeam = { ...team, ...updates };
-    this.teams.set(id, updatedTeam);
-    return updatedTeam;
+    try {
+      const team = await prisma.team.update({
+        where: { id },
+        data: updates
+      });
+      return team;
+    } catch {
+      return undefined;
+    }
   }
 
   async deleteTeam(id: string): Promise<boolean> {
-    // Delete team members
-    Array.from(this.teamMembers.entries())
-      .filter(([_, member]) => member.teamId === id)
-      .forEach(([memberKey]) => this.teamMembers.delete(memberKey));
-    
-    // Delete team invitations
-    Array.from(this.teamInvitations.entries())
-      .filter(([_, invitation]) => invitation.teamId === id)
-      .forEach(([invitationKey]) => this.teamInvitations.delete(invitationKey));
-    
-    // Delete the team
-    return this.teams.delete(id);
+    try {
+      // Delete team members first (if not handled by cascade)
+      await prisma.teamMember.deleteMany({
+        where: { teamId: id }
+      });
+      
+      // Delete team invitations
+      await prisma.teamInvitation.deleteMany({
+        where: { teamId: id }
+      });
+      
+      // Delete the team
+      await prisma.team.delete({
+        where: { id }
+      });
+      
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async getTeamMembers(teamId: string): Promise<(TeamMember & { user: User })[]> {
-    const members = Array.from(this.teamMembers.values())
-      .filter(member => member.teamId === teamId);
-    
-    const membersWithUsers: (TeamMember & { user: User })[] = [];
-    for (const member of members) {
-      const user = this.users.get(member.userId);
-      if (user) {
-        membersWithUsers.push({
-          ...member,
-          user: { ...user, password: "" } // Don't include password
-        });
-      }
+    try {
+      const members = await prisma.teamMember.findMany({
+        where: { teamId },
+        include: { user: true }
+      });
+      return members;
+    } catch {
+      return [];
     }
-    
-    return membersWithUsers;
   }
 
   async addTeamMember(member: InsertTeamMember): Promise<TeamMember> {
-    const teamMember: TeamMember = {
-      id: nanoid(),
-      teamId: member.teamId,
-      userId: member.userId,
-      joinedAt: new Date(),
-    };
-    
-    this.teamMembers.set(teamMember.id, teamMember);
-    return teamMember;
+    return await prisma.teamMember.create({
+      data: member
+    });
   }
 
   async removeTeamMember(teamId: string, userId: string): Promise<boolean> {
-    const memberEntry = Array.from(this.teamMembers.entries())
-      .find(([_, member]) => member.teamId === teamId && member.userId === userId);
-    
-    if (memberEntry) {
-      this.teamMembers.delete(memberEntry[0]);
+    try {
+      await prisma.teamMember.delete({
+        where: {
+          teamId_userId: {
+            teamId,
+            userId
+          }
+        }
+      });
       return true;
+    } catch {
+      return false;
     }
-    
-    return false;
   }
 
   async getTeamInvitations(userId: string): Promise<(TeamInvitation & { team: Team, inviter: User })[]> {
-    const invitations = Array.from(this.teamInvitations.values())
-      .filter(invitation => invitation.invitedUser === userId && invitation.status === "PENDING");
-    
-    const invitationsWithDetails: (TeamInvitation & { team: Team, inviter: User })[] = [];
-    for (const invitation of invitations) {
-      const team = this.teams.get(invitation.teamId);
-      const inviter = this.users.get(invitation.invitedBy);
-      
-      if (team && inviter) {
-        invitationsWithDetails.push({
-          ...invitation,
-          team,
-          inviter: { ...inviter, password: "" }
-        });
-      }
+    try {
+      const invitations = await prisma.teamInvitation.findMany({
+        where: {
+          invitedUser: userId,
+          status: "PENDING"
+        },
+        include: {
+          team: true,
+          inviter: true
+        }
+      });
+      return invitations;
+    } catch {
+      return [];
     }
-    
-    return invitationsWithDetails;
   }
 
   async getSentInvitations(teamId: string): Promise<(TeamInvitation & { user: User })[]> {
-    const invitations = Array.from(this.teamInvitations.values())
-      .filter(invitation => invitation.teamId === teamId);
-    
-    const invitationsWithUsers: (TeamInvitation & { user: User })[] = [];
-    for (const invitation of invitations) {
-      const user = this.users.get(invitation.invitedUser);
-      if (user) {
-        invitationsWithUsers.push({
-          ...invitation,
-          user: { ...user, password: "" }
-        });
-      }
+    try {
+      const invitations = await prisma.teamInvitation.findMany({
+        where: { teamId },
+        include: { invited: true }
+      });
+      return invitations.map((inv: any) => ({
+        ...inv,
+        user: inv.invited
+      }));
+    } catch {
+      return [];
     }
-    
-    return invitationsWithUsers;
   }
 
   async createTeamInvitation(invitation: InsertTeamInvitation): Promise<TeamInvitation> {
-    const teamInvitation: TeamInvitation = {
-      id: nanoid(),
-      teamId: invitation.teamId,
-      invitedBy: invitation.invitedBy,
-      invitedUser: invitation.invitedUser,
-      status: "PENDING",
-      createdAt: new Date(),
-    };
-    
-    this.teamInvitations.set(teamInvitation.id, teamInvitation);
-    return teamInvitation;
+    return await prisma.teamInvitation.create({
+      data: {
+        ...invitation,
+        status: "PENDING"
+      }
+    });
   }
 
   async updateInvitationStatus(id: string, status: "ACCEPTED" | "REJECTED"): Promise<TeamInvitation | undefined> {
-    const invitation = this.teamInvitations.get(id);
-    if (!invitation) return undefined;
-    
-    const updatedInvitation = { ...invitation, status };
-    this.teamInvitations.set(id, updatedInvitation);
-    
-    // If accepted, add user to team
-    if (status === "ACCEPTED") {
-      await this.addTeamMember({
-        teamId: invitation.teamId,
-        userId: invitation.invitedUser,
+    try {
+      const invitation = await prisma.teamInvitation.update({
+        where: { id },
+        data: { status }
       });
+      
+      // If accepted, add user to team
+      if (status === "ACCEPTED") {
+        await this.addTeamMember({
+          teamId: invitation.teamId,
+          userId: invitation.invitedUser,
+        });
+      }
+      
+      return invitation;
+    } catch {
+      return undefined;
     }
-    
-    return updatedInvitation;
   }
 
   async getMatches(userId: string): Promise<Match[]> {
-    return Array.from(this.matches.values())
-      .filter(match => match.userId === userId)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    try {
+      const matches = await prisma.match.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' }
+      });
+      return matches;
+    } catch {
+      return [];
+    }
   }
 
   async createMatch(match: InsertMatch): Promise<Match> {
-    const newMatch: Match = {
-      id: nanoid(),
-      userId: match.userId,
-      opponent: match.opponent,
-      matchDate: match.matchDate,
-      runsScored: match.runsScored,
-      ballsFaced: match.ballsFaced,
-      oversBowled: match.oversBowled,
-      runsConceded: match.runsConceded,
-      wicketsTaken: match.wicketsTaken,
-      catchesTaken: match.catchesTaken,
-      createdAt: new Date(),
-    };
-    
-    this.matches.set(newMatch.id, newMatch);
+    const createdMatch = await prisma.match.create({
+      data: match
+    });
     
     // Update career stats
     await this.updateCareerStatsFromMatch(match.userId, match);
     
-    return newMatch;
+    return createdMatch;
   }
 
   private async updateCareerStatsFromMatch(userId: string, match: InsertMatch) {
@@ -497,6 +401,46 @@ export class MemoryStorage implements IStorage {
     });
   }
 
+  async searchUsers(query: string): Promise<User[]> {
+    try {
+      const users = await prisma.user.findMany({
+        where: {
+          OR: [
+            {
+              username: {
+                contains: query,
+                mode: 'insensitive'
+              }
+            },
+            {
+              profileName: {
+                contains: query,
+                mode: 'insensitive'
+              }
+            }
+          ],
+          profileComplete: true
+        },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          profileName: true,
+          description: true,
+          role: true,
+          battingHand: true,
+          bowlingStyle: true,
+          profileComplete: true,
+          createdAt: true
+        },
+        take: 20
+      });
+      return users as User[];
+    } catch {
+      return [];
+    }
+  }
+
   async validatePassword(email: string, password: string): Promise<User | null> {
     const user = await this.getUserByEmail(email);
     if (!user) return null;
@@ -506,4 +450,4 @@ export class MemoryStorage implements IStorage {
   }
 }
 
-export const storage = new MemoryStorage();
+export const storage = new PrismaStorage();
