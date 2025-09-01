@@ -706,7 +706,7 @@ export default function Scoreboard() {
       </Card>
 
       {/* Wicket Dialog */}
-      <Dialog open={showWicketDialog} onOpenChange={setShowWicketDialog}>
+      <Dialog open={showWicketDialog} onOpenChange={() => {}}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Select Dismissal Type</DialogTitle>
@@ -730,7 +730,7 @@ export default function Scoreboard() {
       </Dialog>
 
       {/* New Batsman Dialog */}
-      <Dialog open={showBatsmanDialog} onOpenChange={setShowBatsmanDialog}>
+      <Dialog open={showBatsmanDialog} onOpenChange={() => {}}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Select New Batsman</DialogTitle>
@@ -851,7 +851,7 @@ export default function Scoreboard() {
       </Dialog>
 
       {/* Run Out Dialog */}
-      <Dialog open={showRunOutDialog} onOpenChange={setShowRunOutDialog}>
+      <Dialog open={showRunOutDialog} onOpenChange={() => {}}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Run Out - Runs Completed</DialogTitle>
@@ -877,7 +877,7 @@ export default function Scoreboard() {
       </Dialog>
 
       {/* Who Is Out Dialog */}
-      <Dialog open={showWhoIsOutDialog} onOpenChange={setShowWhoIsOutDialog}>
+      <Dialog open={showWhoIsOutDialog} onOpenChange={() => {}}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Who is Out?</DialogTitle>
