@@ -13,6 +13,9 @@ import { type LocalPlayer } from "@shared/schema";
 export default function LocalMatch() {
   const [, setLocation] = useLocation();
   const [overs, setOvers] = useState<string>("20");
+  const [customOvers, setCustomOvers] = useState<string>("");
+  const [maxOversPerBowler, setMaxOversPerBowler] = useState<string>("4");
+  const [bowlersAtMaxOvers, setBowlersAtMaxOvers] = useState<string>("5");
   const [myTeamPlayers, setMyTeamPlayers] = useState<LocalPlayer[]>(
     Array(11).fill(null).map((_, index) => ({
       name: "",
@@ -52,8 +55,34 @@ export default function LocalMatch() {
   const teamsEqual = myTeamSize === opponentTeamSize;
   const bothTeamsHavePlayers = myTeamSize > 0 && opponentTeamSize > 0;
 
-  // Bowling restrictions based on overs
-  const getBowlingRestrictions = (overs: string) => {
+  // Get current overs value (custom or preset)
+  const getCurrentOvers = () => {
+    return overs === "custom" ? customOvers : overs;
+  };
+
+  // Validate custom bowling restrictions
+  const isValidCustomConfig = () => {
+    if (overs !== "custom") return true;
+    if (!customOvers || !maxOversPerBowler || !bowlersAtMaxOvers) return false;
+    
+    const totalOvers = parseInt(customOvers);
+    const maxOvers = parseInt(maxOversPerBowler);
+    const bowlers = parseInt(bowlersAtMaxOvers);
+    
+    // Basic validations
+    if (maxOvers > Math.floor(totalOvers / 2)) return false; // Max overs can't exceed half the total
+    if (bowlers > 11) return false; // Can't have more than 11 bowlers
+    if (maxOvers * bowlers > totalOvers) return false; // Total possible overs shouldn't exceed match overs
+    
+    return true;
+  };
+
+  // Bowling restrictions based on overs and custom settings
+  const getBowlingRestrictions = () => {
+    if (overs === "custom" && customOvers) {
+      return `Max ${maxOversPerBowler} overs per bowler (${bowlersAtMaxOvers} bowlers can bowl max overs)`;
+    }
+    
     switch (overs) {
       case "10":
         return "Max 2 overs per bowler";
@@ -87,29 +116,87 @@ export default function LocalMatch() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Number of Overs</label>
-              <Select value={overs} onValueChange={setOvers}>
-                <SelectTrigger data-testid="select-overs">
-                  <SelectValue placeholder="Select overs" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10 Overs</SelectItem>
-                  <SelectItem value="12">12 Overs</SelectItem>
-                  <SelectItem value="15">15 Overs</SelectItem>
-                  <SelectItem value="20">20 Overs</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Bowling Restrictions</label>
-              <div className="p-3 bg-muted rounded-md">
-                <p className="text-sm text-muted-foreground" data-testid="bowling-restrictions">
-                  {getBowlingRestrictions(overs)}
-                </p>
+          <div className="space-y-6">
+            {/* Overs Configuration */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Match Format</label>
+                <Select value={overs} onValueChange={setOvers}>
+                  <SelectTrigger data-testid="select-overs">
+                    <SelectValue placeholder="Select format" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 Overs</SelectItem>
+                    <SelectItem value="12">12 Overs</SelectItem>
+                    <SelectItem value="15">15 Overs</SelectItem>
+                    <SelectItem value="20">20 Overs</SelectItem>
+                    <SelectItem value="custom">Custom Format</SelectItem>
+                  </SelectContent>
+                </Select>
+                {overs === "custom" && (
+                  <Input
+                    type="number"
+                    placeholder="Enter number of overs"
+                    value={customOvers}
+                    onChange={(e) => setCustomOvers(e.target.value)}
+                    min="1"
+                    max="50"
+                    data-testid="input-custom-overs"
+                    className="mt-2"
+                  />
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Current Configuration</label>
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-sm font-semibold">
+                    {overs === "custom" && customOvers ? `${customOvers} Overs Match` : `${overs} Overs Match`}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1" data-testid="bowling-restrictions">
+                    {getBowlingRestrictions()}
+                  </p>
+                </div>
               </div>
             </div>
+
+            {/* Custom Bowling Rules (only show for custom format) */}
+            {overs === "custom" && (
+              <div className="border-t pt-6">
+                <h4 className="text-sm font-medium mb-4">Custom Bowling Restrictions</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Max Overs Per Bowler</label>
+                    <Input
+                      type="number"
+                      placeholder="Enter max overs"
+                      value={maxOversPerBowler}
+                      onChange={(e) => setMaxOversPerBowler(e.target.value)}
+                      min="1"
+                      max={customOvers ? Math.floor(parseInt(customOvers) / 2).toString() : "10"}
+                      data-testid="input-max-overs-per-bowler"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Maximum overs any single bowler can bowl
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Bowlers at Max Overs</label>
+                    <Input
+                      type="number"
+                      placeholder="Enter number of bowlers"
+                      value={bowlersAtMaxOvers}
+                      onChange={(e) => setBowlersAtMaxOvers(e.target.value)}
+                      min="1"
+                      max="11"
+                      data-testid="input-bowlers-at-max-overs"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      How many bowlers can bowl the maximum overs
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -119,6 +206,21 @@ export default function LocalMatch() {
           <AlertTriangle className="h-4 w-4 text-orange-600" />
           <AlertDescription className="text-orange-800 dark:text-orange-200">
             Teams must have equal number of players. My Team: {myTeamSize} players, Opponent Team: {opponentTeamSize} players.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {/* Custom Configuration Validation Alert */}
+      {overs === "custom" && !isValidCustomConfig() && customOvers && (
+        <Alert className="mb-6 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800 dark:text-red-200">
+            Invalid bowling configuration. Please check:
+            <ul className="list-disc list-inside mt-2 text-sm">
+              <li>Max overs per bowler can't exceed {Math.floor(parseInt(customOvers || "0") / 2)} (half of total overs)</li>
+              <li>Number of bowlers can't exceed 11</li>
+              <li>Total maximum overs ({parseInt(maxOversPerBowler || "0")} × {parseInt(bowlersAtMaxOvers || "0")}) shouldn't exceed match overs ({customOvers})</li>
+            </ul>
           </AlertDescription>
         </Alert>
       )}
@@ -240,12 +342,15 @@ export default function LocalMatch() {
       <div className="mt-6 flex justify-center">
         <Button 
           onClick={() => {
-            // Store team data for coin toss and scoring
+            // Store team data and match configuration for coin toss and scoring
             localStorage.setItem('myTeamPlayers', JSON.stringify(myTeamPlayers));
             localStorage.setItem('opponentTeamPlayers', JSON.stringify(opponentTeamPlayers));
+            localStorage.setItem('matchOvers', getCurrentOvers());
+            localStorage.setItem('maxOversPerBowler', maxOversPerBowler);
+            localStorage.setItem('bowlersAtMaxOvers', bowlersAtMaxOvers);
             setLocation('/coin-toss');
           }}
-          disabled={!bothTeamsHavePlayers || !teamsEqual}
+          disabled={!bothTeamsHavePlayers || !teamsEqual || !isValidCustomConfig()}
           data-testid="button-save-local-match"
           className="px-8"
         >Start Match</Button>
