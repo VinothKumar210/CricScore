@@ -24,6 +24,9 @@ interface BatsmanStats {
   fours: number;
   sixes: number;
   strikeRate: number;
+  isOut: boolean;
+  dismissalType?: DismissalType;
+  bowlerName?: string;
 }
 
 interface BowlerStats {
@@ -102,7 +105,8 @@ export default function Scoreboard() {
           balls: 0,
           fours: 0,
           sixes: 0,
-          strikeRate: 0
+          strikeRate: 0,
+          isOut: false
         },
         {
           player: players.nonStrikeBatsman,
@@ -110,7 +114,8 @@ export default function Scoreboard() {
           balls: 0,
           fours: 0,
           sixes: 0,
-          strikeRate: 0
+          strikeRate: 0,
+          isOut: false
         }
       ]);
       
@@ -425,6 +430,21 @@ export default function Scoreboard() {
     // Update striker's balls faced
     updateBatsmanStats(matchState.strikeBatsman, 0);
     
+    // Mark striker as out with dismissal details
+    setBatsmanStats(prev => prev.map(stat => {
+      if (stat.player.name === matchState.strikeBatsman.name) {
+        return {
+          ...stat,
+          isOut: true,
+          dismissalType: dismissalType,
+          bowlerName: ['Bowled', 'Caught', 'LBW', 'Hit Wicket'].includes(dismissalType) 
+            ? matchState.currentBowler.name 
+            : undefined
+        };
+      }
+      return stat;
+    }));
+    
     // Show dialog to select new batsman
     setShowBatsmanDialog(true);
     setPendingWicket(dismissalType);
@@ -459,6 +479,20 @@ export default function Scoreboard() {
     setBattingTeamScore(prev => ({
       ...prev,
       wickets: prev.wickets + 1
+    }));
+    
+    // Mark the out batsman with run out details
+    const outBatsmanName = isStriker ? matchState.strikeBatsman.name : matchState.nonStrikeBatsman.name;
+    setBatsmanStats(prev => prev.map(stat => {
+      if (stat.player.name === outBatsmanName) {
+        return {
+          ...stat,
+          isOut: true,
+          dismissalType: 'Run Out' as DismissalType,
+          bowlerName: undefined // Run outs don't credit the bowler
+        };
+      }
+      return stat;
     }));
     
     // Track which batsman is out for replacement (don't rotate yet)
@@ -506,7 +540,8 @@ export default function Scoreboard() {
         balls: 0,
         fours: 0,
         sixes: 0,
-        strikeRate: 0
+        strikeRate: 0,
+        isOut: false
       }
     ]);
     
@@ -844,6 +879,7 @@ export default function Scoreboard() {
                   <th className="text-center py-2 px-3 font-semibold">4's</th>
                   <th className="text-center py-2 px-3 font-semibold">6's</th>
                   <th className="text-center py-2 px-3 font-semibold">SR</th>
+                  <th className="text-center py-2 px-3 font-semibold">Dismissal</th>
                 </tr>
               </thead>
               <tbody>
@@ -883,6 +919,20 @@ export default function Scoreboard() {
                       <td className="text-center py-2 px-3" data-testid={`batsman-sr-${index}`}>
                         {batsman.strikeRate.toFixed(1)}
                       </td>
+                      <td className="text-center py-2 px-3 text-sm" data-testid={`batsman-dismissal-${index}`}>
+                        {batsman.isOut ? (
+                          <div className="text-red-600 dark:text-red-400">
+                            {batsman.dismissalType}
+                            {batsman.bowlerName && (
+                              <div className="text-xs text-muted-foreground">
+                                b {batsman.bowlerName}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-green-600 dark:text-green-400">Not Out</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -893,7 +943,7 @@ export default function Scoreboard() {
                   <td className="text-center py-2 px-3" data-testid="extras-total">
                     {battingTeamScore.extras.wides + battingTeamScore.extras.noBalls + battingTeamScore.extras.byes + battingTeamScore.extras.legByes}
                   </td>
-                  <td className="text-center py-2 px-3 text-xs" colSpan={4}>
+                  <td className="text-center py-2 px-3 text-xs" colSpan={5}>
                     (W {battingTeamScore.extras.wides}, NB {battingTeamScore.extras.noBalls}, B {battingTeamScore.extras.byes}, LB {battingTeamScore.extras.legByes})
                   </td>
                 </tr>
@@ -904,7 +954,7 @@ export default function Scoreboard() {
                   <td className="text-center py-2 px-3" data-testid="team-total-runs">
                     {battingTeamScore.runs}
                   </td>
-                  <td className="text-center py-2 px-3 text-xs" colSpan={4}>
+                  <td className="text-center py-2 px-3 text-xs" colSpan={5}>
                     ({battingTeamScore.wickets} wkts, {formatOvers(battingTeamScore.balls)} ov)
                   </td>
                 </tr>
@@ -918,7 +968,7 @@ export default function Scoreboard() {
                       <td className="text-center py-2 px-3" data-testid="yet-to-bat-count">
                         {yetToBatCount}
                       </td>
-                      <td className="text-center py-2 px-3 text-xs" colSpan={4}>
+                      <td className="text-center py-2 px-3 text-xs" colSpan={5}>
                         players remaining
                       </td>
                     </tr>
