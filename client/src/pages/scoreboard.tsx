@@ -847,6 +847,7 @@ export default function Scoreboard() {
                 </tr>
               </thead>
               <tbody>
+                {/* Only show batsmen who have batted or are currently batting */}
                 {batsmanStats.map((batsman, index) => {
                   const isStriker = batsman.player.name === matchState.strikeBatsman.name;
                   const isNonStriker = batsman.player.name === matchState.nonStrikeBatsman.name;
@@ -885,25 +886,44 @@ export default function Scoreboard() {
                     </tr>
                   );
                 })}
-                
-                {/* Yet to bat players */}
-                {battingTeamPlayers
-                  .filter(player => !batsmanStats.some(stat => stat.player.name === player.name))
-                  .map((player, index) => (
-                    <tr key={`yet-to-bat-${index}`} className="border-b text-muted-foreground">
-                      <td className="py-2 px-3">
-                        <span className={`${player.name.length > 15 ? 'text-sm' : 'text-base'}`}>
-                          {player.name}
-                        </span>
+
+                {/* Extras row */}
+                <tr className="border-b font-medium">
+                  <td className="py-2 px-3">Extras</td>
+                  <td className="text-center py-2 px-3" data-testid="extras-total">
+                    {battingTeamScore.extras.wides + battingTeamScore.extras.noBalls + battingTeamScore.extras.byes + battingTeamScore.extras.legByes}
+                  </td>
+                  <td className="text-center py-2 px-3 text-xs" colSpan={4}>
+                    (W {battingTeamScore.extras.wides}, NB {battingTeamScore.extras.noBalls}, B {battingTeamScore.extras.byes}, LB {battingTeamScore.extras.legByes})
+                  </td>
+                </tr>
+
+                {/* Total runs row */}
+                <tr className="border-b font-bold">
+                  <td className="py-2 px-3">Total</td>
+                  <td className="text-center py-2 px-3" data-testid="team-total-runs">
+                    {battingTeamScore.runs}
+                  </td>
+                  <td className="text-center py-2 px-3 text-xs" colSpan={4}>
+                    ({battingTeamScore.wickets} wkts, {formatOvers(battingTeamScore.balls)} ov)
+                  </td>
+                </tr>
+
+                {/* Yet to bat count */}
+                {(() => {
+                  const yetToBatCount = battingTeamPlayers.length - batsmanStats.length;
+                  return yetToBatCount > 0 ? (
+                    <tr className="text-muted-foreground">
+                      <td className="py-2 px-3">Yet to bat</td>
+                      <td className="text-center py-2 px-3" data-testid="yet-to-bat-count">
+                        {yetToBatCount}
                       </td>
-                      <td className="text-center py-2 px-3">-</td>
-                      <td className="text-center py-2 px-3">-</td>
-                      <td className="text-center py-2 px-3">-</td>
-                      <td className="text-center py-2 px-3">-</td>
-                      <td className="text-center py-2 px-3">-</td>
+                      <td className="text-center py-2 px-3 text-xs" colSpan={4}>
+                        players remaining
+                      </td>
                     </tr>
-                  ))
-                }
+                  ) : null;
+                })()}
               </tbody>
             </table>
           </div>
