@@ -71,6 +71,7 @@ export default function Scoreboard() {
   const [showRunOutDialog, setShowRunOutDialog] = useState(false);
   const [showWhoIsOutDialog, setShowWhoIsOutDialog] = useState(false);
   const [runOutRuns, setRunOutRuns] = useState<number>(0);
+  const [outBatsmanIsStriker, setOutBatsmanIsStriker] = useState<boolean>(true);
   const [currentOverBalls, setCurrentOverBalls] = useState<string[]>([]);
 
   useEffect(() => {
@@ -419,21 +420,19 @@ export default function Scoreboard() {
   const handleWhoIsOut = (isStriker: boolean) => {
     // NOW update scores - only after user selects who is out
     
-    // Add runs to team and original striker (except for +0)
-    if (runOutRuns > 0) {
-      updateTeamScore(runOutRuns);
-      updateBatsmanStats(matchState.strikeBatsman, runOutRuns);
-      updateBowlerStats(runOutRuns);
-    } else {
-      // Run Out +0 - just face the ball
-      updateBatsmanStats(matchState.strikeBatsman, 0);
-      updateBowlerStats(0);
-    }
+    // Always add runs to team score (even for +0)
+    updateTeamScore(runOutRuns);
+    
+    // Always add runs to striker (A) and count ball faced - striker always faces the ball
+    updateBatsmanStats(matchState.strikeBatsman, runOutRuns);
+    
+    // Update bowler stats 
+    updateBowlerStats(runOutRuns);
     
     // Add to current over display
     setCurrentOverBalls(prev => [...prev, runOutRuns === 0 ? 'RO' : `RO+${runOutRuns}`]);
     
-    // Apply strike rotation BEFORE changing batsmen (based on original striker)
+    // Apply strike rotation based on runs completed (before changing who is out)
     if (runOutRuns > 0 && shouldRotateStrike(runOutRuns)) {
       rotateStrike();
     }
@@ -452,15 +451,9 @@ export default function Scoreboard() {
       }, 500);
     }
     
-    // Set which batsman is out and show new batsman dialog
-    if (isStriker) {
-      // Striker is out - will be replaced
-      setPendingWicket('Run Out');
-    } else {
-      // Non-striker is out - they become the striker to be replaced
-      // (since we already rotated strike above if needed)
-      setPendingWicket('Run Out');
-    }
+    // Track which batsman is out for replacement
+    setOutBatsmanIsStriker(isStriker);
+    setPendingWicket('Run Out');
     
     setShowWhoIsOutDialog(false);
     setShowBatsmanDialog(true);
@@ -480,11 +473,20 @@ export default function Scoreboard() {
       }
     ]);
     
-    // Replace the striker (assuming striker got out)
-    setMatchState(prev => prev ? {
-      ...prev,
-      strikeBatsman: newBatsman
-    } : null);
+    // Replace the correct batsman based on who was out
+    if (outBatsmanIsStriker) {
+      // Replace striker
+      setMatchState(prev => prev ? {
+        ...prev,
+        strikeBatsman: newBatsman
+      } : null);
+    } else {
+      // Replace non-striker  
+      setMatchState(prev => prev ? {
+        ...prev,
+        nonStrikeBatsman: newBatsman
+      } : null);
+    }
     
     setShowBatsmanDialog(false);
     setPendingWicket(null);
