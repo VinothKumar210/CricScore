@@ -68,6 +68,9 @@ export default function Scoreboard() {
   const [showExtrasDialog, setShowExtrasDialog] = useState(false);
   const [extrasType, setExtrasType] = useState<'nb' | 'wd' | 'lb' | null>(null);
   const [pendingWicket, setPendingWicket] = useState<DismissalType | null>(null);
+  const [showRunOutDialog, setShowRunOutDialog] = useState(false);
+  const [showWhoIsOutDialog, setShowWhoIsOutDialog] = useState(false);
+  const [runOutRuns, setRunOutRuns] = useState<number>(0);
   const [currentOverBalls, setCurrentOverBalls] = useState<string[]>([]);
 
   useEffect(() => {
@@ -161,7 +164,7 @@ export default function Scoreboard() {
   };
 
   const shouldRotateStrike = (runs: number) => {
-    return runs === 1 || runs === 3;
+    return runs % 2 === 1; // Odd runs (1, 3, 5) rotate strike
   };
 
   const rotateStrike = () => {
@@ -356,6 +359,13 @@ export default function Scoreboard() {
   };
 
   const handleWicket = (dismissalType: DismissalType) => {
+    if (dismissalType === 'Run Out') {
+      // For run outs, show run options first
+      setShowRunOutDialog(true);
+      return;
+    }
+    
+    // For other dismissals (Bowled, LBW, Catch, etc.)
     // Add to current over display
     setCurrentOverBalls(prev => [...prev, 'W']);
     
@@ -386,6 +396,69 @@ export default function Scoreboard() {
     // Show dialog to select new batsman
     setShowBatsmanDialog(true);
     setPendingWicket(dismissalType);
+  };
+
+  const handleRunOut = (runs: number) => {
+    setRunOutRuns(runs);
+    
+    // Add runs to team and striker (except for +0)
+    if (runs > 0) {
+      updateTeamScore(runs);
+      updateBatsmanStats(matchState.strikeBatsman, runs);
+      updateBowlerStats(runs);
+      
+      // Rotate strike based on runs completed
+      if (shouldRotateStrike(runs)) {
+        rotateStrike();
+      }
+    } else {
+      // Run Out +0 - just face the ball
+      updateBatsmanStats(matchState.strikeBatsman, 0);
+      updateBowlerStats(0);
+    }
+    
+    // Add to current over display
+    setCurrentOverBalls(prev => [...prev, runs === 0 ? 'RO' : `RO+${runs}`]);
+    
+    // Now ask who is out
+    setShowRunOutDialog(false);
+    setShowWhoIsOutDialog(true);
+  };
+
+  const handleWhoIsOut = (isStriker: boolean) => {
+    // Update team wickets
+    setBattingTeamScore(prev => ({
+      ...prev,
+      wickets: prev.wickets + 1
+    }));
+    
+    // Bowler doesn't get credit for run out
+    // (bowler stats already updated in handleRunOut)
+    
+    // Check for end of over
+    if ((battingTeamScore.balls + 1) % 6 === 0) {
+      setTimeout(() => {
+        rotateStrike();
+        setCurrentOverBalls([]);
+      }, 500);
+    }
+    
+    // Set which batsman is out and show new batsman dialog
+    if (isStriker) {
+      // Striker is out - will be replaced
+      setPendingWicket('Run Out');
+    } else {
+      // Non-striker is out - need to swap them to striker position first
+      setMatchState(prev => prev ? {
+        ...prev,
+        strikeBatsman: prev.nonStrikeBatsman,
+        nonStrikeBatsman: prev.strikeBatsman
+      } : null);
+      setPendingWicket('Run Out');
+    }
+    
+    setShowWhoIsOutDialog(false);
+    setShowBatsmanDialog(true);
   };
 
   const selectNewBatsman = (newBatsman: LocalPlayer) => {
@@ -748,6 +821,70 @@ export default function Scoreboard() {
               ))}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Run Out Dialog */}
+      <Dialog open={showRunOutDialog} onOpenChange={setShowRunOutDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Run Out - Runs Completed</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              How many runs were completed before the run out?
+            </p>
+            <div className="grid grid-cols-4 gap-3">
+              {[0, 1, 2, 3, 4, 5, 6].map(runs => (
+                <Button
+                  key={runs}
+                  onClick={() => handleRunOut(runs)}
+                  variant="outline"
+                  data-testid={`button-runout-${runs}`}
+                >
+                  Run Out +{runs}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Who Is Out Dialog */}
+      <Dialog open={showWhoIsOutDialog} onOpenChange={setShowWhoIsOutDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Who is Out?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select which batsman was run out:
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <Button
+                onClick={() => handleWhoIsOut(true)}
+                variant="outline"
+                className="h-16 text-left p-4"
+                data-testid="button-striker-out"
+              >
+                <div>
+                  <div className="font-semibold">Striker</div>
+                  <div className="text-sm text-muted-foreground">{matchState.strikeBatsman.name}</div>
+                </div>
+              </Button>
+              <Button
+                onClick={() => handleWhoIsOut(false)}
+                variant="outline"
+                className="h-16 text-left p-4"
+                data-testid="button-non-striker-out"
+              >
+                <div>
+                  <div className="font-semibold">Non-Striker</div>
+                  <div className="text-sm text-muted-foreground">{matchState.nonStrikeBatsman.name}</div>
+                </div>
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
