@@ -88,6 +88,7 @@ export default function Scoreboard() {
   const [matchName, setMatchName] = useState('');
   const [venue, setVenue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [previousBowler, setPreviousBowler] = useState<LocalPlayer | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -720,7 +721,6 @@ export default function Scoreboard() {
   const bowlingTeamPlayers = userTeamBatsFirst ? matchState.opponentTeamPlayers : matchState.myTeamPlayers;
   
   // Store the previous bowler to prevent consecutive overs
-  const [previousBowler, setPreviousBowler] = useState<LocalPlayer | null>(null);
 
   const availableBowlers = bowlingTeamPlayers.filter((player: LocalPlayer) => {
     // Exclude current bowler
