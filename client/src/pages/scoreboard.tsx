@@ -725,12 +725,12 @@ export default function Scoreboard() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 px-3 font-semibold">Name</th>
-                  <th className="text-center py-2 px-3 font-semibold">Runs</th>
-                  <th className="text-center py-2 px-3 font-semibold">Balls</th>
-                  <th className="text-center py-2 px-3 font-semibold">Strike Rate</th>
-                  <th className="text-center py-2 px-3 font-semibold">4's</th>
-                  <th className="text-center py-2 px-3 font-semibold">6's</th>
+                  <th className="text-left py-2 px-3 font-semibold w-2/5">Name</th>
+                  <th className="text-center py-2 px-3 font-semibold w-3/20">Runs</th>
+                  <th className="text-center py-2 px-3 font-semibold w-3/20">Balls</th>
+                  <th className="text-center py-2 px-3 font-semibold w-3/20">Strike Rate</th>
+                  <th className="text-center py-2 px-3 font-semibold w-3/20">4's</th>
+                  <th className="text-center py-2 px-3 font-semibold w-3/20">6's</th>
                 </tr>
               </thead>
               <tbody>
