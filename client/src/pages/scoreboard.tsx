@@ -226,10 +226,28 @@ export default function Scoreboard() {
         catchesTaken: number;
       }> = [];
       
+      // Helper function to find player's userId from team data
+      const findPlayerUserId = (playerName: string) => {
+        // Check in myTeamPlayers
+        const myTeamPlayer = matchState.myTeamPlayers.find(p => p.name === playerName && p.hasAccount && p.username);
+        if (myTeamPlayer && myTeamPlayer.userId) {
+          return myTeamPlayer.userId;
+        }
+        
+        // Check in opponentTeamPlayers  
+        const opponentPlayer = matchState.opponentTeamPlayers.find(p => p.name === playerName && p.hasAccount && p.username);
+        if (opponentPlayer && opponentPlayer.userId) {
+          return opponentPlayer.userId;
+        }
+        
+        return undefined;
+      };
+
       // Add batsman stats
       batsmanStats.forEach(stat => {
+        const userId = findPlayerUserId(stat.player.name);
         allPlayerPerformances.push({
-          userId: stat.player.userId,
+          userId: userId,
           playerName: stat.player.name,
           runsScored: stat.runs,
           ballsFaced: stat.balls,
@@ -242,8 +260,9 @@ export default function Scoreboard() {
       
       // Add bowler stats
       bowlerStats.forEach(stat => {
+        const userId = findPlayerUserId(stat.player.name);
         allPlayerPerformances.push({
-          userId: stat.player.userId,
+          userId: userId,
           playerName: stat.player.name,
           runsScored: 0,
           ballsFaced: 0,
