@@ -13,25 +13,13 @@ export default function SearchPlayers() {
   const [searchInput, setSearchInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
-  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Query for search results (when user clicks search or presses enter)
   const { data: searchResults, isLoading, isError } = useQuery<UserType[]>({
     queryKey: ["search-users", searchTerm],
-    enabled: searchTerm.length >= 1,
+    enabled: searchTerm.length >= 2,
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchTerm)}`);
-      return response.json();
-    },
-  });
-
-  // Query for selected user's statistics
-  const { data: userStats } = useQuery({
-    queryKey: ["user-stats", selectedUser?.id],
-    enabled: !!selectedUser?.id,
-    queryFn: async () => {
-      const response = await apiRequest("GET", `/api/users/${selectedUser?.id}/stats`);
       return response.json();
     },
   });
@@ -48,14 +36,7 @@ export default function SearchPlayers() {
   });
 
   const handleSearch = () => {
-    const term = searchInput.trim();
-    setSearchTerm(term);
-    // If there's exactly one search result, select it automatically
-    if (searchResults && searchResults.length === 1) {
-      setSelectedUser(searchResults[0]);
-    } else {
-      setSelectedUser(null);
-    }
+    setSearchTerm(searchInput.trim());
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -125,7 +106,6 @@ export default function SearchPlayers() {
   const selectSuggestion = (user: UserType) => {
     setSearchInput(user.username || "");
     setSearchTerm(user.username || "");
-    setSelectedUser(user);
     setShowSuggestions(false);
     setActiveSuggestion(-1);
   };
@@ -266,177 +246,89 @@ export default function SearchPlayers() {
             </CardContent>
           </Card>
 
-          {/* Selected User Profile */}
-          {selectedUser && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center space-x-2">
-                    <User className="h-5 w-5" />
-                    <span>Player Profile</span>
-                  </CardTitle>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setSelectedUser(null)}
-                    data-testid="button-clear-selection"
-                  >
-                    Clear
-                  </Button>
+          {/* Search Results */}
+          {searchTerm && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">Search Results for "{searchTerm}"</h2>
+              
+              {isLoading && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                      <span className="text-primary-foreground font-medium text-lg">
-                        {selectedUser.username?.charAt(0).toUpperCase()}
-                      </span>
+              )}
+
+              {isError && (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-muted-foreground">Failed to search players. Please try again.</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {!isLoading && !isError && searchResults && (
+                <>
+                  {searchResults.length === 0 ? (
+                    <Card>
+                      <CardContent className="p-6 text-center">
+                        <p className="text-muted-foreground">No players found matching "{searchTerm}"</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {searchResults.map((player: UserType) => (
+                        <Card key={player.id} className="hover:shadow-md transition-shadow">
+                          <CardHeader className="text-center">
+                            <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-3">
+                              <User className="w-8 h-8 text-primary-foreground" />
+                            </div>
+                            <CardTitle className="text-lg">{player.profileName || "Player"}</CardTitle>
+                            <CardDescription>@{player.username}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            {/* Playing Style */}
+                            <div className="space-y-2">
+                              <div className="flex justify-center">
+                                <Badge variant="secondary" className="text-xs" data-testid={`player-role-${player.id}`}>
+                                  {player.role ? formatRole(player.role) : "Role not specified"}
+                                </Badge>
+                              </div>
+                              <div className="flex justify-center space-x-2">
+                                {player.battingHand && (
+                                  <Badge variant="outline" className="text-xs" data-testid={`player-batting-${player.id}`}>
+                                    {formatBattingHand(player.battingHand)}
+                                  </Badge>
+                                )}
+                                {player.bowlingStyle && (
+                                  <Badge variant="outline" className="text-xs" data-testid={`player-bowling-${player.id}`}>
+                                    {formatBowlingStyle(player.bowlingStyle)}
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Description */}
+                            {player.description && (
+                              <p className="text-sm text-muted-foreground text-center line-clamp-2" data-testid={`player-description-${player.id}`}>
+                                {player.description}
+                              </p>
+                            )}
+
+                            {/* Member Since */}
+                            <div className="text-center text-xs text-muted-foreground">
+                              Member since {player.createdAt ? new Date(player.createdAt).toLocaleDateString() : "N/A"}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                    <div>
-                      <p className="font-medium text-lg text-foreground">
-                        {selectedUser.profileName || selectedUser.username}
-                      </p>
-                      <div className="flex items-center space-x-2">
-                        <p className="text-sm text-muted-foreground">
-                          @{selectedUser.username}
-                        </p>
-                        {selectedUser.role && (
-                          <Badge variant="outline" className="text-xs">
-                            {formatRole(selectedUser.role)}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    {selectedUser.battingHand && (
-                      <Badge variant="secondary" className="text-xs">
-                        {formatBattingHand(selectedUser.battingHand)}
-                      </Badge>
-                    )}
-                    {selectedUser.bowlingStyle && (
-                      <Badge variant="secondary" className="text-xs">
-                        {formatBowlingStyle(selectedUser.bowlingStyle)}
-                      </Badge>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(`/player/${selectedUser.id}`, '_blank')}
-                      data-testid="button-view-profile"
-                    >
-                      View Full Profile
-                    </Button>
-                  </div>
-                </div>
-                
-                {selectedUser.description && (
-                  <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-                    <p className="text-sm text-muted-foreground">{selectedUser.description}</p>
-                  </div>
-                )}
-                
-                {/* Quick Stats */}
-                {userStats && (
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Batting Runs</p>
-                      <p className="text-lg font-semibold">{userStats.battingRuns || 0}</p>
-                    </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Bowling Wickets</p>
-                      <p className="text-lg font-semibold">{userStats.bowlingWickets || 0}</p>
-                    </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Catches</p>
-                      <p className="text-lg font-semibold">{userStats.catches || 0}</p>
-                    </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
-                      <p className="text-sm text-muted-foreground">High Score</p>
-                      <p className="text-lg font-semibold">{userStats.highestScore || 0}</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Search Results List (when multiple results) */}
-          {searchTerm && !selectedUser && searchResults && searchResults.length > 1 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Search Results for "{searchTerm}" ({searchResults.length} found)</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {searchResults.map((player: UserType) => (
-                    <div
-                      key={player.id}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
-                      onClick={() => setSelectedUser(player)}
-                      data-testid={`search-result-${player.id}`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                          <span className="text-primary-foreground font-medium">
-                            {player.username?.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {player.profileName || player.username}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            @{player.username}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {player.role && (
-                          <Badge variant="outline" className="text-xs">
-                            {formatRole(player.role)}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* No Results */}
-          {searchTerm && !selectedUser && searchResults && searchResults.length === 0 && (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <p className="text-muted-foreground">No players found matching "{searchTerm}"</p>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Loading State */}
-          {isLoading && (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Searching for players...</p>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* Error State */}
-          {isError && (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <p className="text-muted-foreground">Failed to search players. Please try again.</p>
-              </CardContent>
-            </Card>
+                  )}
+                </>
+              )}
+            </div>
           )}
 
           {/* Initial State */}
-          {!searchTerm && !selectedUser && (
+          {!searchTerm && (
             <Card>
               <CardContent className="p-12 text-center">
                 <Search className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
