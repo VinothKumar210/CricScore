@@ -345,6 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Local match results endpoint - handles comprehensive match data from scoreboard
   app.post("/api/local-match-results", async (req, res) => {
+    console.log('Received local match results:', JSON.stringify(req.body, null, 2));
     try {
       const localMatchResultsSchema = z.object({
         matchName: z.string().min(1),
