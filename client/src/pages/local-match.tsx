@@ -58,7 +58,7 @@ export default function LocalMatch() {
       case "12":
         return "Max 3 overs per bowler (2 bowlers only)";
       case "15":
-        return "Max 2 overs per bowler";
+        return "Max 3 overs per bowler";
       case "20":
         return "Max 4 overs per bowler";
       default:
