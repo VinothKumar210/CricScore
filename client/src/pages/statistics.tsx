@@ -2,16 +2,29 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Target, Hand, TrendingUp } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useEffect } from 'react';
+import { useAuth } from "@/components/auth/auth-context";
 import type { CareerStats, Match } from "@shared/schema";
 
 export default function Statistics() {
-  const { data: stats, isLoading } = useQuery<CareerStats>({
+  const { user } = useAuth();
+  
+  const { data: stats, isLoading, refetch: refetchStats } = useQuery<CareerStats>({
     queryKey: ["/api/stats"],
   });
 
-  const { data: matches, isLoading: matchesLoading } = useQuery<Match[]>({
+  const { data: matches, isLoading: matchesLoading, refetch: refetchMatches } = useQuery<Match[]>({
     queryKey: ["/api/matches"],
   });
+
+  // Refresh statistics data when user changes or statistics page mounts
+  useEffect(() => {
+    if (user) {
+      // Ensure fresh data from database on statistics page load
+      refetchStats();
+      refetchMatches();
+    }
+  }, [user, refetchStats, refetchMatches]);
 
   if (isLoading || matchesLoading) {
     return (
