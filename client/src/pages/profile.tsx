@@ -162,20 +162,20 @@ export default function Profile() {
     const recentMatches = playerMatches.slice(-10); // Last 10 matches
     const totalMatches = playerMatches.length;
 
-    const battingAverage = playerStats.battingRuns && playerStats.battingInnings
-      ? (playerStats.battingRuns / playerStats.battingInnings).toFixed(2)
+    const battingAverage = playerStats.totalRuns && playerStats.matchesPlayed
+      ? (playerStats.totalRuns / playerStats.matchesPlayed).toFixed(2)
       : '0.00';
 
-    const strikeRate = playerStats.battingRuns && playerStats.ballsFaced
-      ? ((playerStats.battingRuns / playerStats.ballsFaced) * 100).toFixed(2)
+    const strikeRate = playerStats.totalRuns && playerStats.ballsFaced
+      ? ((playerStats.totalRuns / playerStats.ballsFaced) * 100).toFixed(2)
       : '0.00';
 
-    const bowlingAverage = playerStats.bowlingWickets && playerStats.bowlingRuns
-      ? (playerStats.bowlingRuns / playerStats.bowlingWickets).toFixed(2)
+    const bowlingAverage = playerStats.wicketsTaken && playerStats.runsConceded
+      ? (playerStats.runsConceded / playerStats.wicketsTaken).toFixed(2)
       : '0.00';
 
-    const economyRate = playerStats.bowlingRuns && playerStats.bowlingOvers
-      ? (playerStats.bowlingRuns / playerStats.bowlingOvers).toFixed(2)
+    const economyRate = playerStats.runsConceded && playerStats.oversBowled
+      ? (playerStats.runsConceded / playerStats.oversBowled).toFixed(2)
       : '0.00';
 
     return {
@@ -494,23 +494,19 @@ export default function Profile() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm">Runs</span>
-                        <span className="font-medium">{playerStats.battingRuns || 0}</span>
+                        <span className="font-medium">{playerStats.totalRuns || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm">Innings</span>
-                        <span className="font-medium">{playerStats.battingInnings || 0}</span>
+                        <span className="text-sm">Balls Faced</span>
+                        <span className="font-medium">{playerStats.ballsFaced || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm">High Score</span>
-                        <span className="font-medium">{playerStats.highestScore || 0}</span>
+                        <span className="text-sm">Strike Rate</span>
+                        <span className="font-medium">{playerStats.strikeRate ? playerStats.strikeRate.toFixed(2) : '0.00'}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm">Sixes</span>
-                        <span className="font-medium">{playerStats.sixes || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Fours</span>
-                        <span className="font-medium">{playerStats.fours || 0}</span>
+                        <span className="text-sm">Matches</span>
+                        <span className="font-medium">{playerStats.matchesPlayed || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -521,19 +517,19 @@ export default function Profile() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm">Wickets</span>
-                        <span className="font-medium">{playerStats.bowlingWickets || 0}</span>
+                        <span className="font-medium">{playerStats.wicketsTaken || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Runs Given</span>
-                        <span className="font-medium">{playerStats.bowlingRuns || 0}</span>
+                        <span className="font-medium">{playerStats.runsConceded || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm">Overs</span>
-                        <span className="font-medium">{playerStats.bowlingOvers || 0}</span>
+                        <span className="font-medium">{playerStats.oversBowled || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm">Best Figures</span>
-                        <span className="font-medium">{playerStats.bestBowlingFigures || 'N/A'}</span>
+                        <span className="text-sm">Economy</span>
+                        <span className="font-medium">{playerStats.economy ? playerStats.economy.toFixed(2) : '0.00'}</span>
                       </div>
                     </div>
                   </div>
@@ -544,15 +540,11 @@ export default function Profile() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm">Catches</span>
-                        <span className="font-medium">{playerStats.catches || 0}</span>
+                        <span className="font-medium">{playerStats.catchesTaken || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm">Stumpings</span>
-                        <span className="font-medium">{playerStats.stumpings || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Run Outs</span>
-                        <span className="font-medium">{playerStats.runOuts || 0}</span>
+                        <span className="text-sm">Total Matches</span>
+                        <span className="font-medium">{playerStats.matchesPlayed || 0}</span>
                       </div>
                     </div>
                   </div>
