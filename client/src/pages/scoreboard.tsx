@@ -24,6 +24,9 @@ interface MatchState {
   matchOvers: number;
   firstInningsScore?: TeamScore;
   target?: number;
+  matchComplete?: boolean;
+  matchResult?: 'first_team_wins' | 'second_team_wins' | 'draw';
+  winningTeam?: string;
 }
 
 interface BatsmanStats {
@@ -95,6 +98,7 @@ export default function Scoreboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [previousBowler, setPreviousBowler] = useState<LocalPlayer | null>(null);
   const [showInningsTransition, setShowInningsTransition] = useState(false);
+  const [showMatchResult, setShowMatchResult] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -364,13 +368,62 @@ export default function Scoreboard() {
         overs: newOvers
       };
       
-      // Check for innings completion
+      // Check for first innings completion
       if (matchState && !matchState.firstInningsComplete && newOvers >= matchState.matchOvers) {
         handleInningsComplete(updatedScore);
       }
       
+      // Check for second innings/match completion
+      if (matchState && matchState.currentInnings === 2 && !matchState.matchComplete) {
+        setTimeout(() => checkMatchCompletion(updatedScore), 100);
+      }
+      
       return updatedScore;
     });
+  };
+  
+  const checkMatchCompletion = (currentScore: TeamScore) => {
+    if (!matchState || !matchState.target || matchState.matchComplete) return;
+    
+    const targetReached = currentScore.runs >= matchState.target;
+    const oversCompleted = currentScore.overs >= matchState.matchOvers;
+    const allWicketsLost = currentScore.wickets >= 10; // Assuming 11 players, so 10 wickets
+    
+    let matchComplete = false;
+    let result: 'first_team_wins' | 'second_team_wins' | 'draw' | undefined;
+    let winningTeam: string | undefined;
+    
+    if (targetReached) {
+      // Target reached - second batting team wins
+      matchComplete = true;
+      result = 'second_team_wins';
+      winningTeam = matchState.userTeamRole.includes('batting') ? 'Your Team' : 'Opponent Team';
+    } else if (oversCompleted || allWicketsLost) {
+      // Overs completed or all wickets lost - compare scores
+      matchComplete = true;
+      if (currentScore.runs < matchState.target - 1) {
+        // Second team didn't reach target
+        result = 'first_team_wins';
+        winningTeam = matchState.userTeamRole.includes('bowling') ? 'Your Team' : 'Opponent Team';
+      } else if (currentScore.runs === matchState.target - 1) {
+        // Scores are equal
+        result = 'draw';
+      }
+    }
+    
+    if (matchComplete) {
+      setMatchState(prev => prev ? {
+        ...prev,
+        matchComplete: true,
+        matchResult: result,
+        winningTeam: winningTeam
+      } : null);
+      
+      // Show match result dialog
+      setTimeout(() => {
+        setShowMatchResult(true);
+      }, 500);
+    }
   };
   
   const handleInningsComplete = (finalScore: TeamScore) => {
@@ -438,6 +491,9 @@ export default function Scoreboard() {
   };
 
   const handleRunScored = (runs: number) => {
+    // Prevent scoring if match is complete
+    if (matchState?.matchComplete) return;
+    
     // Save current state for undo
     saveStateForUndo();
     
@@ -489,6 +545,9 @@ export default function Scoreboard() {
   };
 
   const handleExtra = (type: 'nb' | 'wd' | 'lb', additionalRuns: number = 0, isLegBye: boolean = false) => {
+    // Prevent extras if match is complete
+    if (matchState?.matchComplete) return;
+    
     if (type === 'nb' && isLegBye) {
       // Add to current over display
       setCurrentOverBalls(prev => [...prev, `NB+LB${additionalRuns}`]);
@@ -595,6 +654,9 @@ export default function Scoreboard() {
   };
 
   const handleWicket = (dismissalType: DismissalType) => {
+    // Prevent wickets if match is complete
+    if (matchState?.matchComplete) return;
+    
     if (dismissalType === 'Run Out') {
       // For run outs, show run options first
       setShowRunOutDialog(true);
@@ -606,10 +668,19 @@ export default function Scoreboard() {
     setCurrentOverBalls(prev => [...prev, 'W']);
     
     // Update team wickets
-    setBattingTeamScore(prev => ({
-      ...prev,
-      wickets: prev.wickets + 1
-    }));
+    setBattingTeamScore(prev => {
+      const updatedScore = {
+        ...prev,
+        wickets: prev.wickets + 1
+      };
+      
+      // Check for match completion in second innings after wicket
+      if (matchState && matchState.currentInnings === 2 && !matchState.matchComplete) {
+        setTimeout(() => checkMatchCompletion(updatedScore), 100);
+      }
+      
+      return updatedScore;
+    });
     
     // Update bowler stats if bowler gets credit
     if (['Bowled', 'Caught', 'LBW', 'Hit Wicket'].includes(dismissalType)) {
@@ -667,10 +738,19 @@ export default function Scoreboard() {
     setCurrentOverBalls(prev => [...prev, runOutRuns === 0 ? 'RO' : `RO+${runOutRuns}`]);
     
     // Update team wickets
-    setBattingTeamScore(prev => ({
-      ...prev,
-      wickets: prev.wickets + 1
-    }));
+    setBattingTeamScore(prev => {
+      const updatedScore = {
+        ...prev,
+        wickets: prev.wickets + 1
+      };
+      
+      // Check for match completion in second innings after wicket
+      if (matchState && matchState.currentInnings === 2 && !matchState.matchComplete) {
+        setTimeout(() => checkMatchCompletion(updatedScore), 100);
+      }
+      
+      return updatedScore;
+    });
     
     // Mark the out batsman with run out details
     const outBatsmanName = isStriker ? matchState.strikeBatsman.name : matchState.nonStrikeBatsman.name;
@@ -1675,6 +1755,82 @@ export default function Scoreboard() {
                 Save Match
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* Match Result Dialog */}
+      <Dialog open={showMatchResult} onOpenChange={() => {}}>
+        <DialogContent className="max-w-md" aria-describedby="match-result-description">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl">
+              {matchState?.matchResult === 'draw' ? '🤝 Match Drawn!' : 
+               '🏆 Match Complete!'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-center" id="match-result-description">
+            {matchState?.matchResult && (
+              <>
+                <div className="text-xl font-semibold text-primary">
+                  {matchState.matchResult === 'draw' 
+                    ? 'Match is a Draw!' 
+                    : `${matchState.winningTeam} Wins!`}
+                </div>
+                
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <div className="font-medium">Final Scores:</div>
+                  <div>
+                    First Innings: {matchState.firstInningsScore?.runs}/{matchState.firstInningsScore?.wickets} 
+                    ({formatOvers(matchState.firstInningsScore?.balls || 0)} ov)
+                  </div>
+                  <div>
+                    Second Innings: {battingTeamScore.runs}/{battingTeamScore.wickets} 
+                    ({formatOvers(battingTeamScore.balls)} ov)
+                  </div>
+                  
+                  {matchState.matchResult === 'second_team_wins' && (
+                    <div className="text-green-600 font-medium mt-2">
+                      Target of {matchState.target} reached with {(matchState.matchOvers * 6) - battingTeamScore.balls} balls remaining!
+                    </div>
+                  )}
+                  
+                  {matchState.matchResult === 'first_team_wins' && (
+                    <div className="text-blue-600 font-medium mt-2">
+                      {battingTeamScore.wickets >= 10 
+                        ? 'All out! Target not reached.'
+                        : `Won by ${(matchState.target || 0) - battingTeamScore.runs - 1} runs`}
+                    </div>
+                  )}
+                  
+                  {matchState.matchResult === 'draw' && (
+                    <div className="text-yellow-600 font-medium mt-2">
+                      Both teams scored equally!
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex justify-center space-x-3 pt-4">
+                  <Button
+                    onClick={() => {
+                      setShowMatchResult(false);
+                      setShowSaveMatchDialog(true);
+                    }}
+                    data-testid="button-save-match-results"
+                  >
+                    Save Match
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowMatchResult(false);
+                      setLocation('/dashboard');
+                    }}
+                    data-testid="button-back-dashboard"
+                  >
+                    Back to Dashboard
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
