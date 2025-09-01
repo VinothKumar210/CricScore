@@ -77,3 +77,14 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+/**
+ * Utility function to refresh user statistics data
+ * This invalidates and refetches statistics and matches data from the API
+ */
+export const refreshUserStatistics = async (): Promise<void> => {
+  await queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/matches"] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+  await queryClient.invalidateQueries({ queryKey: ["/api/invitations"] });
+};
