@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, AlertTriangle, Clock } from "lucide-react";
+import { Users, AlertTriangle, Clock, Check, X, Loader2 } from "lucide-react";
 import { type LocalPlayer } from "@shared/schema";
 
 export default function LocalMatch() {
@@ -32,6 +32,112 @@ export default function LocalMatch() {
       userId: undefined,
     }))
   );
+
+  // Username validation states
+  const [usernameValidation, setUsernameValidation] = useState<Record<string, {
+    isValidating: boolean;
+    isValid: boolean | null;
+    userId?: string;
+  }>>({});
+
+  // Debounced username validation
+  useEffect(() => {
+    const validateUsernames = async () => {
+      const allPlayers = [...myTeamPlayers, ...opponentTeamPlayers];
+      const validationPromises: Promise<void>[] = [];
+
+      allPlayers.forEach((player, index) => {
+        const playerKey = index < 11 ? `my-${index}` : `opp-${index - 11}`;
+        
+        if (player.hasAccount && player.username && player.username.length >= 3) {
+          const promise = validateUsername(player.username, playerKey);
+          validationPromises.push(promise);
+        } else if (player.hasAccount) {
+          // Clear validation for empty usernames
+          setUsernameValidation(prev => ({
+            ...prev,
+            [playerKey]: { isValidating: false, isValid: null }
+          }));
+        }
+      });
+
+      await Promise.all(validationPromises);
+    };
+
+    const timeoutId = setTimeout(validateUsernames, 500); // Debounce for 500ms
+    return () => clearTimeout(timeoutId);
+  }, [myTeamPlayers, opponentTeamPlayers]);
+
+  // Function to validate a single username
+  const validateUsername = async (username: string, playerKey: string) => {
+    setUsernameValidation(prev => ({
+      ...prev,
+      [playerKey]: { isValidating: true, isValid: null }
+    }));
+
+    try {
+      const response = await fetch(`/api/users/check-username?username=${encodeURIComponent(username)}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Username exists (available = false means username is taken, which is what we want)
+        const userExists = !data.available;
+        
+        if (userExists) {
+          // Get user details to store userId
+          const userResponse = await fetch(`/api/users/search?q=${encodeURIComponent(username)}&limit=1`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (userResponse.ok) {
+            const users = await userResponse.json();
+            const user = users.find((u: any) => u.username === username);
+            
+            setUsernameValidation(prev => ({
+              ...prev,
+              [playerKey]: { 
+                isValidating: false, 
+                isValid: true,
+                userId: user?.id 
+              }
+            }));
+
+            // Update the player's userId
+            const isMyTeam = playerKey.startsWith('my-');
+            const playerIndex = parseInt(playerKey.split('-')[1]);
+            
+            if (isMyTeam) {
+              updateMyTeamPlayer(playerIndex, 'userId', user?.id);
+            } else {
+              updateOpponentTeamPlayer(playerIndex, 'userId', user?.id);
+            }
+          } else {
+            setUsernameValidation(prev => ({
+              ...prev,
+              [playerKey]: { isValidating: false, isValid: true }
+            }));
+          }
+        } else {
+          setUsernameValidation(prev => ({
+            ...prev,
+            [playerKey]: { isValidating: false, isValid: false }
+          }));
+        }
+      } else {
+        setUsernameValidation(prev => ({
+          ...prev,
+          [playerKey]: { isValidating: false, isValid: false }
+        }));
+      }
+    } catch (error) {
+      setUsernameValidation(prev => ({
+        ...prev,
+        [playerKey]: { isValidating: false, isValid: false }
+      }));
+    }
+  };
 
   const updateMyTeamPlayer = (index: number, field: keyof LocalPlayer, value: any) => {
     setMyTeamPlayers(prev => {
@@ -253,13 +359,31 @@ export default function LocalMatch() {
                           data-testid={`input-my-team-player-${index + 1}`}
                         />
                         {player.hasAccount && (
-                          <Input
-                            placeholder="@username"
-                            value={player.username || ""}
-                            onChange={(e) => updateMyTeamPlayer(index, "username", e.target.value)}
-                            data-testid={`input-my-team-username-${index + 1}`}
-                            className="text-sm"
-                          />
+                          <div className="relative">
+                            <Input
+                              placeholder="@username"
+                              value={player.username || ""}
+                              onChange={(e) => updateMyTeamPlayer(index, "username", e.target.value)}
+                              data-testid={`input-my-team-username-${index + 1}`}
+                              className="text-sm pr-8"
+                            />
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              {(() => {
+                                const validation = usernameValidation[`my-${index}`];
+                                if (!player.username || player.username.length < 3) return null;
+                                if (validation?.isValidating) {
+                                  return <Loader2 className="h-4 w-4 animate-spin text-gray-400" />;
+                                }
+                                if (validation?.isValid === true) {
+                                  return <Check className="h-4 w-4 text-green-500" data-testid={`icon-valid-my-${index + 1}`} />;
+                                }
+                                if (validation?.isValid === false) {
+                                  return <X className="h-4 w-4 text-red-500" data-testid={`icon-invalid-my-${index + 1}`} />;
+                                }
+                                return null;
+                              })()}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </TableCell>
@@ -310,13 +434,31 @@ export default function LocalMatch() {
                           data-testid={`input-opponent-team-player-${index + 1}`}
                         />
                         {player.hasAccount && (
-                          <Input
-                            placeholder="@username"
-                            value={player.username || ""}
-                            onChange={(e) => updateOpponentTeamPlayer(index, "username", e.target.value)}
-                            data-testid={`input-opponent-team-username-${index + 1}`}
-                            className="text-sm"
-                          />
+                          <div className="relative">
+                            <Input
+                              placeholder="@username"
+                              value={player.username || ""}
+                              onChange={(e) => updateOpponentTeamPlayer(index, "username", e.target.value)}
+                              data-testid={`input-opponent-team-username-${index + 1}`}
+                              className="text-sm pr-8"
+                            />
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              {(() => {
+                                const validation = usernameValidation[`opp-${index}`];
+                                if (!player.username || player.username.length < 3) return null;
+                                if (validation?.isValidating) {
+                                  return <Loader2 className="h-4 w-4 animate-spin text-gray-400" />;
+                                }
+                                if (validation?.isValid === true) {
+                                  return <Check className="h-4 w-4 text-green-500" data-testid={`icon-valid-opp-${index + 1}`} />;
+                                }
+                                if (validation?.isValid === false) {
+                                  return <X className="h-4 w-4 text-red-500" data-testid={`icon-invalid-opp-${index + 1}`} />;
+                                }
+                                return null;
+                              })()}
+                            </div>
+                          </div>
                         )}
                       </div>
                     </TableCell>
