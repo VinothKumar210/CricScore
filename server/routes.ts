@@ -407,7 +407,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             // Calculate derived stats
             const strikeRate = newBallsFaced > 0 ? (newTotalRuns / newBallsFaced) * 100 : 0;
-            const economy = newOversBowled > 0 ? newRunsConceded / newOversBowled : 0;
+            // Convert cricket overs to decimal for proper economy calculation
+            const convertOversToDecimal = (cricketOvers: number): number => {
+              const wholeOvers = Math.floor(cricketOvers);
+              const balls = Math.round((cricketOvers - wholeOvers) * 10);
+              return wholeOvers + (balls / 6);
+            };
+            const decimalOversBowled = convertOversToDecimal(newOversBowled);
+            const economy = decimalOversBowled > 0 ? newRunsConceded / decimalOversBowled : 0;
 
             await storage.updateCareerStats(performance.userId, {
               matchesPlayed: newMatchesPlayed,

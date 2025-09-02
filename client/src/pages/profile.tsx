@@ -183,8 +183,15 @@ export default function Profile() {
       ? (playerStats.runsConceded / playerStats.wicketsTaken).toFixed(2)
       : '0.00';
 
-    const economyRate = playerStats.runsConceded && playerStats.oversBowled
-      ? (playerStats.runsConceded / playerStats.oversBowled).toFixed(2)
+    // Convert cricket overs to decimal for proper economy calculation
+    const convertOversToDecimal = (cricketOvers: number): number => {
+      const wholeOvers = Math.floor(cricketOvers);
+      const balls = Math.round((cricketOvers - wholeOvers) * 10);
+      return wholeOvers + (balls / 6);
+    };
+    const decimalOvers = playerStats.oversBowled ? convertOversToDecimal(playerStats.oversBowled) : 0;
+    const economyRate = playerStats.runsConceded && decimalOvers > 0
+      ? (playerStats.runsConceded / decimalOvers).toFixed(2)
       : '0.00';
 
     return {
