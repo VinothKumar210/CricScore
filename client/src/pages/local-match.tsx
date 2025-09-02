@@ -84,34 +84,36 @@ export default function LocalMatch() {
         const userExists = !data.available;
         
         if (userExists) {
-          // Get user details to store userId
-          const userResponse = await fetch(`/api/users/search?q=${encodeURIComponent(username)}&limit=1`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-            }
-          });
+          // Get user details to store userId using public endpoint
+          const userResponse = await fetch(`/api/users/lookup-username?username=${encodeURIComponent(username)}`);
           
           if (userResponse.ok) {
-            const users = await userResponse.json();
-            const user = users.find((u: any) => u.username === username);
+            const result = await userResponse.json();
             
-            setUsernameValidation(prev => ({
-              ...prev,
-              [playerKey]: { 
-                isValidating: false, 
-                isValid: true,
-                userId: user?.id 
-              }
-            }));
+            if (result.found) {
+              setUsernameValidation(prev => ({
+                ...prev,
+                [playerKey]: { 
+                  isValidating: false, 
+                  isValid: true,
+                  userId: result.user.id 
+                }
+              }));
 
-            // Update the player's userId
-            const isMyTeam = playerKey.startsWith('my-');
-            const playerIndex = parseInt(playerKey.split('-')[1]);
-            
-            if (isMyTeam) {
-              updateMyTeamPlayer(playerIndex, 'userId', user?.id);
+              // Update the player's userId
+              const isMyTeam = playerKey.startsWith('my-');
+              const playerIndex = parseInt(playerKey.split('-')[1]);
+              
+              if (isMyTeam) {
+                updateMyTeamPlayer(playerIndex, 'userId', result.user.id);
+              } else {
+                updateOpponentTeamPlayer(playerIndex, 'userId', result.user.id);
+              }
             } else {
-              updateOpponentTeamPlayer(playerIndex, 'userId', user?.id);
+              setUsernameValidation(prev => ({
+                ...prev,
+                [playerKey]: { isValidating: false, isValid: true }
+              }));
             }
           } else {
             setUsernameValidation(prev => ({

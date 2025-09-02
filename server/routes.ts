@@ -749,6 +749,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public route for getting basic user info by username (for local match setup)
+  app.get("/api/users/lookup-username", async (req, res) => {
+    try {
+      const { username } = req.query;
+      
+      if (!username || typeof username !== 'string') {
+        return res.status(400).json({ message: "Username parameter required" });
+      }
+      
+      const user = await storage.getUserByUsername(username);
+      
+      if (user) {
+        // Return only safe, public information needed for local match setup
+        return res.json({
+          found: true,
+          user: {
+            id: user.id,
+            username: user.username,
+            profileName: user.profileName
+          }
+        });
+      } else {
+        return res.json({
+          found: false,
+          message: "Username not found"
+        });
+      }
+    } catch (error) {
+      console.error("Error looking up username:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get user by ID route
   app.get("/api/users/:id", authenticateToken, async (req: any, res) => {
     try {
