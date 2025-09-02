@@ -224,19 +224,17 @@ export default function Profile() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="space-y-6">
           {/* Header */}
-          {!isOwnProfile && (
-            <div className="flex items-center space-x-4 mb-6">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setLocation("/dashboard")}
-                data-testid="button-back-dashboard"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center space-x-4 mb-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setLocation("/dashboard")}
+              data-testid="button-back-dashboard"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back
+            </Button>
+          </div>
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold text-foreground">
               {isOwnProfile ? "Your Profile" : `${user.profileName || user.username}'s Profile`}
