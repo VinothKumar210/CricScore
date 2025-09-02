@@ -1087,6 +1087,30 @@ export default function Scoreboard() {
                 First innings: {matchState.firstInningsScore.runs}/{matchState.firstInningsScore.wickets} ({formatOvers(matchState.firstInningsScore.balls)} ov)
               </div>
             )}
+            
+            {/* Current Batsmen and Bowler at bottom */}
+            <div className="flex justify-between items-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              {/* Current Batsmen - Bottom Left */}
+              <div className="text-left">
+                <div className="text-xs text-muted-foreground mb-1">Current Batsmen</div>
+                <div className="space-y-1">
+                  <div className="text-sm font-medium">
+                    {matchState.strikeBatsman.name}* {getCurrentBatsmanStats(true).runs}({getCurrentBatsmanStats(true).balls})
+                  </div>
+                  <div className="text-sm">
+                    {matchState.nonStrikeBatsman.name} {getCurrentBatsmanStats(false).runs}({getCurrentBatsmanStats(false).balls})
+                  </div>
+                </div>
+              </div>
+              
+              {/* Current Bowler - Bottom Right */}
+              <div className="text-right">
+                <div className="text-xs text-muted-foreground mb-1">Current Bowler</div>
+                <div className="text-sm font-medium">
+                  {matchState.currentBowler.name} {getCurrentBowlerStats().wickets}-{getCurrentBowlerStats().runs}, {getCurrentBowlerStats().overs}
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
