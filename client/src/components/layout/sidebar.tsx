@@ -42,8 +42,16 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
       <div className="p-6 border-b border-border">
         <Link href="/profile" onClick={onNavigate}>
           <div className="flex items-center space-x-3 cursor-pointer hover:bg-accent rounded-md p-2 transition-colors" data-testid="nav-profile">
-            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">{getProfileInitial(user?.profileName)}</span>
+            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center overflow-hidden">
+              {(user as any)?.profilePictureUrl ? (
+                <img 
+                  src={(user as any).profilePictureUrl} 
+                  alt="Profile picture" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-primary-foreground font-bold">{getProfileInitial(user?.profileName)}</span>
+              )}
             </div>
             <div>
               <h1 className="text-lg font-bold text-foreground">{user?.profileName || 'Player'}</h1>

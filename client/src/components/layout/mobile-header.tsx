@@ -37,10 +37,18 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
         </div>
         <h1 className="text-lg font-semibold text-foreground">CricketScore Pro</h1>
         <Link href="/profile">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center cursor-pointer">
-            <span className="text-primary-foreground font-bold text-sm">
-              {getProfileInitial(user?.profileName)}
-            </span>
+          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center cursor-pointer overflow-hidden">
+            {(user as any)?.profilePictureUrl ? (
+              <img 
+                src={(user as any).profilePictureUrl} 
+                alt="Profile picture" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-primary-foreground font-bold text-sm">
+                {getProfileInitial(user?.profileName)}
+              </span>
+            )}
           </div>
         </Link>
       </div>
