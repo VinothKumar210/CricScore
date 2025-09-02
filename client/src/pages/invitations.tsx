@@ -116,7 +116,6 @@ export default function Invitations() {
       <h2 className="text-xl sm:text-2xl font-bold text-foreground" data-testid="title-invitations">
         Team Invitations
       </h2>
-      
       <div className="space-y-6">
         {/* Pending Invitations */}
         <Card>
@@ -162,7 +161,7 @@ export default function Invitations() {
                       >
                         <Check className="mr-1 h-4 w-4" />
                         <span className="hidden xs:inline">Accept</span>
-                        <span className="xs:hidden">✓</span>
+                        <span className="xs:hidden">Accept</span>
                       </Button>
                       <Button
                         size="sm"
