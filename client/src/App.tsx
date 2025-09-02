@@ -1,6 +1,6 @@
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/components/auth/auth-context";
@@ -26,6 +26,13 @@ import { useEffect, useState } from "react";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Fetch pending invitations to show notification badge
+  const { data: invitations } = useQuery<any[]>({
+    queryKey: ["/api/invitations"],
+  });
+
+  const hasPendingInvitations = invitations && invitations.length > 0;
 
   return (
     <div className="flex h-screen bg-background">
@@ -54,6 +61,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         <MobileHeader
           isMenuOpen={isMobileMenuOpen}
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          hasPendingInvitations={hasPendingInvitations}
         />
         {children}
       </main>

@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-context";
+import { useQuery } from "@tanstack/react-query";
 import { Users, BarChart3, Plus, Mail, LogOut, Gauge, Search, UserPlus } from "lucide-react";
 
 interface SidebarProps {
@@ -11,6 +12,13 @@ interface SidebarProps {
 export function Sidebar({ className, onNavigate }: SidebarProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+
+  // Fetch pending invitations to show notification badge
+  const { data: invitations } = useQuery<any[]>({
+    queryKey: ["/api/invitations"],
+  });
+
+  const hasPendingInvitations = invitations && invitations.length > 0;
 
   // Get first alphabetic letter from profile name
   const getProfileInitial = (profileName?: string) => {
@@ -49,6 +57,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         {navigation.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.href;
+          const isInvitations = item.name === "Invitations";
           
           return (
             <Link
@@ -57,7 +66,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               onClick={onNavigate}
               data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
               className={cn(
-                "flex items-center space-x-3 px-3 py-2 rounded-md transition-colors",
+                "flex items-center space-x-3 px-3 py-2 rounded-md transition-colors relative",
                 isActive
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -65,6 +74,9 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
             >
               <Icon className="w-5 h-5" />
               <span>{item.name}</span>
+              {isInvitations && hasPendingInvitations && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-card" />
+              )}
             </Link>
           );
         })}
