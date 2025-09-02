@@ -87,7 +87,7 @@ export default function LocalMatch() {
           // Get user details to store userId
           const userResponse = await fetch(`/api/users/search?q=${encodeURIComponent(username)}&limit=1`, {
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
+              'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
             }
           });
           
