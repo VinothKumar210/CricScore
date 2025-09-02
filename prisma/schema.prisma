@@ -17,6 +17,7 @@ model User {
   username        String?  @unique
   profileName     String?
   description     String?
+  profilePictureUrl String?
   role            Role?
   battingHand     BattingHand?
   bowlingStyle    BowlingStyle?

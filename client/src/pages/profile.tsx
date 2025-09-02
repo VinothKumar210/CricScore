@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { User, Mail, Calendar, Trophy, Edit, Save, X, ArrowLeft, Target, TrendingUp, Award, BarChart3 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { User, Mail, Calendar, Trophy, Edit, Save, X, ArrowLeft, Target, TrendingUp, Award, BarChart3, Camera, Upload } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -27,6 +27,8 @@ export default function Profile() {
   const [, setLocation] = useLocation();
   const { user: currentUser, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -100,6 +102,7 @@ export default function Profile() {
     defaultValues: {
       profileName: "",
       description: "",
+      profilePictureUrl: "",
       role: undefined as any,
       battingHand: undefined as any,
       bowlingStyle: undefined as any,
@@ -112,10 +115,12 @@ export default function Profile() {
       form.reset({
         profileName: user.profileName || "",
         description: user.description || "",
+        profilePictureUrl: (user as any).profilePictureUrl || "",
         role: user.role || undefined,
         battingHand: user.battingHand || undefined,
         bowlingStyle: user.bowlingStyle || undefined,
       });
+      setProfilePicturePreview((user as any).profilePictureUrl || null);
     }
   }, [user, form]);
 
@@ -154,10 +159,12 @@ export default function Profile() {
 
   const handleCancel = () => {
     try {
+      setProfilePicturePreview((user as any)?.profilePictureUrl || null);
       if (user) {
         form.reset({
           profileName: user.profileName || "",
           description: user.description || "",
+          profilePictureUrl: (user as any).profilePictureUrl || "",
           role: user.role || undefined,
           battingHand: user.battingHand || undefined,
           bowlingStyle: user.bowlingStyle || undefined,
@@ -166,6 +173,45 @@ export default function Profile() {
       setIsEditing(false);
     } catch (error) {
       setIsEditing(false);
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        setProfilePicturePreview(dataUrl);
+        form.setValue('profilePictureUrl', dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleProfilePictureClick = () => {
+    if (isOwnProfile && isEditing) {
+      fileInputRef.current?.click();
     }
   };
 
@@ -284,9 +330,37 @@ export default function Profile() {
                   )}
                 </div>
               )}
-              <div className="mx-auto w-20 h-20 bg-primary rounded-full flex items-center justify-center mb-4">
-                <User className="w-10 h-10 text-primary-foreground" />
+              <div 
+                className={`mx-auto w-20 h-20 bg-primary rounded-full flex items-center justify-center mb-4 overflow-hidden ${
+                  isOwnProfile && isEditing ? "cursor-pointer hover:opacity-80 transition-opacity" : ""
+                }`}
+                onClick={handleProfilePictureClick}
+                data-testid="profile-picture-container"
+              >
+                {profilePicturePreview || (user as any)?.profilePictureUrl ? (
+                  <img 
+                    src={profilePicturePreview || (user as any)?.profilePictureUrl} 
+                    alt="Profile picture" 
+                    className="w-full h-full object-cover"
+                    data-testid="img-profile-picture"
+                  />
+                ) : (
+                  <User className="w-10 h-10 text-primary-foreground" />
+                )}
+                {isOwnProfile && isEditing && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
+                )}
               </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+                data-testid="input-profile-picture"
+              />
               <CardTitle className="text-2xl">{user.profileName || "Player"}</CardTitle>
               <CardDescription className="text-lg">@{user.username}</CardDescription>
             </CardHeader>
