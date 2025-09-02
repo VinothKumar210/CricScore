@@ -173,7 +173,7 @@ export default function Invitations() {
                       >
                         <X className="mr-1 h-4 w-4" />
                         <span className="hidden xs:inline">Decline</span>
-                        <span className="xs:hidden">✕</span>
+                        <span className="xs:hidden">Reject</span>
                       </Button>
                     </div>
                   </div>
