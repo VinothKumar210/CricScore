@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -97,6 +98,7 @@ export default function Scoreboard() {
   const [showInningsTransition, setShowInningsTransition] = useState(false);
   const [showMatchResult, setShowMatchResult] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     // Get match data from localStorage
@@ -214,8 +216,8 @@ export default function Scoreboard() {
     setIsPostingStats(true);
     
     try {
-      // Collect all player performances
-      const allPlayerPerformances: Array<{
+      // Collect all player performances and merge batting/bowling stats
+      const playerPerformanceMap = new Map<string, {
         userId?: string;
         playerName: string;
         runsScored: number;
@@ -224,7 +226,7 @@ export default function Scoreboard() {
         runsConceded: number;
         wicketsTaken: number;
         catchesTaken: number;
-      }> = [];
+      }>();
       
       // Helper function to find player's userId from team data
       const findPlayerUserId = (playerName: string) => {
@@ -243,35 +245,55 @@ export default function Scoreboard() {
         return undefined;
       };
 
-      // Add batsman stats
+      // Process batsman stats
       batsmanStats.forEach(stat => {
         const userId = findPlayerUserId(stat.player.name);
-        allPlayerPerformances.push({
-          userId: userId,
-          playerName: stat.player.name,
-          runsScored: stat.runs,
-          ballsFaced: stat.balls,
-          oversBowled: 0,
-          runsConceded: 0,
-          wicketsTaken: 0,
-          catchesTaken: 0
-        });
+        const playerName = stat.player.name;
+        
+        if (playerPerformanceMap.has(playerName)) {
+          const existing = playerPerformanceMap.get(playerName)!;
+          existing.runsScored = stat.runs;
+          existing.ballsFaced = stat.balls;
+        } else {
+          playerPerformanceMap.set(playerName, {
+            userId: userId,
+            playerName: playerName,
+            runsScored: stat.runs,
+            ballsFaced: stat.balls,
+            oversBowled: 0,
+            runsConceded: 0,
+            wicketsTaken: 0,
+            catchesTaken: 0
+          });
+        }
       });
       
-      // Add bowler stats
+      // Process bowler stats
       bowlerStats.forEach(stat => {
         const userId = findPlayerUserId(stat.player.name);
-        allPlayerPerformances.push({
-          userId: userId,
-          playerName: stat.player.name,
-          runsScored: 0,
-          ballsFaced: 0,
-          oversBowled: stat.overs + (stat.balls / 6),
-          runsConceded: stat.runs,
-          wicketsTaken: stat.wickets,
-          catchesTaken: 0
-        });
+        const playerName = stat.player.name;
+        
+        if (playerPerformanceMap.has(playerName)) {
+          const existing = playerPerformanceMap.get(playerName)!;
+          existing.oversBowled = stat.overs + (stat.balls / 6);
+          existing.runsConceded = stat.runs;
+          existing.wicketsTaken = stat.wickets;
+        } else {
+          playerPerformanceMap.set(playerName, {
+            userId: userId,
+            playerName: playerName,
+            runsScored: 0,
+            ballsFaced: 0,
+            oversBowled: stat.overs + (stat.balls / 6),
+            runsConceded: stat.runs,
+            wicketsTaken: stat.wickets,
+            catchesTaken: 0
+          });
+        }
       });
+
+      // Convert map to array
+      const allPlayerPerformances = Array.from(playerPerformanceMap.values());
 
       console.log('Auto-posting player performances to backend:', allPlayerPerformances);
       
@@ -299,12 +321,28 @@ export default function Scoreboard() {
 
       if (response.ok) {
         const result = await response.json();
+        
+        // Invalidate stats and matches cache to ensure fresh data is loaded
+        if (typeof window !== 'undefined' && window.location) {
+          // Clear any cached user stats so they're refetched when user visits stats page
+          queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/matches'] });
+        }
+        
         toast({
-          title: "Stats Updated",
-          description: `Career stats updated for ${result.playersWithAccounts} players.`,
+          title: "Stats Updated Successfully!",
+          description: `Career statistics updated for ${result.playersWithAccounts || 0} players with accounts.`,
         });
+        
+        console.log('Stats update results:', result);
       } else {
-        console.error('Failed to post stats automatically');
+        const errorText = await response.text();
+        console.error('Failed to post stats automatically:', errorText);
+        toast({
+          title: "Stats Update Failed",
+          description: "There was an issue updating player statistics. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error posting stats:', error);
