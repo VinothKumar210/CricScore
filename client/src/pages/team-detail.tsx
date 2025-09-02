@@ -27,6 +27,9 @@ export default function TeamDetail() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searchError, setSearchError] = useState<string>("");
   const [referrerPage, setReferrerPage] = useState<string>("/dashboard");
 
   // Detect where the user came from
@@ -173,6 +176,9 @@ export default function TeamDetail() {
       setIsInviteDialogOpen(false);
       setSearchTerm("");
       setSearchResults([]);
+      setSelectedUser(null);
+      setShowDropdown(false);
+      setSearchError("");
     },
     onError: (error: any) => {
       toast({
@@ -183,25 +189,97 @@ export default function TeamDetail() {
     },
   });
 
-  // Search for players
+  // Live search effect
+  useEffect(() => {
+    const performLiveSearch = async () => {
+      if (searchTerm.trim().length < 2) {
+        setSearchResults([]);
+        setShowDropdown(false);
+        setSearchError("");
+        return;
+      }
+      
+      try {
+        const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchTerm.trim())}`);
+        const users = await response.json();
+        setSearchResults(users.slice(0, 10)); // Limit to 10 results
+        setShowDropdown(users.length > 0);
+        setSearchError("");
+      } catch (error) {
+        setSearchResults([]);
+        setShowDropdown(false);
+        setSearchError("Failed to search players");
+      }
+    };
+
+    const delayedSearch = setTimeout(performLiveSearch, 300); // Debounce search
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm]);
+
+  // Handle user selection from dropdown
+  const handleUserSelect = (player: User) => {
+    setSelectedUser(player);
+    setSearchTerm(player.profileName || player.username || "");
+    setShowDropdown(false);
+    setSearchError("");
+  };
+
+  // Handle manual search button click
   const handleSearch = async () => {
     if (searchTerm.trim().length < 2) {
-      setSearchResults([]);
+      setSearchError("Please enter at least 2 characters");
       return;
     }
     
     try {
       const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchTerm.trim())}`);
       const users = await response.json();
-      setSearchResults(users);
+      
+      if (users.length === 0) {
+        setSearchError("No users found with that username");
+        setSelectedUser(null);
+        return;
+      }
+      
+      // If exact match found, select it
+      const exactMatch = users.find((u: User) => 
+        u.username?.toLowerCase() === searchTerm.trim().toLowerCase() ||
+        u.profileName?.toLowerCase() === searchTerm.trim().toLowerCase()
+      );
+      
+      if (exactMatch) {
+        handleUserSelect(exactMatch);
+      } else {
+        setSearchResults(users.slice(0, 10));
+        setShowDropdown(true);
+        setSearchError("");
+      }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to search players",
-        variant: "destructive",
-      });
+      setSearchError("Failed to search players");
+      setSelectedUser(null);
     }
   };
+
+  // Handle invite action
+  const handleInvite = () => {
+    if (!selectedUser) {
+      setSearchError("Please select a user from the dropdown or search results");
+      return;
+    }
+    
+    sendInviteMutation.mutate(selectedUser.username || "");
+  };
+
+  // Reset state when dialog opens/closes
+  useEffect(() => {
+    if (!isInviteDialogOpen) {
+      setSearchTerm("");
+      setSearchResults([]);
+      setSelectedUser(null);
+      setShowDropdown(false);
+      setSearchError("");
+    }
+  }, [isInviteDialogOpen]);
 
   if (!team || isLoading) {
     return (
@@ -581,73 +659,106 @@ export default function TeamDetail() {
             </DialogHeader>
             
             <div className="space-y-4">
-              {/* Search Input */}
-              <div className="flex space-x-2">
-                <Input
-                  placeholder="Search by username..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-                  data-testid="input-search-username"
-                />
-                <Button onClick={handleSearch} variant="outline" data-testid="button-search">
-                  <Search className="h-4 w-4" />
-                </Button>
+              {/* Search Input with Dropdown */}
+              <div className="relative">
+                <div className="flex space-x-2">
+                  <div className="relative flex-1">
+                    <Input
+                      placeholder="Search by username or profile name..."
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setSelectedUser(null); // Clear selection when typing
+                      }}
+                      onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                      onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                      data-testid="input-search-username"
+                      className={searchError ? "border-red-500" : ""}
+                    />
+                    
+                    {/* Live Search Dropdown */}
+                    {showDropdown && searchResults.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        {searchResults.map((player) => {
+                          const isAlreadyMember = members?.some(member => member.id === player.id);
+                          
+                          return (
+                            <div
+                              key={player.id}
+                              className="flex items-center justify-between p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                              onClick={() => !isAlreadyMember && handleUserSelect(player)}
+                              data-testid={`dropdown-item-${player.id}`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                                  <span className="text-primary-foreground text-sm font-medium">
+                                    {(player.profileName || player.username)?.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                                <div>
+                                  <p className="font-medium text-sm">
+                                    {player.profileName || player.username}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    @{player.username}
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              {isAlreadyMember && (
+                                <Badge variant="outline" className="text-xs">
+                                  Already member
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <Button onClick={handleSearch} variant="outline" data-testid="button-search">
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {/* Error Message */}
+                {searchError && (
+                  <p className="text-sm text-red-500 mt-2" data-testid="search-error">
+                    {searchError}
+                  </p>
+                )}
               </div>
               
-              {/* Search Results */}
-              {searchResults.length > 0 && (
-                <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {searchResults.map((player) => {
-                    // Check if player is already a member
-                    const isAlreadyMember = members?.some(member => member.id === player.id);
-                    
-                    return (
-                      <div
-                        key={player.id}
-                        className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                        data-testid={`search-result-${player.id}`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                            <span className="text-primary-foreground text-sm font-medium">
-                              {player.username?.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">
-                              {player.profileName || player.username}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              @{player.username}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        {isAlreadyMember ? (
-                          <Badge variant="outline" className="text-xs">
-                            Already member
-                          </Badge>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => sendInviteMutation.mutate(player.username || "")}
-                            disabled={sendInviteMutation.isPending}
-                            data-testid={`button-invite-${player.id}`}
-                          >
-                            {sendInviteMutation.isPending ? "Sending..." : "Invite"}
-                          </Button>
-                        )}
+              {/* Selected User Display */}
+              {selectedUser && (
+                <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm font-medium">
+                          {(selectedUser.profileName || selectedUser.username)?.charAt(0).toUpperCase()}
+                        </span>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-              
-              {searchTerm.length >= 2 && searchResults.length === 0 && (
-                <div className="text-center py-4 text-muted-foreground">
-                  <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No players found</p>
+                      <div>
+                        <p className="font-medium text-sm text-green-800 dark:text-green-200">
+                          {selectedUser.profileName || selectedUser.username}
+                        </p>
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          @{selectedUser.username}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <Button
+                      size="sm"
+                      onClick={handleInvite}
+                      disabled={sendInviteMutation.isPending}
+                      data-testid="button-invite-selected"
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {sendInviteMutation.isPending ? "Sending..." : "Send Invite"}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
