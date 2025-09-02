@@ -184,9 +184,9 @@ export default function Profile() {
       ? ((playerStats.totalRuns / playerStats.ballsFaced) * 100).toFixed(2)
       : '0.00';
 
-    const bowlingAverage = playerStats.wicketsTaken && playerStats.runsConceded
+    const bowlingAverage = playerStats.wicketsTaken && playerStats.wicketsTaken > 0
       ? (playerStats.runsConceded / playerStats.wicketsTaken).toFixed(2)
-      : '0.00';
+      : playerStats.runsConceded > 0 ? '∞' : '0.00';
 
     // Convert cricket overs to decimal for proper economy calculation
     const convertOversToDecimal = (cricketOvers: number): number => {
