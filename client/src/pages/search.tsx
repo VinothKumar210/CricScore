@@ -104,8 +104,9 @@ export default function SearchPlayers() {
   };
 
   const selectSuggestion = (user: UserType) => {
-    setSearchInput(user.username || "");
-    setSearchTerm(user.username || "");
+    const searchValue = user.profileName || user.username || "";
+    setSearchInput(searchValue);
+    setSearchTerm(searchValue);
     setShowSuggestions(false);
     setActiveSuggestion(-1);
   };
