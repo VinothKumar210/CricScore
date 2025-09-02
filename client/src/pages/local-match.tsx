@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, AlertTriangle, Clock, Check, X, Loader2 } from "lucide-react";
+import { Users, AlertTriangle, Clock, Check, X, Loader2, ArrowLeft } from "lucide-react";
 import { type LocalPlayer } from "@shared/schema";
 
 export default function LocalMatch() {
@@ -271,9 +271,20 @@ export default function LocalMatch() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-foreground" data-testid="title-local-match">
-          Local Match - Select Playing XI
-        </h2>
+        <div className="flex items-center mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation('/')}
+            className="mr-4"
+            data-testid="button-back-to-dashboard"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h2 className="text-2xl font-bold text-foreground" data-testid="title-local-match">
+            Local Match - Select Playing XI
+          </h2>
+        </div>
         <p className="text-muted-foreground mt-2">
           Add players for each team and configure match details. Both teams must have equal number of players.
         </p>
