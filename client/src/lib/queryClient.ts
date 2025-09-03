@@ -3,7 +3,22 @@ import { authService } from "./auth";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
+    let errorData;
+    try {
+      errorData = await res.json();
+    } catch {
+      errorData = { message: res.statusText };
+    }
+    
+    // If the error has field-specific information, preserve it
+    if (errorData.field && errorData.message) {
+      const error = new Error(errorData.message) as Error & { field?: string };
+      error.field = errorData.field;
+      throw error;
+    }
+    
+    // Otherwise, throw a regular error
+    const text = errorData.message || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
 }

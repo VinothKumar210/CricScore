@@ -26,6 +26,9 @@ export default function Login() {
 
   async function onSubmit(values: LoginRequest) {
     setIsLoading(true);
+    // Clear any existing field errors
+    form.clearErrors();
+    
     try {
       const user = await login(values.email, values.password);
       toast({
@@ -42,11 +45,27 @@ export default function Login() {
         }
       }, 100);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to login",
-        variant: "destructive",
-      });
+      // Check if this is a field-specific error from the backend
+      if (error.message && error.field) {
+        if (error.field === "email") {
+          form.setError("email", {
+            type: "manual",
+            message: error.message
+          });
+        } else if (error.field === "password") {
+          form.setError("password", {
+            type: "manual",
+            message: error.message
+          });
+        }
+      } else {
+        // Fallback to toast for other errors
+        toast({
+          title: "Error",
+          description: error.message || "Failed to login",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
