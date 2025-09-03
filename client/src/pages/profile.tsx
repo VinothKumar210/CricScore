@@ -274,8 +274,8 @@ export default function Profile() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setLocation("/dashboard")}
-              data-testid="button-back-dashboard"
+              onClick={() => setLocation("/search")}
+              data-testid="button-back-search"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
