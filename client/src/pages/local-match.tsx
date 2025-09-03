@@ -76,7 +76,6 @@ export default function LocalMatch() {
           Add players for each team and configure match details. Both teams must have equal number of players.
         </p>
       </div>
-
       {/* Match Configuration */}
       <Card className="mb-6">
         <CardHeader>
@@ -112,7 +111,6 @@ export default function LocalMatch() {
           </div>
         </CardContent>
       </Card>
-
       {/* Team Size Validation Alert */}
       {bothTeamsHavePlayers && !teamsEqual && (
         <Alert className="mb-6 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
@@ -122,7 +120,6 @@ export default function LocalMatch() {
           </AlertDescription>
         </Alert>
       )}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* My Team */}
         <Card>
@@ -238,7 +235,6 @@ export default function LocalMatch() {
           </CardContent>
         </Card>
       </div>
-
       <div className="mt-6 flex justify-center">
         <Button 
           onClick={() => {
@@ -247,11 +243,8 @@ export default function LocalMatch() {
           disabled={!bothTeamsHavePlayers || !teamsEqual}
           data-testid="button-save-local-match"
           className="px-8"
-        >
-          Save Local Match
-        </Button>
+        >Start Match</Button>
       </div>
-      
       {/* Additional Info */}
       {bothTeamsHavePlayers && teamsEqual && (
         <div className="mt-4 text-center">
