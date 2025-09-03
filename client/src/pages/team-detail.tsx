@@ -574,8 +574,9 @@ export default function TeamDetail() {
       </div>
 
       {/* Action Buttons - Top Right Corner */}
-      {canManageMembers && (
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10 flex gap-2">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10 flex gap-2">
+        {/* Edit Button - Captain and Vice Captain */}
+        {canManageMembers && (
           <Button
             variant="outline"
             size="sm"
@@ -585,42 +586,44 @@ export default function TeamDetail() {
             <Edit className="mr-2 h-4 w-4" />
             <span className="hidden sm:inline">Edit</span>
           </Button>
-          {isCaptain && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  data-testid="button-delete-team"
+        )}
+        
+        {/* Delete Button - Captain Only */}
+        {isCaptain && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="sm"
+                data-testid="button-delete-team"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Delete Team</span>
+                <span className="sm:hidden">Delete</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Team</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to permanently delete "{team.name}"? This action cannot be undone. All team members, invitations, and team data will be permanently removed.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteTeam}
+                  disabled={deleteTeamMutation.isPending}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  data-testid="confirm-delete-team"
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Delete Team</span>
-                  <span className="sm:hidden">Delete</span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Team</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to permanently delete "{team.name}"? This action cannot be undone. All team members, invitations, and team data will be permanently removed.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteTeam}
-                    disabled={deleteTeamMutation.isPending}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    data-testid="confirm-delete-team"
-                  >
-                    {deleteTeamMutation.isPending ? "Deleting..." : "Delete Team"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
-      )}
+                  {deleteTeamMutation.isPending ? "Deleting..." : "Delete Team"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
 
       {/* Header */}
       <div className="space-y-4">
