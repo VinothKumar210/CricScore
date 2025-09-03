@@ -509,7 +509,45 @@ export default function TeamDetail() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6 relative">
+      {/* Delete Team Button - Top Right Corner */}
+      {isCaptain && (
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="xs"
+                data-testid="button-delete-team"
+              >
+                <Trash2 className="mr-1 h-3 w-3" />
+                <span className="hidden sm:inline">Delete</span>
+                <span className="sm:hidden">×</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Team</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to permanently delete "{team.name}"? This action cannot be undone. All team members, invitations, and team data will be permanently removed.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteTeam}
+                  disabled={deleteTeamMutation.isPending}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  data-testid="confirm-delete-team"
+                >
+                  {deleteTeamMutation.isPending ? "Deleting..." : "Delete Team"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
+
       {/* Header */}
       <div className="space-y-4">
         {/* Back button - full width on mobile */}
@@ -526,7 +564,7 @@ export default function TeamDetail() {
         </div>
         
         {/* Team info and actions */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pr-16 sm:pr-20">
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold text-foreground break-words" data-testid="title-team-name">
               {team.name}
@@ -538,52 +576,19 @@ export default function TeamDetail() {
           
           <div className="flex flex-wrap items-center gap-2">
             {isCaptain && (
-              <>
-                <Badge variant="default" className="flex items-center space-x-1 shrink-0">
-                  <Crown className="h-3 w-3" />
-                  <span className="hidden sm:inline">Captain</span>
-                  <span className="sm:hidden">Cap</span>
-                </Badge>
-                <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    data-testid="button-delete-team"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Team
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Team</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to permanently delete "{team.name}"? This action cannot be undone. All team members, invitations, and team data will be permanently removed.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteTeam}
-                      disabled={deleteTeamMutation.isPending}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      data-testid="confirm-delete-team"
-                    >
-                      {deleteTeamMutation.isPending ? "Deleting..." : "Delete Team"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </>
-          )}
-          {isViceCaptain && (
-            <Badge variant="secondary" className="flex items-center space-x-1">
-              <Shield className="h-3 w-3" />
-              <span>Vice Captain</span>
-            </Badge>
-          )}
-        </div>
+              <Badge variant="default" className="flex items-center space-x-1 shrink-0">
+                <Crown className="h-3 w-3" />
+                <span className="hidden sm:inline">Captain</span>
+                <span className="sm:hidden">Cap</span>
+              </Badge>
+            )}
+            {isViceCaptain && (
+              <Badge variant="secondary" className="flex items-center space-x-1">
+                <Shield className="h-3 w-3" />
+                <span>Vice Captain</span>
+              </Badge>
+            )}
+          </div>
         </div>
       </div>
 
