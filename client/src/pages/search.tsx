@@ -201,7 +201,7 @@ export default function SearchPlayers() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium text-sm truncate leading-tight">
-                                    {user.profileName || user.username}
+                                    {user.profileName || "Player"}
                                   </p>
                                   <div className="flex items-center justify-between mt-1">
                                     <p className="text-xs text-muted-foreground truncate flex-1 min-w-0 mr-2">
