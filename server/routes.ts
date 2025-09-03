@@ -474,6 +474,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/teams/search", authenticateToken, async (req, res) => {
+    try {
+      const { q } = req.query;
+      
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ message: "Search query parameter 'q' required" });
+      }
+      
+      if (q.trim().length < 1) {
+        return res.status(400).json({ message: "Search query must be at least 1 character" });
+      }
+      
+      const teams = await storage.searchTeams(q.trim());
+      res.json(teams);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
   app.post("/api/teams", authenticateToken, async (req: any, res) => {
     try {
       const validatedData = insertTeamSchema.parse({
