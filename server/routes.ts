@@ -530,6 +530,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update team information (captain and vice captain can edit)
+  app.put("/api/teams/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const team = await storage.getTeam(req.params.id);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      // Check if user is captain or vice captain
+      if (team.captainId !== req.userId && team.viceCaptainId !== req.userId) {
+        return res.status(403).json({ message: "Only team captain or vice captain can edit team information" });
+      }
+
+      // Validate request body
+      const updateSchema = z.object({
+        name: z.string().min(1).max(50).optional(),
+        description: z.string().max(500).optional()
+      });
+
+      const validatedData = updateSchema.parse(req.body);
+      
+      // Update the team
+      const updatedTeam = await storage.updateTeam(req.params.id, validatedData);
+      if (!updatedTeam) {
+        return res.status(500).json({ message: "Failed to update team" });
+      }
+
+      res.json(updatedTeam);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      return handleDatabaseError(error, res);
+    }
+  });
+
   // Delete team by ID (only captain can delete)
   app.delete("/api/teams/:id", authenticateToken, async (req: any, res) => {
     try {
