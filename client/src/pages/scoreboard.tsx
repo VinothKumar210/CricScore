@@ -23,6 +23,8 @@ interface MatchState {
   currentInnings: 1 | 2;
   firstInningsComplete: boolean;
   matchOvers: number;
+  maxOversPerBowler?: number;
+  bowlersAtMaxOvers?: number;
   firstInningsScore?: TeamScore;
   target?: number;
   matchComplete?: boolean;
@@ -101,15 +103,28 @@ export default function Scoreboard() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // Helper function to parse positive integers from localStorage
+    const parsePosInt = (v: string | null) => {
+      const n = Number(v);
+      return Number.isFinite(n) && n > 0 ? Math.floor(n) : undefined;
+    };
+    
     // Get match data from localStorage
     const savedMatchData = localStorage.getItem('matchData');
     const savedPlayers = localStorage.getItem('selectedPlayers');
     const savedMatchOvers = localStorage.getItem('matchOvers');
+    const savedMaxOversPerBowler = localStorage.getItem('maxOversPerBowler');
+    const savedBowlersAtMaxOvers = localStorage.getItem('bowlersAtMaxOvers');
     
     if (savedMatchData && savedPlayers && savedMatchOvers) {
       const matchData = JSON.parse(savedMatchData);
       const players = JSON.parse(savedPlayers);
-      const matchOvers = parseInt(savedMatchOvers);
+      const matchOvers = parsePosInt(savedMatchOvers);
+      
+      if (!matchOvers) {
+        console.error('Invalid match overs from localStorage');
+        return;
+      }
       
       const initialMatchState: MatchState = {
         ...matchData,
@@ -118,7 +133,9 @@ export default function Scoreboard() {
         currentBowler: players.bowler,
         currentInnings: 1,
         firstInningsComplete: false,
-        matchOvers: matchOvers
+        matchOvers: matchOvers,
+        maxOversPerBowler: parsePosInt(savedMaxOversPerBowler),
+        bowlersAtMaxOvers: parsePosInt(savedBowlersAtMaxOvers)
       };
       
       setMatchState(initialMatchState);
@@ -1015,15 +1032,67 @@ export default function Scoreboard() {
   
   // Store the previous bowler to prevent consecutive overs
 
-  const availableBowlers = bowlingTeamPlayers.filter((player: LocalPlayer) => {
+  // First pass: Apply all restrictions including previous bowler rule
+  let availableBowlers = bowlingTeamPlayers.filter((player: LocalPlayer) => {
     // Exclude current bowler
     if (player.name === matchState?.currentBowler.name) return false;
     
     // Exclude previous bowler to prevent consecutive overs (unless it's the first over)
     if (previousBowler && player.name === previousBowler.name && battingTeamScore.balls > 0) return false;
     
+    // Derive safe values for bowling restrictions
+    const maxPer = matchState?.maxOversPerBowler ?? null;
+    const maxCount = matchState?.bowlersAtMaxOvers ?? null;
+    
+    // Check bowling restrictions for max overs per bowler
+    if (maxPer) {
+      const stat = bowlerStats.find(s => s.player.name === player.name);
+      const balls = stat?.balls ?? 0;
+      const oversCompleted = Math.floor(balls / 6);
+      
+      // Rule 1: Never allow a bowler to exceed their personal maximum (always enforced when maxPer is set)
+      if (oversCompleted >= maxPer) return false;
+      
+      // Rule 2: If this bowler would reach max overs and the cap is already saturated, block them
+      if (maxCount) {
+        const bowlersAtCap = bowlerStats.filter(s => Math.floor((s.balls ?? 0) / 6) >= maxPer).length;
+        if (oversCompleted === maxPer - 1 && bowlersAtCap >= maxCount) {
+          return false; // This would exceed the allowed number of bowlers at max overs
+        }
+      }
+    }
+    
     return true;
   });
+  
+  // Fallback: If no bowlers available and we have a previous bowler constraint, relax it
+  if (availableBowlers.length === 0 && previousBowler && battingTeamScore.balls > 0) {
+    availableBowlers = bowlingTeamPlayers.filter((player: LocalPlayer) => {
+      // Only exclude current bowler, allow previous bowler as fallback
+      if (player.name === matchState?.currentBowler.name) return false;
+      
+      // Apply bowling restrictions but allow previous bowler
+      const maxPer = matchState?.maxOversPerBowler ?? null;
+      const maxCount = matchState?.bowlersAtMaxOvers ?? null;
+      
+      if (maxPer) {
+        const stat = bowlerStats.find(s => s.player.name === player.name);
+        const balls = stat?.balls ?? 0;
+        const oversCompleted = Math.floor(balls / 6);
+        
+        if (oversCompleted >= maxPer) return false;
+        
+        if (maxCount) {
+          const bowlersAtCap = bowlerStats.filter(s => Math.floor((s.balls ?? 0) / 6) >= maxPer).length;
+          if (oversCompleted === maxPer - 1 && bowlersAtCap >= maxCount) {
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    });
+  }
 
   const formatOvers = (balls: number) => {
     const overs = Math.floor(balls / 6);
