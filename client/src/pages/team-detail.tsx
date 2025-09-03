@@ -11,13 +11,160 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { apiRequest } from "@/lib/queryClient";
-import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search, Trash2, Edit } from "lucide-react";
+import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search, Trash2, Edit, BarChart3, Trophy, Target, Zap, Timer } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Team, User } from "@shared/schema";
 
 interface TeamMember extends User {
   isViceCaptain?: boolean;
+}
+
+interface TeamStatisticsData {
+  matchesPlayed: number;
+  matchesWon: number;
+  matchesLost: number;
+  matchesDrawn: number;
+  winRatio: number;
+  topRunScorer?: User;
+  topRunScorerRuns: number;
+  topWicketTaker?: User;
+  topWicketTakerWickets: number;
+  bestStrikeRatePlayer?: User;
+  bestStrikeRate: number;
+  bestEconomyPlayer?: User;
+  bestEconomy: number;
+}
+
+function TeamStatistics({ teamId }: { teamId: string }) {
+  const { data: stats, isLoading } = useQuery<TeamStatisticsData>({
+    queryKey: ["/api/teams", teamId, "statistics"],
+  });
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="h-20 bg-muted rounded-lg"></div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+        <p className="text-lg font-medium">No statistics available</p>
+        <p className="text-sm">Play some team matches to see statistics</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Match Statistics */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <Trophy className="mr-2 h-5 w-5 text-yellow-500" />
+          Match Performance
+        </h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-muted/50 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-primary">{stats.matchesPlayed}</div>
+            <div className="text-sm text-muted-foreground">Matches Played</div>
+          </div>
+          <div className="bg-green-50 dark:bg-green-950 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">{stats.matchesWon}</div>
+            <div className="text-sm text-muted-foreground">Wins</div>
+          </div>
+          <div className="bg-red-50 dark:bg-red-950 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-red-600">{stats.matchesLost}</div>
+            <div className="text-sm text-muted-foreground">Losses</div>
+          </div>
+          <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600">{(stats.winRatio * 100).toFixed(1)}%</div>
+            <div className="text-sm text-muted-foreground">Win Ratio</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Performers */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <Target className="mr-2 h-5 w-5 text-blue-500" />
+          Top Performers
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Top Run Scorer */}
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Top Run Scorer</span>
+              <TrendingUp className="h-4 w-4 text-green-500" />
+            </div>
+            {stats.topRunScorer ? (
+              <div>
+                <div className="font-semibold">{stats.topRunScorer.profileName || stats.topRunScorer.username}</div>
+                <div className="text-2xl font-bold text-green-600">{stats.topRunScorerRuns} runs</div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">No data available</div>
+            )}
+          </div>
+
+          {/* Top Wicket Taker */}
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Top Wicket Taker</span>
+              <Target className="h-4 w-4 text-red-500" />
+            </div>
+            {stats.topWicketTaker ? (
+              <div>
+                <div className="font-semibold">{stats.topWicketTaker.profileName || stats.topWicketTaker.username}</div>
+                <div className="text-2xl font-bold text-red-600">{stats.topWicketTakerWickets} wickets</div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">No data available</div>
+            )}
+          </div>
+
+          {/* Best Strike Rate */}
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Best Strike Rate (50+ runs)</span>
+              <Zap className="h-4 w-4 text-yellow-500" />
+            </div>
+            {stats.bestStrikeRatePlayer ? (
+              <div>
+                <div className="font-semibold">{stats.bestStrikeRatePlayer.profileName || stats.bestStrikeRatePlayer.username}</div>
+                <div className="text-2xl font-bold text-yellow-600">{stats.bestStrikeRate.toFixed(1)}</div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">Minimum 50 runs required</div>
+            )}
+          </div>
+
+          {/* Most Economical Bowler */}
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Best Economy (5+ overs)</span>
+              <Timer className="h-4 w-4 text-purple-500" />
+            </div>
+            {stats.bestEconomyPlayer ? (
+              <div>
+                <div className="font-semibold">{stats.bestEconomyPlayer.profileName || stats.bestEconomyPlayer.username}</div>
+                <div className="text-2xl font-bold text-purple-600">{stats.bestEconomy.toFixed(2)}</div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">Minimum 5 overs required</div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function TeamDetail() {
@@ -655,6 +802,19 @@ export default function TeamDetail() {
           </div>
         </div>
       </div>
+
+      {/* Team Statistics */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <BarChart3 className="h-5 w-5" />
+            <span>Team Statistics</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TeamStatistics teamId={id!} />
+        </CardContent>
+      </Card>
 
       {/* Team Members */}
       <Card>

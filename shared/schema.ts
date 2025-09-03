@@ -73,6 +73,51 @@ export const insertMatchSchema = z.object({
   catchesTaken: z.number().int().min(0),
 });
 
+export const insertTeamMatchSchema = z.object({
+  homeTeamId: z.string(),
+  awayTeamId: z.string(),
+  matchDate: z.date(),
+  venue: z.string().min(1),
+  status: z.enum(["UPCOMING", "ONGOING", "COMPLETED", "CANCELLED"]).default("COMPLETED"),
+  result: z.enum(["HOME_WIN", "AWAY_WIN", "DRAW"]).optional(),
+  homeTeamRuns: z.number().int().min(0).default(0),
+  homeTeamWickets: z.number().int().min(0).max(10).default(0),
+  homeTeamOvers: z.number().min(0).default(0),
+  awayTeamRuns: z.number().int().min(0).default(0),
+  awayTeamWickets: z.number().int().min(0).max(10).default(0),
+  awayTeamOvers: z.number().min(0).default(0),
+});
+
+export const insertTeamMatchPlayerSchema = z.object({
+  teamMatchId: z.string(),
+  userId: z.string(),
+  teamId: z.string(),
+  runsScored: z.number().int().min(0).default(0),
+  ballsFaced: z.number().int().min(0).default(0),
+  wasDismissed: z.boolean().default(false),
+  oversBowled: z.number().min(0).default(0),
+  runsConceded: z.number().int().min(0).default(0),
+  wicketsTaken: z.number().int().min(0).default(0),
+  catchesTaken: z.number().int().min(0).default(0),
+});
+
+export const insertTeamStatisticsSchema = z.object({
+  teamId: z.string(),
+  matchesPlayed: z.number().int().min(0).default(0),
+  matchesWon: z.number().int().min(0).default(0),
+  matchesLost: z.number().int().min(0).default(0),
+  matchesDrawn: z.number().int().min(0).default(0),
+  winRatio: z.number().min(0).max(1).default(0),
+  topRunScorerId: z.string().optional(),
+  topRunScorerRuns: z.number().int().min(0).default(0),
+  topWicketTakerId: z.string().optional(),
+  topWicketTakerWickets: z.number().int().min(0).default(0),
+  bestStrikeRatePlayerId: z.string().optional(),
+  bestStrikeRate: z.number().min(0).default(0),
+  bestEconomyPlayerId: z.string().optional(),
+  bestEconomy: z.number().min(0).default(0),
+});
+
 // Frontend form schema for match input
 export const matchFormSchema = insertMatchSchema.omit({ userId: true }).extend({
   matchDate: z.string(),
@@ -138,6 +183,9 @@ export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 export type InsertTeamInvitation = z.infer<typeof insertTeamInvitationSchema>;
 export type InsertMatch = z.infer<typeof insertMatchSchema>;
+export type InsertTeamMatch = z.infer<typeof insertTeamMatchSchema>;
+export type InsertTeamMatchPlayer = z.infer<typeof insertTeamMatchPlayerSchema>;
+export type InsertTeamStatistics = z.infer<typeof insertTeamStatisticsSchema>;
 export type LocalPlayer = z.infer<typeof localPlayerSchema>;
 export type InsertLocalMatch = z.infer<typeof insertLocalMatchSchema>;
 export type LocalMatchForm = z.infer<typeof localMatchFormSchema>;
@@ -146,4 +194,4 @@ export type LoginRequest = z.infer<typeof loginSchema>;
 export type RegisterRequest = z.infer<typeof registerSchema>;
 
 // Re-export Prisma model types
-export type { User, CareerStats, Team, TeamMember, TeamInvitation, Match } from "@prisma/client";
+export type { User, CareerStats, Team, TeamMember, TeamInvitation, Match, TeamMatch, TeamMatchPlayer, TeamStatistics } from "@prisma/client";

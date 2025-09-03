@@ -7,6 +7,9 @@ import type {
   TeamMember,
   TeamInvitation,
   Match,
+  TeamMatch,
+  TeamMatchPlayer,
+  TeamStatistics,
 } from "@prisma/client";
 import type {
   InsertUser,
@@ -15,6 +18,9 @@ import type {
   InsertTeamMember,
   InsertTeamInvitation,
   InsertMatch,
+  InsertTeamMatch,
+  InsertTeamMatchPlayer,
+  InsertTeamStatistics,
   ProfileSetup,
 } from "@shared/schema";
 
@@ -59,6 +65,21 @@ export interface IStorage {
   
   // Auth operations
   validatePassword(email: string, password: string): Promise<{ user: User | null; errorType?: 'EMAIL_NOT_FOUND' | 'WRONG_PASSWORD' }>;
+  
+  // Team match operations
+  createTeamMatch(teamMatch: InsertTeamMatch): Promise<TeamMatch>;
+  getTeamMatch(id: string): Promise<TeamMatch | undefined>;
+  getTeamMatches(teamId: string): Promise<TeamMatch[]>;
+  
+  // Team match player operations
+  createTeamMatchPlayer(player: InsertTeamMatchPlayer): Promise<TeamMatchPlayer>;
+  getTeamMatchPlayers(teamMatchId: string): Promise<(TeamMatchPlayer & { user: User })[]>;
+  
+  // Team statistics operations
+  getTeamStatistics(teamId: string): Promise<TeamStatistics | undefined>;
+  createTeamStatistics(stats: InsertTeamStatistics): Promise<TeamStatistics>;
+  updateTeamStatistics(teamId: string, stats: Partial<TeamStatistics>): Promise<TeamStatistics | undefined>;
+  calculateAndUpdateTeamStatistics(teamId: string): Promise<void>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -545,6 +566,256 @@ export class PrismaStorage implements IStorage {
     }
     
     return { user };
+  }
+
+  // Team match operations
+  async createTeamMatch(teamMatch: InsertTeamMatch): Promise<TeamMatch> {
+    return await prisma.teamMatch.create({
+      data: teamMatch
+    });
+  }
+
+  async getTeamMatch(id: string): Promise<TeamMatch | undefined> {
+    try {
+      const match = await prisma.teamMatch.findUnique({
+        where: { id }
+      });
+      return match || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getTeamMatches(teamId: string): Promise<TeamMatch[]> {
+    try {
+      const matches = await prisma.teamMatch.findMany({
+        where: {
+          OR: [
+            { homeTeamId: teamId },
+            { awayTeamId: teamId }
+          ]
+        },
+        include: {
+          homeTeam: true,
+          awayTeam: true
+        },
+        orderBy: { matchDate: 'desc' }
+      });
+      return matches;
+    } catch {
+      return [];
+    }
+  }
+
+  // Team match player operations
+  async createTeamMatchPlayer(player: InsertTeamMatchPlayer): Promise<TeamMatchPlayer> {
+    return await prisma.teamMatchPlayer.create({
+      data: player
+    });
+  }
+
+  async getTeamMatchPlayers(teamMatchId: string): Promise<(TeamMatchPlayer & { user: User })[]> {
+    try {
+      const players = await prisma.teamMatchPlayer.findMany({
+        where: { teamMatchId },
+        include: { user: true }
+      });
+      return players;
+    } catch {
+      return [];
+    }
+  }
+
+  // Team statistics operations
+  async getTeamStatistics(teamId: string): Promise<TeamStatistics | undefined> {
+    try {
+      const stats = await prisma.teamStatistics.findUnique({
+        where: { teamId },
+        include: {
+          topRunScorer: true,
+          topWicketTaker: true,
+          bestStrikeRatePlayer: true,
+          bestEconomyPlayer: true
+        }
+      });
+      return stats || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async createTeamStatistics(stats: InsertTeamStatistics): Promise<TeamStatistics> {
+    return await prisma.teamStatistics.create({
+      data: stats
+    });
+  }
+
+  async updateTeamStatistics(teamId: string, stats: Partial<TeamStatistics>): Promise<TeamStatistics | undefined> {
+    try {
+      const updatedStats = await prisma.teamStatistics.update({
+        where: { teamId },
+        data: stats
+      });
+      return updatedStats;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async calculateAndUpdateTeamStatistics(teamId: string): Promise<void> {
+    try {
+      // Get all team matches for this team
+      const teamMatches = await this.getTeamMatches(teamId);
+      
+      if (teamMatches.length === 0) {
+        return;
+      }
+
+      // Calculate basic match statistics
+      let matchesPlayed = 0;
+      let matchesWon = 0;
+      let matchesLost = 0;
+      let matchesDrawn = 0;
+
+      for (const match of teamMatches) {
+        if (match.status === 'COMPLETED') {
+          matchesPlayed++;
+          
+          if (match.result === 'HOME_WIN' && match.homeTeamId === teamId) {
+            matchesWon++;
+          } else if (match.result === 'AWAY_WIN' && match.awayTeamId === teamId) {
+            matchesWon++;
+          } else if (match.result === 'DRAW') {
+            matchesDrawn++;
+          } else {
+            matchesLost++;
+          }
+        }
+      }
+
+      const winRatio = matchesPlayed > 0 ? matchesWon / matchesPlayed : 0;
+
+      // Get all player performances for this team
+      const teamMatchIds = teamMatches.map(m => m.id);
+      const allPlayerStats = await prisma.teamMatchPlayer.findMany({
+        where: {
+          teamMatchId: { in: teamMatchIds },
+          teamId: teamId
+        },
+        include: { user: true }
+      });
+
+      // Calculate top performers
+      let topRunScorerId: string | undefined;
+      let topRunScorerRuns = 0;
+      let topWicketTakerId: string | undefined;
+      let topWicketTakerWickets = 0;
+      let bestStrikeRatePlayerId: string | undefined;
+      let bestStrikeRate = 0;
+      let bestEconomyPlayerId: string | undefined;
+      let bestEconomy = Infinity;
+
+      // Aggregate stats by player
+      const playerAggregates = new Map<string, {
+        runs: number;
+        ballsFaced: number;
+        wickets: number;
+        oversBowled: number;
+        runsConceded: number;
+      }>();
+
+      for (const stat of allPlayerStats) {
+        const existing = playerAggregates.get(stat.userId) || {
+          runs: 0,
+          ballsFaced: 0,
+          wickets: 0,
+          oversBowled: 0,
+          runsConceded: 0
+        };
+        
+        existing.runs += stat.runsScored;
+        existing.ballsFaced += stat.ballsFaced;
+        existing.wickets += stat.wicketsTaken;
+        existing.oversBowled += stat.oversBowled;
+        existing.runsConceded += stat.runsConceded;
+        
+        playerAggregates.set(stat.userId, existing);
+      }
+
+      // Find top performers
+      for (const [userId, stats] of playerAggregates) {
+        // Top run scorer
+        if (stats.runs > topRunScorerRuns) {
+          topRunScorerRuns = stats.runs;
+          topRunScorerId = userId;
+        }
+
+        // Top wicket taker
+        if (stats.wickets > topWicketTakerWickets) {
+          topWicketTakerWickets = stats.wickets;
+          topWicketTakerId = userId;
+        }
+
+        // Best strike rate (minimum 50 runs)
+        if (stats.runs >= 50 && stats.ballsFaced > 0) {
+          const strikeRate = (stats.runs / stats.ballsFaced) * 100;
+          if (strikeRate > bestStrikeRate) {
+            bestStrikeRate = strikeRate;
+            bestStrikeRatePlayerId = userId;
+          }
+        }
+
+        // Best economy (minimum 5 overs)
+        if (stats.oversBowled >= 5) {
+          const decimalOvers = this.convertOversToDecimal(stats.oversBowled);
+          const economy = stats.runsConceded / decimalOvers;
+          if (economy < bestEconomy) {
+            bestEconomy = economy;
+            bestEconomyPlayerId = userId;
+          }
+        }
+      }
+
+      // Create or update team statistics
+      const existingStats = await this.getTeamStatistics(teamId);
+      
+      if (existingStats) {
+        await this.updateTeamStatistics(teamId, {
+          matchesPlayed,
+          matchesWon,
+          matchesLost,
+          matchesDrawn,
+          winRatio: parseFloat(winRatio.toFixed(3)),
+          topRunScorerId,
+          topRunScorerRuns,
+          topWicketTakerId,
+          topWicketTakerWickets,
+          bestStrikeRatePlayerId,
+          bestStrikeRate: parseFloat(bestStrikeRate.toFixed(2)),
+          bestEconomyPlayerId,
+          bestEconomy: bestEconomy === Infinity ? 0 : parseFloat(bestEconomy.toFixed(2)),
+        });
+      } else {
+        await this.createTeamStatistics({
+          teamId,
+          matchesPlayed,
+          matchesWon,
+          matchesLost,
+          matchesDrawn,
+          winRatio: parseFloat(winRatio.toFixed(3)),
+          topRunScorerId,
+          topRunScorerRuns,
+          topWicketTakerId,
+          topWicketTakerWickets,
+          bestStrikeRatePlayerId,
+          bestStrikeRate: parseFloat(bestStrikeRate.toFixed(2)),
+          bestEconomyPlayerId,
+          bestEconomy: bestEconomy === Infinity ? 0 : parseFloat(bestEconomy.toFixed(2)),
+        });
+      }
+    } catch (error) {
+      console.error('Error calculating team statistics:', error);
+    }
   }
 }
 

@@ -596,6 +596,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get team statistics
+  app.get("/api/teams/:id/statistics", authenticateToken, async (req, res) => {
+    try {
+      const stats = await storage.getTeamStatistics(req.params.id);
+      
+      if (!stats) {
+        // Return empty statistics if none exist
+        return res.json({
+          matchesPlayed: 0,
+          matchesWon: 0,
+          matchesLost: 0,
+          matchesDrawn: 0,
+          winRatio: 0,
+          topRunScorer: null,
+          topRunScorerRuns: 0,
+          topWicketTaker: null,
+          topWicketTakerWickets: 0,
+          bestStrikeRatePlayer: null,
+          bestStrikeRate: 0,
+          bestEconomyPlayer: null,
+          bestEconomy: 0,
+        });
+      }
+
+      res.json(stats);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
   app.get("/api/teams/:id/members", authenticateToken, async (req, res) => {
     try {
       const members = await storage.getTeamMembers(req.params.id);
