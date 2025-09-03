@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { User as UserType } from "@shared/schema";
 
 export default function SearchPlayers() {
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -279,7 +281,12 @@ export default function SearchPlayers() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {searchResults.map((player: UserType) => (
-                        <Card key={player.id} className="hover:shadow-md transition-shadow">
+                        <Card 
+                          key={player.id} 
+                          className="hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => setLocation(`/player/${player.id}`)}
+                          data-testid={`player-card-${player.id}`}
+                        >
                           <CardHeader className="text-center">
                             <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-3">
                               <User className="w-8 h-8 text-primary-foreground" />
