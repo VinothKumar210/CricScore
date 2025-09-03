@@ -509,10 +509,11 @@ export default function TeamDetail() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="space-y-4">
+        {/* Back button - full width on mobile */}
+        <div className="flex items-center">
           <Button
             variant="outline"
             size="sm"
@@ -522,23 +523,28 @@ export default function TeamDetail() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             {referrerPage === "/teams" ? "Back to Teams" : "Back to Dashboard"}
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground" data-testid="title-team-name">
+        </div>
+        
+        {/* Team info and actions */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-bold text-foreground break-words" data-testid="title-team-name">
               {team.name}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mt-1">
               {team.description || "No description provided"}
             </p>
           </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          {isCaptain && (
-            <>
-              <Badge variant="default" className="flex items-center space-x-1">
-                <Crown className="h-3 w-3" />
-                <span>Captain</span>
-              </Badge>
-              <AlertDialog>
+          
+          <div className="flex flex-wrap items-center gap-2">
+            {isCaptain && (
+              <>
+                <Badge variant="default" className="flex items-center space-x-1 shrink-0">
+                  <Crown className="h-3 w-3" />
+                  <span className="hidden sm:inline">Captain</span>
+                  <span className="sm:hidden">Cap</span>
+                </Badge>
+                <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="destructive"
@@ -577,6 +583,7 @@ export default function TeamDetail() {
               <span>Vice Captain</span>
             </Badge>
           )}
+        </div>
         </div>
       </div>
 
