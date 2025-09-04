@@ -1027,15 +1027,18 @@ export default function Scoreboard() {
     // For second innings, we need to select both openers if current batsmen are not set yet
     if (matchState?.currentInnings === 2 && !matchState.strikeBatsman.name) {
       // This is the first batsman for second innings - set as striker
-      setBatsmanStats([{
-        player: newBatsman,
-        runs: 0,
-        balls: 0,
-        fours: 0,
-        sixes: 0,
-        strikeRate: 0,
-        isOut: false
-      }]);
+      setBatsmanStats(prev => [
+        ...prev,
+        {
+          player: newBatsman,
+          runs: 0,
+          balls: 0,
+          fours: 0,
+          sixes: 0,
+          strikeRate: 0,
+          isOut: false
+        }
+      ]);
       
       setMatchState(prev => prev ? {
         ...prev,
