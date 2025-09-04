@@ -205,12 +205,14 @@ export default function MatchScoring() {
               
               <Button
                 onClick={() => {
-                  // TODO: Navigate to actual scoring interface
-                  console.log('Starting scoring with:', {
+                  // Store selected players for scoreboard
+                  const selectedPlayers = {
                     strikeBatsman: selectedStrikeBatsman,
                     nonStrikeBatsman: selectedNonStrikeBatsman,
                     bowler: selectedBowler
-                  });
+                  };
+                  localStorage.setItem('selectedPlayers', JSON.stringify(selectedPlayers));
+                  setLocation('/scoreboard');
                 }}
                 data-testid="button-begin-scoring"
               >
