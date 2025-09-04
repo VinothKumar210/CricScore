@@ -1213,124 +1213,127 @@ export default function Scoreboard() {
   };
 
   return (
-    <div className="p-4 max-w-6xl mx-auto space-y-6">
-      {/* Match Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center text-2xl">
-            {userTeamBatsFirst ? 'Your Team' : 'Opponent Team'} Batting
-            <Badge className="ml-2" variant={matchState.currentInnings === 1 ? "default" : "secondary"}>
-              {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center">
-            <div className="text-4xl font-bold text-primary mb-2">
-              {battingTeamScore.runs}/{battingTeamScore.wickets}
-            </div>
-            <div className="text-lg text-muted-foreground mb-2">
-              Overs: {formatOvers(battingTeamScore.balls)}/{matchState.matchOvers}
-            </div>
-            
-            {/* Target and Required Run Rate for 2nd Innings */}
-            {matchState.currentInnings === 2 && matchState.target && (
-              <div className="mt-4 p-3 bg-sky-50 dark:bg-slate-700 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-red-600">Target: {matchState.target}</div>
-                    <div className="text-muted-foreground">To Win</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-blue-600">
-                      {matchState.target - battingTeamScore.runs}
-                    </div>
-                    <div className="text-muted-foreground">Runs Needed</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-green-600">
-                      {(() => {
-                        const ballsRemaining = (matchState.matchOvers * 6) - battingTeamScore.balls;
-                        const oversRemaining = ballsRemaining / 6;
-                        const runsNeeded = matchState.target - battingTeamScore.runs;
-                        return oversRemaining > 0 ? (runsNeeded / oversRemaining).toFixed(2) : '0.00';
-                      })()} RPO
-                    </div>
-                    <div className="text-muted-foreground">Required Rate</div>
-                  </div>
-                </div>
+    <div className="h-screen flex flex-col p-4 max-w-6xl mx-auto">
+      {/* Top Section - Takes up full viewport height */}
+      <div className="flex-1 flex flex-col space-y-4 min-h-0">
+        
+        {/* Match Header */}
+        <Card className="flex-shrink-0">
+          <CardHeader>
+            <CardTitle className="text-center text-2xl">
+              {userTeamBatsFirst ? 'Your Team' : 'Opponent Team'} Batting
+              <Badge className="ml-2" variant={matchState.currentInnings === 1 ? "default" : "secondary"}>
+                {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-primary mb-2">
+                {battingTeamScore.runs}/{battingTeamScore.wickets}
               </div>
-            )}
-            
-            {/* First Innings Summary for 2nd Innings */}
-            {matchState.currentInnings === 2 && matchState.firstInningsScore && (
-              <div className="mt-2 text-sm text-muted-foreground">
-                First innings: {matchState.firstInningsScore.runs}/{matchState.firstInningsScore.wickets} ({formatOvers(matchState.firstInningsScore.balls)} ov)
-              </div>
-            )}
-            
-            {/* Current Batsmen and Bowler at bottom */}
-            <div className="flex justify-between items-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-              {/* Current Batsmen - Bottom Left */}
-              <div className="text-left">
-                <div className="text-xs text-muted-foreground mb-1">Current Batsmen</div>
-                <div className="space-y-1">
-                  <div className="text-sm font-medium">
-                    {matchState.strikeBatsman.name}* {getCurrentBatsmanStats(true).runs}({getCurrentBatsmanStats(true).balls})
-                  </div>
-                  <div className="text-sm">
-                    {matchState.nonStrikeBatsman.name} {getCurrentBatsmanStats(false).runs}({getCurrentBatsmanStats(false).balls})
-                  </div>
-                </div>
+              <div className="text-lg text-muted-foreground mb-2">
+                Overs: {formatOvers(battingTeamScore.balls)}/{matchState.matchOvers}
               </div>
               
-              {/* Current Bowler - Bottom Right */}
-              <div className="text-right">
-                <div className="text-xs text-muted-foreground mb-1">Current Bowler</div>
-                <div className="text-sm font-medium">
-                  {matchState.currentBowler.name} {getCurrentBowlerStats().wickets}-{getCurrentBowlerStats().runs}, {getCurrentBowlerStats().overs}
+              {/* Target and Required Run Rate for 2nd Innings */}
+              {matchState.currentInnings === 2 && matchState.target && (
+                <div className="mt-4 p-3 bg-sky-50 dark:bg-slate-700 rounded-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-red-600">Target: {matchState.target}</div>
+                      <div className="text-muted-foreground">To Win</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-blue-600">
+                        {matchState.target - battingTeamScore.runs}
+                      </div>
+                      <div className="text-muted-foreground">Runs Needed</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-bold text-green-600">
+                        {(() => {
+                          const ballsRemaining = (matchState.matchOvers * 6) - battingTeamScore.balls;
+                          const oversRemaining = ballsRemaining / 6;
+                          const runsNeeded = matchState.target - battingTeamScore.runs;
+                          return oversRemaining > 0 ? (runsNeeded / oversRemaining).toFixed(2) : '0.00';
+                        })()} RPO
+                      </div>
+                      <div className="text-muted-foreground">Required Rate</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* First Innings Summary for 2nd Innings */}
+              {matchState.currentInnings === 2 && matchState.firstInningsScore && (
+                <div className="mt-2 text-sm text-muted-foreground">
+                  First innings: {matchState.firstInningsScore.runs}/{matchState.firstInningsScore.wickets} ({formatOvers(matchState.firstInningsScore.balls)} ov)
+                </div>
+              )}
+              
+              {/* Current Batsmen and Bowler at bottom */}
+              <div className="flex justify-between items-end mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                {/* Current Batsmen - Bottom Left */}
+                <div className="text-left">
+                  <div className="text-xs text-muted-foreground mb-1">Current Batsmen</div>
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium">
+                      {matchState.strikeBatsman.name}* {getCurrentBatsmanStats(true).runs}({getCurrentBatsmanStats(true).balls})
+                    </div>
+                    <div className="text-sm">
+                      {matchState.nonStrikeBatsman.name} {getCurrentBatsmanStats(false).runs}({getCurrentBatsmanStats(false).balls})
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Current Bowler - Bottom Right */}
+                <div className="text-right">
+                  <div className="text-xs text-muted-foreground mb-1">Current Bowler</div>
+                  <div className="text-sm font-medium">
+                    {matchState.currentBowler.name} {getCurrentBowlerStats().wickets}-{getCurrentBowlerStats().runs}, {getCurrentBowlerStats().overs}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Current Over Display */}
-      <div className="bg-sky-50 dark:bg-slate-800 rounded-lg border p-4 mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-lg">Current Over</h3>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Over {battingTeamScore.overs + 1} of {matchState.matchOvers} ({matchState.currentInnings === 1 ? '1st' : '2nd'} Innings)
+        {/* Current Over Display */}
+        <div className="bg-sky-50 dark:bg-slate-800 rounded-lg border p-4 flex-shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-lg">Current Over</h3>
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Over {battingTeamScore.overs + 1} of {matchState.matchOvers} ({matchState.currentInnings === 1 ? '1st' : '2nd'} Innings)
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Balls:</span>
+            <div className="flex space-x-1">
+              {currentOverBalls.map((ball, index) => (
+                <div
+                  key={index}
+                  className="min-w-[40px] h-8 bg-white dark:bg-slate-700 border rounded flex items-center justify-center text-sm font-medium"
+                  data-testid={`ball-${index}`}
+                >
+                  {ball}
+                </div>
+              ))}
+              {/* Empty slots for remaining balls */}
+              {Array.from({ length: 6 - currentOverBalls.length }, (_, index) => (
+                <div
+                  key={`empty-${index}`}
+                  className="min-w-[40px] h-8 bg-gray-100 dark:bg-slate-600 border border-dashed rounded flex items-center justify-center text-sm text-gray-400"
+                >
+                  -
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Balls:</span>
-          <div className="flex space-x-1">
-            {currentOverBalls.map((ball, index) => (
-              <div
-                key={index}
-                className="min-w-[40px] h-8 bg-white dark:bg-slate-700 border rounded flex items-center justify-center text-sm font-medium"
-                data-testid={`ball-${index}`}
-              >
-                {ball}
-              </div>
-            ))}
-            {/* Empty slots for remaining balls */}
-            {Array.from({ length: 6 - currentOverBalls.length }, (_, index) => (
-              <div
-                key={`empty-${index}`}
-                className="min-w-[40px] h-8 bg-gray-100 dark:bg-slate-600 border border-dashed rounded flex items-center justify-center text-sm text-gray-400"
-              >
-                -
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      {/* Scoring Controls */}
-      <Card>
+        {/* Scoring Controls - Fills remaining space */}
+        <Card className="flex-1 flex flex-col min-h-0">
         <CardHeader>
           <CardTitle>Ball-by-Ball Scoring</CardTitle>
         </CardHeader>
@@ -1441,10 +1444,13 @@ export default function Scoreboard() {
             </Button>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
 
-      {/* Current Players and Bowler */}
-      <Card>
+      {/* Detailed Scorecards Section - Scrollable below */}
+      <div className="space-y-6">
+        {/* Current Players and Bowler */}
+        <Card>
         <CardHeader>
           <CardTitle>Current Batsmen</CardTitle>
         </CardHeader>
@@ -1732,6 +1738,7 @@ export default function Scoreboard() {
           </div>
         </CardContent>
       </Card>
+      </div>
 
       {/* Wicket Dialog */}
       <Dialog open={showWicketDialog} onOpenChange={() => {}}>
