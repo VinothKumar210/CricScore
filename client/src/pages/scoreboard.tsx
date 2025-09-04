@@ -436,6 +436,21 @@ export default function Scoreboard() {
     }
   };
 
+  // Helper function to format cricket overs correctly
+  const formatCricketOvers = (oversValue: number): string => {
+    if (oversValue === 0) return '0.0';
+    
+    // Extract overs and balls from the stored value
+    const oversStr = oversValue.toString();
+    const [overs, balls] = oversStr.split('.');
+    
+    // Ensure balls is always a single digit 0-5
+    const ballsNum = parseInt(balls || '0');
+    const validBalls = Math.min(ballsNum, 5); // Cricket balls should never exceed 5
+    
+    return `${overs}.${validBalls}`;
+  };
+
   const updateBatsmanStats = (player: LocalPlayer, runsScored: number, ballFaced: boolean = true) => {
     setBatsmanStats(prev => prev.map(stat => {
       if (stat.player.name === player.name) {
@@ -1691,7 +1706,7 @@ export default function Scoreboard() {
                         </div>
                       </td>
                       <td className="text-center py-2 px-1 font-medium text-sm" data-testid={`bowler-overs-${index}`}>
-                        {bowler.overs.toFixed(1)}
+                        {formatCricketOvers(bowler.overs)}
                       </td>
                       <td className="text-center py-2 px-1 text-sm" data-testid={`bowler-runs-${index}`}>
                         {bowler.runs}
@@ -2116,7 +2131,7 @@ export default function Scoreboard() {
                                 </span>
                               </td>
                               <td className="text-center py-2 px-1 font-medium text-sm">
-                                {bowler.overs.toFixed(1)}
+                                {formatCricketOvers(bowler.overs)}
                               </td>
                               <td className="text-center py-2 px-1 text-sm">
                                 {bowler.runs}
