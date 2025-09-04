@@ -1136,11 +1136,12 @@ export default function Scoreboard() {
     setPendingWicket(null);
   };
 
-  const availableBatsmen = battingTeamPlayers.filter(player => 
-    !batsmanStats.some(stat => stat.player.name === player.name)
-  );
+  const availableBatsmen = battingTeamPlayers
+    .filter(player => player.name && player.name.trim() !== '')
+    .filter(player => !batsmanStats.some(stat => stat.player.name === player.name));
   
-  const bowlingTeamPlayers = userTeamBatsFirst ? matchState.opponentTeamPlayers : matchState.myTeamPlayers;
+  const bowlingTeamPlayers = (userTeamBatsFirst ? matchState.opponentTeamPlayers : matchState.myTeamPlayers)
+    .filter(player => player.name && player.name.trim() !== '');
   
   // Store the previous bowler to prevent consecutive overs
 
