@@ -1,18 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLocation } from 'wouter';
+import { type LocalPlayer } from '@shared/schema';
 
-type Phase = 'choose-side' | 'toss' | 'determine-winner' | 'choose-batting' | 'final';
+type Phase = 'toss-method' | 'choose-side' | 'toss' | 'determine-winner' | 'choose-batting' | 'manual-entry' | 'final';
+
+interface MatchData {
+  myTeamPlayers: LocalPlayer[];
+  opponentTeamPlayers: LocalPlayer[];
+}
 
 export function CoinToss() {
   const [, setLocation] = useLocation();
-  const [phase, setPhase] = useState<Phase>('choose-side');
+  const [phase, setPhase] = useState<Phase>('toss-method');
+  const [tossMethod, setTossMethod] = useState<'animated' | 'manual' | null>(null);
   const [selectedSide, setSelectedSide] = useState<'heads' | 'tails' | null>(null);
   const [isFlipping, setIsFlipping] = useState(false);
   const [result, setResult] = useState<'heads' | 'tails' | null>(null);
   const [tossWinner, setTossWinner] = useState<'user' | 'opponent' | null>(null);
   const [battingChoice, setBattingChoice] = useState<'batting' | 'bowling' | null>(null);
+  const [matchData, setMatchData] = useState<MatchData | null>(null);
+  const [manualTossWinner, setManualTossWinner] = useState<'my-team' | 'opponent-team' | null>(null);
+  const [manualBattingChoice, setManualBattingChoice] = useState<'batting' | 'bowling' | null>(null);
+
+  useEffect(() => {
+    // Get match data from localStorage
+    const savedMatchData = localStorage.getItem('localMatchData');
+    if (savedMatchData) {
+      setMatchData(JSON.parse(savedMatchData));
+    } else {
+      // If no data, redirect back to setup
+      setLocation('/local-match');
+    }
+  }, [setLocation]);
+
+  const handleTossMethodChoice = (method: 'animated' | 'manual') => {
+    setTossMethod(method);
+    if (method === 'animated') {
+      setPhase('choose-side');
+    } else {
+      setPhase('manual-entry');
+    }
+  };
 
   const handleSideSelection = (side: 'heads' | 'tails') => {
     setSelectedSide(side);
@@ -45,12 +76,46 @@ export function CoinToss() {
     setPhase('final');
   };
 
+  const handleManualTossSubmit = () => {
+    if (manualTossWinner && manualBattingChoice) {
+      // Store toss results and navigate directly to match scoring
+      const tossResult = {
+        winner: manualTossWinner,
+        decision: manualBattingChoice,
+        method: 'manual'
+      };
+      
+      // Determine team roles based on manual input
+      const userTeamRole = manualTossWinner === 'my-team'
+        ? (manualBattingChoice === 'batting' ? 'batting first' : 'bowling first')
+        : (manualBattingChoice === 'batting' ? 'bowling first' : 'batting first');
+      
+      const opponentTeamRole = manualTossWinner === 'my-team'
+        ? (manualBattingChoice === 'batting' ? 'bowling first' : 'batting first')
+        : (manualBattingChoice === 'batting' ? 'batting first' : 'bowling first');
+      
+      // Store match data with toss results
+      const finalMatchData = {
+        ...matchData,
+        userTeamRole,
+        opponentTeamRole,
+        tossResult
+      };
+      
+      localStorage.setItem('matchData', JSON.stringify(finalMatchData));
+      setLocation('/match-scoring');
+    }
+  };
+
   const handleStartOver = () => {
-    setPhase('choose-side');
+    setPhase('toss-method');
+    setTossMethod(null);
     setSelectedSide(null);
     setResult(null);
     setTossWinner(null);
     setBattingChoice(null);
+    setManualTossWinner(null);
+    setManualBattingChoice(null);
   };
 
   const getUserTeamRole = () => {
@@ -79,6 +144,8 @@ export function CoinToss() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Coin Toss</CardTitle>
           <p className="text-muted-foreground">
+            {phase === 'toss-method' && "How would you like to decide the toss?"}
+            {phase === 'manual-entry' && "Enter the toss results manually"}
             {phase === 'choose-side' && "Choose your side and let's decide who bats first!"}
             {phase === 'toss' && "Ready to toss the coin!"}
             {phase === 'determine-winner' && "Let's see who won the toss!"}
@@ -87,6 +154,84 @@ export function CoinToss() {
           </p>
         </CardHeader>
         <CardContent className="flex flex-col items-center space-y-8">
+          {/* Toss Method Selection Phase */}
+          {phase === 'toss-method' && (
+            <div className="text-center space-y-6">
+              <h3 className="text-xl font-semibold">Choose Toss Method</h3>
+              <div className="flex flex-col gap-4 justify-center max-w-md">
+                <Button 
+                  onClick={() => handleTossMethodChoice('animated')}
+                  className="px-6 py-4 text-lg"
+                  data-testid="button-animated-toss"
+                >
+                  🪙 Animated Coin Toss
+                </Button>
+                <Button 
+                  onClick={() => handleTossMethodChoice('manual')}
+                  variant="outline"
+                  className="px-6 py-4 text-lg"
+                  data-testid="button-manual-toss"
+                >
+                  ✏️ Enter Toss Result Manually
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Manual Entry Phase */}
+          {phase === 'manual-entry' && matchData && (
+            <div className="text-center space-y-6 w-full max-w-md">
+              <h3 className="text-xl font-semibold">Enter Toss Results</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Who won the toss?</label>
+                  <Select value={manualTossWinner || ""} onValueChange={(value: 'my-team' | 'opponent-team') => setManualTossWinner(value)}>
+                    <SelectTrigger data-testid="select-toss-winner">
+                      <SelectValue placeholder="Select toss winner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="my-team">My Team</SelectItem>
+                      <SelectItem value="opponent-team">Opponent Team</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">What did the winning team choose?</label>
+                  <Select value={manualBattingChoice || ""} onValueChange={(value: 'batting' | 'bowling') => setManualBattingChoice(value)}>
+                    <SelectTrigger data-testid="select-batting-choice">
+                      <SelectValue placeholder="Select choice" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="batting">Batting First</SelectItem>
+                      <SelectItem value="bowling">Bowling First</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button 
+                    onClick={handleStartOver}
+                    variant="outline"
+                    className="flex-1"
+                    data-testid="button-back"
+                  >
+                    ← Back
+                  </Button>
+                  <Button 
+                    onClick={handleManualTossSubmit}
+                    disabled={!manualTossWinner || !manualBattingChoice}
+                    className="flex-1"
+                    data-testid="button-proceed-scoring"
+                  >
+                    Proceed to Scoring
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Side Selection Phase */}
           {phase === 'choose-side' && (
             <div className="text-center space-y-6">
@@ -262,14 +407,20 @@ export function CoinToss() {
               <div className="space-y-3">
                 <Button 
                   onClick={() => {
-                    // Store match data for scoring page
-                    const matchData = {
+                    // Store match data for scoring page with animated toss results
+                    const tossResult = {
+                      winner: tossWinner === 'user' ? 'my-team' : 'opponent-team',
+                      decision: battingChoice,
+                      method: 'animated'
+                    };
+                    
+                    const finalMatchData = {
+                      ...matchData,
                       userTeamRole: getUserTeamRole(),
                       opponentTeamRole: getOpponentTeamRole(),
-                      myTeamPlayers: JSON.parse(localStorage.getItem('myTeamPlayers') || '[]'),
-                      opponentTeamPlayers: JSON.parse(localStorage.getItem('opponentTeamPlayers') || '[]')
+                      tossResult
                     };
-                    localStorage.setItem('matchData', JSON.stringify(matchData));
+                    localStorage.setItem('matchData', JSON.stringify(finalMatchData));
                     setLocation('/match-scoring');
                   }}
                   className="w-full py-3 text-base sm:text-lg"
