@@ -268,7 +268,7 @@ export default function MatchScoring() {
       )}
 
       {/* Main Content Card */}
-      <Card className="flex flex-col h-[60vh]">
+      <Card>
         <CardHeader>
           <CardTitle className="text-lg">
             {selectionStep === 'bowler' ? 'Bowling Team Players' : 'Batting Team Players'}
@@ -276,8 +276,8 @@ export default function MatchScoring() {
         </CardHeader>
         
         {/* Scrollable Player List */}
-        <CardContent className="flex-1 flex flex-col p-6">
-          <ScrollArea className="flex-1 border rounded-md">
+        <CardContent className="flex flex-col p-6">
+          <ScrollArea className="h-80 border rounded-md">
             <div className="p-4">
               <div className="grid gap-3">
                 {getPlayersToShow().map((player, index) => (
