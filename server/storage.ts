@@ -184,6 +184,7 @@ export class PrismaStorage implements IStorage {
         totalRuns: 0,
         ballsFaced: 0,
         strikeRate: 0,
+        highestScore: 0,
         oversBowled: 0,
         runsConceded: 0,
         wicketsTaken: 0,
@@ -489,6 +490,7 @@ export class PrismaStorage implements IStorage {
     const newMatchesPlayed = (stats.matchesPlayed || 0) + 1;
     const newTotalRuns = (stats.totalRuns || 0) + match.runsScored;
     const newBallsFaced = (stats.ballsFaced || 0) + match.ballsFaced;
+    const newHighestScore = Math.max((stats.highestScore || 0), match.runsScored);
     const newTimesOut = (stats.timesOut || 0) + (match.wasDismissed ? 1 : 0);
     const newOversBowled = (stats.oversBowled || 0) + match.oversBowled;
     const newRunsConceded = (stats.runsConceded || 0) + match.runsConceded;
@@ -506,6 +508,7 @@ export class PrismaStorage implements IStorage {
       totalRuns: newTotalRuns,
       ballsFaced: newBallsFaced,
       strikeRate: parseFloat(strikeRate.toFixed(2)),
+      highestScore: newHighestScore,
       timesOut: newTimesOut,
       oversBowled: parseFloat(newOversBowled.toFixed(1)),
       runsConceded: newRunsConceded,

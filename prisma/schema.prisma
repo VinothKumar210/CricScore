@@ -50,6 +50,7 @@ model CareerStats {
   totalRuns      Int     @default(0)
   ballsFaced     Int     @default(0)
   strikeRate     Float   @default(0)
+  highestScore   Int     @default(0)
   timesOut       Int     @default(0)
   // Bowling stats
   oversBowled    Float   @default(0)

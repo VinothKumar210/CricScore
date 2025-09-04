@@ -407,6 +407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const newMatchesPlayed = currentStats.matchesPlayed + 1;
             const newTotalRuns = currentStats.totalRuns + performance.runsScored;
             const newBallsFaced = currentStats.ballsFaced + performance.ballsFaced;
+            const newHighestScore = Math.max((currentStats.highestScore || 0), performance.runsScored);
             const newOversBowled = currentStats.oversBowled + performance.oversBowled;
             const newRunsConceded = currentStats.runsConceded + performance.runsConceded;
             const newWicketsTaken = currentStats.wicketsTaken + performance.wicketsTaken;
@@ -428,6 +429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               totalRuns: newTotalRuns,
               ballsFaced: newBallsFaced,
               strikeRate: parseFloat(strikeRate.toFixed(2)),
+              highestScore: newHighestScore,
               oversBowled: parseFloat(newOversBowled.toFixed(1)),
               runsConceded: newRunsConceded,
               wicketsTaken: newWicketsTaken,

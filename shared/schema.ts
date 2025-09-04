@@ -33,6 +33,7 @@ export const insertCareerStatsSchema = z.object({
   totalRuns: z.number().int().min(0).optional(),
   ballsFaced: z.number().int().min(0).optional(),
   strikeRate: z.number().min(0).optional(),
+  highestScore: z.number().int().min(0).optional(),
   timesOut: z.number().int().min(0).optional(),
   oversBowled: z.number().min(0).optional(),
   runsConceded: z.number().int().min(0).optional(),

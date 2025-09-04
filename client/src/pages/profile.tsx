@@ -588,6 +588,10 @@ export default function Profile() {
                         <span className="text-sm">Strike Rate</span>
                         <span className="font-medium">{playerStats.strikeRate ? playerStats.strikeRate.toFixed(2) : '0.00'}</span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Highest Score</span>
+                        <span className="font-medium">{playerStats.highestScore || 0}</span>
+                      </div>
                     </div>
                   </div>
 
