@@ -1990,7 +1990,7 @@ export default function Scoreboard() {
       </Dialog>
 
       {/* Bowler Selection Dialog */}
-      <Dialog open={showBowlerDialog} onOpenChange={() => {}}>
+      <Dialog open={showBowlerDialog} onOpenChange={setShowBowlerDialog}>
         <DialogContent aria-describedby="bowler-selection-description">
           <DialogHeader>
             <DialogTitle>
@@ -2005,17 +2005,26 @@ export default function Scoreboard() {
             </p>
             <ScrollArea className="h-60">
               <div className="grid gap-2">
-                {availableBowlers.map((player, index) => (
-                  <Button
-                    key={`${player.name}-${index}`}
-                    onClick={() => selectNewBowler(player)}
-                    variant="outline"
-                    className="justify-start"
-                    data-testid={`button-new-bowler-${index}`}
-                  >
-                    {player.name}
-                  </Button>
-                ))}
+                {availableBowlers.length > 0 ? (
+                  availableBowlers.map((player, index) => (
+                    <Button
+                      key={`${player.name}-${index}`}
+                      onClick={() => selectNewBowler(player)}
+                      variant="outline"
+                      className="justify-start"
+                      data-testid={`button-new-bowler-${index}`}
+                    >
+                      {player.name}
+                    </Button>
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground mb-2">No bowlers available</p>
+                    <p className="text-xs text-muted-foreground">
+                      This can happen due to bowling restrictions. Please check match rules.
+                    </p>
+                  </div>
+                )}
               </div>
             </ScrollArea>
           </div>
