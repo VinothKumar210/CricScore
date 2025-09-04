@@ -285,10 +285,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             matchDate: playerStat.matchDate,
             runsScored: playerStat.runs,
             ballsFaced: playerStat.ballsFaced,
+            wasDismissed: false, // Default to false
             oversBowled: playerStat.oversBowled,
             runsConceded: playerStat.runsConceded,
             wicketsTaken: playerStat.wicketsTaken,
-            catchesTaken: playerStat.catchesTaken
+            catchesTaken: playerStat.catchesTaken,
+            isManOfTheMatch: false // Default to false for this endpoint
           });
 
           // Update career stats
@@ -617,6 +619,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           bestStrikeRate: 0,
           bestEconomyPlayer: null,
           bestEconomy: 0,
+          mostManOfTheMatchPlayer: null,
+          mostManOfTheMatchAwards: 0,
         });
       }
 
@@ -969,6 +973,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
+      // Import man of the match calculation
+      const { calculateManOfTheMatch } = require('../shared/man-of-the-match');
+
+      // Calculate man of the match
+      const manOfTheMatchResult = calculateManOfTheMatch(playerPerformances, 'T20'); // Default to T20 format
+      
       const results = [];
       const errors = [];
 
@@ -988,6 +998,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Only process if player has a valid userId (meaning they have an account)
         if (userId) {
           try {
+            // Determine if this player is man of the match
+            const isManOfTheMatch = manOfTheMatchResult && 
+              (manOfTheMatchResult.playerId === userId || 
+               (manOfTheMatchResult.playerName === playerName && !manOfTheMatchResult.playerId));
+
             // Create match record for this player
             const matchData = {
               userId,
@@ -995,22 +1010,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
               matchDate: new Date(matchDate),
               runsScored: parseInt(runsScored) || 0,
               ballsFaced: parseInt(ballsFaced) || 0,
+              wasDismissed: false, // Default to false for local matches
               oversBowled: parseFloat(oversBowled) || 0,
               runsConceded: parseInt(runsConceded) || 0,
               wicketsTaken: parseInt(wicketsTaken) || 0,
-              catchesTaken: parseInt(catchesTaken) || 0
+              catchesTaken: parseInt(catchesTaken) || 0,
+              isManOfTheMatch: isManOfTheMatch || false
             };
 
             const match = await storage.createMatch(matchData);
             
-            // Update career statistics for this player
+            // Update career statistics for this player (includes MOTM)
             await storage.updateCareerStatsFromMatch(userId, matchData);
             
             results.push({
               playerName,
               userId,
               matchId: match.id,
-              status: 'success'
+              status: 'success',
+              isManOfTheMatch: isManOfTheMatch
             });
           } catch (error) {
             console.error(`Error saving match for player ${playerName}:`, error);
@@ -1029,6 +1047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         playersWithAccounts: results.length,
         successfulSaves: results.length,
         errorCount: errors.length,
+        manOfTheMatch: manOfTheMatchResult,
         results,
         errors
       });

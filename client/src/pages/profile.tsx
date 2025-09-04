@@ -633,6 +633,10 @@ export default function Profile() {
                         <span className="text-sm">Total Matches</span>
                         <span className="font-medium">{playerStats.matchesPlayed || 0}</span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">🏆 Man of the Match</span>
+                        <span className="font-medium">{playerStats.manOfTheMatchAwards || 0}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
