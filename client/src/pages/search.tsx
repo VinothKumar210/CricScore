@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, User, Trophy, Users } from "lucide-react";
+import { Search, User, Trophy, Users, ArrowLeft } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { User as UserType } from "@shared/schema";
 
@@ -152,9 +152,23 @@ export default function SearchPlayers() {
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="space-y-6">
           {/* Header */}
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">Search Players</h1>
-            <p className="text-muted-foreground">Find and connect with cricket players</p>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLocation("/")}
+                className="flex items-center space-x-2"
+                data-testid="button-back-to-dashboard"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Dashboard</span>
+              </Button>
+            </div>
+            <div className="text-center space-y-2">
+              <h1 className="text-3xl font-bold text-foreground">Search Players</h1>
+              <p className="text-muted-foreground">Find and connect with cricket players</p>
+            </div>
           </div>
 
           {/* Search Section */}
