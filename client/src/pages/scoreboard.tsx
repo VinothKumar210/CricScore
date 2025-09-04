@@ -279,8 +279,9 @@ export default function Scoreboard() {
         
         if (playerPerformanceMap.has(playerName)) {
           const existing = playerPerformanceMap.get(playerName)!;
-          existing.runsScored = stat.runs;
-          existing.ballsFaced = stat.balls;
+          // Add to existing stats instead of overwriting
+          existing.runsScored += stat.runs;
+          existing.ballsFaced += stat.balls;
         } else {
           playerPerformanceMap.set(playerName, {
             userId: userId,
@@ -302,9 +303,10 @@ export default function Scoreboard() {
         
         if (playerPerformanceMap.has(playerName)) {
           const existing = playerPerformanceMap.get(playerName)!;
-          existing.oversBowled = stat.overs;
-          existing.runsConceded = stat.runs;
-          existing.wicketsTaken = stat.wickets;
+          // Add to existing stats instead of overwriting
+          existing.oversBowled += stat.overs;
+          existing.runsConceded += stat.runs;
+          existing.wicketsTaken += stat.wickets;
         } else {
           playerPerformanceMap.set(playerName, {
             userId: userId,
