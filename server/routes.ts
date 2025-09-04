@@ -373,7 +373,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           oversBowled: z.number().min(0),
           runsConceded: z.number().min(0),
           wicketsTaken: z.number().min(0),
-          catchesTaken: z.number().min(0)
+          catchesTaken: z.number().min(0),
+          runOuts: z.number().min(0).optional()
         }))
       });
 
@@ -412,6 +413,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const newRunsConceded = currentStats.runsConceded + performance.runsConceded;
             const newWicketsTaken = currentStats.wicketsTaken + performance.wicketsTaken;
             const newCatchesTaken = currentStats.catchesTaken + performance.catchesTaken;
+            const newRunOuts = (currentStats.runOuts || 0) + (performance.runOuts || 0);
 
             // Calculate derived stats
             const strikeRate = newBallsFaced > 0 ? (newTotalRuns / newBallsFaced) * 100 : 0;
@@ -435,6 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               wicketsTaken: newWicketsTaken,
               economy: parseFloat(economy.toFixed(2)),
               catchesTaken: newCatchesTaken,
+              runOuts: newRunOuts,
             });
           }
 

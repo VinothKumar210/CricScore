@@ -30,6 +30,7 @@ export default function AddMatch() {
       runsConceded: 0,
       wicketsTaken: 0,
       catchesTaken: 0,
+      runOuts: 0,
     },
   });
 
@@ -280,6 +281,26 @@ export default function AddMatch() {
                             min="0"
                             placeholder="Enter catches taken"
                             data-testid="input-catches-taken"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="runOuts"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Run Outs *</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="Enter run outs"
+                            data-testid="input-run-outs"
                             {...field}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                           />

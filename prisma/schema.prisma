@@ -59,6 +59,7 @@ model CareerStats {
   economy        Float   @default(0)
   // Fielding stats
   catchesTaken   Int     @default(0)
+  runOuts        Int     @default(0)
   // Achievement stats
   manOfTheMatchAwards Int @default(0)
   updatedAt      DateTime @default(now()) @updatedAt
@@ -135,6 +136,7 @@ model Match {
   wicketsTaken Int
   // Fielding performance
   catchesTaken Int
+  runOuts      Int      @default(0)
   // Achievement tracking
   isManOfTheMatch Boolean @default(false)
   createdAt    DateTime @default(now())

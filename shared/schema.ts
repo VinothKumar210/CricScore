@@ -40,6 +40,7 @@ export const insertCareerStatsSchema = z.object({
   wicketsTaken: z.number().int().min(0).optional(),
   economy: z.number().min(0).optional(),
   catchesTaken: z.number().int().min(0).optional(),
+  runOuts: z.number().int().min(0).optional(),
   manOfTheMatchAwards: z.number().int().min(0).optional(),
 });
 
@@ -73,6 +74,7 @@ export const insertMatchSchema = z.object({
   runsConceded: z.number().int().min(0),
   wicketsTaken: z.number().int().min(0),
   catchesTaken: z.number().int().min(0),
+  runOuts: z.number().int().min(0).default(0),
   isManOfTheMatch: z.boolean().default(false),
 });
 

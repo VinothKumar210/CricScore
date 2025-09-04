@@ -626,6 +626,10 @@ export default function Profile() {
                         <span className="text-sm">Catches</span>
                         <span className="font-medium">{playerStats.catchesTaken || 0}</span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm">Run Outs</span>
+                        <span className="font-medium">{playerStats.runOuts || 0}</span>
+                      </div>
                     </div>
                   </div>
 
