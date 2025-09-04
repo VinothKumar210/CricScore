@@ -80,6 +80,8 @@ export default function Scoreboard() {
   
   const [batsmanStats, setBatsmanStats] = useState<BatsmanStats[]>([]);
   const [bowlerStats, setBowlerStats] = useState<BowlerStats[]>([]);
+  const [firstInningsBatsmanStats, setFirstInningsBatsmanStats] = useState<BatsmanStats[]>([]);
+  const [firstInningsBowlerStats, setFirstInningsBowlerStats] = useState<BowlerStats[]>([]);
   const [showWicketDialog, setShowWicketDialog] = useState(false);
   const [showBatsmanDialog, setShowBatsmanDialog] = useState(false);
   const [showExtrasDialog, setShowExtrasDialog] = useState(false);
@@ -559,8 +561,12 @@ export default function Scoreboard() {
     if (!matchState) return;
     
     if (matchState.currentInnings === 1) {
-      // First innings complete - just store the score and show dialog
+      // First innings complete - store the score and capture stats
       const target = finalScore.runs + 1;
+      
+      // Capture first innings batting and bowling statistics
+      setFirstInningsBatsmanStats([...batsmanStats]);
+      setFirstInningsBowlerStats([...bowlerStats]);
       
       // Only update the first innings completion, don't start second innings yet
       setMatchState(prev => prev ? {
@@ -1993,32 +1999,153 @@ export default function Scoreboard() {
 
       {/* Innings Transition Dialog */}
       <Dialog open={showInningsTransition} onOpenChange={() => {}}>
-        <DialogContent aria-describedby="innings-transition-description">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="innings-transition-description">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">🏏 First Innings Complete!</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 text-center">
+          <div className="space-y-6">
             {matchState.firstInningsScore && (
               <>
-                <div className="text-4xl font-bold text-primary">
-                  {matchState.firstInningsScore.runs}/{matchState.firstInningsScore.wickets}
+                {/* Score Summary */}
+                <div className="text-center space-y-2">
+                  <div className="text-4xl font-bold text-primary">
+                    {matchState.firstInningsScore.runs}/{matchState.firstInningsScore.wickets}
+                  </div>
+                  <div className="text-lg text-muted-foreground">
+                    in {formatOvers(matchState.firstInningsScore.balls)} overs
+                  </div>
+                  <div className="text-xl font-semibold mt-4">
+                    Target: {matchState.target} runs
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {userTeamBatsFirst ? 'Opponent team' : 'Your team'} needs {matchState.target} runs to win in {matchState.matchOvers} overs
+                  </div>
                 </div>
-                <div className="text-lg text-muted-foreground">
-                  in {formatOvers(matchState.firstInningsScore.balls)} overs
+
+                {/* First Innings Batting Scorecard */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>First Innings - Batting Scorecard</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2 px-2 font-semibold">Batsman</th>
+                            <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">R</th>
+                            <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">B</th>
+                            <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">4's</th>
+                            <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">6's</th>
+                            <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">SR</th>
+                            <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">Out</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {firstInningsBatsmanStats.map((batsman, index) => (
+                            <tr 
+                              key={`${batsman.player.name}-${index}`}
+                              className="border-b"
+                              data-testid={`first-innings-batting-stats-${index}`}
+                            >
+                              <td className="py-2 px-2">
+                                <span className={`font-medium ${batsman.player.name.length > 15 ? 'text-xs' : 'text-sm'}`}>
+                                  {batsman.player.name}
+                                </span>
+                              </td>
+                              <td className="text-center py-2 px-1 font-medium text-sm">
+                                {batsman.runs}
+                              </td>
+                              <td className="text-center py-2 px-1 text-sm">
+                                {batsman.balls}
+                              </td>
+                              <td className="text-center py-2 px-1 text-sm">
+                                {batsman.fours}
+                              </td>
+                              <td className="text-center py-2 px-1 text-sm">
+                                {batsman.sixes}
+                              </td>
+                              <td className="text-center py-2 px-1 text-sm">
+                                {batsman.balls > 0 ? batsman.strikeRate.toFixed(1) : '0.0'}
+                              </td>
+                              <td className="text-center py-2 px-1 text-sm">
+                                {batsman.isOut ? (
+                                  <span className="text-red-600 font-medium">
+                                    {batsman.dismissalType}
+                                    {batsman.bowlerName && ` b ${batsman.bowlerName}`}
+                                  </span>
+                                ) : (
+                                  <span className="text-green-600">Not Out</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* First Innings Bowling Scorecard */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>First Innings - Bowling Scorecard</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left py-2 px-2 font-semibold">Bowler</th>
+                            <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">Ov</th>
+                            <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">R</th>
+                            <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">W</th>
+                            <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">Econ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {firstInningsBowlerStats.map((bowler, index) => (
+                            <tr 
+                              key={`${bowler.player.name}-${index}`}
+                              className="border-b"
+                              data-testid={`first-innings-bowling-stats-${index}`}
+                            >
+                              <td className="py-2 px-2">
+                                <span className={`font-medium ${bowler.player.name.length > 15 ? 'text-xs' : 'text-sm'}`}>
+                                  {bowler.player.name}
+                                </span>
+                              </td>
+                              <td className="text-center py-2 px-1 font-medium text-sm">
+                                {bowler.overs.toFixed(1)}
+                              </td>
+                              <td className="text-center py-2 px-1 text-sm">
+                                {bowler.runs}
+                              </td>
+                              <td className="text-center py-2 px-1 text-sm">
+                                {bowler.wickets}
+                              </td>
+                              <td className="text-center py-2 px-1 text-sm">
+                                {bowler.economy.toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Start Second Innings Button */}
+                <div className="flex justify-center pt-4">
+                  <Button
+                    onClick={startSecondInnings}
+                    size="lg"
+                    className="px-8 py-3"
+                    data-testid="button-start-second-innings"
+                  >
+                    Start Second Innings
+                  </Button>
                 </div>
-                <div className="text-xl font-semibold mt-4">
-                  Target: {matchState.target} runs
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {userTeamBatsFirst ? 'Opponent team' : 'Your team'} needs {matchState.target} runs to win in {matchState.matchOvers} overs
-                </div>
-                <Button
-                  onClick={startSecondInnings}
-                  className="mt-6"
-                  data-testid="button-start-second-innings"
-                >
-                  Start Second Innings
-                </Button>
               </>
             )}
           </div>
