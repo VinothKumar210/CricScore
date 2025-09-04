@@ -649,14 +649,14 @@ export default function Scoreboard() {
     // Add to current over display
     setCurrentOverBalls(prev => [...prev, runs.toString()]);
     
-    // Update team score
-    updateTeamScore(runs);
-    
     // Update striker's stats
     updateBatsmanStats(matchState.strikeBatsman, runs);
     
-    // Update bowler stats
+    // Update bowler stats BEFORE team score to ensure final ball is counted
     updateBowlerStats(runs);
+    
+    // Update team score (this may trigger innings completion)
+    updateTeamScore(runs);
     
     // Rotate strike if needed
     if (shouldRotateStrike(runs)) {
@@ -823,6 +823,16 @@ export default function Scoreboard() {
     // Add to current over display
     setCurrentOverBalls(prev => [...prev, 'W']);
     
+    // Update bowler stats BEFORE team score to ensure wicket ball is counted
+    if (['Bowled', 'Caught', 'LBW', 'Hit Wicket'].includes(dismissalType)) {
+      updateBowlerStats(0, true, true);
+    } else {
+      updateBowlerStats(0, true, false);
+    }
+    
+    // Update striker's balls faced
+    updateBatsmanStats(matchState.strikeBatsman, 0);
+    
     // Update team wickets and balls (wicket counts as a legal delivery)
     setBattingTeamScore(prev => {
       const newBalls = prev.balls + 1;  // Wicket counts as 1 ball
@@ -847,16 +857,6 @@ export default function Scoreboard() {
       
       return updatedScore;
     });
-    
-    // Update bowler stats if bowler gets credit
-    if (['Bowled', 'Caught', 'LBW', 'Hit Wicket'].includes(dismissalType)) {
-      updateBowlerStats(0, true, true);
-    } else {
-      updateBowlerStats(0, true, false);
-    }
-    
-    // Update striker's balls faced
-    updateBatsmanStats(matchState.strikeBatsman, 0);
     
     // Mark striker as out with dismissal details
     setBatsmanStats(prev => prev.map(stat => {
@@ -884,6 +884,12 @@ export default function Scoreboard() {
     // Add to current over display
     setCurrentOverBalls(prev => [...prev, 'W']);
     
+    // Update bowler stats BEFORE team score to ensure wicket ball is counted
+    updateBowlerStats(0, true, true);
+    
+    // Update striker's balls faced
+    updateBatsmanStats(matchState.strikeBatsman, 0);
+    
     // Update team wickets and balls (wicket counts as a legal delivery)
     setBattingTeamScore(prev => {
       const newBalls = prev.balls + 1;  // Wicket counts as 1 ball
@@ -908,12 +914,6 @@ export default function Scoreboard() {
       
       return updatedScore;
     });
-    
-    // Update bowler stats (bowler gets credit for caught dismissals)
-    updateBowlerStats(0, true, true);
-    
-    // Update striker's balls faced
-    updateBatsmanStats(matchState.strikeBatsman, 0);
     
     // Mark striker as out with dismissal details including fielder
     setBatsmanStats(prev => prev.map(stat => {
