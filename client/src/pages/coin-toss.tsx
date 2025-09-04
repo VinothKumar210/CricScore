@@ -13,8 +13,6 @@ interface MatchData {
   myTeamName: string;
   opponentTeamName: string;
   matchOvers?: string;
-  maxOversPerBowler?: string;
-  bowlersAtMaxOvers?: string;
 }
 
 export function CoinToss() {
@@ -37,8 +35,6 @@ export function CoinToss() {
     const myTeamName = localStorage.getItem('myTeamName');
     const opponentTeamName = localStorage.getItem('opponentTeamName');
     const matchOvers = localStorage.getItem('matchOvers');
-    const maxOversPerBowler = localStorage.getItem('maxOversPerBowler');
-    const bowlersAtMaxOvers = localStorage.getItem('bowlersAtMaxOvers');
     
     if (myTeamPlayers && opponentTeamPlayers && myTeamName && opponentTeamName) {
       const matchData = {
@@ -46,9 +42,7 @@ export function CoinToss() {
         opponentTeamPlayers: JSON.parse(opponentTeamPlayers),
         myTeamName,
         opponentTeamName,
-        matchOvers: matchOvers || undefined,
-        maxOversPerBowler: maxOversPerBowler || undefined,
-        bowlersAtMaxOvers: bowlersAtMaxOvers || undefined
+        matchOvers: matchOvers || undefined
       };
       setMatchData(matchData);
     } else {
