@@ -472,9 +472,31 @@ export default function Scoreboard() {
       if (response.ok) {
         const result = await response.json();
         
-        // Store man of the match data
+        // Store man of the match data with detailed stats
         if (result.manOfTheMatch) {
-          setManOfTheMatchData(result.manOfTheMatch);
+          // Find the player's detailed performance stats
+          const manOfTheMatchPlayer = allPlayerPerformances.find(
+            p => p.playerName === result.manOfTheMatch.playerName
+          );
+          
+          // Find the player's username and account info
+          const findPlayerInfo = (playerName: string) => {
+            const myTeamPlayer = matchState.myTeamPlayers.find(p => p.name === playerName);
+            const opponentPlayer = matchState.opponentTeamPlayers.find(p => p.name === playerName);
+            return myTeamPlayer || opponentPlayer || { name: playerName, hasAccount: false, username: '' };
+          };
+          
+          const playerInfo = findPlayerInfo(result.manOfTheMatch.playerName);
+          
+          // Enhanced man of the match data with detailed stats
+          const enhancedManOfTheMatchData = {
+            ...result.manOfTheMatch,
+            detailedStats: manOfTheMatchPlayer,
+            username: playerInfo.username || '',
+            hasAccount: playerInfo.hasAccount || false
+          };
+          
+          setManOfTheMatchData(enhancedManOfTheMatchData);
         }
         
         // Invalidate stats and matches cache to ensure fresh data is loaded
@@ -2404,33 +2426,73 @@ export default function Scoreboard() {
                 {/* Man of the Match Section */}
                 {manOfTheMatchData && (
                   <div className="border-t pt-4 mt-4">
-                    <div className="text-center space-y-2">
+                    <div className="text-center space-y-3">
                       <div className="flex justify-center items-center gap-2">
                         <span className="text-2xl">🏆</span>
                         <span className="text-lg font-semibold text-primary">Man of the Match</span>
                       </div>
-                      <div className="text-xl font-bold text-amber-600 dark:text-amber-400">
-                        {manOfTheMatchData.playerName}
+                      
+                      {/* Player Name and Username */}
+                      <div className="space-y-1">
+                        <div className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                          {manOfTheMatchData.playerName}
+                        </div>
+                        {manOfTheMatchData.username && (
+                          <div className="text-sm text-muted-foreground">
+                            @{manOfTheMatchData.username}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        Performance Score: {manOfTheMatchData.performanceScore} points
-                      </div>
-                      {manOfTheMatchData.breakdown && (
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          {manOfTheMatchData.breakdown.battingPoints > 0 && (
-                            <div>Batting: {manOfTheMatchData.breakdown.battingPoints} pts</div>
-                          )}
-                          {manOfTheMatchData.breakdown.bowlingPoints > 0 && (
-                            <div>Bowling: {manOfTheMatchData.breakdown.bowlingPoints} pts</div>
-                          )}
-                          {manOfTheMatchData.breakdown.fieldingPoints > 0 && (
-                            <div>Fielding: {manOfTheMatchData.breakdown.fieldingPoints} pts</div>
-                          )}
-                          {manOfTheMatchData.breakdown.bonuses.length > 0 && (
-                            <div className="text-green-600 font-medium">
-                              Bonuses: {manOfTheMatchData.breakdown.bonuses.join(', ')}
+                      
+                      {/* Detailed Cricket Statistics */}
+                      {manOfTheMatchData.detailedStats && (
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3 space-y-2">
+                          <div className="text-sm font-medium text-primary mb-2">Match Performance</div>
+                          
+                          {/* Batting Stats */}
+                          {manOfTheMatchData.detailedStats.ballsFaced > 0 && (
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-muted-foreground">🏏 Batting:</span>
+                              <span className="font-medium">
+                                {manOfTheMatchData.detailedStats.runsScored} ({manOfTheMatchData.detailedStats.ballsFaced})
+                              </span>
                             </div>
                           )}
+                          
+                          {/* Bowling Stats */}
+                          {manOfTheMatchData.detailedStats.oversBowled > 0 && (
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-muted-foreground">⚾ Bowling:</span>
+                              <span className="font-medium">
+                                {manOfTheMatchData.detailedStats.runsConceded}-{manOfTheMatchData.detailedStats.wicketsTaken}
+                                {manOfTheMatchData.detailedStats.oversBowled > 0 && (
+                                  <span className="text-muted-foreground ml-1">
+                                    ({formatCricketOvers(manOfTheMatchData.detailedStats.oversBowled)} ov)
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Fielding Stats */}
+                          {manOfTheMatchData.detailedStats.catchesTaken > 0 && (
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-muted-foreground">🥎 Catches:</span>
+                              <span className="font-medium">
+                                {manOfTheMatchData.detailedStats.catchesTaken}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Performance Score */}
+                          <div className="border-t pt-2 mt-2">
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-muted-foreground">Performance Score:</span>
+                              <span className="font-bold text-primary">
+                                {manOfTheMatchData.performanceScore} pts
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
