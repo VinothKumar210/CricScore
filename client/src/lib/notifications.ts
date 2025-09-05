@@ -3,7 +3,7 @@ import { registerServiceWorker } from "@/sw-register";
 
 // VAPID public key - In production, this should be from environment variables
 // For now, using a placeholder that would be replaced with actual VAPID key
-const VAPID_PUBLIC_KEY = process.env.VITE_VAPID_PUBLIC_KEY || 'BPLyN3_LPBPyFVWkjWE6LPcvXfD-Y3-8-yKF2Hy_-QV4DjT5SH3YzU2F-9-ztAeVjXlT3FnGztCYcOQF2nO9XPw';
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BPLyN3_LPBPyFVWkjWE6LPcvXfD-Y3-8-yKF2Hy_-QV4DjT5SH3YzU2F-9-ztAeVjXlT3FnGztCYcOQF2nO9XPw';
 
 // Convert VAPID key to Uint8Array
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
