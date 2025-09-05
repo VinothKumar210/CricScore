@@ -362,62 +362,6 @@ export default function Scoreboard() {
         </CardContent>
       </Card>
 
-      {/* Current Players */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>On Strike</span>
-              <Badge variant="default">*</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="font-semibold text-lg">{matchState.strikeBatsman.name}</p>
-              <div className="text-sm space-y-1">
-                <p>Runs: {getCurrentBatsmanStats(true).runs}</p>
-                <p>Balls: {getCurrentBatsmanStats(true).balls}</p>
-                <p>Strike Rate: {getCurrentBatsmanStats(true).strikeRate}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Non-Strike</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="font-semibold text-lg">{matchState.nonStrikeBatsman.name}</p>
-              <div className="text-sm space-y-1">
-                <p>Runs: {getCurrentBatsmanStats(false).runs}</p>
-                <p>Balls: {getCurrentBatsmanStats(false).balls}</p>
-                <p>Strike Rate: {getCurrentBatsmanStats(false).strikeRate}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bowler Stats */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Bowler</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <p className="font-semibold text-lg">{matchState.currentBowler.name}</p>
-            <div className="grid grid-cols-4 gap-4 text-sm">
-              <div>Overs: {getCurrentBowlerStats().overs}</div>
-              <div>Runs: {getCurrentBowlerStats().runs}</div>
-              <div>Wickets: {getCurrentBowlerStats().wickets}</div>
-              <div>Economy: {getCurrentBowlerStats().economy}</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Scoring Controls */}
       <Card>
         <CardHeader>
@@ -476,6 +420,62 @@ export default function Scoreboard() {
             >
               Wide (WD)
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Current Players */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>On Strike</span>
+              <Badge variant="default">*</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p className="font-semibold text-lg">{matchState.strikeBatsman.name}</p>
+              <div className="text-sm space-y-1">
+                <p>Runs: {getCurrentBatsmanStats(true).runs}</p>
+                <p>Balls: {getCurrentBatsmanStats(true).balls}</p>
+                <p>Strike Rate: {getCurrentBatsmanStats(true).strikeRate}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Non-Strike</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p className="font-semibold text-lg">{matchState.nonStrikeBatsman.name}</p>
+              <div className="text-sm space-y-1">
+                <p>Runs: {getCurrentBatsmanStats(false).runs}</p>
+                <p>Balls: {getCurrentBatsmanStats(false).balls}</p>
+                <p>Strike Rate: {getCurrentBatsmanStats(false).strikeRate}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bowler Stats */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Bowler</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <p className="font-semibold text-lg">{matchState.currentBowler.name}</p>
+            <div className="grid grid-cols-4 gap-4 text-sm">
+              <div>Overs: {getCurrentBowlerStats().overs}</div>
+              <div>Runs: {getCurrentBowlerStats().runs}</div>
+              <div>Wickets: {getCurrentBowlerStats().wickets}</div>
+              <div>Economy: {getCurrentBowlerStats().economy}</div>
+            </div>
           </div>
         </CardContent>
       </Card>
