@@ -910,16 +910,16 @@ export default function Scoreboard() {
       // For no ball, update striker's stats
       if (type === 'nb') {
         if (additionalRuns > 0) {
-          // When batter scores runs on no-ball, they get runs but NO ball faced (illegal delivery)
-          updateBatsmanStats(matchState.strikeBatsman, additionalRuns, false);
+          // When batter hits no-ball: they get runs AND face the ball, but bowler must bowl again
+          updateBatsmanStats(matchState.strikeBatsman, additionalRuns, true);
           
           // Rotate strike for odd additional runs
           if (shouldRotateStrike(additionalRuns)) {
             rotateStrike();
           }
         } else {
-          // No runs scored on no-ball, no ball faced (illegal delivery)
-          updateBatsmanStats(matchState.strikeBatsman, 0, false);
+          // No-ball faced but no runs scored: batsman still faces the ball
+          updateBatsmanStats(matchState.strikeBatsman, 0, true);
         }
       }
       
