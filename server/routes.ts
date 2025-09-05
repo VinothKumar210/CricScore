@@ -981,8 +981,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
       
-      // Check if this is a team vs team match
-      const isTeamMatch = myTeamId && opponentTeamId && myTeamId.trim() !== '' && opponentTeamId.trim() !== '';
+      // Check which teams are selected from database (have valid IDs)
+      const hasMyTeamId = myTeamId && myTeamId.trim() !== '';
+      const hasOpponentTeamId = opponentTeamId && opponentTeamId.trim() !== '';
+      const isBothTeamsMatch = hasMyTeamId && hasOpponentTeamId;
       let teamMatchId: string | undefined;
 
       // Import man of the match calculation
@@ -1054,11 +1056,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // If this is a team vs team match, create team match record and update team statistics
-      if (isTeamMatch) {
-        try {
+      // Handle team statistics based on which teams are selected from database
+      try {
+        // If both teams are selected from database, create full team match record
+        if (isBothTeamsMatch) {
           // Determine match result based on final score
-          // For now, assume the team with higher score wins (you can enhance this logic)
           let result: 'HOME_WIN' | 'AWAY_WIN' | 'DRAW' = 'HOME_WIN';
           
           // Create team match record
@@ -1103,15 +1105,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await storage.createTeamMatchPlayer(teamMatchPlayerData);
             }
           }
-          
-          // Update team statistics for both teams
-          await storage.calculateAndUpdateTeamStatistics(myTeamId);
-          await storage.calculateAndUpdateTeamStatistics(opponentTeamId);
-          
-        } catch (error) {
-          console.error('Error processing team match:', error);
-          // Don't fail the entire request if team processing fails
         }
+        
+        // Update team statistics for My Team if it's selected from database
+        if (hasMyTeamId) {
+          await storage.calculateAndUpdateTeamStatistics(myTeamId);
+        }
+        
+        // Update team statistics for Opponent Team if it's selected from database
+        if (hasOpponentTeamId) {
+          await storage.calculateAndUpdateTeamStatistics(opponentTeamId);
+        }
+        
+      } catch (error) {
+        console.error('Error processing team statistics:', error);
+        // Don't fail the entire request if team processing fails
       }
 
       res.json({
@@ -1123,7 +1131,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         manOfTheMatch: manOfTheMatchResult,
         results,
         errors,
-        teamMatch: isTeamMatch ? { id: teamMatchId, myTeamId, opponentTeamId } : undefined
+        teamMatch: isBothTeamsMatch ? { id: teamMatchId, myTeamId, opponentTeamId } : undefined,
+        teamStatsUpdated: {
+          myTeam: hasMyTeamId,
+          opponentTeam: hasOpponentTeamId
+        }
       });
     } catch (error) {
       console.error('Error processing local match results:', error);
