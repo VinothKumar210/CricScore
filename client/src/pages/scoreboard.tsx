@@ -910,16 +910,16 @@ export default function Scoreboard() {
       // For no ball, update striker's stats
       if (type === 'nb') {
         if (additionalRuns > 0) {
-          // When batter scores runs on no-ball, they hit the ball so it counts as ball faced
-          updateBatsmanStats(matchState.strikeBatsman, additionalRuns, true);
+          // When batter scores runs on no-ball, they get runs but NO ball faced (illegal delivery)
+          updateBatsmanStats(matchState.strikeBatsman, additionalRuns, false);
           
           // Rotate strike for odd additional runs
           if (shouldRotateStrike(additionalRuns)) {
             rotateStrike();
           }
         } else {
-          // Even if no runs scored, no-ball counts as ball faced (ball delivered to batter)
-          updateBatsmanStats(matchState.strikeBatsman, 0, true);
+          // No runs scored on no-ball, no ball faced (illegal delivery)
+          updateBatsmanStats(matchState.strikeBatsman, 0, false);
         }
       }
       
