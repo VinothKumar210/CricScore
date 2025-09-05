@@ -646,7 +646,7 @@ export default function Scoreboard() {
     
     const targetReached = currentScore.runs >= matchState.target;
     const oversCompleted = currentScore.overs >= matchState.matchOvers;
-    const allWicketsLost = currentScore.wickets >= 10; // Assuming 11 players, so 10 wickets
+    const allWicketsLost = currentScore.wickets >= getMaxWicketsForCurrentInnings(); // All wickets lost
     
     let matchComplete = false;
     let result: 'first_team_wins' | 'second_team_wins' | 'draw' | undefined;
@@ -980,7 +980,7 @@ export default function Scoreboard() {
       };
       
       // Check for first innings completion
-      if (matchState && !matchState.firstInningsComplete && (newBalls >= matchState.matchOvers * 6 || updatedScore.wickets >= 10)) {
+      if (matchState && !matchState.firstInningsComplete && (newBalls >= matchState.matchOvers * 6 || updatedScore.wickets >= getMaxWicketsForCurrentInnings())) {
         setTimeout(() => {
           // For wicket balls, calculate updated bowler stats manually
           const updatedBowlerStats = bowlerStats.map(stat => {
@@ -1061,7 +1061,7 @@ export default function Scoreboard() {
       };
       
       // Check for first innings completion
-      if (matchState && !matchState.firstInningsComplete && (newBalls >= matchState.matchOvers * 6 || updatedScore.wickets >= 10)) {
+      if (matchState && !matchState.firstInningsComplete && (newBalls >= matchState.matchOvers * 6 || updatedScore.wickets >= getMaxWicketsForCurrentInnings())) {
         setTimeout(() => {
           // For wicket balls, calculate updated bowler stats manually
           const updatedBowlerStats = bowlerStats.map(stat => {
@@ -1151,7 +1151,7 @@ export default function Scoreboard() {
       };
       
       // Check for first innings completion
-      if (matchState && !matchState.firstInningsComplete && updatedScore.wickets >= 10) {
+      if (matchState && !matchState.firstInningsComplete && updatedScore.wickets >= getMaxWicketsForCurrentInnings()) {
         setTimeout(() => {
           // For wicket balls, calculate updated bowler stats manually
           const updatedBowlerStats = bowlerStats.map(stat => {
@@ -1400,6 +1400,16 @@ export default function Scoreboard() {
   // Calculate total balls actually faced by batsmen (excludes wides, includes no-balls when batsman faced them)
   const getTotalBallsFacedByBatsmen = (statsArray: BatsmanStats[]) => {
     return statsArray.reduce((total, stat) => total + stat.balls, 0);
+  };
+
+  // Calculate maximum wickets based on current batting team size (team size - 1)
+  const getMaxWicketsForCurrentInnings = () => {
+    const userTeamBatsFirst = matchState?.userTeamRole.includes('batting');
+    const battingTeamPlayers = userTeamBatsFirst 
+      ? matchState?.myTeamPlayers.filter(p => p.name.trim() !== '') || []
+      : matchState?.opponentTeamPlayers.filter(p => p.name.trim() !== '') || [];
+    
+    return Math.max(battingTeamPlayers.length - 1, 1); // At least 1 wicket needed
   };
 
   return (
@@ -2415,7 +2425,7 @@ export default function Scoreboard() {
                   
                   {matchState.matchResult === 'first_team_wins' && (
                     <div className="text-blue-600 font-medium mt-2">
-                      {battingTeamScore.wickets >= 10 
+                      {battingTeamScore.wickets >= getMaxWicketsForCurrentInnings() 
                         ? 'All out! Target not reached.'
                         : `Won by ${(matchState.target || 0) - battingTeamScore.runs - 1} runs`}
                     </div>
