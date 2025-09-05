@@ -1397,6 +1397,11 @@ export default function Scoreboard() {
     return `${overs}.${remainingBalls}`;
   };
 
+  // Calculate total balls actually faced by batsmen (excludes wides, includes no-balls when batsman faced them)
+  const getTotalBallsFacedByBatsmen = (statsArray: BatsmanStats[]) => {
+    return statsArray.reduce((total, stat) => total + stat.balls, 0);
+  };
+
   return (
     <div className="p-4 max-w-6xl mx-auto space-y-6">
       {/* Back Button */}
@@ -2233,7 +2238,7 @@ export default function Scoreboard() {
                     {matchState.firstInningsScore.runs}/{matchState.firstInningsScore.wickets}
                   </div>
                   <div className="text-lg text-muted-foreground">
-                    in {formatOvers(matchState.firstInningsScore.balls)} overs
+                    in {formatOvers(getTotalBallsFacedByBatsmen(firstInningsBatsmanStats))} overs
                   </div>
                   <div className="text-xl font-semibold mt-4">
                     Target: {matchState.target} runs
@@ -2395,11 +2400,11 @@ export default function Scoreboard() {
                   <div className="font-medium">Final Scores:</div>
                   <div>
                     First Innings: {matchState.firstInningsScore?.runs}/{matchState.firstInningsScore?.wickets} 
-                    ({formatOvers(matchState.firstInningsScore?.balls || 0)} ov)
+                    ({formatOvers(getTotalBallsFacedByBatsmen(firstInningsBatsmanStats))} ov)
                   </div>
                   <div>
                     Second Innings: {battingTeamScore.runs}/{battingTeamScore.wickets} 
-                    ({formatOvers(battingTeamScore.balls)} ov)
+                    ({formatOvers(getTotalBallsFacedByBatsmen(batsmanStats))} ov)
                   </div>
                   
                   {matchState.matchResult === 'second_team_wins' && (
