@@ -68,6 +68,7 @@ export default function Scoreboard() {
   const [showExtrasDialog, setShowExtrasDialog] = useState(false);
   const [extrasType, setExtrasType] = useState<'nb' | 'wd' | 'lb' | null>(null);
   const [pendingWicket, setPendingWicket] = useState<DismissalType | null>(null);
+  const [currentOverBalls, setCurrentOverBalls] = useState<string[]>([]);
 
   useEffect(() => {
     // Get match data from localStorage
@@ -234,6 +235,9 @@ export default function Scoreboard() {
   };
 
   const handleRunScored = (runs: number) => {
+    // Add to current over display
+    setCurrentOverBalls(prev => [...prev, runs.toString()]);
+    
     // Update team score
     updateTeamScore(runs);
     
@@ -251,12 +255,18 @@ export default function Scoreboard() {
     // Check for end of over
     if ((battingTeamScore.balls + 1) % 6 === 0) {
       // End of over - auto rotate strike
-      setTimeout(() => rotateStrike(), 500);
+      setTimeout(() => {
+        rotateStrike();
+        setCurrentOverBalls([]); // Reset for new over
+      }, 500);
     }
   };
 
   const handleExtra = (type: 'nb' | 'wd' | 'lb', additionalRuns: number = 0, isLegBye: boolean = false) => {
     if (type === 'nb' && isLegBye) {
+      // Add to current over display
+      setCurrentOverBalls(prev => [...prev, `NB+LB${additionalRuns}`]);
+      
       // No Ball + Leg Bye: 1 run penalty + leg bye runs, no legal ball
       const totalRuns = 1 + additionalRuns; // 1 for no ball + leg bye runs
       updateTeamScore(totalRuns, false); // Not a legal ball
@@ -278,6 +288,9 @@ export default function Scoreboard() {
         rotateStrike();
       }
     } else if (type === 'lb') {
+      // Add to current over display
+      setCurrentOverBalls(prev => [...prev, `LB${additionalRuns}`]);
+      
       // Leg bye: runs go to team only, striker faces ball, legal delivery
       updateTeamScore(additionalRuns, true); // Legal ball
       updateBatsmanStats(matchState.strikeBatsman, 0, true); // No runs to batsman, but ball faced
@@ -299,9 +312,19 @@ export default function Scoreboard() {
       
       // Check for end of over
       if ((battingTeamScore.balls + 1) % 6 === 0) {
-        setTimeout(() => rotateStrike(), 500);
+        setTimeout(() => {
+          rotateStrike();
+          setCurrentOverBalls([]); // Reset for new over
+        }, 500);
       }
     } else {
+      // Add to current over display
+      if (type === 'nb') {
+        setCurrentOverBalls(prev => [...prev, additionalRuns > 0 ? `NB+${additionalRuns}` : 'NB']);
+      } else if (type === 'wd') {
+        setCurrentOverBalls(prev => [...prev, additionalRuns > 0 ? `WD+${additionalRuns}` : 'WD']);
+      }
+      
       const totalRuns = 1 + additionalRuns; // 1 for the extra + additional runs
       
       // Update team score (no legal ball)
@@ -333,6 +356,9 @@ export default function Scoreboard() {
   };
 
   const handleWicket = (dismissalType: DismissalType) => {
+    // Add to current over display
+    setCurrentOverBalls(prev => [...prev, 'W']);
+    
     // Update team wickets
     setBattingTeamScore(prev => ({
       ...prev,
@@ -348,6 +374,14 @@ export default function Scoreboard() {
     
     // Update striker's balls faced
     updateBatsmanStats(matchState.strikeBatsman, 0);
+    
+    // Check for end of over
+    if ((battingTeamScore.balls + 1) % 6 === 0) {
+      setTimeout(() => {
+        rotateStrike();
+        setCurrentOverBalls([]); // Reset for new over
+      }, 500);
+    }
     
     // Show dialog to select new batsman
     setShowBatsmanDialog(true);
@@ -408,6 +442,39 @@ export default function Scoreboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Current Over Display */}
+      <div className="bg-sky-50 dark:bg-slate-800 rounded-lg border p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-lg">Current Over</h3>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Over {battingTeamScore.overs + 1}
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Balls:</span>
+          <div className="flex space-x-1">
+            {currentOverBalls.map((ball, index) => (
+              <div
+                key={index}
+                className="min-w-[40px] h-8 bg-white dark:bg-slate-700 border rounded flex items-center justify-center text-sm font-medium"
+                data-testid={`ball-${index}`}
+              >
+                {ball}
+              </div>
+            ))}
+            {/* Empty slots for remaining balls */}
+            {Array.from({ length: 6 - currentOverBalls.length }, (_, index) => (
+              <div
+                key={`empty-${index}`}
+                className="min-w-[40px] h-8 bg-gray-100 dark:bg-slate-600 border border-dashed rounded flex items-center justify-center text-sm text-gray-400"
+              >
+                -
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Scoring Controls */}
       <Card>
