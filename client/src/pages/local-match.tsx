@@ -974,6 +974,9 @@ export default function LocalMatch() {
             localStorage.setItem('myTeamName', myTeamName || 'My Team');
             localStorage.setItem('opponentTeamName', opponentTeamName || 'Opponent Team');
             localStorage.setItem('matchOvers', getCurrentOvers());
+            // Store team IDs for team statistics tracking
+            localStorage.setItem('myTeamId', selectedMyTeam || '');
+            localStorage.setItem('opponentTeamId', selectedOpponentTeam || '');
             setLocation('/coin-toss');
           }}
           disabled={!bothTeamsHavePlayers || !teamsEqual || !isValidCustomConfig()}

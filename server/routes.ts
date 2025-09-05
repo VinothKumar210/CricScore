@@ -290,6 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             runsConceded: playerStat.runsConceded,
             wicketsTaken: playerStat.wicketsTaken,
             catchesTaken: playerStat.catchesTaken,
+            runOuts: 0, // Default to 0
             isManOfTheMatch: false // Default to false for this endpoint
           });
 
@@ -970,13 +971,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         myTeamPlayers,
         opponentTeamPlayers,
         finalScore,
-        playerPerformances
+        playerPerformances,
+        myTeamId,
+        opponentTeamId
       } = req.body;
 
       // Basic validation
       if (!matchName || !venue || !matchDate || !myTeamPlayers || !opponentTeamPlayers || !playerPerformances) {
         return res.status(400).json({ message: "Missing required fields" });
       }
+      
+      // Check if this is a team vs team match
+      const isTeamMatch = myTeamId && opponentTeamId && myTeamId.trim() !== '' && opponentTeamId.trim() !== '';
+      let teamMatchId: string | undefined;
 
       // Import man of the match calculation
       const { calculateManOfTheMatch } = require('../shared/man-of-the-match');
@@ -1020,6 +1027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               runsConceded: parseInt(runsConceded) || 0,
               wicketsTaken: parseInt(wicketsTaken) || 0,
               catchesTaken: parseInt(catchesTaken) || 0,
+              runOuts: 0, // Default to 0 for local matches
               isManOfTheMatch: isManOfTheMatch || false
             };
 
@@ -1045,6 +1053,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
+      
+      // If this is a team vs team match, create team match record and update team statistics
+      if (isTeamMatch) {
+        try {
+          // Determine match result based on final score
+          // For now, assume the team with higher score wins (you can enhance this logic)
+          let result: 'HOME_WIN' | 'AWAY_WIN' | 'DRAW' = 'HOME_WIN';
+          
+          // Create team match record
+          const teamMatchData = {
+            homeTeamId: myTeamId,
+            awayTeamId: opponentTeamId,
+            matchDate: new Date(matchDate),
+            venue: venue,
+            status: 'COMPLETED' as const,
+            result: result,
+            homeTeamRuns: finalScore?.runs || 0,
+            homeTeamWickets: finalScore?.wickets || 0,
+            homeTeamOvers: finalScore?.overs || 0,
+            awayTeamRuns: 0, // You might want to calculate this from the match data
+            awayTeamWickets: 0,
+            awayTeamOvers: 0
+          };
+          
+          const teamMatch = await storage.createTeamMatch(teamMatchData);
+          teamMatchId = teamMatch.id;
+          
+          // Create team match player records for players who participated
+          for (const performance of playerPerformances) {
+            if (performance.userId) {
+              // Determine which team this player belongs to
+              const isMyTeamPlayer = myTeamPlayers.some((p: any) => p.userId === performance.userId);
+              const teamId = isMyTeamPlayer ? myTeamId : opponentTeamId;
+              
+              const teamMatchPlayerData = {
+                teamMatchId: teamMatch.id,
+                userId: performance.userId,
+                teamId: teamId,
+                runsScored: parseInt(performance.runsScored) || 0,
+                ballsFaced: parseInt(performance.ballsFaced) || 0,
+                wasDismissed: false, // Default for local matches
+                oversBowled: parseFloat(performance.oversBowled) || 0,
+                runsConceded: parseInt(performance.runsConceded) || 0,
+                wicketsTaken: parseInt(performance.wicketsTaken) || 0,
+                catchesTaken: parseInt(performance.catchesTaken) || 0
+              };
+              
+              await storage.createTeamMatchPlayer(teamMatchPlayerData);
+            }
+          }
+          
+          // Update team statistics for both teams
+          await storage.calculateAndUpdateTeamStatistics(myTeamId);
+          await storage.calculateAndUpdateTeamStatistics(opponentTeamId);
+          
+        } catch (error) {
+          console.error('Error processing team match:', error);
+          // Don't fail the entire request if team processing fails
+        }
+      }
 
       res.json({
         message: "Local match results processed",
@@ -1054,7 +1122,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         errorCount: errors.length,
         manOfTheMatch: manOfTheMatchResult,
         results,
-        errors
+        errors,
+        teamMatch: isTeamMatch ? { id: teamMatchId, myTeamId, opponentTeamId } : undefined
       });
     } catch (error) {
       console.error('Error processing local match results:', error);
