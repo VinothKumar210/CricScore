@@ -274,14 +274,14 @@ export default function Scoreboard() {
         return undefined;
       };
 
-      // Process batsman stats
-      batsmanStats.forEach(stat => {
+      // Process batsman stats from both innings
+      // First innings stats
+      firstInningsBatsmanStats.forEach(stat => {
         const userId = findPlayerUserId(stat.player.name);
         const playerName = stat.player.name;
         
         if (playerPerformanceMap.has(playerName)) {
           const existing = playerPerformanceMap.get(playerName)!;
-          // Add to existing stats instead of overwriting
           existing.runsScored += stat.runs;
           existing.ballsFaced += stat.balls;
         } else {
@@ -298,14 +298,61 @@ export default function Scoreboard() {
         }
       });
       
-      // Process bowler stats
+      // Current innings stats (second innings if match is complete, or first innings if only first innings played)
+      batsmanStats.forEach(stat => {
+        const userId = findPlayerUserId(stat.player.name);
+        const playerName = stat.player.name;
+        
+        if (playerPerformanceMap.has(playerName)) {
+          const existing = playerPerformanceMap.get(playerName)!;
+          existing.runsScored += stat.runs;
+          existing.ballsFaced += stat.balls;
+        } else {
+          playerPerformanceMap.set(playerName, {
+            userId: userId,
+            playerName: playerName,
+            runsScored: stat.runs,
+            ballsFaced: stat.balls,
+            oversBowled: 0,
+            runsConceded: 0,
+            wicketsTaken: 0,
+            catchesTaken: 0
+          });
+        }
+      });
+      
+      // Process bowler stats from both innings
+      // First innings bowling stats
+      firstInningsBowlerStats.forEach(stat => {
+        const userId = findPlayerUserId(stat.player.name);
+        const playerName = stat.player.name;
+        
+        if (playerPerformanceMap.has(playerName)) {
+          const existing = playerPerformanceMap.get(playerName)!;
+          existing.oversBowled += stat.overs;
+          existing.runsConceded += stat.runs;
+          existing.wicketsTaken += stat.wickets;
+        } else {
+          playerPerformanceMap.set(playerName, {
+            userId: userId,
+            playerName: playerName,
+            runsScored: 0,
+            ballsFaced: 0,
+            oversBowled: stat.overs,
+            runsConceded: stat.runs,
+            wicketsTaken: stat.wickets,
+            catchesTaken: 0
+          });
+        }
+      });
+      
+      // Current innings bowling stats (second innings if match is complete, or first innings if only first innings played)
       bowlerStats.forEach(stat => {
         const userId = findPlayerUserId(stat.player.name);
         const playerName = stat.player.name;
         
         if (playerPerformanceMap.has(playerName)) {
           const existing = playerPerformanceMap.get(playerName)!;
-          // Add to existing stats instead of overwriting
           existing.oversBowled += stat.overs;
           existing.runsConceded += stat.runs;
           existing.wicketsTaken += stat.wickets;
@@ -323,17 +370,40 @@ export default function Scoreboard() {
         }
       });
 
-      // Calculate catches taken by fielders from caught dismissals
-      batsmanStats.forEach(stat => {
+      // Calculate catches taken by fielders from caught dismissals in both innings
+      // First innings catches
+      firstInningsBatsmanStats.forEach(stat => {
         if (stat.dismissalType === 'Caught' && stat.fielderName) {
           const fielderName = stat.fielderName;
           
-          // Find or create entry for the fielder
           if (playerPerformanceMap.has(fielderName)) {
             const existing = playerPerformanceMap.get(fielderName)!;
             existing.catchesTaken += 1;
           } else {
-            // Fielder hasn't batted or bowled, create entry
+            const userId = findPlayerUserId(fielderName);
+            playerPerformanceMap.set(fielderName, {
+              userId: userId,
+              playerName: fielderName,
+              runsScored: 0,
+              ballsFaced: 0,
+              oversBowled: 0,
+              runsConceded: 0,
+              wicketsTaken: 0,
+              catchesTaken: 1
+            });
+          }
+        }
+      });
+      
+      // Current innings catches
+      batsmanStats.forEach(stat => {
+        if (stat.dismissalType === 'Caught' && stat.fielderName) {
+          const fielderName = stat.fielderName;
+          
+          if (playerPerformanceMap.has(fielderName)) {
+            const existing = playerPerformanceMap.get(fielderName)!;
+            existing.catchesTaken += 1;
+          } else {
             const userId = findPlayerUserId(fielderName);
             playerPerformanceMap.set(fielderName, {
               userId: userId,
@@ -631,7 +701,11 @@ export default function Scoreboard() {
       currentInnings: 2,
       // Switch teams
       userTeamRole: prev.userTeamRole.includes('batting') ? prev.userTeamRole.replace('batting', 'bowling') : prev.userTeamRole.replace('bowling', 'batting'),
-      opponentTeamRole: prev.opponentTeamRole.includes('batting') ? prev.opponentTeamRole.replace('batting', 'bowling') : prev.opponentTeamRole.replace('bowling', 'batting')
+      opponentTeamRole: prev.opponentTeamRole.includes('batting') ? prev.opponentTeamRole.replace('batting', 'bowling') : prev.opponentTeamRole.replace('bowling', 'batting'),
+      // Clear batsmen and bowler from first innings to start fresh for second innings
+      strikeBatsman: { name: '', hasAccount: false, username: '' },
+      nonStrikeBatsman: { name: '', hasAccount: false, username: '' },
+      currentBowler: { name: '', hasAccount: false, username: '' }
     } : null);
     
     // Reset score for second innings
@@ -643,8 +717,14 @@ export default function Scoreboard() {
       extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0 }
     });
     
-    // PRESERVE stats from first innings - DO NOT clear them
-    // Stats will accumulate across both innings for complete match performance
+    // Reset batsman stats for second innings (but preserve first innings stats separately)
+    setBatsmanStats([]);
+    
+    // Reset bowler stats for second innings (but preserve first innings stats separately)  
+    setBowlerStats([]);
+    
+    // Reset current over display
+    setCurrentOverBalls([]);
     
     // Close the transition dialog
     setShowInningsTransition(false);
