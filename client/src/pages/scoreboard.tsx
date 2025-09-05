@@ -805,13 +805,19 @@ export default function Scoreboard() {
         }
       }));
       
-      // For no ball with runs, update striker's stats
-      if (type === 'nb' && additionalRuns > 0) {
-        updateBatsmanStats(matchState.strikeBatsman, additionalRuns, false);
-        
-        // Rotate strike for odd additional runs
-        if (shouldRotateStrike(additionalRuns)) {
-          rotateStrike();
+      // For no ball, update striker's stats
+      if (type === 'nb') {
+        if (additionalRuns > 0) {
+          // When batter scores runs on no-ball, they hit the ball so it counts as ball faced
+          updateBatsmanStats(matchState.strikeBatsman, additionalRuns, true);
+          
+          // Rotate strike for odd additional runs
+          if (shouldRotateStrike(additionalRuns)) {
+            rotateStrike();
+          }
+        } else {
+          // Even if no runs scored, no-ball counts as ball faced (ball delivered to batter)
+          updateBatsmanStats(matchState.strikeBatsman, 0, true);
         }
       }
       
