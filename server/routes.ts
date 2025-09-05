@@ -1,9 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import jwt from "jsonwebtoken";
-import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema } from "@shared/schema";
+import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, liveMatchFormSchema, insertLiveMatchBallSchema } from "@shared/schema";
 import { z } from "zod";
+
+// Global type declaration for push subscriptions
+declare global {
+  var pushSubscriptions: Map<string, any> | undefined;
+}
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -42,7 +48,23 @@ const authenticateToken = async (req: any, res: any, next: any) => {
   }
 };
 
+// WebSocket connections for live matches
+const liveMatchConnections = new Map<string, Set<WebSocket>>();
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  
+  // Function to broadcast live match updates
+  const broadcastLiveMatchUpdate = (matchId: string, update: any) => {
+    const connections = liveMatchConnections.get(matchId);
+    if (connections) {
+      const message = JSON.stringify(update);
+      connections.forEach(ws => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(message);
+        }
+      });
+    }
+  };
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
@@ -234,6 +256,254 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Live match endpoints
+  app.post("/api/live-matches", authenticateToken, async (req: any, res) => {
+    try {
+      const validatedData = liveMatchFormSchema.parse(req.body);
+      
+      const liveMatchData = {
+        ...validatedData,
+        creatorId: req.userId,
+        matchDate: new Date(validatedData.matchDate),
+      };
+
+      const liveMatch = await storage.createLiveMatch(liveMatchData);
+      
+      // TODO: Send push notifications to spectators
+      // This will be implemented in the next task
+      
+      res.status(201).json(liveMatch);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/live-matches", authenticateToken, async (req: any, res) => {
+    try {
+      const liveMatches = await storage.getLiveMatchesByCreator(req.userId);
+      res.json(liveMatches);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/live-matches/:id", async (req, res) => {
+    try {
+      const liveMatch = await storage.getLiveMatch(req.params.id);
+      if (!liveMatch) {
+        return res.status(404).json({ message: "Live match not found" });
+      }
+      res.json(liveMatch);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/live-matches/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const liveMatch = await storage.getLiveMatch(req.params.id);
+      if (!liveMatch) {
+        return res.status(404).json({ message: "Live match not found" });
+      }
+      
+      if (liveMatch.creatorId !== req.userId) {
+        return res.status(403).json({ message: "Not authorized to update this match" });
+      }
+
+      const updatedMatch = await storage.updateLiveMatch(req.params.id, req.body);
+      
+      // Broadcast the update to all connected clients
+      broadcastLiveMatchUpdate(req.params.id, {
+        type: 'match_update',
+        match: updatedMatch
+      });
+      
+      res.json(updatedMatch);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/live-matches/:id/balls", authenticateToken, async (req: any, res) => {
+    try {
+      const liveMatch = await storage.getLiveMatch(req.params.id);
+      if (!liveMatch) {
+        return res.status(404).json({ message: "Live match not found" });
+      }
+      
+      if (liveMatch.creatorId !== req.userId) {
+        return res.status(403).json({ message: "Not authorized to score this match" });
+      }
+
+      const validatedData = insertLiveMatchBallSchema.parse({
+        ...req.body,
+        liveMatchId: req.params.id,
+      });
+
+      const ball = await storage.addLiveMatchBall(validatedData);
+      
+      // Update match current score based on the ball
+      const currentScore = liveMatch.currentScore || { runs: 0, wickets: 0, overs: 0, ballsInOver: 0 };
+      const newScore = {
+        runs: currentScore.runs + validatedData.runs,
+        wickets: currentScore.wickets + (validatedData.isWicket ? 1 : 0),
+        overs: validatedData.overNumber - 1,
+        ballsInOver: validatedData.ballInOver,
+      };
+
+      // Update the match with new score
+      await storage.updateLiveMatch(req.params.id, {
+        currentScore: newScore
+      });
+
+      // Broadcast the ball-by-ball update to all connected clients
+      broadcastLiveMatchUpdate(req.params.id, {
+        type: 'ball_update',
+        ball,
+        currentScore: newScore,
+        match: await storage.getLiveMatch(req.params.id)
+      });
+      
+      res.status(201).json({ ball, currentScore: newScore });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/live-matches/:id/balls", async (req, res) => {
+    try {
+      const balls = await storage.getLiveMatchBalls(req.params.id);
+      res.json(balls);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/live-matches/:id/spectators", async (req, res) => {
+    try {
+      const spectators = await storage.getLiveMatchSpectators(req.params.id);
+      res.json(spectators);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Push notification subscription endpoints
+  app.post("/api/push/subscribe", authenticateToken, async (req: any, res) => {
+    try {
+      const { subscription, username } = req.body;
+      
+      if (!subscription || !username) {
+        return res.status(400).json({ message: "Subscription and username are required" });
+      }
+
+      // For now, store in memory (in production, this would be in database)
+      if (!globalThis.pushSubscriptions) {
+        globalThis.pushSubscriptions = new Map();
+      }
+      
+      globalThis.pushSubscriptions.set(username, subscription);
+      console.log(`Push subscription registered for user: ${username}`);
+      
+      res.json({ message: "Subscription registered successfully" });
+    } catch (error) {
+      console.error("Error registering push subscription:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/push/unsubscribe", authenticateToken, async (req: any, res) => {
+    try {
+      const { username } = req.body;
+      
+      if (!username) {
+        return res.status(400).json({ message: "Username is required" });
+      }
+
+      if (globalThis.pushSubscriptions) {
+        globalThis.pushSubscriptions.delete(username);
+        console.log(`Push subscription removed for user: ${username}`);
+      }
+      
+      res.json({ message: "Subscription removed successfully" });
+    } catch (error) {
+      console.error("Error removing push subscription:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Send push notifications to spectators
+  app.post("/api/live-matches/:id/notify", authenticateToken, async (req: any, res) => {
+    try {
+      const liveMatch = await storage.getLiveMatch(req.params.id);
+      if (!liveMatch) {
+        return res.status(404).json({ message: "Live match not found" });
+      }
+      
+      if (liveMatch.creatorId !== req.userId) {
+        return res.status(403).json({ message: "Not authorized to send notifications for this match" });
+      }
+
+      const { title, body, data } = req.body;
+      const notificationsSent = [];
+      const errors = [];
+
+      // Get push subscriptions for spectators
+      if (globalThis.pushSubscriptions) {
+        for (const username of liveMatch.spectatorUsernames) {
+          const subscription = globalThis.pushSubscriptions.get(username);
+          if (subscription) {
+            try {
+              // In a real implementation, you would use a library like web-push to send notifications
+              // For now, we'll just log that we would send the notification
+              console.log(`Would send push notification to ${username}:`, {
+                title: title || `${liveMatch.matchName} Started!`,
+                body: body || `Live match between ${liveMatch.myTeamName} vs ${liveMatch.opponentTeamName} has started`,
+                data: {
+                  matchId: liveMatch.id,
+                  ...data
+                }
+              });
+              
+              notificationsSent.push(username);
+              
+              // Mark spectator as notified
+              await storage.updateSpectatorNotification(liveMatch.id, username, true);
+              
+            } catch (error) {
+              console.error(`Error sending notification to ${username}:`, error);
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+              errors.push({ username, error: errorMessage });
+            }
+          } else {
+            console.log(`No push subscription found for user: ${username}`);
+            errors.push({ username, error: 'No push subscription found' });
+          }
+        }
+      }
+
+      res.json({
+        message: "Notifications processed",
+        sent: notificationsSent.length,
+        errors: errors.length,
+        details: {
+          notificationsSent,
+          errors
+        }
+      });
+      
+    } catch (error) {
+      console.error("Error sending push notifications:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -1144,5 +1414,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Setup WebSocket server for live match updates
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws: WebSocket, req) => {
+    console.log('WebSocket connection established');
+    
+    ws.on('message', (message: string) => {
+      try {
+        const data = JSON.parse(message);
+        
+        if (data.type === 'join_live_match' && data.matchId) {
+          // Add connection to live match room
+          if (!liveMatchConnections.has(data.matchId)) {
+            liveMatchConnections.set(data.matchId, new Set());
+          }
+          liveMatchConnections.get(data.matchId)!.add(ws);
+          
+          // Store match ID on the WebSocket for cleanup
+          (ws as any).liveMatchId = data.matchId;
+          
+          console.log(`Client joined live match: ${data.matchId}`);
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      // Remove connection from live match room
+      const matchId = (ws as any).liveMatchId;
+      if (matchId && liveMatchConnections.has(matchId)) {
+        liveMatchConnections.get(matchId)!.delete(ws);
+        if (liveMatchConnections.get(matchId)!.size === 0) {
+          liveMatchConnections.delete(matchId);
+        }
+      }
+      console.log('WebSocket connection closed');
+    });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
+  
   return httpServer;
 }
