@@ -19,25 +19,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      try {
-        const currentUser = await authService.me();
-        setUser(currentUser);
-        
-        // Invalidate statistics cache to ensure fresh data on app initialization
-        if (currentUser) {
-          try {
-            await refreshUserStatistics();
-          } catch (error) {
-            console.warn('Failed to refresh user statistics on init:', error);
-            // Don't block app initialization if statistics refresh fails
-          }
-        }
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
+      const currentUser = await authService.me();
+      setUser(currentUser);
+      
+      // Invalidate statistics cache to ensure fresh data on app initialization
+      if (currentUser) {
+        await refreshUserStatistics();
       }
+      
+      setIsLoading(false);
     };
 
     initAuth();

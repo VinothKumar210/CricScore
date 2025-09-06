@@ -19,9 +19,6 @@ import TeamDetail from "@/pages/team-detail";
 import Invitations from "@/pages/invitations";
 import SearchPlayers from "@/pages/search";
 import LocalMatch from "@/pages/local-match";
-import LiveMatchSetup from "@/pages/live-match-setup";
-import LiveMatchView from "@/pages/live-match-view";
-import LiveMatchScore from "@/pages/live-match-score";
 import { CoinToss } from "@/pages/coin-toss";
 import MatchScoring from "@/pages/match-scoring";
 import Scoreboard from "@/pages/scoreboard";
@@ -184,22 +181,6 @@ function Router() {
       <Route path="/local-match">
         <ProtectedRoute>
           <LocalMatch />
-        </ProtectedRoute>
-      </Route>
-      
-      <Route path="/live-match-setup">
-        <ProtectedRoute>
-          <LiveMatchSetup />
-        </ProtectedRoute>
-      </Route>
-      
-      <Route path="/live-match/:id/view">
-        <LiveMatchView />
-      </Route>
-      
-      <Route path="/live-match/:id/score">
-        <ProtectedRoute>
-          <LiveMatchScore />
         </ProtectedRoute>
       </Route>
       

@@ -465,10 +465,7 @@ export default function Scoreboard() {
             wickets: battingTeamScore.wickets,
             overs: battingTeamScore.overs + (battingTeamScore.balls / 6)
           },
-          playerPerformances: allPlayerPerformances,
-          // Include team IDs for team statistics tracking
-          myTeamId: localStorage.getItem('myTeamId') || '',
-          opponentTeamId: localStorage.getItem('opponentTeamId') || ''
+          playerPerformances: allPlayerPerformances
         })
       });
 
