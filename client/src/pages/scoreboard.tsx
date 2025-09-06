@@ -432,26 +432,13 @@ export default function Scoreboard() {
     // Add to current over display
     setCurrentOverBalls(prev => [...prev, runOutRuns === 0 ? 'RO' : `RO+${runOutRuns}`]);
     
-    // Apply strike rotation based on runs completed (before changing who is out)
-    if (runOutRuns > 0 && shouldRotateStrike(runOutRuns)) {
-      rotateStrike();
-    }
-    
     // Update team wickets
     setBattingTeamScore(prev => ({
       ...prev,
       wickets: prev.wickets + 1
     }));
     
-    // Check for end of over
-    if ((battingTeamScore.balls + 1) % 6 === 0) {
-      setTimeout(() => {
-        rotateStrike();
-        setCurrentOverBalls([]);
-      }, 500);
-    }
-    
-    // Track which batsman is out for replacement
+    // Track which batsman is out for replacement (don't rotate yet)
     setOutBatsmanIsStriker(isStriker);
     setPendingWicket('Run Out');
     
@@ -486,6 +473,21 @@ export default function Scoreboard() {
         ...prev,
         nonStrikeBatsman: newBatsman
       } : null);
+    }
+    
+    // Now apply strike rotation if needed (after replacement)
+    if (pendingWicket === 'Run Out' && runOutRuns > 0 && shouldRotateStrike(runOutRuns)) {
+      setTimeout(() => {
+        rotateStrike();
+      }, 100); // Small delay to ensure state updates
+    }
+    
+    // Check for end of over (after all updates)
+    if ((battingTeamScore.balls) % 6 === 0) {
+      setTimeout(() => {
+        rotateStrike();
+        setCurrentOverBalls([]);
+      }, 200);
     }
     
     setShowBatsmanDialog(false);
