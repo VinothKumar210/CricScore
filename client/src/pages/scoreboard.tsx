@@ -353,6 +353,14 @@ export default function Scoreboard() {
         }
       }
       
+      // For wide with runs, do NOT update batsman stats, but still handle strike rotation
+      if (type === 'wd' && additionalRuns > 0) {
+        // Rotate strike for odd additional runs (but no runs to batsman)
+        if (shouldRotateStrike(additionalRuns)) {
+          rotateStrike();
+        }
+      }
+      
       // Update bowler stats (runs but no legal ball)
       updateBowlerStats(totalRuns, false);
     }
@@ -401,16 +409,21 @@ export default function Scoreboard() {
   const handleRunOut = (runs: number) => {
     setRunOutRuns(runs);
     
-    // Add runs to team and striker (except for +0)
-    if (runs > 0) {
-      updateTeamScore(runs);
-      updateBatsmanStats(matchState.strikeBatsman, runs);
-      updateBowlerStats(runs);
-      
-      // Rotate strike based on runs completed
-      if (shouldRotateStrike(runs)) {
-        rotateStrike();
-      }
+    // Don't update scores yet - wait until user selects who is out
+    // Just store the runs and proceed to who is out dialog
+    
+    setShowRunOutDialog(false);
+    setShowWhoIsOutDialog(true);
+  };
+
+  const handleWhoIsOut = (isStriker: boolean) => {
+    // NOW update scores - only after user selects who is out
+    
+    // Add runs to team and original striker (except for +0)
+    if (runOutRuns > 0) {
+      updateTeamScore(runOutRuns);
+      updateBatsmanStats(matchState.strikeBatsman, runOutRuns);
+      updateBowlerStats(runOutRuns);
     } else {
       // Run Out +0 - just face the ball
       updateBatsmanStats(matchState.strikeBatsman, 0);
@@ -418,22 +431,18 @@ export default function Scoreboard() {
     }
     
     // Add to current over display
-    setCurrentOverBalls(prev => [...prev, runs === 0 ? 'RO' : `RO+${runs}`]);
+    setCurrentOverBalls(prev => [...prev, runOutRuns === 0 ? 'RO' : `RO+${runOutRuns}`]);
     
-    // Now ask who is out
-    setShowRunOutDialog(false);
-    setShowWhoIsOutDialog(true);
-  };
-
-  const handleWhoIsOut = (isStriker: boolean) => {
+    // Apply strike rotation BEFORE changing batsmen (based on original striker)
+    if (runOutRuns > 0 && shouldRotateStrike(runOutRuns)) {
+      rotateStrike();
+    }
+    
     // Update team wickets
     setBattingTeamScore(prev => ({
       ...prev,
       wickets: prev.wickets + 1
     }));
-    
-    // Bowler doesn't get credit for run out
-    // (bowler stats already updated in handleRunOut)
     
     // Check for end of over
     if ((battingTeamScore.balls + 1) % 6 === 0) {
@@ -448,12 +457,8 @@ export default function Scoreboard() {
       // Striker is out - will be replaced
       setPendingWicket('Run Out');
     } else {
-      // Non-striker is out - need to swap them to striker position first
-      setMatchState(prev => prev ? {
-        ...prev,
-        strikeBatsman: prev.nonStrikeBatsman,
-        nonStrikeBatsman: prev.strikeBatsman
-      } : null);
+      // Non-striker is out - they become the striker to be replaced
+      // (since we already rotated strike above if needed)
       setPendingWicket('Run Out');
     }
     
