@@ -16,7 +16,7 @@ export default function LiveScoreboard() {
   const { shouldShow: showNotificationPermission, dismiss: dismissNotificationPermission } = useNotificationPermissionState();
 
   // Fetch ongoing matches where user is a spectator
-  const { data: spectatorMatches, isLoading: spectatorMatchesLoading } = useQuery<
+  const { data: spectatorMatches, isLoading: spectatorMatchesLoading, error: spectatorError } = useQuery<
     (LocalMatch & { 
       creator: User;
       myTeam?: { name: string; id: string };
@@ -24,10 +24,11 @@ export default function LiveScoreboard() {
     })[]
   >({
     queryKey: ["/api/local-matches/spectator"],
+    enabled: !!user, // Only fetch when user is authenticated
   });
 
   // Fetch all ongoing matches for discovery
-  const { data: ongoingMatches, isLoading: ongoingMatchesLoading } = useQuery<
+  const { data: ongoingMatches, isLoading: ongoingMatchesLoading, error: ongoingError } = useQuery<
     (LocalMatch & { 
       creator: User;
       myTeam?: { name: string; id: string };
@@ -35,7 +36,13 @@ export default function LiveScoreboard() {
     })[]
   >({
     queryKey: ["/api/local-matches/ongoing"],
+    enabled: !!user, // Only fetch when user is authenticated
   });
+
+  // Debug logging
+  console.log("LiveScoreboard - User:", user ? `${user.username} (${user.id})` : 'Not authenticated');
+  console.log("LiveScoreboard - Spectator matches:", { spectatorMatches, spectatorMatchesLoading, spectatorError });
+  console.log("LiveScoreboard - Ongoing matches:", { ongoingMatches, ongoingMatchesLoading, ongoingError });
 
   const getMatchStatusBadge = (status: string) => {
     switch (status) {
