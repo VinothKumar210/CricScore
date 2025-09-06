@@ -10,6 +10,9 @@ import type {
   TeamMatch,
   TeamMatchPlayer,
   TeamStatistics,
+  LocalMatch,
+  MatchSpectator,
+  OverHistory,
 } from "@prisma/client";
 import type {
   InsertUser,
@@ -21,6 +24,9 @@ import type {
   InsertTeamMatch,
   InsertTeamMatchPlayer,
   InsertTeamStatistics,
+  InsertLocalMatch,
+  InsertMatchSpectator,
+  InsertOverHistory,
   ProfileSetup,
 } from "@shared/schema";
 
@@ -80,6 +86,22 @@ export interface IStorage {
   createTeamStatistics(stats: InsertTeamStatistics): Promise<TeamStatistics>;
   updateTeamStatistics(teamId: string, stats: Partial<TeamStatistics>): Promise<TeamStatistics | undefined>;
   calculateAndUpdateTeamStatistics(teamId: string): Promise<void>;
+
+  // Local match operations
+  createLocalMatch(match: InsertLocalMatch): Promise<LocalMatch>;
+  getLocalMatch(id: string): Promise<LocalMatch | undefined>;
+  updateLocalMatch(id: string, updates: Partial<LocalMatch>): Promise<LocalMatch | undefined>;
+  getSpectatorMatches(userId: string): Promise<LocalMatch[]>;
+  getOngoingMatches(): Promise<LocalMatch[]>;
+
+  // Match spectator operations
+  addMatchSpectator(spectator: InsertMatchSpectator): Promise<MatchSpectator>;
+  removeMatchSpectator(localMatchId: string, userId: string): Promise<boolean>;
+  getMatchSpectators(localMatchId: string): Promise<(MatchSpectator & { user: User })[]>;
+
+  // Over history operations
+  createOverHistory(overHistory: InsertOverHistory): Promise<OverHistory>;
+  getOverHistory(localMatchId: string): Promise<OverHistory[]>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -668,6 +690,232 @@ export class PrismaStorage implements IStorage {
       return updatedStats;
     } catch {
       return undefined;
+    }
+  }
+
+  // ============== LOCAL MATCH OPERATIONS ==============
+
+  async createLocalMatch(match: InsertLocalMatch): Promise<LocalMatch> {
+    return await prisma.localMatch.create({
+      data: match
+    });
+  }
+
+  async getLocalMatch(id: string): Promise<LocalMatch | undefined> {
+    try {
+      const match = await prisma.localMatch.findUnique({
+        where: { id },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              username: true,
+              profileName: true,
+              email: true,
+              description: true,
+              role: true,
+              battingHand: true,
+              bowlingStyle: true,
+              profileComplete: true,
+              createdAt: true
+            }
+          },
+          myTeam: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          opponentTeam: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          spectators: {
+            include: {
+              user: true
+            }
+          },
+          overHistory: {
+            orderBy: {
+              overNumber: 'asc'
+            }
+          }
+        }
+      });
+      return match || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async updateLocalMatch(id: string, updates: Partial<LocalMatch>): Promise<LocalMatch | undefined> {
+    try {
+      const match = await prisma.localMatch.update({
+        where: { id },
+        data: updates
+      });
+      return match;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async getSpectatorMatches(userId: string): Promise<LocalMatch[]> {
+    try {
+      const matches = await prisma.localMatch.findMany({
+        where: {
+          spectators: {
+            some: {
+              userId: userId
+            }
+          },
+          status: {
+            in: ["ONGOING", "CREATED"]
+          }
+        },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              username: true,
+              profileName: true,
+              email: true,
+              description: true,
+              role: true,
+              battingHand: true,
+              bowlingStyle: true,
+              profileComplete: true,
+              createdAt: true
+            }
+          },
+          myTeam: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          opponentTeam: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        orderBy: {
+          matchDate: 'desc'
+        }
+      });
+      return matches;
+    } catch {
+      return [];
+    }
+  }
+
+  async getOngoingMatches(): Promise<LocalMatch[]> {
+    try {
+      const matches = await prisma.localMatch.findMany({
+        where: {
+          status: {
+            in: ["ONGOING", "CREATED"]
+          },
+          allowSpectators: true
+        },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              username: true,
+              profileName: true,
+              email: true,
+              description: true,
+              role: true,
+              battingHand: true,
+              bowlingStyle: true,
+              profileComplete: true,
+              createdAt: true
+            }
+          },
+          myTeam: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          opponentTeam: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        orderBy: {
+          matchDate: 'desc'
+        }
+      });
+      return matches;
+    } catch {
+      return [];
+    }
+  }
+
+  // ============== MATCH SPECTATOR OPERATIONS ==============
+
+  async addMatchSpectator(spectator: InsertMatchSpectator): Promise<MatchSpectator> {
+    return await prisma.matchSpectator.create({
+      data: spectator
+    });
+  }
+
+  async removeMatchSpectator(localMatchId: string, userId: string): Promise<boolean> {
+    try {
+      await prisma.matchSpectator.delete({
+        where: {
+          localMatchId_userId: {
+            localMatchId,
+            userId
+          }
+        }
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async getMatchSpectators(localMatchId: string): Promise<(MatchSpectator & { user: User })[]> {
+    try {
+      const spectators = await prisma.matchSpectator.findMany({
+        where: { localMatchId },
+        include: { user: true }
+      });
+      return spectators;
+    } catch {
+      return [];
+    }
+  }
+
+  // ============== OVER HISTORY OPERATIONS ==============
+
+  async createOverHistory(overHistory: InsertOverHistory): Promise<OverHistory> {
+    return await prisma.overHistory.create({
+      data: overHistory
+    });
+  }
+
+  async getOverHistory(localMatchId: string): Promise<OverHistory[]> {
+    try {
+      const history = await prisma.overHistory.findMany({
+        where: { localMatchId },
+        orderBy: [
+          { innings: 'asc' },
+          { overNumber: 'asc' }
+        ]
+      });
+      return history;
+    } catch {
+      return [];
     }
   }
 

@@ -22,6 +22,8 @@ import LocalMatch from "@/pages/local-match";
 import { CoinToss } from "@/pages/coin-toss";
 import MatchScoring from "@/pages/match-scoring";
 import Scoreboard from "@/pages/scoreboard";
+import LiveScoreboard from "@/pages/live-scoreboard";
+import MatchView from "@/pages/match-view";
 import { useEffect, useState } from "react";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -199,6 +201,18 @@ function Router() {
       <Route path="/scoreboard">
         <ProtectedRoute>
           <Scoreboard />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/live-scoreboard">
+        <ProtectedRoute>
+          <LiveScoreboard />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/match-view/:id">
+        <ProtectedRoute>
+          <MatchView />
         </ProtectedRoute>
       </Route>
 
