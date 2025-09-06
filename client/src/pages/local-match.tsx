@@ -1333,6 +1333,9 @@ export default function LocalMatch() {
             // Store team IDs for team statistics tracking
             localStorage.setItem('myTeamId', selectedMyTeam || '');
             localStorage.setItem('opponentTeamId', selectedOpponentTeam || '');
+            // Store spectator data
+            localStorage.setItem('allowSpectators', JSON.stringify(allowSpectators));
+            localStorage.setItem('spectatorUsernames', JSON.stringify(spectatorUsernames));
             setLocation('/coin-toss');
           }}
           disabled={!bothTeamsHavePlayers || !teamsEqual || !isValidCustomConfig()}
