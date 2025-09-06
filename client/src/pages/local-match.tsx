@@ -619,7 +619,7 @@ export default function LocalMatch() {
         </p>
       </div>
       
-      {/* Player Selection Mode Toggle */}
+      {/* Player Selection Mode Toggle - FORCE REFRESH */}
       <Card className="mb-6">
         <CardHeader>
           <CardTitle className="flex items-center">
