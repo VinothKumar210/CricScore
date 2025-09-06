@@ -475,15 +475,9 @@ export default function Scoreboard() {
       } : null);
     }
     
-    // For Run Out: apply strike rotation after replacement based on runs completed
-    if (pendingWicket === 'Run Out') {
-      // Use a longer timeout to ensure replacement happens first
-      setTimeout(() => {
-        if (runOutRuns > 0 && shouldRotateStrike(runOutRuns)) {
-          rotateStrike();
-        }
-      }, 100);
-    }
+    // For Run Out: NO additional strike rotation needed
+    // The natural strike rotation already happened when the runs were completed
+    // The players are already in their correct positions based on completed runs
     
     // Check for end of over (after all updates)
     if ((battingTeamScore.balls) % 6 === 0) {
