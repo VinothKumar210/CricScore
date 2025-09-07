@@ -460,24 +460,39 @@ export default function Scoreboard() {
       }
     ]);
     
-    // Replace the correct batsman based on who was out
-    if (outBatsmanIsStriker) {
-      // Replace striker
+    // For Run Out: determine replacement position based on where the out batsman was running to
+    if (pendingWicket === 'Run Out') {
+      if (outBatsmanIsStriker) {
+        // Striker is out - replace striker
+        setMatchState(prev => prev ? {
+          ...prev,
+          strikeBatsman: newBatsman
+        } : null);
+      } else {
+        // Non-striker is out
+        // For even runs (2,4,6): non-striker was running toward striker end
+        // For odd runs (1,3,5): non-striker was running toward non-striker end  
+        if (runOutRuns % 2 === 0) {
+          // Even runs - non-striker was heading to striker end, replace at striker
+          setMatchState(prev => prev ? {
+            ...prev,
+            strikeBatsman: newBatsman
+          } : null);
+        } else {
+          // Odd runs - non-striker was heading to non-striker end, replace at non-striker
+          setMatchState(prev => prev ? {
+            ...prev,
+            nonStrikeBatsman: newBatsman
+          } : null);
+        }
+      }
+    } else {
+      // For other dismissals, replace striker (who got out)
       setMatchState(prev => prev ? {
         ...prev,
         strikeBatsman: newBatsman
       } : null);
-    } else {
-      // Replace non-striker  
-      setMatchState(prev => prev ? {
-        ...prev,
-        nonStrikeBatsman: newBatsman
-      } : null);
     }
-    
-    // For Run Out: NO additional strike rotation needed
-    // The natural strike rotation already happened when the runs were completed
-    // The players are already in their correct positions based on completed runs
     
     // Check for end of over (after all updates)
     if ((battingTeamScore.balls) % 6 === 0) {
