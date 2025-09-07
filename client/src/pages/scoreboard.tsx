@@ -73,6 +73,7 @@ export default function Scoreboard() {
   const [runOutRuns, setRunOutRuns] = useState<number>(0);
   const [outBatsmanIsStriker, setOutBatsmanIsStriker] = useState<boolean>(true);
   const [currentOverBalls, setCurrentOverBalls] = useState<string[]>([]);
+  const [undoStack, setUndoStack] = useState<any[]>([]);
 
   useEffect(() => {
     // Get match data from localStorage
@@ -238,7 +239,22 @@ export default function Scoreboard() {
     });
   };
 
+  const saveStateForUndo = () => {
+    const currentState = {
+      battingTeamScore: { ...battingTeamScore },
+      batsmanStats: [...batsmanStats],
+      bowlerStats: [...bowlerStats],
+      matchState: { ...matchState },
+      currentOverBalls: [...currentOverBalls],
+      actionType: 'run'
+    };
+    setUndoStack(prev => [...prev, currentState]);
+  };
+
   const handleRunScored = (runs: number) => {
+    // Save current state for undo
+    saveStateForUndo();
+    
     // Add to current over display
     setCurrentOverBalls(prev => [...prev, runs.toString()]);
     
@@ -264,6 +280,22 @@ export default function Scoreboard() {
         setCurrentOverBalls([]); // Reset for new over
       }, 500);
     }
+  };
+
+  const handleUndo = () => {
+    if (undoStack.length === 0) return;
+    
+    const lastState = undoStack[undoStack.length - 1];
+    
+    // Restore all states
+    setBattingTeamScore(lastState.battingTeamScore);
+    setBatsmanStats(lastState.batsmanStats);
+    setBowlerStats(lastState.bowlerStats);
+    setMatchState(lastState.matchState);
+    setCurrentOverBalls(lastState.currentOverBalls);
+    
+    // Remove the last state from undo stack
+    setUndoStack(prev => prev.slice(0, -1));
   };
 
   const handleExtra = (type: 'nb' | 'wd' | 'lb', additionalRuns: number = 0, isLegBye: boolean = false) => {
@@ -600,9 +632,12 @@ export default function Scoreboard() {
           </div>
 
           {/* Wicket and Extras */}
-          <div className="grid md:grid-cols-4 gap-4">
+          <div className="grid md:grid-cols-5 gap-4">
             <Button
-              onClick={() => setShowWicketDialog(true)}
+              onClick={() => {
+                saveStateForUndo();
+                setShowWicketDialog(true);
+              }}
               variant="destructive"
               className="h-12"
               data-testid="button-wicket"
@@ -611,7 +646,18 @@ export default function Scoreboard() {
             </Button>
             
             <Button
+              onClick={handleUndo}
+              disabled={undoStack.length === 0}
+              variant="secondary"
+              className="h-12"
+              data-testid="button-undo"
+            >
+              Undo
+            </Button>
+            
+            <Button
               onClick={() => {
+                saveStateForUndo();
                 setExtrasType('nb');
                 setShowExtrasDialog(true);
               }}
@@ -624,6 +670,7 @@ export default function Scoreboard() {
             
             <Button
               onClick={() => {
+                saveStateForUndo();
                 setExtrasType('wd');
                 setShowExtrasDialog(true);
               }}
@@ -636,6 +683,7 @@ export default function Scoreboard() {
             
             <Button
               onClick={() => {
+                saveStateForUndo();
                 setExtrasType('lb');
                 setShowExtrasDialog(true);
               }}
