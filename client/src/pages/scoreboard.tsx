@@ -470,16 +470,21 @@ export default function Scoreboard() {
         } : null);
       } else {
         // Non-striker is out
-        // For even runs (2,4,6): non-striker was running toward striker end
-        // For odd runs (1,3,5): non-striker was running toward non-striker end  
         if (runOutRuns % 2 === 0) {
-          // Even runs - non-striker was heading to striker end, replace at striker
+          // Even runs (2,4,6): after completed runs, players back to original positions
+          // Non-striker was running toward striker end, so:
+          // - New player takes striker position (where B was heading)
+          // - A (original striker) moves to non-striker position
           setMatchState(prev => prev ? {
             ...prev,
-            strikeBatsman: newBatsman
+            strikeBatsman: newBatsman,
+            nonStrikeBatsman: prev.strikeBatsman  // A moves to non-striker
           } : null);
         } else {
-          // Odd runs - non-striker was heading to non-striker end, replace at non-striker
+          // Odd runs (1,3,5): after completed runs, players swapped positions
+          // Non-striker was running toward non-striker end, so:
+          // - New player takes non-striker position (where B was heading)
+          // - A stays at striker position
           setMatchState(prev => prev ? {
             ...prev,
             nonStrikeBatsman: newBatsman
