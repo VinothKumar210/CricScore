@@ -426,14 +426,6 @@ export default function Scoreboard() {
     // Update striker's balls faced
     updateBatsmanStats(matchState.strikeBatsman, 0);
     
-    // Check for end of over
-    if ((battingTeamScore.balls + 1) % 6 === 0) {
-      setTimeout(() => {
-        rotateStrike();
-        setCurrentOverBalls([]); // Reset for new over
-      }, 500);
-    }
-    
     // Show dialog to select new batsman
     setShowBatsmanDialog(true);
     setPendingWicket(dismissalType);
@@ -525,18 +517,12 @@ export default function Scoreboard() {
       }
     } else {
       // For other dismissals, replace striker (who got out)
+      // The new batsman simply takes the striker position
+      // The non-striker stays in their position
       setMatchState(prev => prev ? {
         ...prev,
         strikeBatsman: newBatsman
       } : null);
-    }
-    
-    // Check for end of over (after all updates)
-    if ((battingTeamScore.balls) % 6 === 0) {
-      setTimeout(() => {
-        rotateStrike();
-        setCurrentOverBalls([]);
-      }, 100);
     }
     
     setShowBatsmanDialog(false);
