@@ -716,42 +716,74 @@ export default function Scoreboard() {
       </Card>
 
       {/* Current Players */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>On Strike</span>
-              <Badge variant="default">*</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="font-semibold text-lg">{matchState.strikeBatsman.name}</p>
-              <div className="text-sm space-y-1">
-                <p>Runs: {getCurrentBatsmanStats(true).runs}</p>
-                <p>Balls: {getCurrentBatsmanStats(true).balls}</p>
-                <p>Strike Rate: {getCurrentBatsmanStats(true).strikeRate}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Non-Strike</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <p className="font-semibold text-lg">{matchState.nonStrikeBatsman.name}</p>
-              <div className="text-sm space-y-1">
-                <p>Runs: {getCurrentBatsmanStats(false).runs}</p>
-                <p>Balls: {getCurrentBatsmanStats(false).balls}</p>
-                <p>Strike Rate: {getCurrentBatsmanStats(false).strikeRate}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Current Batsmen</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 px-3 font-semibold">Name</th>
+                  <th className="text-center py-2 px-3 font-semibold">Runs</th>
+                  <th className="text-center py-2 px-3 font-semibold">Balls</th>
+                  <th className="text-center py-2 px-3 font-semibold">Strike Rate</th>
+                  <th className="text-center py-2 px-3 font-semibold">4's</th>
+                  <th className="text-center py-2 px-3 font-semibold">6's</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Striker first */}
+                <tr className="border-b bg-sky-50 dark:bg-slate-800" data-testid="striker-row">
+                  <td className="py-3 px-3">
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="default" className="text-xs">*</Badge>
+                      <span className="font-semibold text-lg">{matchState.strikeBatsman.name}</span>
+                    </div>
+                  </td>
+                  <td className="text-center py-3 px-3 font-medium" data-testid="striker-runs">
+                    {getCurrentBatsmanStats(true).runs}
+                  </td>
+                  <td className="text-center py-3 px-3" data-testid="striker-balls">
+                    {getCurrentBatsmanStats(true).balls}
+                  </td>
+                  <td className="text-center py-3 px-3" data-testid="striker-strike-rate">
+                    {getCurrentBatsmanStats(true).strikeRate}
+                  </td>
+                  <td className="text-center py-3 px-3" data-testid="striker-fours">
+                    {getCurrentBatsmanStats(true).fours || 0}
+                  </td>
+                  <td className="text-center py-3 px-3" data-testid="striker-sixes">
+                    {getCurrentBatsmanStats(true).sixes || 0}
+                  </td>
+                </tr>
+                {/* Non-striker second */}
+                <tr data-testid="non-striker-row">
+                  <td className="py-3 px-3">
+                    <span className="font-semibold text-lg">{matchState.nonStrikeBatsman.name}</span>
+                  </td>
+                  <td className="text-center py-3 px-3 font-medium" data-testid="non-striker-runs">
+                    {getCurrentBatsmanStats(false).runs}
+                  </td>
+                  <td className="text-center py-3 px-3" data-testid="non-striker-balls">
+                    {getCurrentBatsmanStats(false).balls}
+                  </td>
+                  <td className="text-center py-3 px-3" data-testid="non-striker-strike-rate">
+                    {getCurrentBatsmanStats(false).strikeRate}
+                  </td>
+                  <td className="text-center py-3 px-3" data-testid="non-striker-fours">
+                    {getCurrentBatsmanStats(false).fours || 0}
+                  </td>
+                  <td className="text-center py-3 px-3" data-testid="non-striker-sixes">
+                    {getCurrentBatsmanStats(false).sixes || 0}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Bowler Stats */}
       <Card>
