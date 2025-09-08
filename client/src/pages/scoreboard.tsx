@@ -74,6 +74,7 @@ export default function Scoreboard() {
   const [outBatsmanIsStriker, setOutBatsmanIsStriker] = useState<boolean>(true);
   const [currentOverBalls, setCurrentOverBalls] = useState<string[]>([]);
   const [undoStack, setUndoStack] = useState<any[]>([]);
+  const [showBowlerDialog, setShowBowlerDialog] = useState(false);
 
   useEffect(() => {
     // Get match data from localStorage
@@ -274,10 +275,9 @@ export default function Scoreboard() {
     
     // Check for end of over
     if ((battingTeamScore.balls + 1) % 6 === 0) {
-      // End of over - auto rotate strike
+      // End of over - show bowler selection dialog
       setTimeout(() => {
-        rotateStrike();
-        setCurrentOverBalls([]); // Reset for new over
+        setShowBowlerDialog(true);
       }, 500);
     }
   };
@@ -349,8 +349,7 @@ export default function Scoreboard() {
       // Check for end of over
       if ((battingTeamScore.balls + 1) % 6 === 0) {
         setTimeout(() => {
-          rotateStrike();
-          setCurrentOverBalls([]); // Reset for new over
+          setShowBowlerDialog(true);
         }, 500);
       }
     } else {
@@ -470,6 +469,33 @@ export default function Scoreboard() {
     setShowBatsmanDialog(true);
   };
 
+  const selectNewBowler = (newBowler: LocalPlayer) => {
+    // Add new bowler stats
+    setBowlerStats(prev => [
+      ...prev,
+      {
+        player: newBowler,
+        overs: 0,
+        balls: 0,
+        runs: 0,
+        wickets: 0,
+        economy: 0
+      }
+    ]);
+    
+    // Update match state with new bowler
+    setMatchState(prev => prev ? {
+      ...prev,
+      currentBowler: newBowler
+    } : null);
+    
+    // Rotate strike and reset over
+    rotateStrike();
+    setCurrentOverBalls([]);
+    
+    setShowBowlerDialog(false);
+  };
+
   const selectNewBatsman = (newBatsman: LocalPlayer) => {
     // Add new batsman stats
     setBatsmanStats(prev => [
@@ -531,6 +557,12 @@ export default function Scoreboard() {
 
   const availableBatsmen = battingTeamPlayers.filter(player => 
     !batsmanStats.some(stat => stat.player.name === player.name)
+  );
+  
+  const bowlingTeamPlayers = userTeamBatsFirst ? matchState.opponentTeamPlayers : matchState.myTeamPlayers;
+  
+  const availableBowlers = bowlingTeamPlayers.filter((player: LocalPlayer) => 
+    player.name !== matchState?.currentBowler.name
   );
 
   const formatOvers = (balls: number) => {
@@ -944,6 +976,35 @@ export default function Scoreboard() {
                 </div>
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bowler Selection Dialog */}
+      <Dialog open={showBowlerDialog} onOpenChange={() => {}}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select Next Bowler</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Over completed! Select the next bowler from the bowling team:
+            </p>
+            <ScrollArea className="h-60">
+              <div className="grid gap-2">
+                {availableBowlers.map((player, index) => (
+                  <Button
+                    key={`${player.name}-${index}`}
+                    onClick={() => selectNewBowler(player)}
+                    variant="outline"
+                    className="justify-start"
+                    data-testid={`button-new-bowler-${index}`}
+                  >
+                    {player.name}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         </DialogContent>
       </Dialog>
