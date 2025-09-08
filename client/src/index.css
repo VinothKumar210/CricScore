@@ -479,7 +479,7 @@ html {
 }
 
 .form-section {
-  @apply space-y-4 p-6 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm rounded-2xl border border-white/10;
+  @apply space-y-4 p-6 bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm rounded-2xl border border-white/10;
 }
 
 .form-section-title {
@@ -490,21 +490,21 @@ html {
 .form-field-error input,
 .form-field-error textarea,
 .form-field-error select {
-  @apply border-destructive/50 bg-destructive/5 focus-visible:ring-destructive/30 focus-visible:border-destructive/70;
+  @apply border-red-500/50 bg-red-500/5 focus-visible:ring-red-500/30 focus-visible:border-red-500/70;
 }
 
 .form-field-success input,
 .form-field-success textarea, 
 .form-field-success select {
-  @apply border-emerald-500/50 bg-emerald-500/5 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/70;
+  @apply border-green-500/50 bg-green-500/5 focus-visible:ring-green-500/30 focus-visible:border-green-500/70;
 }
 
 .form-message-error {
-  @apply text-destructive text-sm font-medium flex items-center space-x-2 mt-2 animate-in slide-in-from-top-1 duration-200;
+  @apply text-red-600 text-sm font-medium flex items-center space-x-2 mt-2 animate-in slide-in-from-top-1 duration-200;
 }
 
 .form-message-success {
-  @apply text-emerald-600 text-sm font-medium flex items-center space-x-2 mt-2 animate-in slide-in-from-top-1 duration-200;
+  @apply text-green-600 text-sm font-medium flex items-center space-x-2 mt-2 animate-in slide-in-from-top-1 duration-200;
 }
 
 /* Enhanced form grid layouts */
@@ -518,7 +518,7 @@ html {
 
 /* Modern select and textarea styling */
 select, textarea {
-  @apply rounded-2xl border border-input/20 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 focus-visible:border-primary/50 focus-visible:bg-background/80 hover:border-input/40 hover:bg-background/60;
+  @apply rounded-2xl border border-slate-200/30 bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-0 focus-visible:border-blue-500/50 focus-visible:bg-white/20 hover:border-slate-300/50 hover:bg-white/15;
 }
 
 textarea {
@@ -554,5 +554,5 @@ textarea {
 
 /* Enhanced focus ring for accessibility */
 .focus-ring-modern:focus-visible {
-  @apply ring-2 ring-primary/50 ring-offset-2 ring-offset-background outline-none;
+  @apply ring-2 ring-blue-500/50 ring-offset-2 ring-offset-white outline-none;
 }
