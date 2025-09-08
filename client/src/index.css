@@ -818,17 +818,19 @@ textarea {
 
 /* Touch feedback for mobile */
 .touch-feedback {
-  @apply active:scale-95 transition-transform duration-150;
+  @apply active:scale-[0.95] transition-transform duration-150;
 }
 
 .touch-feedback-subtle {
-  @apply active:scale-98 transition-transform duration-100;
+  @apply active:scale-[0.98] transition-transform duration-100;
 }
 
 /* Mobile-optimized scrolling */
 .scroll-mobile {
-  @apply overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 scrollbar-thumb-rounded-full;
+  @apply overflow-x-auto;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent;
 }
 
 /* Safe area handling for mobile */
