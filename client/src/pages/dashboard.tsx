@@ -108,15 +108,9 @@ export default function Dashboard() {
                 <p className="text-2xl sm:text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-matches-played">
                   {stats?.matchesPlayed || 0}
                 </p>
-                <div className="space-y-2">
-                  <Progress 
-                    value={getMatchesProgress(stats?.matchesPlayed || 0)} 
-                    className="h-2 bg-gradient-to-r from-primary/10 to-sky-500/10 progress-animated" 
-                  />
-                  <div className="flex items-center space-x-1 text-xs">
-                    <ArrowUpRight className="w-3 h-3 text-green-500" />
-                    <span className="text-green-600 font-medium">Active Player</span>
-                  </div>
+                <div className="flex items-center space-x-1 text-xs">
+                  <ArrowUpRight className="w-3 h-3 text-green-500" />
+                  <span className="text-green-600 font-medium">Active Player</span>
                 </div>
               </div>
               <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -137,18 +131,9 @@ export default function Dashboard() {
                 <p className="text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-total-runs">
                   {stats?.totalRuns || 0}
                 </p>
-                <div className="space-y-2">
-                  <Progress 
-                    value={getRunsProgress(stats?.totalRuns || 0)} 
-                    className="h-2 bg-gradient-to-r from-green-500/10 to-emerald-600/10 progress-animated" 
-                  />
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-green-600 font-medium">Scoring Well</span>
-                    </div>
-                    <span className="text-muted-foreground font-mono">{getRunsProgress(stats?.totalRuns || 0).toFixed(0)}%</span>
-                  </div>
+                <div className="flex items-center space-x-1 text-xs">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-green-600 font-medium">Scoring Well</span>
                 </div>
               </div>
               <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -169,20 +154,11 @@ export default function Dashboard() {
                 <p className="text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-strike-rate">
                   {stats?.strikeRate || "0.00"}
                 </p>
-                <div className="space-y-2">
-                  <Progress 
-                    value={getStrikeRatePercentage(Number(stats?.strikeRate) || 0)} 
-                    className="h-2 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 progress-animated" 
-                  />
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-1">
-                      <Zap className="w-3 h-3 text-orange-500" />
-                      <span className="text-orange-600 font-medium">
-                        {Number(stats?.strikeRate) >= 130 ? "Explosive" : Number(stats?.strikeRate) >= 100 ? "Aggressive" : "Building"}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground font-mono">{getStrikeRatePercentage(Number(stats?.strikeRate) || 0).toFixed(0)}%</span>
-                  </div>
+                <div className="flex items-center space-x-1 text-xs">
+                  <Zap className="w-3 h-3 text-orange-500" />
+                  <span className="text-orange-600 font-medium">
+                    {Number(stats?.strikeRate) >= 130 ? "Explosive" : Number(stats?.strikeRate) >= 100 ? "Aggressive" : "Building"}
+                  </span>
                 </div>
               </div>
               <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -203,20 +179,11 @@ export default function Dashboard() {
                 <p className="text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-wickets">
                   {stats?.wicketsTaken || 0}
                 </p>
-                <div className="space-y-2">
-                  <Progress 
-                    value={getWicketsProgress(stats?.wicketsTaken || 0)} 
-                    className="h-2 bg-gradient-to-r from-red-500/10 to-rose-600/10 progress-animated" 
-                  />
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-1">
-                      <Target className="w-3 h-3 text-red-500" />
-                      <span className="text-red-600 font-medium">
-                        {(stats?.wicketsTaken || 0) >= 20 ? "Lethal" : (stats?.wicketsTaken || 0) >= 10 ? "Sharp" : "Building"}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground font-mono">{getWicketsProgress(stats?.wicketsTaken || 0).toFixed(0)}%</span>
-                  </div>
+                <div className="flex items-center space-x-1 text-xs">
+                  <Target className="w-3 h-3 text-red-500" />
+                  <span className="text-red-600 font-medium">
+                    {(stats?.wicketsTaken || 0) >= 20 ? "Lethal" : (stats?.wicketsTaken || 0) >= 10 ? "Sharp" : "Building"}
+                  </span>
                 </div>
               </div>
               <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
@@ -237,20 +204,11 @@ export default function Dashboard() {
                 <p className="text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-economy">
                   {stats?.economy || "0.00"}
                 </p>
-                <div className="space-y-2">
-                  <Progress 
-                    value={getEconomyProgress(Number(stats?.economy) || 0)} 
-                    className="h-2 bg-gradient-to-r from-blue-500/10 to-indigo-600/10 progress-animated" 
-                  />
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-1">
-                      <Activity className="w-3 h-3 text-blue-500" />
-                      <span className="text-blue-600 font-medium">
-                        {Number(stats?.economy) <= 6 ? "Excellent" : Number(stats?.economy) <= 8 ? "Good" : "Improving"}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground font-mono">{getEconomyProgress(Number(stats?.economy) || 0).toFixed(0)}%</span>
-                  </div>
+                <div className="flex items-center space-x-1 text-xs">
+                  <Activity className="w-3 h-3 text-blue-500" />
+                  <span className="text-blue-600 font-medium">
+                    {Number(stats?.economy) <= 6 ? "Excellent" : Number(stats?.economy) <= 8 ? "Good" : "Improving"}
+                  </span>
                 </div>
               </div>
               <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
