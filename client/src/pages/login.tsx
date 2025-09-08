@@ -72,18 +72,18 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-4">
-            <span className="text-primary-foreground text-2xl font-bold">C</span>
+    <div className="min-h-screen min-h-dvh bg-gradient-to-br from-sky-50 to-blue-100 flex items-center justify-center container-mobile safe-area-top safe-area-bottom">
+      <Card className="w-full max-w-sm sm:max-w-md card-mobile">
+        <CardHeader className="text-center space-y-3 sm:space-y-4">
+          <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-primary rounded-full flex items-center justify-center mb-4 shadow-lg">
+            <span className="text-primary-foreground text-xl sm:text-2xl font-bold">🏏</span>
           </div>
-          <CardTitle className="text-3xl font-bold">CricketScore Pro</CardTitle>
-          <CardDescription>Track your cricket career statistics</CardDescription>
+          <CardTitle className="text-mobile-h2">CricScore</CardTitle>
+          <CardDescription className="text-mobile-caption">Track your cricket career statistics</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="form-mobile">
               <FormField
                 control={form.control}
                 name="email"
@@ -122,7 +122,7 @@ export default function Login() {
               />
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full btn-mobile-lg"
                 disabled={isLoading}
                 data-testid="button-login"
               >
