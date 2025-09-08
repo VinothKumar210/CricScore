@@ -3,16 +3,18 @@
 @tailwind utilities;
 
 :root {
-  /* Modern Background with subtle gradient */
-  --background: linear-gradient(135deg, hsl(210, 40%, 98%) 0%, hsl(220, 60%, 97%) 100%);
+  /* Modern Background with enhanced mobile-optimized gradient */
+  --background: linear-gradient(135deg, hsl(210, 40%, 98%) 0%, hsl(220, 60%, 97%) 50%, hsl(200, 50%, 96%) 100%);
   --background-solid: hsl(210, 40%, 98%);
+  --background-mobile: linear-gradient(180deg, hsl(210, 40%, 99%) 0%, hsl(220, 60%, 98%) 100%);
   --foreground: hsl(222.2, 84%, 4.9%);
   
-  /* Enhanced glassmorphism cards */
-  --card: hsla(0, 0%, 100%, 0.7);
+  /* Enhanced glassmorphism cards with better mobile performance */
+  --card: hsla(255, 255, 255, 0.85);
   --card-foreground: hsl(222.2, 84%, 4.9%);
-  --card-backdrop: blur(20px);
-  --card-border: hsla(210, 40%, 80%, 0.3);
+  --card-backdrop: blur(24px);
+  --card-border: hsla(210, 40%, 85%, 0.4);
+  --card-shadow: 0 8px 32px hsla(210, 40%, 20%, 0.12), 0 2px 16px hsla(210, 40%, 20%, 0.08);
   
   --popover: hsla(0, 0%, 100%, 0.95);
   --popover-foreground: hsl(222.2, 84%, 4.9%);
@@ -63,11 +65,26 @@
   --sidebar-border: hsla(214.3, 31.8%, 91.4%, 0.4);
   --sidebar-ring: hsl(199, 89%, 48%);
   
-  /* Enhanced typography system */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-serif: "SF Pro Display", Georgia, serif;
-  --font-mono: "SF Mono", Menlo, monospace;
-  --radius: 0.75rem;
+  /* Enhanced typography system with mobile optimization */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "SF Pro Display", "Inter", Georgia, serif;
+  --font-mono: "SF Mono", "Fira Code", Consolas, "Liberation Mono", Menlo, monospace;
+  --radius: 1rem;
+  --radius-sm: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
+  
+  /* Mobile-specific spacing */
+  --spacing-mobile-xs: 0.5rem;
+  --spacing-mobile-sm: 0.75rem;
+  --spacing-mobile-md: 1rem;
+  --spacing-mobile-lg: 1.5rem;
+  --spacing-mobile-xl: 2rem;
+  
+  /* Touch-friendly sizes */
+  --touch-target: 44px;
+  --touch-target-sm: 40px;
+  --touch-target-lg: 48px;
   
   /* Typography scale */
   --text-xs: 0.75rem;
@@ -145,11 +162,25 @@
     @apply font-sans antialiased text-foreground;
     background: var(--background);
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
     line-height: var(--leading-normal);
     letter-spacing: var(--tracking-normal);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    
+    /* Mobile optimizations */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
+  
+  /* Mobile-specific background */
+  @media (max-width: 768px) {
+    body {
+      background: var(--background-mobile);
+    }
   }
 
   /* Enhanced typography hierarchy */
@@ -261,19 +292,47 @@
   }
 }
 
-/* Modern glassmorphism card effects */
+/* Enhanced mobile-optimized glassmorphism card effects */
 .glassmorphism {
   background: var(--card);
   backdrop-filter: var(--card-backdrop);
+  -webkit-backdrop-filter: var(--card-backdrop);
   border: 1px solid var(--card-border);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  box-shadow: var(--card-shadow);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Mobile performance optimizations */
+  will-change: transform;
+  contain: layout style paint;
+}
+
+/* Reduced motion variant for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .glassmorphism {
+    transition: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: hsla(255, 255, 255, 0.95);
+  }
 }
 
 .glassmorphism:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 40px 0 rgba(31, 38, 135, 0.2), 0 8px 16px 0 rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 16px 32px 0 rgba(31, 38, 135, 0.18), 0 4px 12px 0 rgba(0, 0, 0, 0.08);
   border-color: var(--primary);
+}
+
+/* Mobile touch interactions */
+@media (max-width: 768px) {
+  .glassmorphism:hover {
+    transform: none;
+    box-shadow: var(--card-shadow);
+  }
+  
+  .glassmorphism:active {
+    transform: scale(0.98);
+    box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.15);
+  }
 }
 
 /* Enhanced card hover effects */
@@ -555,4 +614,236 @@ textarea {
 /* Enhanced focus ring for accessibility */
 .focus-ring-modern:focus-visible {
   @apply ring-2 ring-blue-500/50 ring-offset-2 ring-offset-white outline-none;
+}
+
+/* Modern mobile-first responsive utilities */
+.container-mobile {
+  @apply px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto;
+}
+
+.grid-mobile {
+  @apply grid grid-cols-1 gap-4 sm:gap-6;
+}
+
+.grid-mobile-2 {
+  @apply grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6;
+}
+
+.grid-mobile-3 {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6;
+}
+
+.grid-mobile-4 {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6;
+}
+
+.grid-mobile-5 {
+  @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6;
+}
+
+/* Enhanced card variants for mobile */
+.card-mobile {
+  @apply glassmorphism rounded-xl sm:rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6;
+}
+
+.card-compact {
+  @apply glassmorphism rounded-lg sm:rounded-xl p-3 sm:p-4 space-y-2 sm:space-y-3;
+}
+
+.card-featured {
+  @apply glassmorphism rounded-xl sm:rounded-2xl p-6 sm:p-8 space-y-6 sm:space-y-8 border-2 shadow-lg;
+  border-color: hsl(var(--primary) / 0.2);
+}
+
+/* Mobile-optimized button variants */
+.btn-mobile {
+  @apply h-12 sm:h-10 px-6 sm:px-4 rounded-xl sm:rounded-lg text-base sm:text-sm font-semibold;
+}
+
+.btn-mobile-lg {
+  @apply h-14 sm:h-12 px-8 sm:px-6 rounded-xl sm:rounded-2xl text-lg sm:text-base font-bold;
+}
+
+.btn-mobile-sm {
+  @apply h-10 sm:h-8 px-4 sm:px-3 rounded-lg sm:rounded-md text-sm sm:text-xs font-medium;
+}
+
+/* Mobile-first spacing utilities */
+.space-mobile {
+  @apply space-y-4 sm:space-y-6;
+}
+
+.space-mobile-sm {
+  @apply space-y-2 sm:space-y-3;
+}
+
+.space-mobile-lg {
+  @apply space-y-6 sm:space-y-8;
+}
+
+.gap-mobile {
+  @apply gap-4 sm:gap-6;
+}
+
+.gap-mobile-sm {
+  @apply gap-2 sm:gap-3;
+}
+
+.gap-mobile-lg {
+  @apply gap-6 sm:gap-8;
+}
+
+/* Mobile typography enhancements */
+.text-mobile-h1 {
+  @apply text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight tracking-tight;
+}
+
+.text-mobile-h2 {
+  @apply text-xl sm:text-2xl lg:text-3xl font-bold leading-tight tracking-tight;
+}
+
+.text-mobile-h3 {
+  @apply text-lg sm:text-xl lg:text-2xl font-semibold leading-snug;
+}
+
+.text-mobile-body {
+  @apply text-base sm:text-sm leading-relaxed;
+}
+
+.text-mobile-caption {
+  @apply text-sm sm:text-xs text-muted-foreground leading-normal;
+}
+
+/* Mobile-specific layouts */
+.mobile-stack {
+  @apply flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center;
+}
+
+.mobile-grid-stack {
+  @apply block space-y-4 sm:grid sm:space-y-0 sm:gap-6;
+}
+
+/* Enhanced mobile navigation */
+.nav-mobile {
+  @apply sticky top-0 z-50 backdrop-blur-lg border-b;
+  background: hsla(var(--background-solid), 0.8);
+  border-color: hsla(255, 255, 255, 0.1);
+}
+
+.nav-mobile-item {
+  @apply flex items-center justify-center sm:justify-start space-x-0 sm:space-x-3 p-3 sm:p-2 rounded-xl text-center sm:text-left;
+}
+
+/* Mobile-optimized forms */
+.form-mobile {
+  @apply space-y-6 sm:space-y-4;
+}
+
+.form-mobile input,
+.form-mobile textarea,
+.form-mobile select {
+  @apply h-12 sm:h-10 text-base sm:text-sm rounded-xl sm:rounded-lg;
+}
+
+.form-mobile label {
+  @apply text-sm sm:text-xs font-semibold text-foreground mb-2 block;
+}
+
+/* Mobile-friendly table alternative */
+.table-mobile {
+  @apply block sm:table w-full;
+}
+
+.table-mobile-row {
+  @apply block sm:table-row rounded-lg sm:rounded-none mb-4 sm:mb-0 p-4 sm:p-0 space-y-2 sm:space-y-0 border sm:border-0;
+  background: hsla(var(--background-solid), 0.5);
+  border-color: hsla(255, 255, 255, 0.1);
+}
+
+.table-mobile-cell {
+  @apply block sm:table-cell sm:px-4 sm:py-3 text-left;
+}
+
+.table-mobile-header {
+  @apply hidden sm:table-header-group;
+}
+
+.table-mobile-body {
+  @apply block sm:table-row-group;
+}
+
+/* Mobile pull-to-refresh indicator */
+.pull-to-refresh {
+  @apply absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-full transition-transform duration-300;
+}
+
+.pull-to-refresh.active {
+  @apply translate-y-0;
+}
+
+/* Bottom navigation for mobile */
+.bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl border-t p-2 sm:hidden;
+  background: hsla(var(--background-solid), 0.9);
+  border-color: hsla(255, 255, 255, 0.1);
+}
+
+.bottom-nav-item {
+  @apply flex flex-col items-center justify-center p-2 rounded-lg text-xs font-medium min-w-0 flex-1;
+}
+
+/* Mobile-specific animations */
+@media (max-width: 768px) {
+  .stagger-mobile {
+    animation: staggerMobile 0.4s ease-out both;
+  }
+  
+  .stagger-mobile:nth-child(1) { animation-delay: 0.05s; }
+  .stagger-mobile:nth-child(2) { animation-delay: 0.1s; }
+  .stagger-mobile:nth-child(3) { animation-delay: 0.15s; }
+  .stagger-mobile:nth-child(4) { animation-delay: 0.2s; }
+  .stagger-mobile:nth-child(5) { animation-delay: 0.25s; }
+}
+
+@keyframes staggerMobile {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Touch feedback for mobile */
+.touch-feedback {
+  @apply active:scale-95 transition-transform duration-150;
+}
+
+.touch-feedback-subtle {
+  @apply active:scale-98 transition-transform duration-100;
+}
+
+/* Mobile-optimized scrolling */
+.scroll-mobile {
+  @apply overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted-foreground/20 scrollbar-thumb-rounded-full;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area handling for mobile */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
 }
