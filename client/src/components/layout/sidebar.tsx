@@ -39,10 +39,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
   ];
 
   return (
-    <aside className={cn("w-64 glassmorphism border-0 border-r border-white/10 backdrop-blur-xl", className)}>
-      <div className="p-6 border-b border-white/10">
+    <aside className={cn("w-72 sm:w-64 glassmorphism border-0 border-r border-white/10 backdrop-blur-xl safe-area-left", className)}>
+      <div className="p-4 sm:p-6 border-b border-white/10">
         <Link href="/profile" onClick={onNavigate}>
-          <div className="flex items-center space-x-4 cursor-pointer hover:bg-gradient-to-r hover:from-primary/10 hover:to-sky-500/10 rounded-2xl p-3 transition-all duration-300 group" data-testid="nav-profile">
+          <div className="flex items-center space-x-3 sm:space-x-4 cursor-pointer hover:bg-gradient-to-r hover:from-primary/10 hover:to-sky-500/10 rounded-2xl p-3 transition-all duration-300 group touch-feedback-subtle" data-testid="nav-profile">
             <div className="relative">
               <div className="w-12 h-12 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
                 {(user as any)?.profilePictureUrl ? (
@@ -66,7 +66,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         </Link>
       </div>
 
-      <nav className="p-4 space-y-3">
+      <nav className="p-3 sm:p-4 space-y-2 sm:space-y-3 safe-area-bottom pb-20 sm:pb-4">
         {navigation.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.href;

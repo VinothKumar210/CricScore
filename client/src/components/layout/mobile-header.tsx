@@ -21,7 +21,7 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
   };
 
   return (
-    <header className="glassmorphism border-0 border-b border-white/10 p-4 lg:hidden backdrop-blur-xl shadow-modern">
+    <header className="glassmorphism border-0 border-b border-white/10 p-3 sm:p-4 lg:hidden backdrop-blur-xl shadow-modern safe-area-top">
       <div className="flex items-center justify-between">
         <div className="relative">
           <Button
