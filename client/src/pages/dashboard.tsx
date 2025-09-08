@@ -69,16 +69,16 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="p-6 space-y-8 pb-24 min-h-screen">
+    <div className="container-mobile space-mobile-lg pb-24 sm:pb-8 min-h-screen min-h-dvh">
       {/* Welcome Section - Enhanced */}
-      <div className="relative overflow-hidden gradient-primary rounded-2xl p-8 text-primary-foreground shadow-modern">
+      <div className="relative overflow-hidden gradient-primary rounded-2xl p-6 sm:p-8 text-primary-foreground shadow-modern stagger-mobile touch-feedback-subtle">
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-3xl font-bold mb-3 tracking-tight" data-testid="text-welcome">
+              <h2 className="text-mobile-h1 mb-3" data-testid="text-welcome">
                 Game on, {user?.profileName || user?.username || 'Champion'}! 
               </h2>
-              <p className="text-lg opacity-90 font-medium">Time to smash some records and track your cricket journey!</p>
+              <p className="text-base sm:text-lg opacity-90 font-medium">Time to smash some records and track your cricket journey!</p>
             </div>
             <div className="hidden md:flex items-center space-x-2">
               <Sparkles className="w-8 h-8 text-yellow-300 float-animation" />
@@ -97,15 +97,15 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-        <Card className="glassmorphism border-0 group relative overflow-hidden stagger-item scale-interaction interactive-glow">
-          <CardContent className="p-6">
+      <div className="grid-mobile-5">
+        <Card className="card-compact border-0 group relative overflow-hidden stagger-mobile scale-interaction interactive-glow">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
                   Matches Played
                 </p>
-                <p className="text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-matches-played">
+                <p className="text-2xl sm:text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-matches-played">
                   {stats?.matchesPlayed || 0}
                 </p>
                 <div className="space-y-2">
@@ -119,7 +119,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
                 <Gamepad className="text-white h-7 w-7" />
               </div>
             </div>
@@ -127,8 +127,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="glassmorphism border-0 group relative overflow-hidden stagger-item scale-interaction interactive-glow">
-          <CardContent className="p-6">
+        <Card className="card-compact border-0 group relative overflow-hidden stagger-mobile scale-interaction interactive-glow">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
@@ -159,8 +159,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="glassmorphism border-0 group relative overflow-hidden stagger-item scale-interaction interactive-glow">
-          <CardContent className="p-6">
+        <Card className="card-compact border-0 group relative overflow-hidden stagger-mobile scale-interaction interactive-glow">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
@@ -193,8 +193,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="glassmorphism border-0 group relative overflow-hidden stagger-item scale-interaction interactive-glow">
-          <CardContent className="p-6">
+        <Card className="card-compact border-0 group relative overflow-hidden stagger-mobile scale-interaction interactive-glow">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
@@ -227,8 +227,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="glassmorphism border-0 group relative overflow-hidden stagger-item scale-interaction interactive-glow">
-          <CardContent className="p-6">
+        <Card className="card-compact border-0 group relative overflow-hidden stagger-mobile scale-interaction interactive-glow">
+          <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
@@ -263,9 +263,9 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Activity & Teams */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid-mobile-2 gap-mobile-lg">
         {/* Recent Matches */}
-        <Card className="glassmorphism border-0 group">
+        <Card className="card-mobile border-0 group">
           <CardHeader className="pb-4">
             <CardTitle className="text-xl font-bold text-foreground flex items-center space-x-2">
               <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
@@ -323,7 +323,7 @@ export default function Dashboard() {
         </Card>
 
         {/* My Teams */}
-        <Card className="glassmorphism border-0 group">
+        <Card className="card-mobile border-0 group">
           <CardHeader className="pb-4">
             <CardTitle className="text-xl font-bold text-foreground flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -392,7 +392,8 @@ export default function Dashboard() {
       {/* Floating Local Match Button */}
       <Button 
         asChild 
-        className="fixed bottom-6 right-6 rounded-2xl px-6 py-4 shadow-modern hover:shadow-modern-hover transition-all duration-300 z-50 btn-modern btn-interactive ripple-effect interactive-glow bg-gradient-to-r from-primary to-sky-500 hover:from-primary-hover hover:to-sky-600 border-0 group" 
+        size="mobile"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 rounded-2xl shadow-modern hover:shadow-modern-hover transition-all duration-300 z-50 btn-modern btn-interactive ripple-effect interactive-glow bg-gradient-to-r from-primary to-sky-500 hover:from-primary-hover hover:to-sky-600 border-0 group touch-feedback safe-area-bottom" 
         data-testid="floating-local-match"
       >
         <Link href="/local-match" className="flex items-center space-x-3 text-white">
