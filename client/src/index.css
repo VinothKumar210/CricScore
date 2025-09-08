@@ -472,3 +472,87 @@ html {
   0% { left: -100%; }
   100% { left: 100%; }
 }
+
+/* Modern form enhancements */
+.form-modern {
+  @apply space-y-6;
+}
+
+.form-section {
+  @apply space-y-4 p-6 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm rounded-2xl border border-white/10;
+}
+
+.form-section-title {
+  @apply text-lg font-bold text-foreground border-b border-white/10 pb-3 mb-4 tracking-tight;
+}
+
+/* Enhanced form validation states */
+.form-field-error input,
+.form-field-error textarea,
+.form-field-error select {
+  @apply border-destructive/50 bg-destructive/5 focus-visible:ring-destructive/30 focus-visible:border-destructive/70;
+}
+
+.form-field-success input,
+.form-field-success textarea, 
+.form-field-success select {
+  @apply border-emerald-500/50 bg-emerald-500/5 focus-visible:ring-emerald-500/30 focus-visible:border-emerald-500/70;
+}
+
+.form-message-error {
+  @apply text-destructive text-sm font-medium flex items-center space-x-2 mt-2 animate-in slide-in-from-top-1 duration-200;
+}
+
+.form-message-success {
+  @apply text-emerald-600 text-sm font-medium flex items-center space-x-2 mt-2 animate-in slide-in-from-top-1 duration-200;
+}
+
+/* Enhanced form grid layouts */
+.form-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+}
+
+.form-grid-full {
+  @apply md:col-span-2;
+}
+
+/* Modern select and textarea styling */
+select, textarea {
+  @apply rounded-2xl border border-input/20 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 focus-visible:border-primary/50 focus-visible:bg-background/80 hover:border-input/40 hover:bg-background/60;
+}
+
+textarea {
+  @apply min-h-[100px] px-4 py-3 resize-none;
+}
+
+/* Form animations */
+.form-animate {
+  animation: formSlideIn 0.6s ease-out;
+}
+
+@keyframes formSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading states for forms */
+.form-loading {
+  @apply pointer-events-none opacity-70;
+}
+
+.form-loading input,
+.form-loading textarea,
+.form-loading select {
+  @apply shimmer;
+}
+
+/* Enhanced focus ring for accessibility */
+.focus-ring-modern:focus-visible {
+  @apply ring-2 ring-primary/50 ring-offset-2 ring-offset-background outline-none;
+}
