@@ -42,7 +42,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
     <aside className={cn("w-72 sm:w-64 bg-background border-0 border-r border-border shadow-2xl safe-area-left", className)}>
       <div className="p-4 sm:p-6 border-b border-border bg-muted/50">
         <Link href="/profile" onClick={onNavigate}>
-          <div className="flex items-center space-x-3 sm:space-x-4 cursor-pointer hover:bg-gradient-to-r hover:from-primary/10 hover:to-sky-500/10 rounded-2xl p-3 transition-all duration-300 group touch-feedback-subtle" data-testid="nav-profile">
+          <div className="flex items-center space-x-3 sm:space-x-4 cursor-pointer hover:bg-gradient-to-r hover:from-primary/30 hover:to-sky-500/30 rounded-2xl p-3 transition-all duration-300 group touch-feedback-subtle border border-transparent hover:border-primary/50" data-testid="nav-profile">
             <div className="relative">
               <div className="w-12 h-12 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
                 {(user as any)?.profilePictureUrl ? (
