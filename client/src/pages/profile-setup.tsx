@@ -184,7 +184,7 @@ export default function ProfileSetup() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Player Role *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-role">
                                 <SelectValue placeholder="Select your role" />
@@ -254,7 +254,7 @@ export default function ProfileSetup() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Batting Hand *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-batting-hand">
                                 <SelectValue placeholder="Select batting hand" />
@@ -277,7 +277,7 @@ export default function ProfileSetup() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Bowling Style {selectedRole === "BOWLER" ? "*" : ""}</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-bowling-style">
                                   <SelectValue placeholder="Select bowling style" />
