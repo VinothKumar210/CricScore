@@ -909,11 +909,11 @@ textarea {
 
 /* Enhanced button system */
 .btn-primary-lg {
-  @apply bg-gradient-to-r from-primary to-sky-500 hover:from-primary/90 hover:to-sky-600 text-white font-semibold py-3 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95;
+  @apply bg-gradient-to-r from-primary to-sky-500 text-white font-semibold py-3 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95 hover:brightness-110;
 }
 
 .btn-secondary-lg {
-  @apply bg-gradient-to-r from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary/70 text-secondary-foreground font-semibold py-3 px-8 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 active:scale-95;
+  @apply bg-gradient-to-r from-secondary to-muted text-secondary-foreground font-semibold py-3 px-8 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 hover:brightness-105;
 }
 
 .btn-outline-lg {
