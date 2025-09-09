@@ -4,9 +4,9 @@
 
 :root {
   /* Modern Background with enhanced mobile-optimized gradient */
-  --background: linear-gradient(135deg, hsl(210, 40%, 98%) 0%, hsl(220, 60%, 97%) 50%, hsl(200, 50%, 96%) 100%);
-  --background-solid: hsl(210, 40%, 98%);
-  --background-mobile: linear-gradient(180deg, hsl(210, 40%, 99%) 0%, hsl(220, 60%, 98%) 100%);
+  --background: linear-gradient(135deg, hsl(210, 40%, 99%) 0%, hsl(220, 60%, 98%) 50%, hsl(200, 50%, 97%) 100%);
+  --background-solid: hsl(210, 40%, 99%);
+  --background-mobile: linear-gradient(180deg, hsl(210, 40%, 99.5%) 0%, hsl(220, 60%, 98.5%) 100%);
   --foreground: hsl(222.2, 84%, 4.9%);
   
   /* Enhanced glassmorphism cards with better mobile performance */
@@ -23,7 +23,9 @@
   --primary: hsl(199, 89%, 48%);
   --primary-gradient: linear-gradient(135deg, hsl(199, 89%, 48%) 0%, hsl(210, 85%, 55%) 100%);
   --primary-foreground: hsl(210, 40%, 98%);
-  --primary-hover: hsl(199, 89%, 42%);
+  --primary-hover: hsl(199, 89%, 45%);
+  --primary-light: hsl(199, 89%, 85%);
+  --primary-dark: hsl(199, 89%, 35%);
   
   /* Enhanced secondary colors */
   --secondary: hsla(210, 40%, 96%, 0.8);
@@ -136,9 +138,10 @@
 }
 
 .dark {
-  --background: hsl(222.2, 84%, 4.9%);
+  --background: linear-gradient(135deg, hsl(222.2, 84%, 4.9%) 0%, hsl(217.2, 32.6%, 5.5%) 50%, hsl(210, 40%, 4%) 100%);
+  --background-solid: hsl(222.2, 84%, 4.9%);
   --foreground: hsl(210, 40%, 98%);
-  --card: hsl(222.2, 84%, 4.9%);
+  --card: hsla(222.2, 84%, 4.9%, 0.95);
   --card-foreground: hsl(210, 40%, 98%);
   --popover: hsl(222.2, 84%, 4.9%);
   --popover-foreground: hsl(210, 40%, 98%);
