@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<User>;
   register: (email: string, password: string) => Promise<User>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   isLoading: boolean;
 }
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Invalidate statistics cache to ensure fresh data on app initialization
       if (currentUser) {
-        await refreshUserStatistics();
+        await refreshUserStatistics(currentUser.id);
       }
       
       setIsLoading(false);
@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(user);
     
     // Invalidate and refetch statistics after successful login
-    await refreshUserStatistics();
+    await refreshUserStatistics(user.id);
     
     return user;
   };
@@ -48,14 +48,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(user);
     
     // Invalidate and refetch statistics after successful registration
-    await refreshUserStatistics();
+    await refreshUserStatistics(user.id);
     
     return user;
   };
 
-  const logout = () => {
+  const logout = async () => {
     authService.logout();
     setUser(null);
+    // Clear all cached data when user logs out
+    await refreshUserStatistics();
   };
 
   const refreshUser = async () => {
@@ -64,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     // Refresh statistics data when user data is refreshed
     if (currentUser) {
-      await refreshUserStatistics();
+      await refreshUserStatistics(currentUser.id);
     }
   };
 
