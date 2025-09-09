@@ -47,14 +47,14 @@ export default function Profile() {
   
   // Query for player statistics
   const { data: playerStats, isLoading: isStatsLoading, refetch: refetchStats } = useQuery<CareerStats>({
-    queryKey: isOwnProfile ? ["/api/stats"] : ["/api/users", id, "stats"],
-    enabled: !!user,
+    queryKey: isOwnProfile ? ["/api/stats", currentUser?.id] : ["/api/users", id, "stats"],
+    enabled: !!user && (isOwnProfile ? !!currentUser?.id : !!id),
   });
 
   // Query for player matches for performance analysis
   const { data: playerMatches, isLoading: isMatchesLoading, refetch: refetchMatches } = useQuery<Match[]>({
-    queryKey: isOwnProfile ? ["/api/matches"] : ["/api/users", id, "matches"],
-    enabled: !!user,
+    queryKey: isOwnProfile ? ["/api/matches", currentUser?.id] : ["/api/users", id, "matches"],
+    enabled: !!user && (isOwnProfile ? !!currentUser?.id : !!id),
   });
 
   // Refresh statistics data when user changes or component mounts
