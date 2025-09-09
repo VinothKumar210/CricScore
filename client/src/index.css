@@ -10,11 +10,11 @@
   --foreground: hsl(222.2, 84%, 4.9%);
   
   /* Enhanced glassmorphism cards with better mobile performance */
-  --card: hsla(255, 255, 255, 0.85);
+  --card: hsla(255, 255, 255, 0.95);
   --card-foreground: hsl(222.2, 84%, 4.9%);
   --card-backdrop: blur(24px);
-  --card-border: hsla(210, 40%, 85%, 0.4);
-  --card-shadow: 0 8px 32px hsla(210, 40%, 20%, 0.12), 0 2px 16px hsla(210, 40%, 20%, 0.08);
+  --card-border: hsla(210, 40%, 85%, 0.3);
+  --card-shadow: 0 20px 25px -5px hsla(210, 40%, 20%, 0.1), 0 10px 10px -5px hsla(210, 40%, 20%, 0.04);
   
   --popover: hsla(0, 0%, 100%, 0.95);
   --popover-foreground: hsl(222.2, 84%, 4.9%);
@@ -42,6 +42,18 @@
   /* Enhanced destructive colors */
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(210, 40%, 98%);
+  
+  /* Enhanced success colors */
+  --success: hsl(142, 76%, 36%);
+  --success-foreground: hsl(210, 40%, 98%);
+  
+  /* Enhanced warning colors */
+  --warning: hsl(38, 92%, 50%);
+  --warning-foreground: hsl(222.2, 84%, 4.9%);
+  
+  /* Enhanced info colors */
+  --info: hsl(221, 83%, 53%);
+  --info-foreground: hsl(210, 40%, 98%);
   
   /* Softer borders and inputs */
   --border: hsla(214.3, 31.8%, 91.4%, 0.6);
@@ -292,11 +304,13 @@
   }
 }
 
-/* Enhanced mobile-optimized solid card effects - no glass finish */
+/* Enhanced mobile-optimized card effects */
 .glassmorphism {
-  background: hsl(var(--background));
-  border: 1px solid hsl(var(--border));
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--card-border));
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
   /* Mobile performance optimizations */
@@ -819,6 +833,227 @@ textarea {
 
 .touch-feedback-subtle {
   @apply active:scale-[0.98] transition-transform duration-100;
+}
+
+/* Enhanced responsive containers */
+.container-responsive {
+  @apply w-full max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12;
+}
+
+.container-narrow {
+  @apply w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.container-wide {
+  @apply w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-10;
+}
+
+/* Enhanced grid systems */
+.grid-responsive {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .grid-responsive {
+    gap: 1.5rem;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-responsive {
+    gap: 2rem;
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid-responsive {
+    gap: 2.5rem;
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Enhanced card system */
+.card-elevated {
+  @apply glassmorphism rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300;
+}
+
+.card-featured {
+  @apply card-elevated border-2;
+  background: linear-gradient(to bottom right, hsl(var(--primary) / 0.05), hsl(199, 89%, 48% / 0.05));
+  border-color: hsl(var(--primary) / 0.2);
+}
+
+.card-interactive {
+  @apply card-elevated hover:scale-[1.02] active:scale-[0.98] cursor-pointer;
+}
+
+/* Professional spacing system */
+.section-spacing {
+  @apply py-8 sm:py-12 lg:py-16 xl:py-20;
+}
+
+.content-spacing {
+  @apply space-y-6 sm:space-y-8 lg:space-y-10;
+}
+
+.element-spacing {
+  @apply space-y-4 sm:space-y-6;
+}
+
+/* Enhanced button system */
+.btn-primary-lg {
+  @apply bg-gradient-to-r from-primary to-sky-500 hover:from-primary/90 hover:to-sky-600 text-white font-semibold py-3 px-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 active:scale-95;
+}
+
+.btn-secondary-lg {
+  @apply bg-gradient-to-r from-secondary to-secondary/80 hover:from-secondary/90 hover:to-secondary/70 text-secondary-foreground font-semibold py-3 px-8 rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 active:scale-95;
+}
+
+.btn-outline-lg {
+  @apply border-2 bg-transparent text-primary font-semibold py-3 px-8 rounded-2xl transition-all duration-300 active:scale-95;
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+.btn-outline-lg:hover {
+  background-color: hsl(var(--primary) / 0.1);
+}
+
+/* Professional status indicators */
+.status-indicator {
+  @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium;
+}
+
+.status-success {
+  @apply status-indicator bg-green-100 text-green-800 border border-green-200;
+}
+
+.status-warning {
+  @apply status-indicator bg-yellow-100 text-yellow-800 border border-yellow-200;
+}
+
+.status-error {
+  @apply status-indicator bg-red-100 text-red-800 border border-red-200;
+}
+
+.status-info {
+  @apply status-indicator bg-blue-100 text-blue-800 border border-blue-200;
+}
+
+/* Enhanced loading states */
+.skeleton {
+  @apply animate-pulse bg-gradient-to-r from-muted via-muted/50 to-muted rounded;
+}
+
+.skeleton-text {
+  @apply skeleton h-4 w-full;
+}
+
+.skeleton-heading {
+  @apply skeleton h-6 w-3/4;
+}
+
+.skeleton-circle {
+  @apply skeleton rounded-full;
+}
+
+/* Professional form enhancements */
+.form-group {
+  @apply space-y-2;
+}
+
+.form-section-divider {
+  @apply border-t border-border/50 my-8 pt-8;
+}
+
+.form-actions {
+  @apply flex flex-col sm:flex-row gap-4 pt-6 border-t border-border/50;
+}
+
+/* Enhanced focus states */
+.focus-ring-professional {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background;
+}
+
+/* Modern data visualization */
+.stat-card {
+  @apply bg-gradient-to-br from-white/95 to-white/85 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300;
+}
+
+.stat-value {
+  @apply text-3xl sm:text-4xl font-bold text-foreground tracking-tight;
+}
+
+.stat-label {
+  @apply text-sm font-medium text-muted-foreground uppercase tracking-wide;
+}
+
+.stat-change {
+  @apply flex items-center gap-1 text-sm font-medium;
+}
+
+.stat-change-positive {
+  @apply stat-change text-green-600;
+}
+
+.stat-change-negative {
+  @apply stat-change text-red-600;
+}
+
+/* Professional navigation */
+.nav-item {
+  @apply flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 hover:bg-primary/10 hover:text-primary;
+}
+
+.nav-item-active {
+  @apply nav-item text-primary border;
+  background-color: hsl(var(--primary) / 0.15);
+  border-color: hsl(var(--primary) / 0.2);
+}
+
+/* Enhanced typography scale */
+.heading-primary {
+  @apply text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight tracking-tight text-foreground;
+}
+
+.heading-secondary {
+  @apply text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight tracking-tight text-foreground;
+}
+
+.heading-tertiary {
+  @apply text-xl sm:text-2xl lg:text-3xl font-semibold leading-snug text-foreground;
+}
+
+.text-lead {
+  @apply text-lg sm:text-xl text-muted-foreground leading-relaxed;
+}
+
+.text-body-large {
+  @apply text-base sm:text-lg text-foreground leading-relaxed;
+}
+
+/* Professional alerts and notifications */
+.alert {
+  @apply flex items-start gap-3 p-4 rounded-xl border;
+}
+
+.alert-success {
+  @apply alert bg-green-50 border-green-200 text-green-800;
+}
+
+.alert-warning {
+  @apply alert bg-yellow-50 border-yellow-200 text-yellow-800;
+}
+
+.alert-error {
+  @apply alert bg-red-50 border-red-200 text-red-800;
+}
+
+.alert-info {
+  @apply alert bg-blue-50 border-blue-200 text-blue-800;
 }
 
 /* Mobile-optimized scrolling */
