@@ -39,12 +39,12 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
   ];
 
   return (
-    <aside className={cn("w-72 sm:w-64 bg-background border-0 border-r border-border shadow-2xl safe-area-left", className)}>
-      <div className="p-4 sm:p-6 border-b border-border bg-muted/50">
+    <aside className={cn("w-80 sm:w-72 bg-background/95 backdrop-blur-xl border-0 border-r border-border/50 shadow-2xl safe-area-left", className)}>
+      <div className="p-5 sm:p-6 border-b border-border/50 bg-gradient-to-r from-primary/5 to-sky-500/5">
         <Link href="/profile" onClick={onNavigate}>
-          <div className="flex items-center space-x-3 sm:space-x-4 cursor-pointer hover:bg-gradient-to-r hover:from-primary/30 hover:to-sky-500/30 rounded-2xl p-3 transition-all duration-300 group touch-feedback-subtle border border-transparent hover:border-primary/50" data-testid="nav-profile">
+          <div className="flex items-center space-x-3 sm:space-x-4 cursor-pointer hover:bg-gradient-to-r hover:from-primary/20 hover:to-sky-500/20 rounded-2xl p-4 transition-all duration-300 group touch-feedback-subtle border border-transparent hover:border-primary/30 hover:shadow-lg" data-testid="nav-profile">
             <div className="relative">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <div className="w-14 h-14 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
                 {(user as any)?.profilePictureUrl ? (
                   <img 
                     src={(user as any).profilePictureUrl} 
@@ -58,7 +58,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full border-2 border-white animate-pulse"></div>
             </div>
             <div className="flex-1">
-              <h1 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">{user?.profileName || 'Player'}</h1>
+              <h1 className="text-lg font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{user?.profileName || 'Player'}</h1>
               <p className="text-sm text-muted-foreground font-medium">@{user?.username || 'user'}</p>
             </div>
             <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all duration-300 opacity-0 group-hover:opacity-100" />
@@ -66,7 +66,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         </Link>
       </div>
 
-      <nav className="p-3 sm:p-4 space-y-2 sm:space-y-3 safe-area-bottom pb-20 sm:pb-4">
+      <nav className="p-4 sm:p-5 space-y-2 safe-area-bottom pb-20 sm:pb-4">
         {navigation.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.href;
@@ -79,10 +79,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               onClick={onNavigate}
               data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
               className={cn(
-                "flex items-center space-x-4 px-4 py-3 rounded-2xl transition-all duration-300 relative group border",
+                "flex items-center space-x-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative group border",
                 isActive
-                  ? "bg-gradient-to-r from-primary to-sky-500 text-white shadow-lg border-primary/30 transform scale-105"
-                  : "text-foreground/80 hover:bg-gradient-to-r hover:from-primary/30 hover:to-sky-500/30 hover:text-foreground border-transparent hover:border-primary/50 hover:shadow-md"
+                  ? "bg-gradient-to-r from-primary to-sky-500 text-white shadow-lg border-primary/30 transform scale-[1.02]"
+                  : "text-foreground/80 hover:bg-gradient-to-r hover:from-primary/15 hover:to-sky-500/15 hover:text-foreground border-transparent hover:border-primary/30 hover:shadow-md hover:scale-[1.01]"
               )}
             >
               <div className={cn(
@@ -106,11 +106,11 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
           );
         })}
         
-        <div className="pt-4 mt-4 border-t border-border">
+        <div className="pt-4 mt-4 border-t border-border/50">
           <button
             onClick={logout}
             data-testid="button-logout"
-            className="w-full flex items-center space-x-4 px-4 py-3 rounded-2xl text-foreground/80 hover:bg-gradient-to-r hover:from-red-500/30 hover:to-rose-600/30 hover:text-red-600 transition-all duration-300 group border border-transparent hover:border-red-500/50"
+            className="w-full flex items-center space-x-4 px-4 py-3.5 rounded-2xl text-foreground/80 hover:bg-gradient-to-r hover:from-red-500/15 hover:to-rose-600/15 hover:text-red-600 transition-all duration-300 group border border-transparent hover:border-red-500/30 hover:shadow-md hover:scale-[1.01]"
           >
             <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted group-hover:bg-red-500/20 transition-all duration-300">
               <LogOut className="w-5 h-5 group-hover:text-red-500" />
