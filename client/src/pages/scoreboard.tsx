@@ -828,6 +828,144 @@ export default function Scoreboard() {
         </CardContent>
       </Card>
 
+      {/* Full Batting Scorecard */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Batting Scorecard</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 px-3 font-semibold">Batsman</th>
+                  <th className="text-center py-2 px-3 font-semibold">Runs</th>
+                  <th className="text-center py-2 px-3 font-semibold">Balls</th>
+                  <th className="text-center py-2 px-3 font-semibold">4's</th>
+                  <th className="text-center py-2 px-3 font-semibold">6's</th>
+                  <th className="text-center py-2 px-3 font-semibold">SR</th>
+                </tr>
+              </thead>
+              <tbody>
+                {batsmanStats.map((batsman, index) => {
+                  const isStriker = batsman.player.name === matchState.strikeBatsman.name;
+                  const isNonStriker = batsman.player.name === matchState.nonStrikeBatsman.name;
+                  const isCurrentBatsman = isStriker || isNonStriker;
+                  
+                  return (
+                    <tr 
+                      key={`${batsman.player.name}-${index}`}
+                      className={`border-b ${isCurrentBatsman ? 'bg-sky-50 dark:bg-slate-800' : ''}`}
+                      data-testid={`batting-stats-${index}`}
+                    >
+                      <td className="py-2 px-3">
+                        <div className="flex items-center space-x-2">
+                          <span className={`font-medium ${batsman.player.name.length > 15 ? 'text-sm' : 'text-base'}`}>
+                            {batsman.player.name}
+                          </span>
+                          {isStriker && <Badge variant="default" className="text-xs">*</Badge>}
+                          {isNonStriker && !isStriker && <Badge variant="secondary" className="text-xs">•</Badge>}
+                        </div>
+                      </td>
+                      <td className="text-center py-2 px-3 font-medium" data-testid={`batsman-runs-${index}`}>
+                        {batsman.runs}
+                      </td>
+                      <td className="text-center py-2 px-3" data-testid={`batsman-balls-${index}`}>
+                        {batsman.balls}
+                      </td>
+                      <td className="text-center py-2 px-3" data-testid={`batsman-fours-${index}`}>
+                        {batsman.fours}
+                      </td>
+                      <td className="text-center py-2 px-3" data-testid={`batsman-sixes-${index}`}>
+                        {batsman.sixes}
+                      </td>
+                      <td className="text-center py-2 px-3" data-testid={`batsman-sr-${index}`}>
+                        {batsman.strikeRate.toFixed(1)}
+                      </td>
+                    </tr>
+                  );
+                })}
+                
+                {/* Yet to bat players */}
+                {battingTeamPlayers
+                  .filter(player => !batsmanStats.some(stat => stat.player.name === player.name))
+                  .map((player, index) => (
+                    <tr key={`yet-to-bat-${index}`} className="border-b text-muted-foreground">
+                      <td className="py-2 px-3">
+                        <span className={`${player.name.length > 15 ? 'text-sm' : 'text-base'}`}>
+                          {player.name}
+                        </span>
+                      </td>
+                      <td className="text-center py-2 px-3">-</td>
+                      <td className="text-center py-2 px-3">-</td>
+                      <td className="text-center py-2 px-3">-</td>
+                      <td className="text-center py-2 px-3">-</td>
+                      <td className="text-center py-2 px-3">-</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Full Bowling Scorecard */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bowling Scorecard</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 px-3 font-semibold">Bowler</th>
+                  <th className="text-center py-2 px-3 font-semibold">Overs</th>
+                  <th className="text-center py-2 px-3 font-semibold">Runs</th>
+                  <th className="text-center py-2 px-3 font-semibold">Wickets</th>
+                  <th className="text-center py-2 px-3 font-semibold">Economy</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bowlerStats.map((bowler, index) => {
+                  const isCurrentBowler = bowler.player.name === matchState.currentBowler.name;
+                  
+                  return (
+                    <tr 
+                      key={`${bowler.player.name}-${index}`}
+                      className={`border-b ${isCurrentBowler ? 'bg-sky-50 dark:bg-slate-800' : ''}`}
+                      data-testid={`bowling-stats-${index}`}
+                    >
+                      <td className="py-2 px-3">
+                        <div className="flex items-center space-x-2">
+                          <span className={`font-medium ${bowler.player.name.length > 15 ? 'text-sm' : 'text-base'}`}>
+                            {bowler.player.name}
+                          </span>
+                          {isCurrentBowler && <Badge variant="default" className="text-xs">•</Badge>}
+                        </div>
+                      </td>
+                      <td className="text-center py-2 px-3 font-medium" data-testid={`bowler-overs-${index}`}>
+                        {bowler.overs.toFixed(1)}
+                      </td>
+                      <td className="text-center py-2 px-3" data-testid={`bowler-runs-${index}`}>
+                        {bowler.runs}
+                      </td>
+                      <td className="text-center py-2 px-3" data-testid={`bowler-wickets-${index}`}>
+                        {bowler.wickets}
+                      </td>
+                      <td className="text-center py-2 px-3" data-testid={`bowler-economy-${index}`}>
+                        {bowler.economy.toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Wicket Dialog */}
       <Dialog open={showWicketDialog} onOpenChange={() => {}}>
         <DialogContent>
