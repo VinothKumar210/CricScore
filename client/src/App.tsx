@@ -19,7 +19,6 @@ import TeamDetail from "@/pages/team-detail";
 import Invitations from "@/pages/invitations";
 import SearchPlayers from "@/pages/search";
 import LocalMatch from "@/pages/local-match";
-import CreateLiveMatch from "@/pages/create-live-match";
 import { CoinToss } from "@/pages/coin-toss";
 import MatchScoring from "@/pages/match-scoring";
 import Scoreboard from "@/pages/scoreboard";
@@ -191,11 +190,6 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
-      <Route path="/create-live-match">
-        <ProtectedRoute>
-          <CreateLiveMatch />
-        </ProtectedRoute>
-      </Route>
       
       <Route path="/coin-toss">
         <ProtectedRoute>
