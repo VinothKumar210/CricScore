@@ -292,6 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             runsConceded: playerStat.runsConceded,
             wicketsTaken: playerStat.wicketsTaken,
             catchesTaken: playerStat.catchesTaken,
+            runOuts: 0, // Default to 0
             isManOfTheMatch: false // Default to false for this endpoint
           });
 
@@ -1022,6 +1023,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               runsConceded: parseInt(runsConceded) || 0,
               wicketsTaken: parseInt(wicketsTaken) || 0,
               catchesTaken: parseInt(catchesTaken) || 0,
+              runOuts: 0, // Default to 0 for local matches
               isManOfTheMatch: isManOfTheMatch || false
             };
 
@@ -1093,7 +1095,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Send notification to spectators about the new match
         try {
-          const creator = await storage.getUserById(req.userId);
+          const creator = await storage.getUser(req.userId);
           const notificationTitle = `🏏 New Match Invitation`;
           const notificationBody = `${creator?.profileName || creator?.username || 'A cricket player'} has invited you to watch ${localMatch.matchName} at ${localMatch.venue}`;
           
