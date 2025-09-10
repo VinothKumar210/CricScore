@@ -177,14 +177,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/stats", authenticateToken, async (req: any, res) => {
     try {
       const stats = await storage.getCareerStats(req.userId);
-      console.log(`DEBUG: Stats for user ${req.userId}:`, JSON.stringify(stats, null, 2));
       if (!stats) {
         return res.status(404).json({ message: "Stats not found" });
       }
       
       res.json(stats);
     } catch (error) {
-      console.error(`ERROR: Stats API error for user ${req.userId}:`, error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
