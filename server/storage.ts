@@ -98,7 +98,7 @@ export interface IStorage {
   addMatchSpectator(spectator: InsertMatchSpectator): Promise<MatchSpectator>;
   removeMatchSpectator(localMatchId: string, userId: string): Promise<boolean>;
   getMatchSpectators(localMatchId: string): Promise<(MatchSpectator & { user: User })[]>;
-  getPendingNotifications(userId: string): Promise<(MatchSpectator & { localMatch: LocalMatch & { creator: User } })[]>;
+  getPendingNotifications(userId: string): Promise<any[]>;
   markNotificationsAsRead(userId: string, matchIds: string[]): Promise<void>;
 
   // Over history operations
@@ -909,7 +909,7 @@ export class PrismaStorage implements IStorage {
     }
   }
 
-  async getPendingNotifications(userId: string): Promise<(MatchSpectator & { localMatch: LocalMatch & { creator: Partial<User> } })[]> {
+  async getPendingNotifications(userId: string): Promise<any[]> {
     try {
       const notifications = await prisma.matchSpectator.findMany({
         where: {
