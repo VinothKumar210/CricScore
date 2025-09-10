@@ -141,5 +141,71 @@ export type ProfileSetup = z.infer<typeof profileSetupSchema>;
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type RegisterRequest = z.infer<typeof registerSchema>;
 
-// Re-export Prisma model types
-export type { User, CareerStats, Team, TeamMember, TeamInvitation, Match } from "@prisma/client";
+// Define model types locally (previously from Prisma)
+export interface User {
+  id: string;
+  email: string;
+  password: string;
+  username?: string;
+  profileName?: string;
+  description?: string;
+  role?: Role;
+  battingHand?: BattingHand;
+  bowlingStyle?: BowlingStyle;
+  profileComplete: boolean;
+  createdAt: Date;
+}
+
+export interface CareerStats {
+  id: string;
+  userId: string;
+  matchesPlayed: number;
+  totalRuns: number;
+  ballsFaced: number;
+  strikeRate: number;
+  oversBowled: number;
+  runsConceded: number;
+  wicketsTaken: number;
+  economy: number;
+  catchesTaken: number;
+  updatedAt: Date;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  description?: string;
+  captainId: string;
+  viceCaptainId?: string;
+  createdAt: Date;
+}
+
+export interface TeamMember {
+  id: string;
+  teamId: string;
+  userId: string;
+  joinedAt: Date;
+}
+
+export interface TeamInvitation {
+  id: string;
+  teamId: string;
+  invitedBy: string;
+  invitedUser: string;
+  status: InvitationStatus;
+  createdAt: Date;
+}
+
+export interface Match {
+  id: string;
+  userId: string;
+  opponent: string;
+  matchDate: Date;
+  runsScored: number;
+  ballsFaced: number;
+  oversBowled: number;
+  runsConceded: number;
+  wicketsTaken: number;
+  catchesTaken: number;
+  createdAt: Date;
+}
