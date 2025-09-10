@@ -98,6 +98,8 @@ export interface IStorage {
   addMatchSpectator(spectator: InsertMatchSpectator): Promise<MatchSpectator>;
   removeMatchSpectator(localMatchId: string, userId: string): Promise<boolean>;
   getMatchSpectators(localMatchId: string): Promise<(MatchSpectator & { user: User })[]>;
+  getPendingNotifications(userId: string): Promise<(MatchSpectator & { localMatch: LocalMatch & { creator: User } })[]>;
+  markNotificationsAsRead(userId: string, matchIds: string[]): Promise<void>;
 
   // Over history operations
   createOverHistory(overHistory: InsertOverHistory): Promise<OverHistory>;
@@ -750,7 +752,18 @@ export class PrismaStorage implements IStorage {
     }
   }
 
-  async updateLocalMatch(id: string, updates: Partial<Omit<LocalMatch, 'id' | 'createdAt' | 'updatedAt'>>): Promise<LocalMatch | undefined> {
+  async updateLocalMatch(id: string, updates: {
+    status?: 'CREATED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+    currentInnings?: number;
+    currentOver?: number;
+    currentBall?: number;
+    myTeamScore?: number;
+    myTeamWickets?: number;
+    myTeamOvers?: number;
+    opponentTeamScore?: number;
+    opponentTeamWickets?: number;
+    opponentTeamOvers?: number;
+  }): Promise<LocalMatch | undefined> {
     try {
       const match = await prisma.localMatch.update({
         where: { id },
@@ -893,6 +906,63 @@ export class PrismaStorage implements IStorage {
       return spectators;
     } catch {
       return [];
+    }
+  }
+
+  async getPendingNotifications(userId: string): Promise<(MatchSpectator & { localMatch: LocalMatch & { creator: Partial<User> } })[]> {
+    try {
+      const notifications = await prisma.matchSpectator.findMany({
+        where: {
+          userId,
+          notified: false,
+          localMatch: {
+            status: {
+              in: ["CREATED", "ONGOING"]
+            }
+          }
+        },
+        include: {
+          localMatch: {
+            include: {
+              creator: {
+                select: {
+                  id: true,
+                  username: true,
+                  profileName: true,
+                  email: true,
+                  description: true,
+                  role: true,
+                  battingHand: true,
+                  bowlingStyle: true,
+                  profileComplete: true,
+                  createdAt: true
+                }
+              }
+            }
+          }
+        }
+      });
+      return notifications;
+    } catch {
+      return [];
+    }
+  }
+
+  async markNotificationsAsRead(userId: string, matchIds: string[]): Promise<void> {
+    try {
+      await prisma.matchSpectator.updateMany({
+        where: {
+          userId,
+          localMatchId: {
+            in: matchIds
+          }
+        },
+        data: {
+          notified: true
+        }
+      });
+    } catch (error) {
+      console.error('Error marking notifications as read:', error);
     }
   }
 

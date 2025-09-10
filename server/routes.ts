@@ -1094,12 +1094,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Send notification to spectators about the new match
         try {
           const creator = await storage.getUser(req.userId);
-          const notificationTitle = `🏏 New Match Invitation`;
-          const notificationBody = `${creator?.profileName || creator?.username || 'A cricket player'} has invited you to watch ${localMatch.matchName} at ${localMatch.venue}`;
+          const notificationData = {
+            title: `🏏 New Match Invitation`,
+            body: `${creator?.profileName || creator?.username || 'A cricket player'} has invited you to watch ${localMatch.matchName} at ${localMatch.venue}`,
+            matchId: localMatch.id,
+            spectatorIds: req.body.selectedSpectators
+          };
           
-          // Note: In a real implementation, you would send actual push notifications here
-          // For now, we'll log this and the frontend will handle notifications when spectators check their matches
-          console.log(`Match created - would notify ${req.body.selectedSpectators.length} spectators about match: ${localMatch.matchName}`);
+          // Store notification data for spectators to retrieve
+          console.log(`Match created - notification data prepared for ${req.body.selectedSpectators.length} spectators about match: ${localMatch.matchName}`);
         } catch (notificationError) {
           console.error('Error preparing spectator notifications:', notificationError);
         }
@@ -1142,6 +1145,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Match not found" });
       }
       res.json(match);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get pending notifications for spectator
+  app.get("/api/notifications/pending", authenticateToken, async (req: any, res) => {
+    try {
+      const pendingNotifications = await storage.getPendingNotifications(req.userId);
+      res.json(pendingNotifications);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Mark notifications as read
+  app.post("/api/notifications/mark-read", authenticateToken, async (req: any, res) => {
+    try {
+      const { matchIds } = req.body;
+      if (!Array.isArray(matchIds)) {
+        return res.status(400).json({ message: "matchIds must be an array" });
+      }
+      
+      await storage.markNotificationsAsRead(req.userId, matchIds);
+      res.json({ message: "Notifications marked as read" });
     } catch (error) {
       return handleDatabaseError(error, res);
     }
