@@ -27,13 +27,13 @@ export default function Invitations() {
   const queryClient = useQueryClient();
 
   const { data: invitations, isLoading: invitationsLoading } = useQuery<any[]>({
-    queryKey: ["/api/invitations", user?.id],
-    enabled: !!user?.id,
+    queryKey: ["/api/invitations"],
+    enabled: !!user,
   });
 
   const { data: teams, isLoading: teamsLoading } = useQuery<Team[]>({
-    queryKey: ["/api/teams", user?.id],
-    enabled: !!user?.id,
+    queryKey: ["/api/teams"],
+    enabled: !!user,
   });
 
   const form = useForm<InviteFormData>({
