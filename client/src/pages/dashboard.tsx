@@ -14,22 +14,22 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   const { data: stats, refetch: refetchStats } = useQuery<CareerStats>({
-    queryKey: ["/api/stats", user?.id],
+    queryKey: ["/api/stats"],
     enabled: !!user?.id,
   });
 
   const { data: recentMatches, refetch: refetchMatches } = useQuery<Match[]>({
-    queryKey: ["/api/matches", user?.id],
+    queryKey: ["/api/matches"],
     enabled: !!user?.id,
   });
 
   const { data: teams, refetch: refetchTeams } = useQuery<Team[]>({
-    queryKey: ["/api/teams", user?.id],
+    queryKey: ["/api/teams"],
     enabled: !!user?.id,
   });
 
   const { data: invitations, refetch: refetchInvitations } = useQuery<any[]>({
-    queryKey: ["/api/invitations", user?.id],
+    queryKey: ["/api/invitations"],
     enabled: !!user?.id,
   });
 
