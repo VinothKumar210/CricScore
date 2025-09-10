@@ -278,7 +278,7 @@ export default function Profile() {
               data-testid="button-back-dashboard"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
+              🏠 Dashboard
             </Button>
           </div>
           <div className="text-center space-y-2">
