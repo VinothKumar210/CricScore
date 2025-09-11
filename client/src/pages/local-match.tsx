@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SafeSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/safe-select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Users, AlertTriangle, Clock, Check, X, Loader2, ArrowLeft, Search, Crown } from "lucide-react";
 import { type LocalPlayer, type Team, type User } from "@shared/schema";
@@ -14,34 +14,6 @@ import { useAuth } from "@/components/auth/auth-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
-// Error boundary component for select dropdown
-function SafeSelect({ value, onValueChange, children, ...props }: any) {
-  const [hasError, setHasError] = useState(false);
-  
-  const handleValueChange = (newValue: string) => {
-    try {
-      setHasError(false);
-      onValueChange?.(newValue);
-    } catch (error) {
-      console.error('Select error:', error);
-      setHasError(true);
-    }
-  };
-
-  if (hasError) {
-    return (
-      <div className="p-2 border border-red-200 rounded text-red-600 text-sm">
-        Error loading dropdown. Please refresh the page.
-      </div>
-    );
-  }
-
-  return (
-    <Select value={value} onValueChange={handleValueChange} {...props}>
-      {children}
-    </Select>
-  );
-}
 
 export default function LocalMatch() {
   const { user } = useAuth();
