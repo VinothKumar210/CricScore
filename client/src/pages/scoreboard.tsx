@@ -19,6 +19,11 @@ interface MatchState {
   strikeBatsman: LocalPlayer;
   nonStrikeBatsman: LocalPlayer;
   currentBowler: LocalPlayer;
+  currentInnings: 1 | 2;
+  firstInningsComplete: boolean;
+  matchOvers: number;
+  firstInningsScore?: TeamScore;
+  target?: number;
 }
 
 interface BatsmanStats {
@@ -89,22 +94,28 @@ export default function Scoreboard() {
   const [venue, setVenue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [previousBowler, setPreviousBowler] = useState<LocalPlayer | null>(null);
+  const [showInningsTransition, setShowInningsTransition] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     // Get match data from localStorage
     const savedMatchData = localStorage.getItem('matchData');
     const savedPlayers = localStorage.getItem('selectedPlayers');
+    const savedMatchOvers = localStorage.getItem('matchOvers');
     
-    if (savedMatchData && savedPlayers) {
+    if (savedMatchData && savedPlayers && savedMatchOvers) {
       const matchData = JSON.parse(savedMatchData);
       const players = JSON.parse(savedPlayers);
+      const matchOvers = parseInt(savedMatchOvers);
       
       const initialMatchState: MatchState = {
         ...matchData,
         strikeBatsman: players.strikeBatsman,
         nonStrikeBatsman: players.nonStrikeBatsman,
-        currentBowler: players.bowler
+        currentBowler: players.bowler,
+        currentInnings: 1,
+        firstInningsComplete: false,
+        matchOvers: matchOvers
       };
       
       setMatchState(initialMatchState);
@@ -346,13 +357,57 @@ export default function Scoreboard() {
       const newOvers = Math.floor(newBalls / 6);
       const remainingBalls = newBalls % 6;
       
-      return {
+      const updatedScore = {
         ...prev,
         runs: newRuns,
         balls: newBalls,
         overs: newOvers
       };
+      
+      // Check for innings completion
+      if (matchState && !matchState.firstInningsComplete && newOvers >= matchState.matchOvers) {
+        handleInningsComplete(updatedScore);
+      }
+      
+      return updatedScore;
     });
+  };
+  
+  const handleInningsComplete = (finalScore: TeamScore) => {
+    if (!matchState) return;
+    
+    if (matchState.currentInnings === 1) {
+      // First innings complete
+      const target = finalScore.runs + 1;
+      
+      // Update match state for second innings
+      setMatchState(prev => prev ? {
+        ...prev,
+        currentInnings: 2,
+        firstInningsComplete: true,
+        firstInningsScore: finalScore,
+        target: target,
+        // Switch teams
+        userTeamRole: prev.userTeamRole.includes('batting') ? prev.userTeamRole.replace('batting', 'bowling') : prev.userTeamRole.replace('bowling', 'batting'),
+        opponentTeamRole: prev.opponentTeamRole.includes('batting') ? prev.opponentTeamRole.replace('batting', 'bowling') : prev.opponentTeamRole.replace('bowling', 'batting')
+      } : null);
+      
+      // Reset score for second innings
+      setBattingTeamScore({
+        runs: 0,
+        wickets: 0,
+        overs: 0,
+        balls: 0,
+        extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0 }
+      });
+      
+      // Clear previous stats as new teams are batting/bowling
+      setBatsmanStats([]);
+      setBowlerStats([]);
+      
+      // Show innings transition dialog
+      setShowInningsTransition(true);
+    }
   };
 
   const saveStateForUndo = () => {
@@ -655,7 +710,55 @@ export default function Scoreboard() {
   };
 
   const selectNewBatsman = (newBatsman: LocalPlayer) => {
-    // Add new batsman stats
+    // For second innings, we need to select both openers if no batsmen are set yet
+    if (matchState?.currentInnings === 2 && batsmanStats.length === 0) {
+      // This is the first batsman for second innings - set as striker
+      setBatsmanStats([{
+        player: newBatsman,
+        runs: 0,
+        balls: 0,
+        fours: 0,
+        sixes: 0,
+        strikeRate: 0,
+        isOut: false
+      }]);
+      
+      setMatchState(prev => prev ? {
+        ...prev,
+        strikeBatsman: newBatsman
+      } : null);
+      
+      // Need to select second batsman (non-striker)
+      return;
+    }
+    
+    if (matchState?.currentInnings === 2 && batsmanStats.length === 1) {
+      // This is the second batsman for second innings - set as non-striker
+      setBatsmanStats(prev => [
+        ...prev,
+        {
+          player: newBatsman,
+          runs: 0,
+          balls: 0,
+          fours: 0,
+          sixes: 0,
+          strikeRate: 0,
+          isOut: false
+        }
+      ]);
+      
+      setMatchState(prev => prev ? {
+        ...prev,
+        nonStrikeBatsman: newBatsman
+      } : null);
+      
+      setShowBatsmanDialog(false);
+      // Now need to select opening bowler for second innings
+      setShowBowlerDialog(true);
+      return;
+    }
+    
+    // Regular batsman replacement logic (existing code)
     setBatsmanStats(prev => [
       ...prev,
       {
@@ -745,6 +848,9 @@ export default function Scoreboard() {
         <CardHeader>
           <CardTitle className="text-center text-2xl">
             {userTeamBatsFirst ? 'Your Team' : 'Opponent Team'} Batting
+            <Badge className="ml-2" variant={matchState.currentInnings === 1 ? "default" : "secondary"}>
+              {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
+            </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -752,9 +858,45 @@ export default function Scoreboard() {
             <div className="text-4xl font-bold text-primary mb-2">
               {battingTeamScore.runs}/{battingTeamScore.wickets}
             </div>
-            <div className="text-lg text-muted-foreground">
-              Overs: {formatOvers(battingTeamScore.balls)}
+            <div className="text-lg text-muted-foreground mb-2">
+              Overs: {formatOvers(battingTeamScore.balls)}/{matchState.matchOvers}
             </div>
+            
+            {/* Target and Required Run Rate for 2nd Innings */}
+            {matchState.currentInnings === 2 && matchState.target && (
+              <div className="mt-4 p-3 bg-sky-50 dark:bg-slate-700 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-red-600">Target: {matchState.target}</div>
+                    <div className="text-muted-foreground">To Win</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-blue-600">
+                      {matchState.target - battingTeamScore.runs}
+                    </div>
+                    <div className="text-muted-foreground">Runs Needed</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-green-600">
+                      {(() => {
+                        const ballsRemaining = (matchState.matchOvers * 6) - battingTeamScore.balls;
+                        const oversRemaining = ballsRemaining / 6;
+                        const runsNeeded = matchState.target - battingTeamScore.runs;
+                        return oversRemaining > 0 ? (runsNeeded / oversRemaining).toFixed(2) : '0.00';
+                      })()} RPO
+                    </div>
+                    <div className="text-muted-foreground">Required Rate</div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* First Innings Summary for 2nd Innings */}
+            {matchState.currentInnings === 2 && matchState.firstInningsScore && (
+              <div className="mt-2 text-sm text-muted-foreground">
+                First innings: {matchState.firstInningsScore.runs}/{matchState.firstInningsScore.wickets} ({formatOvers(matchState.firstInningsScore.balls)} ov)
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -764,7 +906,7 @@ export default function Scoreboard() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold text-lg">Current Over</h3>
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Over {battingTeamScore.overs + 1}
+            Over {battingTeamScore.overs + 1} of {matchState.matchOvers} ({matchState.currentInnings === 1 ? '1st' : '2nd'} Innings)
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -1207,9 +1349,15 @@ export default function Scoreboard() {
 
       {/* New Batsman Dialog */}
       <Dialog open={showBatsmanDialog} onOpenChange={() => {}}>
-        <DialogContent>
+        <DialogContent aria-describedby="batsman-selection-description">
           <DialogHeader>
-            <DialogTitle>Select New Batsman</DialogTitle>
+            <DialogTitle>
+              {matchState?.currentInnings === 2 && batsmanStats.length === 0 
+                ? "Select Opening Batsman (Striker)"
+                : matchState?.currentInnings === 2 && batsmanStats.length === 1
+                ? "Select Opening Batsman (Non-Striker)" 
+                : "Select New Batsman"}
+            </DialogTitle>
           </DialogHeader>
           <ScrollArea className="h-60">
             <div className="grid gap-2">
@@ -1392,9 +1540,13 @@ export default function Scoreboard() {
 
       {/* Bowler Selection Dialog */}
       <Dialog open={showBowlerDialog} onOpenChange={() => {}}>
-        <DialogContent>
+        <DialogContent aria-describedby="bowler-selection-description">
           <DialogHeader>
-            <DialogTitle>Select Next Bowler</DialogTitle>
+            <DialogTitle>
+              {matchState?.currentInnings === 2 && bowlerStats.length === 0 
+                ? "Select Opening Bowler (Second Innings)"
+                : "Select Next Bowler"}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
@@ -1415,6 +1567,44 @@ export default function Scoreboard() {
                 ))}
               </div>
             </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Innings Transition Dialog */}
+      <Dialog open={showInningsTransition} onOpenChange={() => {}}>
+        <DialogContent aria-describedby="innings-transition-description">
+          <DialogHeader>
+            <DialogTitle className="text-center text-2xl">🏏 First Innings Complete!</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-center">
+            {matchState.firstInningsScore && (
+              <>
+                <div className="text-4xl font-bold text-primary">
+                  {matchState.firstInningsScore.runs}/{matchState.firstInningsScore.wickets}
+                </div>
+                <div className="text-lg text-muted-foreground">
+                  in {formatOvers(matchState.firstInningsScore.balls)} overs
+                </div>
+                <div className="text-xl font-semibold mt-4">
+                  Target: {matchState.target} runs
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {userTeamBatsFirst ? 'Opponent team' : 'Your team'} needs {matchState.target} runs to win in {matchState.matchOvers} overs
+                </div>
+                <Button
+                  onClick={() => {
+                    setShowInningsTransition(false);
+                    // Need to select new batsmen and bowler for second innings
+                    setShowBatsmanDialog(true);
+                  }}
+                  className="mt-6"
+                  data-testid="button-start-second-innings"
+                >
+                  Start Second Innings
+                </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
