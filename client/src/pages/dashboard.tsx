@@ -80,9 +80,9 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="heading-secondary mb-4" data-testid="text-welcome">
-                Game on, {user?.profileName || user?.username || 'Champion'}! 
+                🔴 PREVIEW TEST - RED SECTION! {user?.profileName || user?.username || 'Champion'}! 
               </h2>
-              <p className="text-lead opacity-95">Time to smash some records and track your cricket journey!</p>
+              <p className="text-lead opacity-95">🔴 This should be RED if preview is working!</p>
             </div>
             <div className="hidden md:flex items-center space-x-2">
               <Sparkles className="w-8 h-8 text-yellow-300 float-animation" />
