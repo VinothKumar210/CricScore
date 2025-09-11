@@ -75,14 +75,14 @@ export default function Dashboard() {
   return (
     <div className="container-responsive content-spacing pb-24 sm:pb-8 min-h-screen min-h-dvh">
       {/* Welcome Section - Enhanced */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-red-500 via-pink-500 to-red-600 rounded-3xl p-8 sm:p-10 text-white shadow-xl stagger-mobile hover:shadow-2xl transition-all duration-500">
+      <div className="relative overflow-hidden bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-3xl p-8 sm:p-10 text-white shadow-xl stagger-mobile hover:shadow-2xl transition-all duration-500">
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="heading-secondary mb-4" data-testid="text-welcome">
-                🔴 PREVIEW TEST - RED SECTION! {user?.profileName || user?.username || 'Champion'}! 
+                🟢 LATEST UPDATE - GREEN TEXT! {user?.profileName || user?.username || 'Champion'}! 
               </h2>
-              <p className="text-lead opacity-95">🔴 This should be RED if preview is working!</p>
+              <p className="text-lead opacity-95">🟢 UPDATED: Green text means preview is WORKING!</p>
             </div>
             <div className="hidden md:flex items-center space-x-2">
               <Sparkles className="w-8 h-8 text-yellow-300 float-animation" />
