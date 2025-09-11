@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SafeSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/safe-select';
 import { useLocation } from 'wouter';
 import { type LocalPlayer } from '@shared/schema';
 
@@ -202,7 +202,7 @@ export function CoinToss() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Who won the toss?</label>
-                  <Select value={manualTossWinner || ""} onValueChange={(value: 'my-team' | 'opponent-team') => setManualTossWinner(value)}>
+                  <SafeSelect value={manualTossWinner || ""} onValueChange={(value: 'my-team' | 'opponent-team') => setManualTossWinner(value)}>
                     <SelectTrigger data-testid="select-toss-winner">
                       <SelectValue placeholder="Select toss winner" />
                     </SelectTrigger>
@@ -210,12 +210,12 @@ export function CoinToss() {
                       <SelectItem value="my-team">My Team</SelectItem>
                       <SelectItem value="opponent-team">Opponent Team</SelectItem>
                     </SelectContent>
-                  </Select>
+                  </SafeSelect>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">What did the winning team choose?</label>
-                  <Select value={manualBattingChoice || ""} onValueChange={(value: 'batting' | 'bowling') => setManualBattingChoice(value)}>
+                  <SafeSelect value={manualBattingChoice || ""} onValueChange={(value: 'batting' | 'bowling') => setManualBattingChoice(value)}>
                     <SelectTrigger data-testid="select-batting-choice">
                       <SelectValue placeholder="Select choice" />
                     </SelectTrigger>
@@ -223,7 +223,7 @@ export function CoinToss() {
                       <SelectItem value="batting">Batting First</SelectItem>
                       <SelectItem value="bowling">Bowling First</SelectItem>
                     </SelectContent>
-                  </Select>
+                  </SafeSelect>
                 </div>
 
                 <div className="flex gap-3 pt-4">

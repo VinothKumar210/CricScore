@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SafeSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/safe-select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
@@ -214,7 +214,7 @@ export default function Invitations() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Select Team</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <SafeSelect onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-team">
                                 <SelectValue placeholder="Choose a team" />
@@ -227,7 +227,7 @@ export default function Invitations() {
                                 </SelectItem>
                               ))}
                             </SelectContent>
-                          </Select>
+                          </SafeSelect>
                           <FormMessage />
                         </FormItem>
                       )}
