@@ -103,9 +103,9 @@ export default function Profile() {
       profileName: "",
       description: "",
       profilePictureUrl: "",
-      role: undefined as any,
-      battingHand: undefined as any,
-      bowlingStyle: undefined as any,
+      role: "",
+      battingHand: "",
+      bowlingStyle: "",
     },
   });
 
@@ -116,9 +116,9 @@ export default function Profile() {
         profileName: user.profileName || "",
         description: user.description || "",
         profilePictureUrl: (user as any).profilePictureUrl || "",
-        role: user.role || undefined,
-        battingHand: user.battingHand || undefined,
-        bowlingStyle: user.bowlingStyle || undefined,
+        role: user.role || "",
+        battingHand: user.battingHand || "",
+        bowlingStyle: user.bowlingStyle || "",
       });
       setProfilePicturePreview((user as any).profilePictureUrl || null);
     }
@@ -165,9 +165,9 @@ export default function Profile() {
           profileName: user.profileName || "",
           description: user.description || "",
           profilePictureUrl: (user as any).profilePictureUrl || "",
-          role: user.role || undefined,
-          battingHand: user.battingHand || undefined,
-          bowlingStyle: user.bowlingStyle || undefined,
+          role: user.role || "",
+          battingHand: user.battingHand || "",
+          bowlingStyle: user.bowlingStyle || "",
         });
       }
       setIsEditing(false);
