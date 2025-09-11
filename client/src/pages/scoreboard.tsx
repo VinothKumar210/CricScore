@@ -5,6 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Trophy, Save } from 'lucide-react';
 import { type LocalPlayer } from '@shared/schema';
 
 interface MatchState {
@@ -78,6 +82,13 @@ export default function Scoreboard() {
   const [currentOverBalls, setCurrentOverBalls] = useState<string[]>([]);
   const [undoStack, setUndoStack] = useState<any[]>([]);
   const [showBowlerDialog, setShowBowlerDialog] = useState(false);
+  
+  // Save match functionality
+  const [showSaveMatchDialog, setShowSaveMatchDialog] = useState(false);
+  const [matchName, setMatchName] = useState('');
+  const [venue, setVenue] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Get match data from localStorage
@@ -181,6 +192,104 @@ export default function Scoreboard() {
       strikeBatsman: prev.nonStrikeBatsman,
       nonStrikeBatsman: prev.strikeBatsman
     } : null);
+  };
+
+  // Save match function
+  const handleSaveMatch = async () => {
+    if (!matchName.trim() || !venue.trim()) {
+      toast({
+        title: "Error",
+        description: "Please fill in match name and venue",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      // Collect all player performances
+      const allPlayerPerformances: Array<{
+        userId?: string;
+        playerName: string;
+        runsScored: number;
+        ballsFaced: number;
+        oversBowled: number;
+        runsConceded: number;
+        wicketsTaken: number;
+        catchesTaken: number;
+      }> = [];
+      
+      // Add batsman stats
+      batsmanStats.forEach(stat => {
+        allPlayerPerformances.push({
+          userId: stat.player.userId,
+          playerName: stat.player.name,
+          runsScored: stat.runs,
+          ballsFaced: stat.balls,
+          oversBowled: 0,
+          runsConceded: 0,
+          wicketsTaken: 0,
+          catchesTaken: 0
+        });
+      });
+      
+      // Add bowler stats
+      bowlerStats.forEach(stat => {
+        allPlayerPerformances.push({
+          userId: stat.player.userId,
+          playerName: stat.player.name,
+          runsScored: 0,
+          ballsFaced: 0,
+          oversBowled: stat.overs + (stat.balls / 6),
+          runsConceded: stat.runs,
+          wicketsTaken: stat.wickets,
+          catchesTaken: 0
+        });
+      });
+
+      // Send to backend
+      const response = await fetch('/api/local-match-results', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          matchName: matchName.trim(),
+          venue: venue.trim(),
+          matchDate: new Date().toISOString(),
+          myTeamPlayers: matchState.myTeamPlayers,
+          opponentTeamPlayers: matchState.opponentTeamPlayers,
+          finalScore: {
+            runs: battingTeamScore.runs,
+            wickets: battingTeamScore.wickets,
+            overs: battingTeamScore.overs + (battingTeamScore.balls / 6)
+          },
+          playerPerformances: allPlayerPerformances
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: "Success",
+          description: `Match saved! Updated career stats for ${result.playersWithAccounts} players.`,
+        });
+        setShowSaveMatchDialog(false);
+        setLocation('/dashboard');
+      } else {
+        throw new Error('Failed to save match');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save match results",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const updateBatsmanStats = (player: LocalPlayer, runsScored: number, ballFaced: boolean = true) => {
@@ -770,6 +879,19 @@ export default function Scoreboard() {
               Leg Bye (LB)
             </Button>
           </div>
+          
+          {/* Save Match Button */}
+          <div className="flex justify-center pt-4">
+            <Button
+              onClick={() => setShowSaveMatchDialog(true)}
+              variant="default"
+              className="h-12 px-8 bg-green-600 hover:bg-green-700"
+              data-testid="button-save-match"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              Save Match Results
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -1293,6 +1415,54 @@ export default function Scoreboard() {
                 ))}
               </div>
             </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Match Dialog */}
+      <Dialog open={showSaveMatchDialog} onOpenChange={setShowSaveMatchDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Match Results</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="match-name">Match Name</Label>
+              <Input
+                id="match-name"
+                value={matchName}
+                onChange={(e) => setMatchName(e.target.value)}
+                placeholder="e.g., Sunday League vs Hawks"
+                data-testid="input-match-name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="venue">Venue</Label>
+              <Input
+                id="venue"
+                value={venue}
+                onChange={(e) => setVenue(e.target.value)}
+                placeholder="e.g., Local Cricket Ground"
+                data-testid="input-venue"
+              />
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowSaveMatchDialog(false)}
+                data-testid="button-cancel-save"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveMatch}
+                disabled={isSaving}
+                data-testid="button-confirm-save"
+              >
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Match
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

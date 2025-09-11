@@ -707,6 +707,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Save local match results and update career stats
+  app.post("/api/local-match-results", authenticateToken, async (req: any, res) => {
+    try {
+      const { 
+        matchName,
+        venue,
+        matchDate,
+        myTeamPlayers,
+        opponentTeamPlayers,
+        finalScore,
+        playerPerformances
+      } = req.body;
+
+      // Basic validation
+      if (!matchName || !venue || !matchDate || !myTeamPlayers || !opponentTeamPlayers || !playerPerformances) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const results = [];
+      const errors = [];
+
+      // Process performances for players with valid userIds
+      for (const performance of playerPerformances) {
+        const { 
+          userId, 
+          playerName,
+          runsScored = 0, 
+          ballsFaced = 0, 
+          oversBowled = 0, 
+          runsConceded = 0, 
+          wicketsTaken = 0, 
+          catchesTaken = 0 
+        } = performance;
+
+        // Only process if player has a valid userId (meaning they have an account)
+        if (userId) {
+          try {
+            // Create match record for this player
+            const matchData = {
+              userId,
+              opponent: `Local Match vs ${myTeamPlayers.some((p: any) => p.userId === userId) ? 'Opponent Team' : 'My Team'}`,
+              matchDate: new Date(matchDate),
+              runsScored: parseInt(runsScored) || 0,
+              ballsFaced: parseInt(ballsFaced) || 0,
+              oversBowled: parseFloat(oversBowled) || 0,
+              runsConceded: parseInt(runsConceded) || 0,
+              wicketsTaken: parseInt(wicketsTaken) || 0,
+              catchesTaken: parseInt(catchesTaken) || 0
+            };
+
+            const match = await storage.createMatch(matchData);
+            results.push({
+              playerName,
+              userId,
+              matchId: match.id,
+              status: 'success'
+            });
+          } catch (error) {
+            console.error(`Error saving match for player ${playerName}:`, error);
+            errors.push({
+              playerName,
+              userId,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            });
+          }
+        }
+      }
+
+      res.json({
+        message: "Local match results processed",
+        totalPlayers: playerPerformances.length,
+        playersWithAccounts: results.length,
+        successfulSaves: results.length,
+        errorCount: errors.length,
+        results,
+        errors
+      });
+    } catch (error) {
+      console.error('Error processing local match results:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
