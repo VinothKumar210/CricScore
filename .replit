@@ -1,19 +1,26 @@
 modules = ["nodejs-20", "web"]
-run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
 channel = "stable-25_05"
 packages = ["jq"]
 
+# Default run command → development
+run = "npm run dev"
+
 [deployment]
 deploymentTarget = "autoscale"
+# In deploy mode → build & start production
 build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
 
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 41285
+externalPort = 3000
 
 [env]
 PORT = "5000"
