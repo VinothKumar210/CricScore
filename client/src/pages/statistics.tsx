@@ -1,8 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, Target, Hand, TrendingUp } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { useEffect } from 'react';
+import { BarChart3, Target, Hand } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
 import type { CareerStats, Match } from "@shared/schema";
 
@@ -19,14 +17,32 @@ export default function Statistics() {
     enabled: !!user?.id,
   });
 
-  // Refresh statistics data when user changes or statistics page mounts
-  useEffect(() => {
-    if (user) {
-      // Ensure fresh data from database on statistics page load
-      refetchStats();
-      refetchMatches();
+  // Calculate batting average
+  const calculateBattingAverage = (totalRuns?: number, timesOut?: number) => {
+    if (totalRuns && timesOut && timesOut > 0) {
+      return (totalRuns / timesOut).toFixed(2);
     }
-  }, [user, refetchStats, refetchMatches]);
+    return totalRuns && totalRuns > 0 ? 'Not Out' : '0.00';
+  };
+
+  // Calculate best bowling figures from matches
+  const getBestBowlingFigures = (matches: Match[]) => {
+    if (!matches || matches.length === 0) return '0/0';
+    
+    let bestWickets = 0;
+    let bestRuns = Infinity;
+    
+    matches.forEach(match => {
+      if (match.wicketsTaken > bestWickets) {
+        bestWickets = match.wicketsTaken;
+        bestRuns = match.runsConceded;
+      } else if (match.wicketsTaken === bestWickets && match.runsConceded < bestRuns) {
+        bestRuns = match.runsConceded;
+      }
+    });
+    
+    return bestWickets > 0 ? `${bestWickets}/${bestRuns}` : '0/0';
+  };
 
   if (isLoading || matchesLoading) {
     return (
@@ -71,9 +87,7 @@ export default function Statistics() {
             <CardContent className="p-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-700 dark:text-blue-300" data-testid="stat-batting-average">
-                  {stats?.totalRuns && stats?.timesOut && stats?.timesOut > 0
-                    ? (stats.totalRuns / stats.timesOut).toFixed(2)
-                    : stats?.totalRuns && stats?.totalRuns > 0 ? 'Not Out' : '0.00'}
+                  {calculateBattingAverage(stats?.totalRuns, stats?.timesOut)}
                 </div>
                 <div className="text-sm text-blue-600 dark:text-blue-400">Batting Average</div>
               </div>
@@ -83,7 +97,7 @@ export default function Statistics() {
             <CardContent className="p-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-700 dark:text-purple-300" data-testid="stat-strike-rate">
-                  {stats?.strikeRate || "0.00"}
+                  {stats?.strikeRate ? stats.strikeRate.toFixed(2) : "0.00"}
                 </div>
                 <div className="text-sm text-purple-600 dark:text-purple-400">Strike Rate</div>
               </div>
@@ -123,9 +137,7 @@ export default function Statistics() {
               <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
                 <span className="text-sm font-medium">Batting Average</span>
                 <span className="font-bold text-lg text-blue-600" data-testid="stat-batting-average-detailed">
-                  {stats?.totalRuns && stats?.timesOut && stats?.timesOut > 0
-                    ? (stats.totalRuns / stats.timesOut).toFixed(2)
-                    : stats?.totalRuns && stats?.totalRuns > 0 ? 'Not Out' : '0.00'}
+                  {calculateBattingAverage(stats?.totalRuns, stats?.timesOut)}
                 </span>
               </div>
               <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
@@ -143,7 +155,7 @@ export default function Statistics() {
               <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
                 <span className="text-sm font-medium">Strike Rate</span>
                 <span className="font-bold text-lg" data-testid="stat-strike-rate-detailed">
-                  {stats?.strikeRate || "0.00"}
+                  {stats?.strikeRate ? stats.strikeRate.toFixed(2) : "0.00"}
                 </span>
               </div>
               <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
@@ -187,13 +199,13 @@ export default function Statistics() {
               <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
                 <span className="text-sm font-medium">Economy Rate</span>
                 <span className="font-bold text-lg" data-testid="stat-economy-rate">
-                  {stats?.economy || "0.00"}
+                  {stats?.economy ? stats.economy.toFixed(2) : "0.00"}
                 </span>
               </div>
               <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
                 <span className="text-sm font-medium">Best Bowling</span>
                 <span className="font-bold text-lg" data-testid="stat-best-bowling">
-                  {stats?.wicketsTaken ? `${stats.wicketsTaken}/${stats?.runsConceded || 0}` : '0/0'}
+                  {getBestBowlingFigures(matches || [])}
                 </span>
               </div>
             </div>
