@@ -3,20 +3,20 @@
 @tailwind utilities;
 
 :root {
-  /* Modern Background with enhanced mobile-optimized gradient */
-  --background: linear-gradient(135deg, hsl(210, 40%, 99%) 0%, hsl(220, 60%, 98%) 50%, hsl(200, 50%, 97%) 100%);
-  --background-solid: hsl(210, 40%, 99%);
-  --background-mobile: linear-gradient(180deg, hsl(210, 40%, 99.5%) 0%, hsl(220, 60%, 98.5%) 100%);
+  /* Solid white background */
+  --background: hsl(0, 0%, 100%);
+  --background-solid: hsl(0, 0%, 100%);
+  --background-mobile: hsl(0, 0%, 100%);
   --foreground: hsl(222.2, 84%, 4.9%);
   
-  /* Enhanced glassmorphism cards with better mobile performance */
-  --card: hsla(255, 255, 255, 0.95);
+  /* Solid white cards */
+  --card: hsl(0, 0%, 100%);
   --card-foreground: hsl(222.2, 84%, 4.9%);
-  --card-backdrop: blur(24px);
-  --card-border: hsla(210, 40%, 85%, 0.3);
-  --card-shadow: 0 20px 25px -5px hsla(210, 40%, 20%, 0.1), 0 10px 10px -5px hsla(210, 40%, 20%, 0.04);
+  --card-backdrop: none;
+  --card-border: hsla(210, 40%, 85%, 0.5);
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   
-  --popover: hsla(0, 0%, 100%, 0.95);
+  --popover: hsl(0, 0%, 100%);
   --popover-foreground: hsl(222.2, 84%, 4.9%);
   
   /* Sophisticated primary color with gradients */
@@ -307,13 +307,11 @@
   }
 }
 
-/* Enhanced mobile-optimized card effects */
+/* Enhanced mobile-optimized card effects - solid white */
 .glassmorphism {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--card-border));
   box-shadow: var(--card-shadow);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
   /* Mobile performance optimizations */
@@ -551,7 +549,7 @@ html {
 }
 
 .form-section {
-  @apply space-y-4 p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10;
+  @apply space-y-4 p-6 bg-white rounded-2xl border border-gray-200;
 }
 
 .form-section-title {
@@ -590,7 +588,7 @@ html {
 
 /* Modern select and textarea styling */
 select, textarea {
-  @apply rounded-2xl border border-slate-200/30 bg-white/10 backdrop-blur-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-0 focus-visible:border-blue-500/50 focus-visible:bg-white/20 hover:border-slate-300/50 hover:bg-white/15;
+  @apply rounded-2xl border border-slate-200 bg-white transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-0 focus-visible:border-blue-500 focus-visible:bg-white hover:border-slate-300;
 }
 
 textarea {
@@ -738,9 +736,8 @@ textarea {
 
 /* Enhanced mobile navigation */
 .nav-mobile {
-  @apply sticky top-0 z-50 backdrop-blur-lg border-b;
-  background: hsla(var(--background-solid), 0.8);
-  border-color: hsla(255, 255, 255, 0.1);
+  @apply sticky top-0 z-50 border-b bg-white;
+  border-color: rgba(0, 0, 0, 0.1);
 }
 
 .nav-mobile-item {
@@ -796,9 +793,8 @@ textarea {
 
 /* Bottom navigation for mobile */
 .bottom-nav {
-  @apply fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl border-t p-2 sm:hidden;
-  background: hsla(var(--background-solid), 0.9);
-  border-color: hsla(255, 255, 255, 0.1);
+  @apply fixed bottom-0 left-0 right-0 z-50 border-t p-2 sm:hidden bg-white;
+  border-color: rgba(0, 0, 0, 0.1);
 }
 
 .bottom-nav-item {
@@ -983,7 +979,15 @@ textarea {
 
 /* Modern data visualization */
 .stat-card {
-  @apply bg-white/95 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300;
+  @apply bg-white border border-gray-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300;
+}
+
+/* Solid white dialog content - no glass theme */
+[data-radix-dialog-content] {
+  background: rgb(255, 255, 255) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
 }
 
 .stat-value {
