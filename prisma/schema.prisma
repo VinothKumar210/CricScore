@@ -6,12 +6,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id              String   @id @default(cuid())
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   email           String   @unique
   password        String
   username        String?  @unique
@@ -36,8 +36,8 @@ model User {
 }
 
 model CareerStats {
-  id             String  @id @default(cuid())
-  userId         String  @unique
+  id             String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String  @unique @db.ObjectId
   matchesPlayed  Int     @default(0)
   // Batting stats
   totalRuns      Int     @default(0)
@@ -59,11 +59,11 @@ model CareerStats {
 }
 
 model Team {
-  id             String   @id @default(cuid())
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
   name           String
   description    String?
-  captainId      String
-  viceCaptainId  String?
+  captainId      String   @db.ObjectId
+  viceCaptainId  String?  @db.ObjectId
   createdAt      DateTime @default(now())
 
   // Relations
@@ -76,9 +76,9 @@ model Team {
 }
 
 model TeamMember {
-  id       String   @id @default(cuid())
-  teamId   String
-  userId   String
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  teamId   String   @db.ObjectId
+  userId   String   @db.ObjectId
   joinedAt DateTime @default(now())
 
   // Relations
@@ -90,10 +90,10 @@ model TeamMember {
 }
 
 model TeamInvitation {
-  id          String            @id @default(cuid())
-  teamId      String
-  invitedBy   String
-  invitedUser String
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  teamId      String            @db.ObjectId
+  invitedBy   String            @db.ObjectId
+  invitedUser String            @db.ObjectId
   status      InvitationStatus  @default(PENDING)
   createdAt   DateTime          @default(now())
 
@@ -106,8 +106,8 @@ model TeamInvitation {
 }
 
 model Match {
-  id           String   @id @default(cuid())
-  userId       String
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
   opponent     String
   matchDate    DateTime
   // Batting performance
