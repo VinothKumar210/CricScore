@@ -72,7 +72,17 @@ export default function Statistics() {
 
       {/* Key Performance Metrics */}
       <div className="mb-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-700 dark:text-orange-300" data-testid="stat-matches-played">
+                  {stats?.matchesPlayed || 0}
+                </div>
+                <div className="text-sm text-orange-600 dark:text-orange-400">Matches Played</div>
+              </div>
+            </CardContent>
+          </Card>
           <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
             <CardContent className="p-4">
               <div className="text-center">
@@ -96,20 +106,20 @@ export default function Statistics() {
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
             <CardContent className="p-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-700 dark:text-purple-300" data-testid="stat-strike-rate">
-                  {stats?.strikeRate ? stats.strikeRate.toFixed(2) : "0.00"}
+                <div className="text-2xl font-bold text-purple-700 dark:text-purple-300" data-testid="stat-wickets-taken">
+                  {stats?.wicketsTaken || 0}
                 </div>
-                <div className="text-sm text-purple-600 dark:text-purple-400">Strike Rate</div>
+                <div className="text-sm text-purple-600 dark:text-purple-400">Wickets Taken</div>
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800">
+          <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200 dark:border-red-800">
             <CardContent className="p-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-700 dark:text-orange-300" data-testid="stat-matches-played">
-                  {stats?.matchesPlayed || 0}
+                <div className="text-2xl font-bold text-red-700 dark:text-red-300" data-testid="stat-economy-rate">
+                  {stats?.economy ? stats.economy.toFixed(2) : "0.00"}
                 </div>
-                <div className="text-sm text-orange-600 dark:text-orange-400">Matches Played</div>
+                <div className="text-sm text-red-600 dark:text-red-400">Economy Rate</div>
               </div>
             </CardContent>
           </Card>
