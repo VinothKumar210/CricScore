@@ -61,24 +61,24 @@ export default function Statistics() {
 
   return (
     <div className="container-mobile space-mobile-lg">
-      {/* Page Header */}
-      <div className="mobile-stack">
-        <h2 className="text-mobile-h1 mt-6" data-testid="title-statistics">
-          Career Statistics
-        </h2>
-        <div className="text-mobile-caption text-right sm:text-left" data-testid="text-last-updated">
-          Last updated: {stats?.updatedAt ? new Date(stats.updatedAt).toLocaleDateString() : "Never"}
-        </div>
-      </div>
-      
       {/* Back Button */}
-      <div className="mt-2 mb-6">
+      <div className="mt-6 mb-4">
         <Link href="/dashboard">
           <button className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-primary to-sky-500 text-white rounded-lg hover:from-primary/90 hover:to-sky-500/90 transition-all duration-200 shadow-sm" data-testid="button-back-dashboard">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </button>
         </Link>
+      </div>
+      
+      {/* Page Header */}
+      <div className="mobile-stack">
+        <h2 className="text-mobile-h1" data-testid="title-statistics">
+          Career Statistics
+        </h2>
+        <div className="text-mobile-caption text-right sm:text-left" data-testid="text-last-updated">
+          Last updated: {stats?.updatedAt ? new Date(stats.updatedAt).toLocaleDateString() : "Never"}
+        </div>
       </div>
 
       {/* Key Performance Metrics */}
