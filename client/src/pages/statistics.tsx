@@ -155,7 +155,7 @@ export default function Statistics() {
               </div>
               <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
                 <span className="text-sm font-medium">Batting Average</span>
-                <span className="font-bold text-lg text-blue-600" data-testid="stat-batting-average-detailed">
+                <span className="font-bold text-lg" data-testid="stat-batting-average-detailed">
                   {calculateBattingAverage(stats?.totalRuns, stats?.timesOut)}
                 </span>
               </div>
