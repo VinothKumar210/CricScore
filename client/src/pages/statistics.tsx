@@ -72,9 +72,9 @@ export default function Statistics() {
       </div>
       
       {/* Back Button */}
-      <div className="mt-4 mb-6">
+      <div className="mt-2 mb-6">
         <Link href="/dashboard">
-          <button className="flex items-center gap-2 px-4 py-2 text-sm bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors" data-testid="button-back-dashboard">
+          <button className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-primary to-sky-500 text-white rounded-lg hover:from-primary/90 hover:to-sky-500/90 transition-all duration-200 shadow-sm" data-testid="button-back-dashboard">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </button>
