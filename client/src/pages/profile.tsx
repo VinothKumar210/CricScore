@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { SafeSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/safe-select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Calendar, Trophy, Edit, Save, X, ArrowLeft, Target, TrendingUp, Award, BarChart3, Camera, Upload } from "lucide-react";
@@ -472,18 +471,21 @@ export default function Profile() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Player Role</FormLabel>
-                              <SafeSelect onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger data-testid="edit-role">
-                                    <SelectValue placeholder="Select your role" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="BATSMAN">Batsman</SelectItem>
-                                  <SelectItem value="BOWLER">Bowler</SelectItem>
-                                  <SelectItem value="ALL_ROUNDER">All-rounder</SelectItem>
-                                </SelectContent>
-                              </SafeSelect>
+                              <FormControl>
+                                <select
+                                  value={field.value || ""}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 pr-10 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent transition-colors appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke-width%3D%221.5%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M8.25%2015L12%2018.75%2015.75%2015m-7.5-6L12%205.25%2015.75%209%22%20/%3E%3C/svg%3E')] bg-[length:1rem] bg-[position:right_0.75rem_center] bg-no-repeat text-foreground dark:text-foreground"
+                                  data-testid="edit-role"
+                                >
+                                  <option value="" disabled hidden>
+                                    Select your role
+                                  </option>
+                                  <option value="BATSMAN">Batsman</option>
+                                  <option value="BOWLER">Bowler</option>
+                                  <option value="ALL_ROUNDER">All-rounder</option>
+                                </select>
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -495,17 +497,20 @@ export default function Profile() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Batting Hand</FormLabel>
-                              <SafeSelect onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger data-testid="edit-batting-hand">
-                                    <SelectValue placeholder="Select batting hand" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="RIGHT">Right Hand</SelectItem>
-                                  <SelectItem value="LEFT">Left Hand</SelectItem>
-                                </SelectContent>
-                              </SafeSelect>
+                              <FormControl>
+                                <select
+                                  value={field.value || ""}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 pr-10 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent transition-colors appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke-width%3D%221.5%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M8.25%2015L12%2018.75%2015.75%2015m-7.5-6L12%205.25%2015.75%209%22%20/%3E%3C/svg%3E')] bg-[length:1rem] bg-[position:right_0.75rem_center] bg-no-repeat text-foreground dark:text-foreground"
+                                  data-testid="edit-batting-hand"
+                                >
+                                  <option value="" disabled hidden>
+                                    Select batting hand
+                                  </option>
+                                  <option value="RIGHT">Right Hand</option>
+                                  <option value="LEFT">Left Hand</option>
+                                </select>
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -517,18 +522,21 @@ export default function Profile() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Bowling Style (Optional)</FormLabel>
-                              <SafeSelect onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger data-testid="edit-bowling-style">
-                                    <SelectValue placeholder="Select bowling style" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="FAST">Fast</SelectItem>
-                                  <SelectItem value="MEDIUM_FAST">Medium Fast</SelectItem>
-                                  <SelectItem value="SPIN">Spin</SelectItem>
-                                </SelectContent>
-                              </SafeSelect>
+                              <FormControl>
+                                <select
+                                  value={field.value || ""}
+                                  onChange={(e) => field.onChange(e.target.value)}
+                                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 pr-10 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent transition-colors appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke-width%3D%221.5%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M8.25%2015L12%2018.75%2015.75%2015m-7.5-6L12%205.25%2015.75%209%22%20/%3E%3C/svg%3E')] bg-[length:1rem] bg-[position:right_0.75rem_center] bg-no-repeat text-foreground dark:text-foreground"
+                                  data-testid="edit-bowling-style"
+                                >
+                                  <option value="" disabled hidden>
+                                    Select bowling style
+                                  </option>
+                                  <option value="FAST">Fast</option>
+                                  <option value="MEDIUM_FAST">Medium Fast</option>
+                                  <option value="SPIN">Spin</option>
+                                </select>
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}

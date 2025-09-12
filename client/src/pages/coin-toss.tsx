@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { SafeSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/safe-select';
 import { useLocation } from 'wouter';
 import { type LocalPlayer } from '@shared/schema';
 
@@ -202,28 +201,34 @@ export function CoinToss() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Who won the toss?</label>
-                  <SafeSelect value={manualTossWinner || ""} onValueChange={(value: string) => setManualTossWinner(value as 'my-team' | 'opponent-team')}>
-                    <SelectTrigger data-testid="select-toss-winner">
-                      <SelectValue placeholder="Select toss winner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="my-team">My Team</SelectItem>
-                      <SelectItem value="opponent-team">Opponent Team</SelectItem>
-                    </SelectContent>
-                  </SafeSelect>
+                  <select
+                    value={manualTossWinner || ""}
+                    onChange={(e) => setManualTossWinner(e.target.value as 'my-team' | 'opponent-team')}
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 pr-10 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent transition-colors appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke-width%3D%221.5%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M8.25%2015L12%2018.75%2015.75%2015m-7.5-6L12%205.25%2015.75%209%22%20/%3E%3C/svg%3E')] bg-[length:1rem] bg-[position:right_0.75rem_center] bg-no-repeat text-foreground dark:text-foreground"
+                    data-testid="select-toss-winner"
+                  >
+                    <option value="" disabled hidden>
+                      Select toss winner
+                    </option>
+                    <option value="my-team">My Team</option>
+                    <option value="opponent-team">Opponent Team</option>
+                  </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">What did the winning team choose?</label>
-                  <SafeSelect value={manualBattingChoice || ""} onValueChange={(value: string) => setManualBattingChoice(value as 'batting' | 'bowling')}>
-                    <SelectTrigger data-testid="select-batting-choice">
-                      <SelectValue placeholder="Select choice" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="batting">Batting First</SelectItem>
-                      <SelectItem value="bowling">Bowling First</SelectItem>
-                    </SelectContent>
-                  </SafeSelect>
+                  <select
+                    value={manualBattingChoice || ""}
+                    onChange={(e) => setManualBattingChoice(e.target.value as 'batting' | 'bowling')}
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 pr-10 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent transition-colors appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke-width%3D%221.5%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M8.25%2015L12%2018.75%2015.75%2015m-7.5-6L12%205.25%2015.75%209%22%20/%3E%3C/svg%3E')] bg-[length:1rem] bg-[position:right_0.75rem_center] bg-no-repeat text-foreground dark:text-foreground"
+                    data-testid="select-batting-choice"
+                  >
+                    <option value="" disabled hidden>
+                      Select choice
+                    </option>
+                    <option value="batting">Batting First</option>
+                    <option value="bowling">Bowling First</option>
+                  </select>
                 </div>
 
                 <div className="flex gap-3 pt-4">
