@@ -529,7 +529,27 @@ export class PrismaStorage implements IStorage {
     const decimalOversBowled = this.convertOversToDecimal(newOversBowled);
     const economy = decimalOversBowled > 0 ? newRunsConceded / decimalOversBowled : 0;
 
-    await this.updateCareerStats(userId, {
+    // Update best bowling figures if this match's bowling performance is better
+    const hasBestFigures = (stats as any).bestBowlingWickets != null && (stats as any).bestBowlingRuns != null;
+    let updatedBestFigures: { wickets: number; runs: number } | null = null;
+    
+    // Only consider updating if the player bowled in this match (wickets taken or runs conceded > 0)
+    if (match.wicketsTaken > 0 || match.runsConceded > 0) {
+      // Update if:
+      // 1. No previous best figures, OR
+      // 2. More wickets than current best, OR  
+      // 3. Same wickets but fewer runs conceded
+      if (!hasBestFigures || 
+          match.wicketsTaken > (stats as any).bestBowlingWickets || 
+          (match.wicketsTaken === (stats as any).bestBowlingWickets && match.runsConceded < (stats as any).bestBowlingRuns)) {
+        updatedBestFigures = {
+          wickets: match.wicketsTaken,
+          runs: match.runsConceded
+        };
+      }
+    }
+
+    const updateData: any = {
       matchesPlayed: newMatchesPlayed,
       totalRuns: newTotalRuns,
       ballsFaced: newBallsFaced,
@@ -543,7 +563,15 @@ export class PrismaStorage implements IStorage {
       catchesTaken: newCatchesTaken,
       runOuts: newRunOuts,
       manOfTheMatchAwards: newManOfTheMatchAwards,
-    });
+    };
+
+    // Only include best bowling fields if there's an update
+    if (updatedBestFigures) {
+      updateData.bestBowlingWickets = updatedBestFigures.wickets;
+      updateData.bestBowlingRuns = updatedBestFigures.runs;
+    }
+
+    await this.updateCareerStats(userId, updateData);
   }
 
   async searchUsers(query: string): Promise<User[]> {
