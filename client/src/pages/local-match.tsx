@@ -593,18 +593,18 @@ export default function LocalMatch() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Match Format</label>
-                <Select value={overs} onValueChange={setOvers}>
-                  <SelectTrigger data-testid="select-overs">
-                    <SelectValue placeholder="Select match format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10 Overs</SelectItem>
-                    <SelectItem value="12">12 Overs</SelectItem>
-                    <SelectItem value="15">15 Overs</SelectItem>
-                    <SelectItem value="20">20 Overs</SelectItem>
-                    <SelectItem value="custom">Custom Format</SelectItem>
-                  </SelectContent>
-                </Select>
+                <select
+                  value={overs}
+                  onChange={(e) => setOvers(e.target.value)}
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 pr-10 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent transition-colors appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke-width%3D%221.5%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M8.25%2015L12%2018.75%2015.75%2015m-7.5-6L12%205.25%2015.75%209%22%20/%3E%3C/svg%3E')] bg-[length:1rem] bg-[position:right_0.75rem_center] bg-no-repeat text-foreground dark:text-foreground"
+                  data-testid="select-overs"
+                >
+                  <option value="10">10 Overs</option>
+                  <option value="12">12 Overs</option>
+                  <option value="15">15 Overs</option>
+                  <option value="20">20 Overs</option>
+                  <option value="custom">Custom Format</option>
+                </select>
                 {overs === "custom" && (
                   <Input
                     type="text"
