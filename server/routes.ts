@@ -605,28 +605,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user by ID route
-  app.get("/api/users/:id", authenticateToken, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      
-      if (!id) {
-        return res.status(400).json({ message: "User ID required" });
-      }
-      
-      const user = await storage.getUser(id);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Remove password from response
-      res.json({ ...user, password: undefined });
-    } catch (error) {
-      return handleDatabaseError(error, res);
-    }
-  });
-
-  // Username availability check route (public - no auth required)
+  // Username availability check route (public - no auth required) - MUST come before /:id route
   app.get("/api/users/check-username", async (req, res) => {
     try {
       const { username } = req.query;
@@ -653,6 +632,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get user by ID route
+  app.get("/api/users/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      
+      if (!id) {
+        return res.status(400).json({ message: "User ID required" });
+      }
+      
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Remove password from response
+      res.json({ ...user, password: undefined });
+    } catch (error) {
+      return handleDatabaseError(error, res);
     }
   });
 
