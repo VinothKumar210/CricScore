@@ -594,8 +594,12 @@ export default function LocalMatch() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Match Format</label>
                 <SafeSelect 
-                  value={overs || "20"} 
-                  onValueChange={(value: string) => setOvers(value || "20")}
+                  value={overs} 
+                  onValueChange={(value: string) => {
+                    if (value && typeof value === 'string') {
+                      setOvers(value);
+                    }
+                  }}
                 >
                   <SelectTrigger data-testid="select-overs">
                     <SelectValue placeholder="Select format" />

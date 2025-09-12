@@ -18,9 +18,20 @@ export const SafeSelect: React.FC<SafeSelectProps> = ({
   // Only pass value prop if it's not null/undefined, otherwise let Select use its internal state
   const selectProps = value != null ? { value } : {};
   
+  // Wrap onValueChange to handle potential errors
+  const handleValueChange = React.useCallback((newValue: string) => {
+    try {
+      if (onValueChange && newValue != null) {
+        onValueChange(newValue);
+      }
+    } catch (error) {
+      console.warn('Error in SafeSelect onValueChange:', error);
+    }
+  }, [onValueChange]);
+  
   return (
     <Select 
-      onValueChange={onValueChange}
+      onValueChange={handleValueChange}
       {...selectProps}
       {...props}
     >
