@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SafeSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/safe-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Users, AlertTriangle, Clock, Check, X, Loader2, ArrowLeft, Search, Crown } from "lucide-react";
 import { type LocalPlayer, type Team, type User } from "@shared/schema";
@@ -593,18 +593,18 @@ export default function LocalMatch() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Match Format</label>
-                <select
-                  value={overs}
-                  onChange={(e) => setOvers(e.target.value)}
-                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  data-testid="select-overs"
-                >
-                  <option value="10">10 Overs</option>
-                  <option value="12">12 Overs</option>
-                  <option value="15">15 Overs</option>
-                  <option value="20">20 Overs</option>
-                  <option value="custom">Custom Format</option>
-                </select>
+                <Select value={overs} onValueChange={setOvers}>
+                  <SelectTrigger data-testid="select-overs">
+                    <SelectValue placeholder="Select format" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 Overs</SelectItem>
+                    <SelectItem value="12">12 Overs</SelectItem>
+                    <SelectItem value="15">15 Overs</SelectItem>
+                    <SelectItem value="20">20 Overs</SelectItem>
+                    <SelectItem value="custom">Custom Format</SelectItem>
+                  </SelectContent>
+                </Select>
                 {overs === "custom" && (
                   <Input
                     type="text"
@@ -879,7 +879,7 @@ export default function LocalMatch() {
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <SafeSelect value={selectedMyTeam} onValueChange={handleMyTeamSelect}>
+              <Select value={selectedMyTeam} onValueChange={handleMyTeamSelect}>
                 <SelectTrigger data-testid="select-my-team">
                   <SelectValue placeholder={myTeamName || "Select from your teams"} />
                 </SelectTrigger>
@@ -906,7 +906,7 @@ export default function LocalMatch() {
                     </div>
                   )}
                 </SelectContent>
-              </SafeSelect>
+              </Select>
               
               {/* Selected team display or manual input */}
               {selectedMyTeam ? (
