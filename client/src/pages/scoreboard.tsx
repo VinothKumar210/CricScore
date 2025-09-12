@@ -460,10 +460,15 @@ export default function Scoreboard() {
     
     // Check for end of over
     if ((battingTeamScore.balls + 1) % 6 === 0) {
-      // End of over - show bowler selection dialog
-      setTimeout(() => {
-        setShowBowlerDialog(true);
-      }, 500);
+      // Only show bowler selection dialog if innings is not complete
+      const newOvers = Math.floor((battingTeamScore.balls + 1) / 6);
+      if (matchState && newOvers < matchState.matchOvers) {
+        // End of over but innings continues - show bowler selection dialog
+        setTimeout(() => {
+          setShowBowlerDialog(true);
+        }, 500);
+      }
+      // If newOvers >= matchState.matchOvers, innings is complete and handleInningsComplete will handle it
     }
   };
 
@@ -533,9 +538,15 @@ export default function Scoreboard() {
       
       // Check for end of over
       if ((battingTeamScore.balls + 1) % 6 === 0) {
-        setTimeout(() => {
-          setShowBowlerDialog(true);
-        }, 500);
+        // Only show bowler selection dialog if innings is not complete
+        const newOvers = Math.floor((battingTeamScore.balls + 1) / 6);
+        if (matchState && newOvers < matchState.matchOvers) {
+          // End of over but innings continues - show bowler selection dialog
+          setTimeout(() => {
+            setShowBowlerDialog(true);
+          }, 500);
+        }
+        // If newOvers >= matchState.matchOvers, innings is complete and handleInningsComplete will handle it
       }
     } else {
       // Add to current over display
