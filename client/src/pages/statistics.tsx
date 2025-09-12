@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, Target, Hand } from "lucide-react";
+import { BarChart3, Target, Hand, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
+import { Link } from "wouter";
 import type { CareerStats } from "@shared/schema";
 
 export default function Statistics() {
@@ -60,6 +61,17 @@ export default function Statistics() {
 
   return (
     <div className="container-mobile space-mobile-lg">
+      {/* Back Button */}
+      <div className="mb-4">
+        <Link href="/dashboard">
+          <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="button-back-dashboard">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </button>
+        </Link>
+      </div>
+      
+      {/* Page Header */}
       <div className="mobile-stack">
         <h2 className="text-mobile-h1" data-testid="title-statistics">
           Career Statistics
