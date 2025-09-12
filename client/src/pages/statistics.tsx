@@ -61,16 +61,6 @@ export default function Statistics() {
 
   return (
     <div className="container-mobile space-mobile-lg">
-      {/* Back Button */}
-      <div className="mb-4">
-        <Link href="/dashboard">
-          <button className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" data-testid="button-back-dashboard">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </button>
-        </Link>
-      </div>
-      
       {/* Page Header */}
       <div className="mobile-stack">
         <h2 className="text-mobile-h1" data-testid="title-statistics">
@@ -79,6 +69,16 @@ export default function Statistics() {
         <div className="text-mobile-caption text-right sm:text-left" data-testid="text-last-updated">
           Last updated: {stats?.updatedAt ? new Date(stats.updatedAt).toLocaleDateString() : "Never"}
         </div>
+      </div>
+      
+      {/* Back Button */}
+      <div className="mt-4 mb-6">
+        <Link href="/dashboard">
+          <button className="flex items-center gap-2 px-4 py-2 text-sm bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors" data-testid="button-back-dashboard">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </button>
+        </Link>
       </div>
 
       {/* Key Performance Metrics */}
