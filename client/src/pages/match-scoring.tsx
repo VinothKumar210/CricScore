@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { type LocalPlayer } from '@shared/schema';
 
 type SelectionStep = 'strike-batsman' | 'non-strike-batsman' | 'bowler' | 'complete';
@@ -54,47 +53,39 @@ export default function MatchScoring() {
     switch (selectionStep) {
       case 'strike-batsman':
         setSelectedStrikeBatsman(player);
+        setSelectionStep('non-strike-batsman');
         break;
       case 'non-strike-batsman':
-        setSelectedNonStrikeBatsman(player);
-        break;
-      case 'bowler':
-        setSelectedBowler(player);
-        break;
-    }
-  };
-
-  const handleNext = () => {
-    switch (selectionStep) {
-      case 'strike-batsman':
-        if (selectedStrikeBatsman) {
-          setSelectionStep('non-strike-batsman');
-        }
-        break;
-      case 'non-strike-batsman':
-        if (selectedNonStrikeBatsman) {
+        if (player.name !== selectedStrikeBatsman?.name) {
+          setSelectedNonStrikeBatsman(player);
           setSelectionStep('bowler');
         }
         break;
       case 'bowler':
-        if (selectedBowler) {
-          setSelectionStep('complete');
-        }
+        setSelectedBowler(player);
+        setSelectionStep('complete');
         break;
     }
   };
 
-  const canProceed = () => {
+  const handleBack = () => {
     switch (selectionStep) {
-      case 'strike-batsman':
-        return selectedStrikeBatsman !== null;
       case 'non-strike-batsman':
-        return selectedNonStrikeBatsman !== null && selectedNonStrikeBatsman !== selectedStrikeBatsman;
+        setSelectionStep('strike-batsman');
+        setSelectedNonStrikeBatsman(null);
+        break;
       case 'bowler':
-        return selectedBowler !== null;
-      default:
-        return false;
+        setSelectionStep('non-strike-batsman');
+        setSelectedBowler(null);
+        break;
+      case 'complete':
+        setSelectionStep('bowler');
+        break;
     }
+  };
+
+  const canGoBack = () => {
+    return selectionStep !== 'strike-batsman';
   };
 
   const getStepTitle = () => {
@@ -226,7 +217,7 @@ export default function MatchScoring() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="min-h-screen p-6 flex flex-col">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-foreground" data-testid="title-player-selection">
           {getStepTitle()}
@@ -270,7 +261,7 @@ export default function MatchScoring() {
       )}
 
       {/* Main Content Card */}
-      <Card>
+      <Card className="flex-1">
         <CardHeader>
           <CardTitle className="text-lg">
             {selectionStep === 'bowler' ? 'Bowling Team Players' : 'Batting Team Players'}
@@ -278,8 +269,8 @@ export default function MatchScoring() {
         </CardHeader>
         
         {/* Scrollable Player List */}
-        <CardContent className="flex flex-col p-6">
-          <ScrollArea className="h-80 border rounded-md">
+        <CardContent className="flex flex-col p-6 h-full">
+          <div className="flex-1 border rounded-md overflow-y-auto" style={{minHeight: '400px'}}>
             <div className="p-4">
               <div className="grid gap-3">
                 {getPlayersToShow().map((player, index) => (
@@ -303,26 +294,29 @@ export default function MatchScoring() {
                 ))}
               </div>
             </div>
-          </ScrollArea>
+          </div>
           
           {/* Action Buttons Below Scroll Area */}
-          <div className="flex justify-between pt-6">
-            <Button
-              onClick={() => setLocation('/coin-toss')}
-              variant="ghost"
-              data-testid="button-back-to-toss"
-            >
-              ← Back to Toss
-            </Button>
-            
-            <Button
-              onClick={handleNext}
-              disabled={!canProceed()}
-              data-testid="button-proceed-next"
-              className="px-8"
-            >
-              {selectionStep === 'bowler' ? 'Complete Setup' : 'Next Step'}
-            </Button>
+          <div className="pt-6">
+            {canGoBack() ? (
+              <Button
+                onClick={handleBack}
+                variant="ghost"
+                data-testid="button-back-step"
+                className="w-full"
+              >
+                ← Back
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setLocation('/coin-toss')}
+                variant="ghost"
+                data-testid="button-back-to-toss"
+                className="w-full"
+              >
+                ← Back to Toss
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
