@@ -12,7 +12,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, refreshUserStatistics } from "@/lib/queryClient";
 import { profileSetupSchema } from "@shared/schema";
 import { useParams, useLocation } from "wouter";
 import type { User as UserType, CareerStats, Match } from "@shared/schema";
@@ -39,16 +39,25 @@ export default function Profile() {
   const isLoading = isOwnProfile ? false : isProfileLoading;
   
   // Query for player statistics
-  const { data: playerStats, isLoading: isStatsLoading } = useQuery<CareerStats>({
+  const { data: playerStats, isLoading: isStatsLoading, refetch: refetchStats } = useQuery<CareerStats>({
     queryKey: isOwnProfile ? ["/api/stats"] : ["/api/users", id, "stats"],
     enabled: !!user,
   });
 
   // Query for player matches for performance analysis
-  const { data: playerMatches, isLoading: isMatchesLoading } = useQuery<Match[]>({
+  const { data: playerMatches, isLoading: isMatchesLoading, refetch: refetchMatches } = useQuery<Match[]>({
     queryKey: isOwnProfile ? ["/api/matches"] : ["/api/users", id, "matches"],
     enabled: !!user,
   });
+
+  // Refresh statistics data when user changes or component mounts
+  useEffect(() => {
+    if (user && isOwnProfile) {
+      // Only refresh for own profile to ensure fresh database data
+      refetchStats();
+      refetchMatches();
+    }
+  }, [user, isOwnProfile, refetchStats, refetchMatches]);
 
   const formatRole = (role: string) => {
     switch (role) {

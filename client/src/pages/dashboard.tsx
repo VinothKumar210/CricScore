@@ -5,26 +5,39 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useAuth } from "@/components/auth/auth-context";
 import { Gamepad, TrendingUp, Zap, Target, Users, Crown } from "lucide-react";
+import { useEffect } from 'react';
+import { refreshUserStatistics } from "@/lib/queryClient";
 import type { CareerStats, Match, Team } from "@shared/schema";
 
 export default function Dashboard() {
   const { user } = useAuth();
 
-  const { data: stats } = useQuery<CareerStats>({
+  const { data: stats, refetch: refetchStats } = useQuery<CareerStats>({
     queryKey: ["/api/stats"],
   });
 
-  const { data: recentMatches } = useQuery<Match[]>({
+  const { data: recentMatches, refetch: refetchMatches } = useQuery<Match[]>({
     queryKey: ["/api/matches"],
   });
 
-  const { data: teams } = useQuery<Team[]>({
+  const { data: teams, refetch: refetchTeams } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
   });
 
-  const { data: invitations } = useQuery<any[]>({
+  const { data: invitations, refetch: refetchInvitations } = useQuery<any[]>({
     queryKey: ["/api/invitations"],
   });
+
+  // Refresh all data when user changes or dashboard mounts
+  useEffect(() => {
+    if (user) {
+      // Ensure fresh data from database on dashboard load
+      refetchStats();
+      refetchMatches();
+      refetchTeams();
+      refetchInvitations();
+    }
+  }, [user, refetchStats, refetchMatches, refetchTeams, refetchInvitations]);
 
   return (
     <div className="p-6 space-y-6">
