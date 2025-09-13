@@ -393,34 +393,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
 
-          // Determine opponent name (use match name as opponent for simplicity)
-          const opponent = validatedData.matchName;
+          // Update career statistics directly without creating match record
+          const currentStats = await storage.getCareerStats(performance.userId);
+          if (currentStats) {
+            const newMatchesPlayed = currentStats.matchesPlayed + 1;
+            const newTotalRuns = currentStats.totalRuns + performance.runsScored;
+            const newBallsFaced = currentStats.ballsFaced + performance.ballsFaced;
+            const newOversBowled = currentStats.oversBowled + performance.oversBowled;
+            const newRunsConceded = currentStats.runsConceded + performance.runsConceded;
+            const newWicketsTaken = currentStats.wicketsTaken + performance.wicketsTaken;
+            const newCatchesTaken = currentStats.catchesTaken + performance.catchesTaken;
 
-          // Create match record for this player
-          const match = await storage.createMatch({
-            userId: performance.userId,
-            opponent: opponent,
-            matchDate: validatedData.matchDate,
-            runsScored: performance.runsScored,
-            ballsFaced: performance.ballsFaced,
-            oversBowled: performance.oversBowled,
-            runsConceded: performance.runsConceded,
-            wicketsTaken: performance.wicketsTaken,
-            catchesTaken: performance.catchesTaken
-          });
+            // Calculate derived stats
+            const strikeRate = newBallsFaced > 0 ? (newTotalRuns / newBallsFaced) * 100 : 0;
+            const economy = newOversBowled > 0 ? newRunsConceded / newOversBowled : 0;
 
-          // Update career statistics using the existing method
-          await storage.updateCareerStatsFromMatch(performance.userId, {
-            userId: performance.userId,
-            opponent: opponent,
-            matchDate: validatedData.matchDate,
-            runsScored: performance.runsScored,
-            ballsFaced: performance.ballsFaced,
-            oversBowled: performance.oversBowled,
-            runsConceded: performance.runsConceded,
-            wicketsTaken: performance.wicketsTaken,
-            catchesTaken: performance.catchesTaken
-          });
+            await storage.updateCareerStats(performance.userId, {
+              matchesPlayed: newMatchesPlayed,
+              totalRuns: newTotalRuns,
+              ballsFaced: newBallsFaced,
+              strikeRate: parseFloat(strikeRate.toFixed(2)),
+              oversBowled: parseFloat(newOversBowled.toFixed(1)),
+              runsConceded: newRunsConceded,
+              wicketsTaken: newWicketsTaken,
+              economy: parseFloat(economy.toFixed(2)),
+              catchesTaken: newCatchesTaken,
+            });
+          }
 
           playersWithAccounts++;
           results.push({
