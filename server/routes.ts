@@ -343,6 +343,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Local match results endpoint - handles comprehensive match data from scoreboard
+  app.post("/api/local-match-results", async (req, res) => {
+    try {
+      const localMatchResultsSchema = z.object({
+        matchName: z.string().min(1),
+        venue: z.string().min(1),
+        matchDate: z.string().transform(str => new Date(str)),
+        myTeamPlayers: z.array(z.any()),
+        opponentTeamPlayers: z.array(z.any()),
+        finalScore: z.object({
+          runs: z.number(),
+          wickets: z.number(),
+          overs: z.number()
+        }),
+        playerPerformances: z.array(z.object({
+          userId: z.string().optional(),
+          playerName: z.string(),
+          runsScored: z.number().min(0),
+          ballsFaced: z.number().min(0),
+          oversBowled: z.number().min(0),
+          runsConceded: z.number().min(0),
+          wicketsTaken: z.number().min(0),
+          catchesTaken: z.number().min(0)
+        }))
+      });
+
+      const validatedData = localMatchResultsSchema.parse(req.body);
+      const results = [];
+      let playersWithAccounts = 0;
+
+      // Process each player's performance
+      for (const performance of validatedData.playerPerformances) {
+        // Skip players without user accounts
+        if (!performance.userId) {
+          continue;
+        }
+
+        try {
+          // Get user to verify they exist
+          const user = await storage.getUser(performance.userId);
+          if (!user) {
+            results.push({
+              userId: performance.userId,
+              playerName: performance.playerName,
+              status: "error",
+              message: "User not found"
+            });
+            continue;
+          }
+
+          // Determine opponent name (use match name as opponent for simplicity)
+          const opponent = validatedData.matchName;
+
+          // Create match record for this player
+          const match = await storage.createMatch({
+            userId: performance.userId,
+            opponent: opponent,
+            matchDate: validatedData.matchDate,
+            runsScored: performance.runsScored,
+            ballsFaced: performance.ballsFaced,
+            oversBowled: performance.oversBowled,
+            runsConceded: performance.runsConceded,
+            wicketsTaken: performance.wicketsTaken,
+            catchesTaken: performance.catchesTaken
+          });
+
+          // Update career statistics using the existing method
+          await storage.updateCareerStatsFromMatch(performance.userId, {
+            userId: performance.userId,
+            opponent: opponent,
+            matchDate: validatedData.matchDate,
+            runsScored: performance.runsScored,
+            ballsFaced: performance.ballsFaced,
+            oversBowled: performance.oversBowled,
+            runsConceded: performance.runsConceded,
+            wicketsTaken: performance.wicketsTaken,
+            catchesTaken: performance.catchesTaken
+          });
+
+          playersWithAccounts++;
+          results.push({
+            userId: performance.userId,
+            playerName: performance.playerName,
+            status: "success",
+            message: "Career stats updated successfully"
+          });
+
+        } catch (error) {
+          console.error(`Error processing player ${performance.playerName}:`, error);
+          results.push({
+            userId: performance.userId,
+            playerName: performance.playerName,
+            status: "error",
+            message: error instanceof Error ? error.message : "Unknown error"
+          });
+        }
+      }
+
+      res.json({
+        message: "Local match results processed successfully",
+        playersWithAccounts,
+        totalPlayers: validatedData.playerPerformances.length,
+        results
+      });
+
+    } catch (error) {
+      console.error('Local match results error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      return handleDatabaseError(error, res);
+    }
+  });
+
   // Team routes
   app.get("/api/teams", authenticateToken, async (req: any, res) => {
     try {
