@@ -1662,66 +1662,66 @@ export default function Scoreboard() {
         <CardHeader>
           <CardTitle>Current Batsmen</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-3">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 px-3 font-semibold w-2/5">Name</th>
-                  <th className="text-center py-2 px-3 font-semibold w-3/20">Runs</th>
-                  <th className="text-center py-2 px-3 font-semibold w-3/20">Balls</th>
-                  <th className="text-center py-2 px-3 font-semibold w-3/20">Strike Rate</th>
-                  <th className="text-center py-2 px-3 font-semibold w-3/20">4's</th>
-                  <th className="text-center py-2 px-3 font-semibold w-3/20">6's</th>
+                  <th className="text-left py-1 px-2 font-medium text-sm w-2/5">Name</th>
+                  <th className="text-center py-1 px-2 font-medium text-sm w-3/20">R</th>
+                  <th className="text-center py-1 px-2 font-medium text-sm w-3/20">B</th>
+                  <th className="text-center py-1 px-2 font-medium text-sm w-3/20">SR</th>
+                  <th className="text-center py-1 px-2 font-medium text-sm w-3/20">4s</th>
+                  <th className="text-center py-1 px-2 font-medium text-sm w-3/20">6s</th>
                 </tr>
               </thead>
               <tbody>
                 {/* Striker first */}
                 <tr className="border-b bg-sky-50 dark:bg-slate-800" data-testid="striker-row">
-                  <td className="py-3 px-3">
-                    <div className="flex items-center space-x-2">
-                      <span className={`font-semibold ${matchState.strikeBatsman.name.length > 12 ? 'text-sm' : 'text-lg'}`}>
+                  <td className="py-1 px-2">
+                    <div className="flex items-center space-x-1">
+                      <span className="font-medium text-sm">
                         {matchState.strikeBatsman.name}
                       </span>
-                      <Badge variant="default" className="text-xs">*</Badge>
+                      <Badge variant="default" className="text-xs px-1">*</Badge>
                     </div>
                   </td>
-                  <td className="text-center py-3 px-3 font-medium" data-testid="striker-runs">
+                  <td className="text-center py-1 px-2 font-medium text-xs" data-testid="striker-runs">
                     {getCurrentBatsmanStats(true).runs}
                   </td>
-                  <td className="text-center py-3 px-3" data-testid="striker-balls">
+                  <td className="text-center py-1 px-2 text-xs" data-testid="striker-balls">
                     {getCurrentBatsmanStats(true).balls}
                   </td>
-                  <td className="text-center py-3 px-3" data-testid="striker-strike-rate">
+                  <td className="text-center py-1 px-2 text-xs" data-testid="striker-strike-rate">
                     {getCurrentBatsmanStats(true).strikeRate}
                   </td>
-                  <td className="text-center py-3 px-3" data-testid="striker-fours">
+                  <td className="text-center py-1 px-2 text-xs" data-testid="striker-fours">
                     {getCurrentBatsmanStats(true).fours || 0}
                   </td>
-                  <td className="text-center py-3 px-3" data-testid="striker-sixes">
+                  <td className="text-center py-1 px-2 text-xs" data-testid="striker-sixes">
                     {getCurrentBatsmanStats(true).sixes || 0}
                   </td>
                 </tr>
                 {/* Non-striker second */}
                 <tr data-testid="non-striker-row">
-                  <td className="py-3 px-3">
-                    <span className={`font-semibold ${matchState.nonStrikeBatsman.name.length > 12 ? 'text-sm' : 'text-lg'}`}>
+                  <td className="py-1 px-2">
+                    <span className="font-medium text-sm">
                       {matchState.nonStrikeBatsman.name}
                     </span>
                   </td>
-                  <td className="text-center py-3 px-3 font-medium" data-testid="non-striker-runs">
+                  <td className="text-center py-1 px-2 font-medium text-xs" data-testid="non-striker-runs">
                     {getCurrentBatsmanStats(false).runs}
                   </td>
-                  <td className="text-center py-3 px-3" data-testid="non-striker-balls">
+                  <td className="text-center py-1 px-2 text-xs" data-testid="non-striker-balls">
                     {getCurrentBatsmanStats(false).balls}
                   </td>
-                  <td className="text-center py-3 px-3" data-testid="non-striker-strike-rate">
+                  <td className="text-center py-1 px-2 text-xs" data-testid="non-striker-strike-rate">
                     {getCurrentBatsmanStats(false).strikeRate}
                   </td>
-                  <td className="text-center py-3 px-3" data-testid="non-striker-fours">
+                  <td className="text-center py-1 px-2 text-xs" data-testid="non-striker-fours">
                     {getCurrentBatsmanStats(false).fours || 0}
                   </td>
-                  <td className="text-center py-3 px-3" data-testid="non-striker-sixes">
+                  <td className="text-center py-1 px-2 text-xs" data-testid="non-striker-sixes">
                     {getCurrentBatsmanStats(false).sixes || 0}
                   </td>
                 </tr>
@@ -1731,35 +1731,35 @@ export default function Scoreboard() {
 
           {/* Current Bowler */}
           <div>
-            <h3 className="font-semibold text-lg mb-3">Current Bowler</h3>
+            <h3 className="font-medium text-sm mb-2">Current Bowler</h3>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-2 px-3 font-semibold w-2/5">Name</th>
-                    <th className="text-center py-2 px-3 font-semibold w-3/20">Overs</th>
-                    <th className="text-center py-2 px-3 font-semibold w-3/20">Runs</th>
-                    <th className="text-center py-2 px-3 font-semibold w-3/20">Wickets</th>
-                    <th className="text-center py-2 px-3 font-semibold w-3/20">Economy</th>
+                    <th className="text-left py-1 px-2 font-medium text-sm w-2/5">Name</th>
+                    <th className="text-center py-1 px-2 font-medium text-sm w-3/20">Ov</th>
+                    <th className="text-center py-1 px-2 font-medium text-sm w-3/20">R</th>
+                    <th className="text-center py-1 px-2 font-medium text-sm w-3/20">W</th>
+                    <th className="text-center py-1 px-2 font-medium text-sm w-3/20">Econ</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr data-testid="bowler-row">
-                    <td className="py-3 px-3">
-                      <span className={`font-semibold ${matchState.currentBowler.name.length > 12 ? 'text-sm' : 'text-lg'}`}>
+                    <td className="py-1 px-2">
+                      <span className="font-medium text-sm">
                         {matchState.currentBowler.name}
                       </span>
                     </td>
-                    <td className="text-center py-3 px-3 font-medium" data-testid="bowler-overs">
+                    <td className="text-center py-1 px-2 font-medium text-xs" data-testid="bowler-overs">
                       {getCurrentBowlerStats().overs}
                     </td>
-                    <td className="text-center py-3 px-3" data-testid="bowler-runs">
+                    <td className="text-center py-1 px-2 text-xs" data-testid="bowler-runs">
                       {getCurrentBowlerStats().runs}
                     </td>
-                    <td className="text-center py-3 px-3" data-testid="bowler-wickets">
+                    <td className="text-center py-1 px-2 text-xs" data-testid="bowler-wickets">
                       {getCurrentBowlerStats().wickets}
                     </td>
-                    <td className="text-center py-3 px-3" data-testid="bowler-economy">
+                    <td className="text-center py-1 px-2 text-xs" data-testid="bowler-economy">
                       {getCurrentBowlerStats().economy}
                     </td>
                   </tr>
@@ -1780,13 +1780,13 @@ export default function Scoreboard() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 px-2 font-semibold">Batsman</th>
-                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">R</th>
-                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">B</th>
-                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">4's</th>
-                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">6's</th>
-                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">SR</th>
-                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">Out</th>
+                  <th className="text-left py-1 px-1 font-medium text-xs">Batsman</th>
+                  <th className="text-center py-1 px-1 font-medium text-xs">R</th>
+                  <th className="text-center py-1 px-1 font-medium text-xs">B</th>
+                  <th className="text-center py-1 px-1 font-medium text-xs">4s</th>
+                  <th className="text-center py-1 px-1 font-medium text-xs">6s</th>
+                  <th className="text-center py-1 px-1 font-medium text-xs">SR</th>
+                  <th className="text-center py-1 px-1 font-medium text-xs">Out</th>
                 </tr>
               </thead>
               <tbody>
@@ -1802,31 +1802,31 @@ export default function Scoreboard() {
                       className={`border-b ${isCurrentBatsman ? 'bg-sky-50 dark:bg-slate-800' : ''}`}
                       data-testid={`batting-stats-${index}`}
                     >
-                      <td className="py-2 px-2">
+                      <td className="py-1 px-1">
                         <div className="flex items-center space-x-1">
-                          <span className={`font-medium ${batsman.player.name.length > 15 ? 'text-xs' : 'text-sm'}`}>
+                          <span className="font-medium text-xs">
                             {batsman.player.name}
                           </span>
-                          {isStriker && <Badge variant="default" className="text-xs">*</Badge>}
-                          {isNonStriker && !isStriker && <Badge variant="secondary" className="text-xs">•</Badge>}
+                          {isStriker && <Badge variant="default" className="text-xs px-1">*</Badge>}
+                          {isNonStriker && !isStriker && <Badge variant="secondary" className="text-xs px-1">•</Badge>}
                         </div>
                       </td>
-                      <td className="text-center py-2 px-1 font-medium text-sm" data-testid={`batsman-runs-${index}`}>
+                      <td className="text-center py-1 px-1 font-medium text-xs" data-testid={`batsman-runs-${index}`}>
                         {batsman.runs}
                       </td>
-                      <td className="text-center py-2 px-1 text-sm" data-testid={`batsman-balls-${index}`}>
+                      <td className="text-center py-1 px-1 text-xs" data-testid={`batsman-balls-${index}`}>
                         {batsman.balls}
                       </td>
-                      <td className="text-center py-2 px-1 text-sm" data-testid={`batsman-fours-${index}`}>
+                      <td className="text-center py-1 px-1 text-xs" data-testid={`batsman-fours-${index}`}>
                         {batsman.fours}
                       </td>
-                      <td className="text-center py-2 px-1 text-sm" data-testid={`batsman-sixes-${index}`}>
+                      <td className="text-center py-1 px-1 text-xs" data-testid={`batsman-sixes-${index}`}>
                         {batsman.sixes}
                       </td>
-                      <td className="text-center py-2 px-1 text-sm" data-testid={`batsman-sr-${index}`}>
+                      <td className="text-center py-1 px-1 text-xs" data-testid={`batsman-sr-${index}`}>
                         {batsman.strikeRate.toFixed(1)}
                       </td>
-                      <td className="text-center py-2 px-1 text-xs" data-testid={`batsman-dismissal-${index}`}>
+                      <td className="text-center py-1 px-1 text-xs" data-testid={`batsman-dismissal-${index}`}>
                         {batsman.isOut ? (
                           <div className="text-red-600 dark:text-red-400">
                             {batsman.dismissalType}
@@ -1850,22 +1850,22 @@ export default function Scoreboard() {
 
                 {/* Extras row */}
                 <tr className="border-b font-medium">
-                  <td className="py-2 px-2 text-sm">Extras</td>
-                  <td className="text-center py-2 px-1 text-sm" data-testid="extras-total">
+                  <td className="py-1 px-1 text-xs">Extras</td>
+                  <td className="text-center py-1 px-1 text-xs" data-testid="extras-total">
                     {battingTeamScore.extras.wides + battingTeamScore.extras.noBalls + battingTeamScore.extras.byes + battingTeamScore.extras.legByes}
                   </td>
-                  <td className="text-center py-2 px-1 text-xs" colSpan={5}>
+                  <td className="text-center py-1 px-1 text-xs" colSpan={5}>
                     (W {battingTeamScore.extras.wides}, NB {battingTeamScore.extras.noBalls}, B {battingTeamScore.extras.byes}, LB {battingTeamScore.extras.legByes})
                   </td>
                 </tr>
 
                 {/* Total runs row */}
                 <tr className="border-b font-bold">
-                  <td className="py-2 px-2 text-sm">Total</td>
-                  <td className="text-center py-2 px-1 text-sm" data-testid="team-total-runs">
+                  <td className="py-1 px-1 text-xs">Total</td>
+                  <td className="text-center py-1 px-1 text-xs" data-testid="team-total-runs">
                     {battingTeamScore.runs}
                   </td>
-                  <td className="text-center py-2 px-1 text-xs" colSpan={5}>
+                  <td className="text-center py-1 px-1 text-xs" colSpan={5}>
                     ({battingTeamScore.wickets} wkts, {formatOvers(battingTeamScore.balls)} ov)
                   </td>
                 </tr>
@@ -1875,11 +1875,11 @@ export default function Scoreboard() {
                   const yetToBatCount = battingTeamPlayers.length - batsmanStats.length;
                   return yetToBatCount > 0 ? (
                     <tr className="text-muted-foreground">
-                      <td className="py-2 px-2 text-sm">Yet to bat</td>
-                      <td className="text-center py-2 px-1 text-sm" data-testid="yet-to-bat-count">
+                      <td className="py-1 px-1 text-xs">Yet to bat</td>
+                      <td className="text-center py-1 px-1 text-xs" data-testid="yet-to-bat-count">
                         {yetToBatCount}
                       </td>
-                      <td className="text-center py-2 px-1 text-xs" colSpan={5}>
+                      <td className="text-center py-1 px-1 text-xs" colSpan={5}>
                         players remaining
                       </td>
                     </tr>
@@ -1901,11 +1901,11 @@ export default function Scoreboard() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 px-2 font-semibold">Bowler</th>
-                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">Ov</th>
-                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">R</th>
-                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">W</th>
-                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">Econ</th>
+                  <th className="text-left py-1 px-1 font-medium text-xs">Bowler</th>
+                  <th className="text-center py-1 px-1 font-medium text-xs">Ov</th>
+                  <th className="text-center py-1 px-1 font-medium text-xs">R</th>
+                  <th className="text-center py-1 px-1 font-medium text-xs">W</th>
+                  <th className="text-center py-1 px-1 font-medium text-xs">Econ</th>
                 </tr>
               </thead>
               <tbody>
@@ -1918,24 +1918,24 @@ export default function Scoreboard() {
                       className={`border-b ${isCurrentBowler ? 'bg-sky-50 dark:bg-slate-800' : ''}`}
                       data-testid={`bowling-stats-${index}`}
                     >
-                      <td className="py-2 px-2">
+                      <td className="py-1 px-1">
                         <div className="flex items-center space-x-1">
-                          <span className={`font-medium ${bowler.player.name.length > 15 ? 'text-xs' : 'text-sm'}`}>
+                          <span className="font-medium text-xs">
                             {bowler.player.name}
                           </span>
-                          {isCurrentBowler && <Badge variant="default" className="text-xs">•</Badge>}
+                          {isCurrentBowler && <Badge variant="default" className="text-xs px-1">•</Badge>}
                         </div>
                       </td>
-                      <td className="text-center py-2 px-1 font-medium text-sm" data-testid={`bowler-overs-${index}`}>
+                      <td className="text-center py-1 px-1 font-medium text-xs" data-testid={`bowler-overs-${index}`}>
                         {formatCricketOvers(bowler.overs)}
                       </td>
-                      <td className="text-center py-2 px-1 text-sm" data-testid={`bowler-runs-${index}`}>
+                      <td className="text-center py-1 px-1 text-xs" data-testid={`bowler-runs-${index}`}>
                         {bowler.runs}
                       </td>
-                      <td className="text-center py-2 px-1 text-sm" data-testid={`bowler-wickets-${index}`}>
+                      <td className="text-center py-1 px-1 text-xs" data-testid={`bowler-wickets-${index}`}>
                         {bowler.wickets}
                       </td>
-                      <td className="text-center py-2 px-1 text-sm" data-testid={`bowler-economy-${index}`}>
+                      <td className="text-center py-1 px-1 text-xs" data-testid={`bowler-economy-${index}`}>
                         {bowler.economy.toFixed(2)}
                       </td>
                     </tr>
