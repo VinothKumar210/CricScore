@@ -903,7 +903,7 @@ export default function LocalMatch() {
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="" disabled>No teams found. Create a team first.</SelectItem>
+                    <SelectItem value="no-teams" disabled>No teams found. Create a team first.</SelectItem>
                   )}
                 </SelectContent>
               </Select>
