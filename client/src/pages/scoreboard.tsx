@@ -264,6 +264,8 @@ export default function Scoreboard() {
         });
       });
 
+      console.log('Sending player performances to backend:', allPlayerPerformances);
+      
       // Send to backend
       const response = await fetch('/api/local-match-results', {
         method: 'POST',
