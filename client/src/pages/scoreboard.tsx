@@ -772,6 +772,29 @@ export default function Scoreboard() {
     setShowBatsmanDialog(true);
   };
 
+  // Centralized over completion handler
+  const handleOverCompletion = (newBalls: number) => {
+    if (newBalls % 6 === 0) {
+      const newOvers = Math.floor(newBalls / 6);
+      if (matchState && newOvers < matchState.matchOvers) {
+        // End of over but innings continues - set previous bowler and show dialog
+        if (matchState.currentBowler) {
+          setPreviousBowler(matchState.currentBowler);
+        }
+        
+        // Rotate strike only when over is actually completed and balls > 0
+        if (newBalls > 0) {
+          rotateStrike();
+        }
+        
+        // Show bowler selection dialog
+        setTimeout(() => {
+          setShowBowlerDialog(true);
+        }, 500);
+      }
+    }
+  };
+
   const saveStateForUndo = () => {
     const currentState = {
       battingTeamScore: { ...battingTeamScore },
@@ -808,18 +831,8 @@ export default function Scoreboard() {
       rotateStrike();
     }
     
-    // Check for end of over
-    if ((battingTeamScore.balls + 1) % 6 === 0) {
-      // Only show bowler selection dialog if innings is not complete
-      const newOvers = Math.floor((battingTeamScore.balls + 1) / 6);
-      if (matchState && newOvers < matchState.matchOvers) {
-        // End of over but innings continues - show bowler selection dialog
-        setTimeout(() => {
-          setShowBowlerDialog(true);
-        }, 500);
-      }
-      // If newBalls >= matchState.matchOvers * 6, innings is complete and handleInningsComplete will handle it
-    }
+    // Check for end of over using centralized handler
+    handleOverCompletion(battingTeamScore.balls + 1);
   };
 
   const handleUndo = () => {
@@ -889,18 +902,8 @@ export default function Scoreboard() {
         rotateStrike();
       }
       
-      // Check for end of over
-      if ((battingTeamScore.balls + 1) % 6 === 0) {
-        // Only show bowler selection dialog if innings is not complete
-        const newOvers = Math.floor((battingTeamScore.balls + 1) / 6);
-        if (matchState && newOvers < matchState.matchOvers) {
-          // End of over but innings continues - show bowler selection dialog
-          setTimeout(() => {
-            setShowBowlerDialog(true);
-          }, 500);
-        }
-        // If newBalls >= matchState.matchOvers * 6, innings is complete and handleInningsComplete will handle it
-      }
+      // Check for end of over using centralized handler
+      handleOverCompletion(battingTeamScore.balls + 1);
     } else {
       // Add to current over display
       if (type === 'nb') {
@@ -1063,6 +1066,9 @@ export default function Scoreboard() {
       return stat;
     }));
     
+    // Check for end of over after wicket using centralized handler
+    handleOverCompletion(battingTeamScore.balls + 1);
+    
     // Show dialog to select new batsman
     setShowBatsmanDialog(true);
     setPendingWicket(dismissalType);
@@ -1142,6 +1148,9 @@ export default function Scoreboard() {
       }
       return stat;
     }));
+    
+    // Check for end of over after wicket using centralized handler
+    handleOverCompletion(battingTeamScore.balls + 1);
     
     // Clean up and show new batsman dialog
     setShowFielderDialog(false);
@@ -1250,6 +1259,9 @@ export default function Scoreboard() {
       return stat;
     }));
     
+    // Check for end of over after run out using centralized handler  
+    handleOverCompletion(battingTeamScore.balls + 1);
+    
     // Track which batsman is out for replacement (don't rotate yet)
     setOutBatsmanIsStriker(isStriker);
     setPendingWicket('Run Out');
@@ -1281,19 +1293,13 @@ export default function Scoreboard() {
       }
     });
     
-    // Store the current bowler as previous before changing
-    if (matchState?.currentBowler) {
-      setPreviousBowler(matchState.currentBowler);
-    }
-    
     // Update match state with new bowler
     setMatchState(prev => prev ? {
       ...prev,
       currentBowler: newBowler
     } : null);
     
-    // Rotate strike and reset over
-    rotateStrike();
+    // Reset current over balls (strike rotation is handled by handleOverCompletion)
     setCurrentOverBalls([]);
     
     setShowBowlerDialog(false);
@@ -1419,26 +1425,16 @@ export default function Scoreboard() {
   
   // Store the previous bowler to prevent consecutive overs
 
-  // Simple bowling selection - only exclude current bowler and previous bowler
-  let availableBowlers = bowlingTeamPlayers.filter((player: LocalPlayer) => {
-    // Exclude current bowler (cannot bowl consecutive balls)
+  // Strict bowling selection - exclude current bowler and previous bowler
+  const availableBowlers = bowlingTeamPlayers.filter((player: LocalPlayer) => {
+    // Always exclude current bowler (cannot bowl consecutive balls)
     if (player.name === matchState?.currentBowler.name) return false;
     
-    // Exclude previous bowler to prevent consecutive overs (unless it's the first over)
+    // Always exclude previous bowler to prevent consecutive overs (except first over)
     if (previousBowler && player.name === previousBowler.name && battingTeamScore.balls > 0) return false;
     
     return true;
   });
-  
-  // Fallback: If no bowlers available and we have a previous bowler constraint, relax it
-  if (availableBowlers.length === 0 && previousBowler && battingTeamScore.balls > 0) {
-    availableBowlers = bowlingTeamPlayers.filter((player: LocalPlayer) => {
-      // Only exclude current bowler, allow previous bowler as fallback
-      if (player.name === matchState?.currentBowler.name) return false;
-      
-      return true;
-    });
-  }
 
   const formatOvers = (balls: number) => {
     const overs = Math.floor(balls / 6);
