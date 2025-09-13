@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useLocation } from 'wouter';
 import { type LocalPlayer } from '@shared/schema';
 
-type Phase = 'toss-method' | 'choose-side' | 'toss' | 'determine-winner' | 'choose-batting' | 'manual-entry' | 'final';
+type Phase = 'toss-method' | 'toss-spinning' | 'determine-winner' | 'choose-batting' | 'manual-entry' | 'final';
 
 interface MatchData {
   myTeamPlayers: LocalPlayer[];
@@ -54,33 +54,32 @@ export function CoinToss() {
   const handleTossMethodChoice = (method: 'animated' | 'manual') => {
     setTossMethod(method);
     if (method === 'animated') {
-      setPhase('choose-side');
+      // Start spinning immediately when animated is chosen
+      setIsFlipping(true);
+      setResult(null);
+      setPhase('toss-spinning');
     } else {
       setPhase('manual-entry');
     }
   };
 
-  const handleSideSelection = (side: 'heads' | 'tails') => {
+  const handleOpponentChoice = (side: 'heads' | 'tails') => {
     setSelectedSide(side);
-    setPhase('toss');
-  };
-
-  const handleToss = () => {
-    setIsFlipping(true);
-    setResult(null);
-
-    // Simulate coin flip after animation
+    
+    // Generate result and stop spinning after a brief delay
     setTimeout(() => {
       const coinResult = Math.random() < 0.5 ? 'heads' : 'tails';
       setResult(coinResult);
       setIsFlipping(false);
       
-      // Determine toss winner based on user's choice vs actual result
-      const winner = selectedSide === coinResult ? 'opponent' : 'user';
+      // Determine toss winner based on opponent's choice vs actual result
+      const winner = side === coinResult ? 'opponent' : 'user';
       setTossWinner(winner);
       setPhase('determine-winner');
-    }, 2000);
+    }, 1000); // Brief delay to show choice was made
   };
+
+  // Remove the old handleToss function as it's no longer needed
 
   const handleShowBattingChoice = () => {
     setPhase('choose-batting');
@@ -162,8 +161,7 @@ export function CoinToss() {
           <p className="text-muted-foreground">
             {phase === 'toss-method' && "How would you like to decide the toss?"}
             {phase === 'manual-entry' && "Enter the toss results manually"}
-            {phase === 'choose-side' && "Choose your side and let's decide who bats first!"}
-            {phase === 'toss' && "Ready to toss the coin!"}
+            {phase === 'toss-spinning' && "Coin is spinning! What did the opponent choose?"}
             {phase === 'determine-winner' && "Let's see who won the toss!"}
             {phase === 'choose-batting' && `${tossWinner === 'user' ? 'You' : 'Opponent'} won the toss! Choose your preference.`}
             {phase === 'final' && "Toss complete! Here's the batting order."}
@@ -254,22 +252,23 @@ export function CoinToss() {
             </div>
           )}
 
-          {/* Side Selection Phase */}
-          {phase === 'choose-side' && (
+          {/* Opponent Choice Phase (while coin is spinning) */}
+          {phase === 'toss-spinning' && (
             <div className="text-center space-y-6">
-              <h3 className="text-xl font-semibold">Choose Your Side</h3>
+              <h3 className="text-xl font-semibold">What did the opponent choose?</h3>
+              <p className="text-muted-foreground">The coin is spinning! Enter the opponent's call:</p>
               <div className="flex gap-4 justify-center">
                 <Button 
-                  onClick={() => handleSideSelection('heads')}
+                  onClick={() => handleOpponentChoice('heads')}
                   className="px-8 py-4 text-lg"
-                  data-testid="button-choose-heads"
+                  data-testid="button-opponent-heads"
                 >
                   👑 Heads
                 </Button>
                 <Button 
-                  onClick={() => handleSideSelection('tails')}
+                  onClick={() => handleOpponentChoice('tails')}
                   className="px-8 py-4 text-lg"
-                  data-testid="button-choose-tails"
+                  data-testid="button-opponent-tails"
                 >
                   🏏 Tails
                 </Button>
@@ -277,12 +276,12 @@ export function CoinToss() {
             </div>
           )}
 
-          {/* Coin Display (for toss and result phases) */}
-          {(phase === 'toss' || phase === 'determine-winner' || phase === 'choose-batting' || phase === 'final') && (
+          {/* Coin Display (for spinning and result phases) */}
+          {(phase === 'toss-spinning' || phase === 'determine-winner' || phase === 'choose-batting' || phase === 'final') && (
             <div className="text-center space-y-4">
-              {selectedSide && (
+              {selectedSide && phase !== 'toss-spinning' && (
                 <p className="text-lg text-muted-foreground" data-testid="selected-side">
-                  You chose: <span className="font-semibold">{selectedSide === 'heads' ? '👑 Heads' : '🏏 Tails'}</span>
+                  Opponent chose: <span className="font-semibold">{selectedSide === 'heads' ? '👑 Heads' : '🏏 Tails'}</span>
                 </p>
               )}
               
@@ -334,7 +333,7 @@ export function CoinToss() {
               </div>
 
               {/* Result Display */}
-              {result && phase !== 'toss' && (
+              {result && phase !== 'toss-spinning' && (
                 <div className="text-center space-y-2" data-testid="toss-result">
                   <h3 className="text-2xl font-bold text-primary">
                     It's {result.charAt(0).toUpperCase() + result.slice(1)}!
@@ -355,8 +354,8 @@ export function CoinToss() {
               </h3>
               <p className="text-lg text-muted-foreground">
                 {selectedSide === result 
-                  ? `You guessed correctly, but the opponent wins the toss!`
-                  : `You guessed wrong, but your team wins the toss!`
+                  ? `Opponent called correctly and wins the toss!`
+                  : `Opponent called wrong, your team wins the toss!`
                 }
               </p>
             </div>
@@ -404,15 +403,10 @@ export function CoinToss() {
 
           {/* Action Buttons */}
           <div className="flex flex-col space-y-4 w-full max-w-sm mx-auto px-4">
-            {phase === 'toss' && (
-              <Button 
-                onClick={handleToss}
-                disabled={isFlipping}
-                className="w-full py-3 text-base sm:text-lg"
-                data-testid="button-toss-coin"
-              >
-                {isFlipping ? 'Flipping...' : 'Toss Coin'}
-              </Button>
+            {phase === 'toss-spinning' && (
+              <div className="text-center">
+                <p className="text-muted-foreground">Waiting for opponent's choice...</p>
+              </div>
             )}
 
             {phase === 'determine-winner' && (
