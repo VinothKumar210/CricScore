@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trophy, Save } from 'lucide-react';
+import { Loader2, Trophy } from 'lucide-react';
 import { type LocalPlayer } from '@shared/schema';
 
 interface MatchState {
@@ -91,11 +91,8 @@ export default function Scoreboard() {
   const [undoStack, setUndoStack] = useState<any[]>([]);
   const [showBowlerDialog, setShowBowlerDialog] = useState(false);
   
-  // Save match functionality
-  const [showSaveMatchDialog, setShowSaveMatchDialog] = useState(false);
-  const [matchName, setMatchName] = useState('');
-  const [venue, setVenue] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+  // Auto stats posting functionality
+  const [isPostingStats, setIsPostingStats] = useState(false);
   const [previousBowler, setPreviousBowler] = useState<LocalPlayer | null>(null);
   const [showInningsTransition, setShowInningsTransition] = useState(false);
   const [showMatchResult, setShowMatchResult] = useState(false);
@@ -210,18 +207,11 @@ export default function Scoreboard() {
     } : null);
   };
 
-  // Save match function
-  const handleSaveMatch = async () => {
-    if (!matchName.trim() || !venue.trim()) {
-      toast({
-        title: "Error",
-        description: "Please fill in match name and venue",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSaving(true);
+  // Auto post stats function
+  const postStatsAutomatically = async () => {
+    if (isPostingStats) return; // Prevent duplicate calls
+    
+    setIsPostingStats(true);
     
     try {
       // Collect all player performances
@@ -264,7 +254,7 @@ export default function Scoreboard() {
         });
       });
 
-      console.log('Sending player performances to backend:', allPlayerPerformances);
+      console.log('Auto-posting player performances to backend:', allPlayerPerformances);
       
       // Send to backend
       const response = await fetch('/api/local-match-results', {
@@ -274,8 +264,8 @@ export default function Scoreboard() {
           'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({
-          matchName: matchName.trim(),
-          venue: venue.trim(),
+          matchName: 'Local Match',
+          venue: 'Local Ground',
           matchDate: new Date().toISOString(),
           myTeamPlayers: matchState.myTeamPlayers,
           opponentTeamPlayers: matchState.opponentTeamPlayers,
@@ -291,22 +281,16 @@ export default function Scoreboard() {
       if (response.ok) {
         const result = await response.json();
         toast({
-          title: "Success",
-          description: `Match saved! Updated career stats for ${result.playersWithAccounts} players.`,
+          title: "Stats Updated",
+          description: `Career stats updated for ${result.playersWithAccounts} players.`,
         });
-        setShowSaveMatchDialog(false);
-        setLocation('/dashboard');
       } else {
-        throw new Error('Failed to save match');
+        console.error('Failed to post stats automatically');
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save match results",
-        variant: "destructive"
-      });
+      console.error('Error posting stats:', error);
     } finally {
-      setIsSaving(false);
+      setIsPostingStats(false);
     }
   };
 
@@ -421,8 +405,9 @@ export default function Scoreboard() {
         winningTeam: winningTeam
       } : null);
       
-      // Show match result dialog
+      // Automatically post stats when match completes
       setTimeout(() => {
+        postStatsAutomatically();
         setShowMatchResult(true);
       }, 500);
     }
@@ -1129,19 +1114,6 @@ export default function Scoreboard() {
               Leg Bye (LB)
             </Button>
           </div>
-          
-          {/* Save Match Button */}
-          <div className="flex justify-center pt-4">
-            <Button
-              onClick={() => setShowSaveMatchDialog(true)}
-              variant="default"
-              className="h-12 px-8 bg-green-600 hover:bg-green-700"
-              data-testid="button-save-match"
-            >
-              <Save className="mr-2 h-4 w-4" />
-              Save Match Results
-            </Button>
-          </div>
         </CardContent>
       </Card>
 
@@ -1713,53 +1685,6 @@ export default function Scoreboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Save Match Dialog */}
-      <Dialog open={showSaveMatchDialog} onOpenChange={setShowSaveMatchDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Save Match Results</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="match-name">Match Name</Label>
-              <Input
-                id="match-name"
-                value={matchName}
-                onChange={(e) => setMatchName(e.target.value)}
-                placeholder="e.g., Sunday League vs Hawks"
-                data-testid="input-match-name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="venue">Venue</Label>
-              <Input
-                id="venue"
-                value={venue}
-                onChange={(e) => setVenue(e.target.value)}
-                placeholder="e.g., Local Cricket Ground"
-                data-testid="input-venue"
-              />
-            </div>
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowSaveMatchDialog(false)}
-                data-testid="button-cancel-save"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveMatch}
-                disabled={isSaving}
-                data-testid="button-confirm-save"
-              >
-                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Match
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
       {/* Match Result Dialog */}
       <Dialog open={showMatchResult} onOpenChange={() => {}}>
         <DialogContent className="max-w-md" aria-describedby="match-result-description">
@@ -1810,16 +1735,7 @@ export default function Scoreboard() {
                   )}
                 </div>
                 
-                <div className="flex justify-center space-x-3 pt-4">
-                  <Button
-                    onClick={() => {
-                      setShowMatchResult(false);
-                      setShowSaveMatchDialog(true);
-                    }}
-                    data-testid="button-save-match-results"
-                  >
-                    Save Match
-                  </Button>
+                <div className="flex justify-center pt-4">
                   <Button
                     variant="outline"
                     onClick={() => {
