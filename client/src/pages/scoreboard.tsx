@@ -686,7 +686,7 @@ export default function Scoreboard() {
       };
       
       // Check for first innings completion
-      if (matchState && !matchState.firstInningsComplete && newOvers >= matchState.matchOvers) {
+      if (matchState && !matchState.firstInningsComplete && (newOvers >= matchState.matchOvers || updatedScore.wickets >= 10)) {
         setTimeout(() => handleInningsComplete(updatedScore), 100);
       }
       
@@ -759,6 +759,11 @@ export default function Scoreboard() {
         ...prev,
         wickets: prev.wickets + 1
       };
+      
+      // Check for first innings completion
+      if (matchState && !matchState.firstInningsComplete && updatedScore.wickets >= 10) {
+        setTimeout(() => handleInningsComplete(updatedScore), 100);
+      }
       
       // Check for match completion in second innings after wicket
       if (matchState && matchState.currentInnings === 2 && !matchState.matchComplete) {
