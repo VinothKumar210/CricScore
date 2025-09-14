@@ -673,12 +673,22 @@ export default function Scoreboard() {
     // Add to current over display
     setCurrentOverBalls(prev => [...prev, 'W']);
     
-    // Update team wickets
+    // Update team wickets and balls (wicket counts as a legal delivery)
     setBattingTeamScore(prev => {
+      const newBalls = prev.balls + 1;  // Wicket counts as 1 ball
+      const newOvers = Math.floor(newBalls / 6);
+      
       const updatedScore = {
         ...prev,
-        wickets: prev.wickets + 1
+        wickets: prev.wickets + 1,
+        balls: newBalls,
+        overs: newOvers
       };
+      
+      // Check for first innings completion
+      if (matchState && !matchState.firstInningsComplete && newOvers >= matchState.matchOvers) {
+        setTimeout(() => handleInningsComplete(updatedScore), 100);
+      }
       
       // Check for match completion in second innings after wicket
       if (matchState && matchState.currentInnings === 2 && !matchState.matchComplete) {
