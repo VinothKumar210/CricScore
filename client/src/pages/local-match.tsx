@@ -897,7 +897,7 @@ export default function LocalMatch() {
                 </SelectTrigger>
                 <SelectContent>
                   {userTeamsLoading ? (
-                    <SelectItem value="" disabled>Loading teams...</SelectItem>
+                    <SelectItem value="loading" disabled>Loading teams...</SelectItem>
                   ) : userTeams && userTeams.length > 0 ? (
                     userTeams.map((team) => (
                       <SelectItem key={team.id} value={team.id} data-testid={`option-my-team-${team.id}`}>
