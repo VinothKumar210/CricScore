@@ -275,7 +275,7 @@ export default function Scoreboard() {
         
         if (playerPerformanceMap.has(playerName)) {
           const existing = playerPerformanceMap.get(playerName)!;
-          existing.oversBowled = stat.overs + (stat.balls / 6);
+          existing.oversBowled = stat.overs;
           existing.runsConceded = stat.runs;
           existing.wicketsTaken = stat.wickets;
         } else {
@@ -284,9 +284,32 @@ export default function Scoreboard() {
             playerName: playerName,
             runsScored: 0,
             ballsFaced: 0,
-            oversBowled: stat.overs + (stat.balls / 6),
+            oversBowled: stat.overs,
             runsConceded: stat.runs,
             wicketsTaken: stat.wickets,
+            catchesTaken: 0
+          });
+        }
+      });
+
+      // Ensure all players who participated are included (even if they only fielded)
+      const allParticipatingPlayers = [...matchState.myTeamPlayers, ...matchState.opponentTeamPlayers]
+        .filter(p => p.name.trim() !== ''); // Only include players with names
+      
+      allParticipatingPlayers.forEach(player => {
+        const userId = findPlayerUserId(player.name);
+        const playerName = player.name;
+        
+        // If player not already in map (didn't bat or bowl), add them with zero stats
+        if (!playerPerformanceMap.has(playerName)) {
+          playerPerformanceMap.set(playerName, {
+            userId: userId,
+            playerName: playerName,
+            runsScored: 0,
+            ballsFaced: 0,
+            oversBowled: 0,
+            runsConceded: 0,
+            wicketsTaken: 0,
             catchesTaken: 0
           });
         }
@@ -381,7 +404,7 @@ export default function Scoreboard() {
         const newWickets = stat.wickets + (isWicket ? 1 : 0);
         const newOvers = Math.floor(newBalls / 6);
         const remainingBalls = newBalls % 6;
-        const oversBowled = newOvers + (remainingBalls / 10);
+        const oversBowled = newOvers + (remainingBalls / 6);
         const newEconomy = oversBowled > 0 ? newRuns / oversBowled : 0;
         
         return {
