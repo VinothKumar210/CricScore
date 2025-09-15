@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import jwt from "jsonwebtoken";
-import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, insertLocalMatchSchema, insertMatchSpectatorSchema } from "@shared/schema";
+import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, insertLocalMatchSchema, insertMatchSpectatorSchema, teamMatchResultsSchema } from "@shared/schema";
+import { calculateManOfTheMatch } from "../shared/man-of-the-match";
 import { z } from "zod";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
@@ -989,8 +990,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
-      // Import man of the match calculation
-      const { calculateManOfTheMatch } = require('../shared/man-of-the-match');
+
 
       // Calculate man of the match
       const manOfTheMatchResult = calculateManOfTheMatch(playerPerformances, 'T20'); // Default to T20 format
@@ -1077,7 +1077,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Team match results endpoint - handles team vs team matches with database teams
   app.post("/api/team-match-results", authenticateToken, async (req: any, res) => {
     try {
-      const { teamMatchResultsSchema } = require('@shared/schema');
       const validatedData = teamMatchResultsSchema.parse(req.body);
       const results = [];
       let teamMatchId = null;
@@ -1090,8 +1089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         playerCount: validatedData.playerPerformances.length
       });
 
-      // Import man of the match calculation
-      const { calculateManOfTheMatch } = require('../shared/man-of-the-match');
+
 
       // Calculate man of the match from player performances
       const manOfTheMatchResult = calculateManOfTheMatch(validatedData.playerPerformances, 'T20');
