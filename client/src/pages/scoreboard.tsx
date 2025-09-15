@@ -458,8 +458,24 @@ export default function Scoreboard() {
       const hasOpponentTeam = opponentTeamId.trim() !== '';
       const hasAnyDatabaseTeam = hasMyTeam || hasOpponentTeam;
       
+      console.log('=== TEAM STATISTICS DEBUG ===');
+      console.log('Team IDs from localStorage:', {
+        myTeamId: myTeamId || '(empty)',
+        opponentTeamId: opponentTeamId || '(empty)',
+        myTeamName,
+        opponentTeamName
+      });
       console.log('Team analysis:', {
-        myTeamId, opponentTeamId, hasMyTeam, hasOpponentTeam, hasAnyDatabaseTeam
+        hasMyTeam,
+        hasOpponentTeam,
+        hasAnyDatabaseTeam,
+        willUseTeamEndpoint: hasAnyDatabaseTeam
+      });
+      
+      // Additional debug: Check what was originally stored during match creation
+      console.log('All localStorage team-related data:');
+      Object.keys(localStorage).filter(key => key.includes('Team')).forEach(key => {
+        console.log(`  ${key}: ${localStorage.getItem(key)}`);
       });
 
       let endpoint, requestBody, response;
@@ -517,12 +533,33 @@ export default function Scoreboard() {
         }
 
         // Map player performances to team-based format
+        // Use teamSide instead of fragile name-based matching
         const teamPlayerPerformances = allPlayerPerformances.map(perf => {
-          const isMyTeamPlayer = matchState.myTeamPlayers.some(p => p.name === perf.playerName);
+          // Find the player in both teams to get their teamSide
+          const playerInMyTeam = matchState.myTeamPlayers.find(p => p.name === perf.playerName);
+          const playerInOpponentTeam = matchState.opponentTeamPlayers.find(p => p.name === perf.playerName);
+          
+          let isMyTeamPlayer = false;
+          let teamSide = null;
+          
+          if (playerInMyTeam) {
+            isMyTeamPlayer = true;
+            teamSide = playerInMyTeam.teamSide || 'my';
+          } else if (playerInOpponentTeam) {
+            isMyTeamPlayer = false;
+            teamSide = playerInOpponentTeam.teamSide || 'opponent';
+          } else {
+            // Fallback to name-based matching if teamSide is not available (backward compatibility)
+            console.warn(`Player ${perf.playerName} not found in either team, falling back to name matching`);
+            isMyTeamPlayer = matchState.myTeamPlayers.some(p => p.name === perf.playerName);
+            teamSide = isMyTeamPlayer ? 'my' : 'opponent';
+          }
+          
           return {
             ...perf,
             teamId: isMyTeamPlayer ? myTeamId || undefined : opponentTeamId || undefined,
             teamName: isMyTeamPlayer ? myTeamName : opponentTeamName,
+            teamSide: teamSide,
             fours: 0, // TODO: Track fours in match scoring
             sixes: 0, // TODO: Track sixes in match scoring 
             runOuts: 0 // TODO: Track run outs in match scoring
@@ -563,7 +600,19 @@ export default function Scoreboard() {
         };
       }
 
-      console.log(`Using endpoint: ${endpoint}`, requestBody);
+      console.log(`=== ENDPOINT SELECTION ===`);
+      console.log(`Selected endpoint: ${endpoint}`);
+      console.log(`Reason: ${hasAnyDatabaseTeam ? 'At least one database team involved' : 'Only local teams involved'}`);
+      console.log('Request body summary:', {
+        endpoint,
+        hasHomeTeamId: !!requestBody.homeTeamId,
+        hasAwayTeamId: !!requestBody.awayTeamId,
+        playerCount: requestBody.playerPerformances?.length || 0,
+        scenario: hasMyTeam && hasOpponentTeam ? 'both_database' : 
+                 hasMyTeam ? 'only_my_team_database' : 
+                 hasOpponentTeam ? 'only_opponent_database' : 'both_local'
+      });
+      console.log(`Full request body:`, requestBody);
       
       // Send to backend
       response = await fetch(endpoint, {
@@ -575,8 +624,12 @@ export default function Scoreboard() {
         body: JSON.stringify(requestBody)
       });
 
+      console.log(`=== BACKEND RESPONSE ===`);
+      console.log(`Response status: ${response.status} ${response.statusText}`);
+      
       if (response.ok) {
         const result = await response.json();
+        console.log('Success response:', result);
         
         // Store man of the match data with detailed stats
         if (result.manOfTheMatch) {
@@ -620,10 +673,19 @@ export default function Scoreboard() {
         console.log('Stats update results:', result);
       } else {
         const errorText = await response.text();
-        console.error('Failed to post stats automatically:', errorText);
+        console.error('=== STATS UPDATE FAILED ===');
+        console.error('Status:', response.status, response.statusText);
+        console.error('Error response:', errorText);
+        console.error('Request details:', {
+          endpoint,
+          hasMyTeam,
+          hasOpponentTeam,
+          hasAnyDatabaseTeam,
+          requestBody
+        });
         toast({
           title: "Stats Update Failed",
-          description: "There was an issue updating player statistics. Please try again.",
+          description: "There was an issue updating player statistics. Check console for details.",
           variant: "destructive",
         });
       }

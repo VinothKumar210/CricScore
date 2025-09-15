@@ -47,6 +47,7 @@ export default function LocalMatch() {
       hasAccount: false,
       username: undefined,
       userId: undefined,
+      teamSide: "my" as const,
     }))
   );
   const [opponentTeamPlayers, setOpponentTeamPlayers] = useState<LocalPlayer[]>(
@@ -55,6 +56,7 @@ export default function LocalMatch() {
       hasAccount: false,
       username: undefined,
       userId: undefined,
+      teamSide: "opponent" as const,
     }))
   );
 
@@ -1312,6 +1314,22 @@ export default function LocalMatch() {
               localStorage.setItem('myTeamId', selectedMyTeam || ''); // Store team ID for endpoint selection
               localStorage.setItem('opponentTeamId', selectedOpponentTeam || ''); // Store team ID for endpoint selection
               localStorage.setItem('matchOvers', getCurrentOvers());
+              
+              // Debug: Log what team IDs are being stored
+              console.log('=== MATCH CREATION - TEAM IDS STORED ===');
+              console.log('Selected teams:', {
+                selectedMyTeam: selectedMyTeam || '(none)',
+                selectedOpponentTeam: selectedOpponentTeam || '(none)',
+                myTeamName: myTeamName || 'My Team',
+                opponentTeamName: opponentTeamName || 'Opponent Team'
+              });
+              console.log('Stored in localStorage:', {
+                myTeamId: selectedMyTeam || '',
+                opponentTeamId: selectedOpponentTeam || '',
+                myTeamName: myTeamName || 'My Team',
+                opponentTeamName: opponentTeamName || 'Opponent Team'
+              });
+              
               setLocation('/coin-toss');
             }
           }}

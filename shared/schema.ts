@@ -138,6 +138,7 @@ export const localPlayerSchema = z.object({
   hasAccount: z.boolean().default(false),
   username: z.string().optional(), // Username if player has account
   userId: z.string().optional(), // Only present if hasAccount is true
+  teamSide: z.enum(["my", "opponent"]).optional(), // Which team this player belongs to
 });
 
 // Local match schema
