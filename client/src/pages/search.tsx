@@ -189,7 +189,7 @@ export default function SearchPlayers() {
                   
                   {/* Live Suggestions Dropdown */}
                   {showSuggestions && searchInput.length >= 1 && (
-                    <div className="absolute top-full left-0 right-0 bg-card border border-border rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
                       {isSuggestionsLoading && (
                         <div className="p-3 text-center text-muted-foreground">
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto"></div>
