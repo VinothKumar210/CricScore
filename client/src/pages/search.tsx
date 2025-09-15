@@ -335,8 +335,8 @@ export default function SearchPlayers() {
           style={{
             position: 'fixed',
             top: inputPosition.top + 4,
-            left: Math.max(8, Math.min(inputPosition.left, window.innerWidth - Math.max(inputPosition.width, 320) - 8)),
-            width: Math.min(inputPosition.width, window.innerWidth - 16),
+            left: window.innerWidth < 640 ? 8 : Math.max(8, Math.min(inputPosition.left, window.innerWidth - Math.max(inputPosition.width, 320) - 8)),
+            width: window.innerWidth < 640 ? window.innerWidth - 16 : Math.min(inputPosition.width, window.innerWidth - 16),
             zIndex: 9999
           }}
           className="bg-card border border-border rounded-md shadow-lg max-h-60 sm:max-h-80 overflow-y-auto"
