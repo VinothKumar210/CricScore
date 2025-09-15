@@ -1203,6 +1203,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             isManOfTheMatch: isManOfTheMatch || false
           });
 
+          // Update player's career statistics from this match
+          if (individualMatch) {
+            await storage.updateCareerStatsFromMatch(performance.userId, individualMatch);
+            console.log(`Updated career stats for ${performance.playerName}`);
+          }
+
           results.push({
             userId: performance.userId,
             playerName: performance.playerName,
