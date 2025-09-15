@@ -1067,61 +1067,50 @@ export class PrismaStorage implements IStorage {
     }
   }
 
+  // Helper function to create canonical match key
+  private createCanonicalMatchKey(opponent: string, matchDate: Date): string {
+    const dateKey = matchDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    // Normalize opponent: lowercase, remove non-alphanumerics, remove common suffixes
+    const opponentKey = opponent.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '')
+      .replace(/(cc|club|team|cricket)$/g, '')
+      .trim();
+    return `${opponentKey}-${dateKey}`;
+  }
+
   async calculateAndUpdateTeamStatistics(teamId: string): Promise<void> {
     try {
-      // Get all team members first
+      // Step 1: Get all team members
       const teamMembers = await this.getTeamMembers(teamId);
       if (teamMembers.length === 0) {
         return;
       }
-
       const memberUserIds = teamMembers.map(m => m.userId);
 
-      // Get formal team matches for this team
-      const teamMatches = await this.getTeamMatches(teamId);
-      
-      // Calculate basic match statistics from formal team matches
-      let matchesPlayed = 0;
-      let matchesWon = 0;
-      let matchesLost = 0;
-      let matchesDrawn = 0;
-
-      for (const match of teamMatches) {
-        if (match.status === 'COMPLETED') {
-          matchesPlayed++;
-          
-          if (match.result === 'HOME_WIN' && match.homeTeamId === teamId) {
-            matchesWon++;
-          } else if (match.result === 'AWAY_WIN' && match.awayTeamId === teamId) {
-            matchesWon++;
-          } else if (match.result === 'DRAW') {
-            matchesDrawn++;
-          } else {
-            matchesLost++;
-          }
-        }
-      }
-
-      // Get additional match count from individual matches (team vs non-team matches)
-      const recentIndividualMatches = await prisma.match.findMany({
+      // Step 2: Get formal team matches with opponent names
+      const teamMatches = await prisma.teamMatch.findMany({
         where: {
-          userId: { in: memberUserIds },
-          opponent: { contains: "vs " }, // Team matches have format "vs OpponentTeam"
-          matchDate: { 
-            gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // Last 90 days
-          }
+          OR: [
+            { homeTeamId: teamId },
+            { awayTeamId: teamId }
+          ],
+          status: 'COMPLETED'
         },
-        distinct: ['opponent', 'matchDate'], // Count unique team matches
-        orderBy: { matchDate: 'desc' }
+        include: {
+          homeTeam: true,
+          awayTeam: true
+        }
       });
 
-      // Count additional team matches (estimate based on individual matches)
-      const additionalMatches = Math.floor(recentIndividualMatches.length / Math.max(1, memberUserIds.length / 3));
-      matchesPlayed += additionalMatches;
+      // Step 3: Build formal match index and calculate win/loss from formal matches only
+      const formalMatchKeys = new Set<string>();
+      let formalMatchesPlayed = 0;
+      let formalMatchesWon = 0;
+      let formalMatchesLost = 0;
+      let formalMatchesDrawn = 0;
 
-      const winRatio = matchesPlayed > 0 ? matchesWon / matchesPlayed : 0;
-
-      // Get player performances from formal team matches
+      // Get formal team match player stats
       const teamMatchIds = teamMatches.map(m => m.id);
       const formalTeamStats = teamMatchIds.length > 0 ? await prisma.teamMatchPlayer.findMany({
         where: {
@@ -1131,18 +1120,77 @@ export class PrismaStorage implements IStorage {
         include: { user: true }
       }) : [];
 
-      // ALSO get individual match performances for team members (for mixed matches)
+      for (const match of teamMatches) {
+        // Determine opponent name relative to this team
+        const opponentName = match.homeTeamId === teamId ? match.awayTeam.name : match.homeTeam.name;
+        const matchKey = this.createCanonicalMatchKey(opponentName, match.matchDate);
+        formalMatchKeys.add(matchKey);
+        
+        formalMatchesPlayed++;
+        
+        if (match.result === 'HOME_WIN' && match.homeTeamId === teamId) {
+          formalMatchesWon++;
+        } else if (match.result === 'AWAY_WIN' && match.awayTeamId === teamId) {
+          formalMatchesWon++;
+        } else if (match.result === 'DRAW') {
+          formalMatchesDrawn++;
+        } else {
+          formalMatchesLost++;
+        }
+      }
+
+      // Step 4: Get individual matches for team members
       const individualMatches = await prisma.match.findMany({
         where: {
-          userId: { in: memberUserIds },
-          opponent: { contains: "vs " }, // Team matches
-          matchDate: { 
-            gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // Last 90 days
-          }
+          userId: { in: memberUserIds }
         },
         include: { user: true },
         orderBy: { matchDate: 'desc' }
       });
+
+      // Step 5: Group individual matches, excluding those already in formal matches
+      const individualMatchGroups = new Map<string, typeof individualMatches>();
+      
+      for (const match of individualMatches) {
+        const matchKey = this.createCanonicalMatchKey(match.opponent, match.matchDate);
+        
+        // Skip if this match is already covered by a formal team match
+        if (formalMatchKeys.has(matchKey)) {
+          continue;
+        }
+        
+        if (!individualMatchGroups.has(matchKey)) {
+          individualMatchGroups.set(matchKey, []);
+        }
+        individualMatchGroups.get(matchKey)!.push(match);
+      }
+
+      // Step 6: Accept individual match groups with sufficient participants (≥3)
+      let acceptedIndividualMatches = 0;
+      const acceptedIndividualStats: typeof individualMatches = [];
+
+      for (const [matchKey, matchGroup] of Array.from(individualMatchGroups.entries())) {
+        const participantIds = new Set(matchGroup.map(m => m.userId));
+        
+        // Only accept as team match if ≥3 team members participated
+        if (participantIds.size >= 3) {
+          acceptedIndividualMatches++;
+          
+          // For participants with multiple entries, prefer the latest one
+          const latestByUser = new Map<string, typeof individualMatches[0]>();
+          for (const match of matchGroup) {
+            const existing = latestByUser.get(match.userId);
+            if (!existing || match.createdAt > existing.createdAt) {
+              latestByUser.set(match.userId, match);
+            }
+          }
+          acceptedIndividualStats.push(...Array.from(latestByUser.values()));
+        }
+      }
+
+      // Step 7: Calculate totals
+      const totalMatchesPlayed = formalMatchesPlayed + acceptedIndividualMatches;
+      const winRatio = formalMatchesPlayed > 0 ? formalMatchesWon / formalMatchesPlayed : 0;
 
       // Calculate top performers
       let topRunScorerId: string | undefined;
@@ -1182,8 +1230,8 @@ export class PrismaStorage implements IStorage {
         playerAggregates.set(stat.userId, existing);
       }
 
-      // Add stats from individual matches (team vs non-team matches)
-      for (const match of individualMatches) {
+      // Add stats from accepted individual matches (non-duplicated team vs non-team matches)
+      for (const match of acceptedIndividualStats) {
         const existing = playerAggregates.get(match.userId) || {
           runs: 0,
           ballsFaced: 0,
@@ -1241,10 +1289,10 @@ export class PrismaStorage implements IStorage {
       
       if (existingStats) {
         await this.updateTeamStatistics(teamId, {
-          matchesPlayed,
-          matchesWon,
-          matchesLost,
-          matchesDrawn,
+          matchesPlayed: totalMatchesPlayed,
+          matchesWon: formalMatchesWon,
+          matchesLost: formalMatchesLost,
+          matchesDrawn: formalMatchesDrawn,
           winRatio: parseFloat(winRatio.toFixed(3)),
           topRunScorerId,
           topRunScorerRuns,
@@ -1260,10 +1308,10 @@ export class PrismaStorage implements IStorage {
       } else {
         await this.createTeamStatistics({
           teamId,
-          matchesPlayed,
-          matchesWon,
-          matchesLost,
-          matchesDrawn,
+          matchesPlayed: totalMatchesPlayed,
+          matchesWon: formalMatchesWon,
+          matchesLost: formalMatchesLost,
+          matchesDrawn: formalMatchesDrawn,
           winRatio: parseFloat(winRatio.toFixed(3)),
           topRunScorerId,
           topRunScorerRuns,
