@@ -36,6 +36,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
     { name: "Create Match", href: "/local-match", icon: UserPlus },
     { name: "My Teams", href: "/teams", icon: Users },
     { name: "Search Players", href: "/search", icon: Search },
+    { name: "Search Teams", href: "/team-search", icon: Users },
     { name: "Invitations", href: "/invitations", icon: Mail },
   ];
 
