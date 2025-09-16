@@ -268,9 +268,6 @@ export default function Scoreboard() {
         }
       });
       
-      // Debug: Log bowler stats before processing
-      console.log('DEBUG: bowlerStats at time of posting:', bowlerStats);
-      
       // Process bowler stats
       bowlerStats.forEach(stat => {
         const userId = findPlayerUserId(stat.player.name);
@@ -407,8 +404,10 @@ export default function Scoreboard() {
         const newWickets = stat.wickets + (isWicket ? 1 : 0);
         const newOvers = Math.floor(newBalls / 6);
         const remainingBalls = newBalls % 6;
-        const oversBowled = newOvers + (remainingBalls / 6);
-        const newEconomy = oversBowled > 0 ? newRuns / oversBowled : 0;
+        const oversBowled = parseFloat(newOvers + '.' + remainingBalls);
+        // For economy calculation, convert back to decimal overs (e.g., 1.2 overs = 1.33 decimal overs)
+        const decimalOvers = newOvers + (remainingBalls / 6);
+        const newEconomy = decimalOvers > 0 ? newRuns / decimalOvers : 0;
         
         return {
           ...stat,
