@@ -317,25 +317,50 @@ export default function Scoreboard() {
         });
       };
       
-      // Create match summary data
+      // Determine match result in the correct format
+      let matchResult: "HOME_WIN" | "AWAY_WIN" | "DRAW";
+      if (matchState?.matchResult === 'draw') {
+        matchResult = 'DRAW';
+      } else if (matchState?.matchResult === 'first_team_wins') {
+        matchResult = userTeamBatsFirst ? 'HOME_WIN' : 'AWAY_WIN';
+      } else if (matchState?.matchResult === 'second_team_wins') {
+        matchResult = userTeamBatsFirst ? 'AWAY_WIN' : 'HOME_WIN';
+      } else {
+        matchResult = 'DRAW'; // fallback
+      }
+      
+      // Create match summary data with correct schema structure
       const matchSummaryData = {
-        localMatchId: '',  // Will be populated if needed
         homeTeamId: myTeamId || undefined,
         homeTeamName: myTeamName,
         awayTeamId: opponentTeamId || undefined,
         awayTeamName: opponentTeamName,
         matchDate: new Date(),
         venue: 'Local Ground',
-        overs: matchState?.matchOvers || 20,
-        homeTeamScore: userTeamBatsFirst ? firstInningsScore.runs : secondInningsScore.runs,
-        homeTeamWickets: userTeamBatsFirst ? firstInningsScore.wickets : secondInningsScore.wickets,
-        homeTeamOvers: userTeamBatsFirst ? firstInningsScore.overs : secondInningsScore.overs,
-        awayTeamScore: userTeamBatsFirst ? secondInningsScore.runs : firstInningsScore.runs,
-        awayTeamWickets: userTeamBatsFirst ? secondInningsScore.wickets : firstInningsScore.wickets,
-        awayTeamOvers: userTeamBatsFirst ? secondInningsScore.overs : firstInningsScore.overs,
+        result: matchResult,
         winningTeam,
-        manOfTheMatchUserId: manOfTheMatchResult?.userId || null,
-        manOfTheMatchStats: manOfTheMatchResult || null,
+        
+        // Innings information - determine which team batted first
+        firstInningsTeam: userTeamBatsFirst ? myTeamName : opponentTeamName,
+        firstInningsRuns: firstInningsScore.runs,
+        firstInningsWickets: firstInningsScore.wickets,
+        firstInningsOvers: firstInningsScore.overs,
+        
+        secondInningsTeam: userTeamBatsFirst ? opponentTeamName : myTeamName,
+        secondInningsRuns: secondInningsScore.runs,
+        secondInningsWickets: secondInningsScore.wickets,
+        secondInningsOvers: secondInningsScore.overs,
+        
+        // Match context
+        target: matchState?.target,
+        totalOvers: matchState?.matchOvers || 20,
+        
+        // Man of the match
+        manOfTheMatchPlayerName: manOfTheMatchResult?.playerName,
+        manOfTheMatchUserId: manOfTheMatchResult?.userId || undefined,
+        manOfTheMatchStats: manOfTheMatchResult || undefined,
+        
+        // Player data
         firstInningsBatsmen: formatBattingStats(userTeamBatsFirst ? firstInningsBatsmanStats : batsmanStats),
         firstInningsBowlers: formatBowlingStats(userTeamBatsFirst ? firstInningsBowlerStats : bowlerStats),
         secondInningsBatsmen: formatBattingStats(userTeamBatsFirst ? batsmanStats : firstInningsBatsmanStats),
