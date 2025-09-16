@@ -152,14 +152,9 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2 mt-4">
-              <Button variant="link" asChild className="flex-1" data-testid="link-add-match">
-                <Link href="/add-match">Add Match →</Link>
-              </Button>
-              <Button variant="outline" asChild className="flex-1" data-testid="link-local-match">
-                <Link href="/local-match">Local Match →</Link>
-              </Button>
-            </div>
+            <Button variant="link" asChild className="w-full mt-4" data-testid="link-add-match">
+              <Link href="/add-match">Add Match →</Link>
+            </Button>
           </CardContent>
         </Card>
 
@@ -214,6 +209,17 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Floating Local Match Button */}
+      <Button 
+        asChild 
+        className="fixed bottom-6 right-6 rounded-full w-16 h-16 shadow-lg hover:shadow-xl transition-shadow z-50" 
+        data-testid="floating-local-match"
+      >
+        <Link href="/local-match">
+          <Gamepad className="h-6 w-6" />
+        </Link>
+      </Button>
     </div>
   );
 }
