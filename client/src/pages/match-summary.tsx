@@ -40,10 +40,10 @@ interface MatchSummary {
   matchDate: string;
   venue: string;
   overs: number;
-  homeTeamScore: number;
+  homeTeamRuns: number;
   homeTeamWickets: number;
   homeTeamOvers: number;
-  awayTeamScore: number;
+  awayTeamRuns: number;
   awayTeamWickets: number;
   awayTeamOvers: number;
   winningTeam: string;
@@ -215,22 +215,12 @@ export default function MatchSummaryPage() {
   const formatOvers = (overs: number): string => {
     if (overs === 0) return '0.0';
     
-    // Handle cricket format where 14.3 means 14 overs and 3 balls
+    // Handle cricket format where overs are stored as decimal (e.g., 14.5 = 14 overs 3 balls)
     const wholeOvers = Math.floor(overs);
-    const decimalPart = overs - wholeOvers;
+    const balls = Math.round((overs - wholeOvers) * 6);
+    const clampedBalls = Math.min(Math.max(balls, 0), 5);
     
-    // Extract balls from decimal part (14.3 means 3 balls)
-    // Round to handle floating point precision issues
-    const balls = Math.round(decimalPart * 10);
-    
-    // Ensure balls are valid (0-5)
-    if (balls < 0 || balls > 5) {
-      // If invalid, treat as decimal and convert properly
-      const convertedBalls = Math.round(decimalPart * 6);
-      return convertedBalls === 0 ? `${wholeOvers}.0` : `${wholeOvers}.${Math.min(convertedBalls, 5)}`;
-    }
-    
-    return balls === 0 ? `${wholeOvers}.0` : `${wholeOvers}.${balls}`;
+    return clampedBalls === 0 ? `${wholeOvers}.0` : `${wholeOvers}.${clampedBalls}`;
   };
 
   const formatDate = (dateString: string): string => {
@@ -439,7 +429,7 @@ export default function MatchSummaryPage() {
                   {matchSummary.homeTeamName}
                 </div>
                 <div className="text-3xl font-bold text-primary" data-testid="text-home-score">
-                  {matchSummary.homeTeamScore}/{matchSummary.homeTeamWickets}
+                  {matchSummary.homeTeamRuns}/{matchSummary.homeTeamWickets}
                 </div>
                 <div className="text-sm text-muted-foreground" data-testid="text-home-overs">
                   ({formatOvers(matchSummary.homeTeamOvers || 0)} overs)
@@ -457,7 +447,7 @@ export default function MatchSummaryPage() {
                   {matchSummary.awayTeamName}
                 </div>
                 <div className="text-3xl font-bold text-primary" data-testid="text-away-score">
-                  {matchSummary.awayTeamScore}/{matchSummary.awayTeamWickets}
+                  {matchSummary.awayTeamRuns}/{matchSummary.awayTeamWickets}
                 </div>
                 <div className="text-sm text-muted-foreground" data-testid="text-away-overs">
                   ({formatOvers(matchSummary.awayTeamOvers || 0)} overs)
