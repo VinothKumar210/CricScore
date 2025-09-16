@@ -1600,6 +1600,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         awayTeamOvers: matchSummary.secondInningsOvers,
         // Remove "Local Ground" if it's the default venue
         venue: matchSummary.venue === 'Local Ground' ? '' : matchSummary.venue,
+        // Fix match result mapping
+        winningTeam: matchSummary.result === 'HOME_WIN' 
+          ? matchSummary.homeTeamName 
+          : matchSummary.result === 'AWAY_WIN' 
+          ? matchSummary.awayTeamName 
+          : 'Draw'
       };
       
       res.json(mappedData);
