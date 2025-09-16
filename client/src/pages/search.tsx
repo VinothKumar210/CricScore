@@ -353,7 +353,7 @@ export default function SearchPlayers() {
                   className={`px-2 sm:px-3 py-2 sm:py-3 cursor-pointer hover:bg-accent transition-colors ${
                     activeSuggestion === index ? 'bg-accent' : ''
                   }`}
-                  onClick={() => selectSuggestion(user)}
+                  onMouseDown={() => selectSuggestion(user)}
                   data-testid={`suggestion-${user.id}`}
                 >
                   <div className="flex items-center space-x-2 sm:space-x-3">
