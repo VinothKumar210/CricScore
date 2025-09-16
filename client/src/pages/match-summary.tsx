@@ -275,50 +275,87 @@ export default function MatchSummaryPage() {
             🏏 {inningsTitle} - Batting
           </CardTitle>
         </CardHeader>
-        <CardContent className="overflow-visible">
-          <div className="overflow-x-auto">
-            <Table className="overflow-visible">
+        <CardContent>
+          {/* Mobile-friendly card layout for smaller screens */}
+          <div className="block md:hidden space-y-4">
+            {stats.map((stat, index) => (
+              <div key={index} className="border rounded-lg p-4 bg-slate-50 dark:bg-slate-800" data-testid={`batting-card-${inningsTitle}-${index}`}>
+                <div className="flex justify-between items-start mb-2">
+                  <div className="font-medium" data-testid={`text-batsman-${stat.playerName}`}>
+                    {stat.playerName || 'Unknown Player'}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold" data-testid={`text-runs-${stat.runs}`}>
+                      {stat.runs || 0} ({stat.balls || 0})
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      SR: {stat.strikeRate || '0.00'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <div>
+                    <span className="font-medium">4s:</span> {stat.fours || 0} | 
+                    <span className="font-medium">6s:</span> {stat.sixes || 0}
+                  </div>
+                  <div className="text-right">
+                    {stat.dismissalType || 'Not Out'}
+                    {stat.dismissalType && stat.dismissalType !== 'Not Out' && (
+                      <div className="text-xs text-muted-foreground">
+                        {stat.bowlerName && `b: ${stat.bowlerName}`}
+                        {stat.fielderName && ` c: ${stat.fielderName}`}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table layout */}
+          <div className="hidden md:block">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Batsman</TableHead>
-                <TableHead className="text-right">Runs</TableHead>
-                <TableHead className="text-right">Balls</TableHead>
-                <TableHead className="text-right">4s</TableHead>
-                <TableHead className="text-right">6s</TableHead>
-                <TableHead className="text-right">SR</TableHead>
-                <TableHead>Dismissal</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {stats.map((stat, index) => (
-                <TableRow key={index} data-testid={`batting-row-${inningsTitle}-${index}`}>
-                  <TableCell className="font-medium" data-testid={`text-batsman-${stat.playerName}`}>
-                    {stat.playerName || 'Unknown Player'}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`text-runs-${stat.runs}`}>
-                    {stat.runs || 0}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`text-balls-${stat.balls}`}>
-                    {stat.balls || 0}
-                  </TableCell>
-                  <TableCell className="text-right">{stat.fours || 0}</TableCell>
-                  <TableCell className="text-right">{stat.sixes || 0}</TableCell>
-                  <TableCell className="text-right">{stat.strikeRate || '0.00'}</TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <div>{stat.dismissalType || 'Not Out'}</div>
-                      {stat.dismissalType && stat.dismissalType !== 'Not Out' && (
-                        <div className="text-muted-foreground text-xs">
-                          {stat.bowlerName && `b: ${stat.bowlerName}`}
-                          {stat.fielderName && ` c: ${stat.fielderName}`}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
+                  <TableHead className="text-right">Runs</TableHead>
+                  <TableHead className="text-right">Balls</TableHead>
+                  <TableHead className="text-right">4s</TableHead>
+                  <TableHead className="text-right">6s</TableHead>
+                  <TableHead className="text-right">SR</TableHead>
+                  <TableHead>Dismissal</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {stats.map((stat, index) => (
+                  <TableRow key={index} data-testid={`batting-row-${inningsTitle}-${index}`}>
+                    <TableCell className="font-medium" data-testid={`text-batsman-${stat.playerName}`}>
+                      {stat.playerName || 'Unknown Player'}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`text-runs-${stat.runs}`}>
+                      {stat.runs || 0}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`text-balls-${stat.balls}`}>
+                      {stat.balls || 0}
+                    </TableCell>
+                    <TableCell className="text-right">{stat.fours || 0}</TableCell>
+                    <TableCell className="text-right">{stat.sixes || 0}</TableCell>
+                    <TableCell className="text-right">{stat.strikeRate || '0.00'}</TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        <div>{stat.dismissalType || 'Not Out'}</div>
+                        {stat.dismissalType && stat.dismissalType !== 'Not Out' && (
+                          <div className="text-muted-foreground text-xs">
+                            {stat.bowlerName && `b: ${stat.bowlerName}`}
+                            {stat.fielderName && ` c: ${stat.fielderName}`}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
@@ -350,38 +387,68 @@ export default function MatchSummaryPage() {
             ⚾ {inningsTitle} - Bowling
           </CardTitle>
         </CardHeader>
-        <CardContent className="overflow-visible">
-          <div className="overflow-x-auto">
-            <Table className="overflow-visible">
+        <CardContent>
+          {/* Mobile-friendly card layout for smaller screens */}
+          <div className="block md:hidden space-y-4">
+            {stats.map((stat, index) => (
+              <div key={index} className="border rounded-lg p-4 bg-slate-50 dark:bg-slate-800" data-testid={`bowling-card-${inningsTitle}-${index}`}>
+                <div className="flex justify-between items-start mb-2">
+                  <div className="font-medium" data-testid={`text-bowler-${stat.playerName}`}>
+                    {stat.playerName || 'Unknown Player'}
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold" data-testid={`text-wickets-${stat.wickets}`}>
+                      {stat.wickets || 0}/{stat.runs || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatOvers(stat.overs || 0)} overs
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <div>
+                    <span className="font-medium">Maidens:</span> {stat.maidens || 0}
+                  </div>
+                  <div className="text-right">
+                    <span className="font-medium">Economy:</span> {stat.economy || '0.00'}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table layout */}
+          <div className="hidden md:block">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Bowler</TableHead>
-                <TableHead className="text-right">Overs</TableHead>
-                <TableHead className="text-right">Maidens</TableHead>
-                <TableHead className="text-right">Runs</TableHead>
-                <TableHead className="text-right">Wickets</TableHead>
-                <TableHead className="text-right">Economy</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {stats.map((stat, index) => (
-                <TableRow key={index} data-testid={`bowling-row-${inningsTitle}-${index}`}>
-                  <TableCell className="font-medium" data-testid={`text-bowler-${stat.playerName}`}>
-                    {stat.playerName || 'Unknown Player'}
-                  </TableCell>
-                  <TableCell className="text-right">{formatOvers(stat.overs || 0)}</TableCell>
-                  <TableCell className="text-right">{stat.maidens || 0}</TableCell>
-                  <TableCell className="text-right" data-testid={`text-runs-conceded-${stat.runs}`}>
-                    {stat.runs || 0}
-                  </TableCell>
-                  <TableCell className="text-right" data-testid={`text-wickets-${stat.wickets}`}>
-                    {stat.wickets || 0}
-                  </TableCell>
-                  <TableCell className="text-right">{stat.economy || '0.00'}</TableCell>
+                  <TableHead className="text-right">Overs</TableHead>
+                  <TableHead className="text-right">Maidens</TableHead>
+                  <TableHead className="text-right">Runs</TableHead>
+                  <TableHead className="text-right">Wickets</TableHead>
+                  <TableHead className="text-right">Economy</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {stats.map((stat, index) => (
+                  <TableRow key={index} data-testid={`bowling-row-${inningsTitle}-${index}`}>
+                    <TableCell className="font-medium" data-testid={`text-bowler-${stat.playerName}`}>
+                      {stat.playerName || 'Unknown Player'}
+                    </TableCell>
+                    <TableCell className="text-right">{formatOvers(stat.overs || 0)}</TableCell>
+                    <TableCell className="text-right">{stat.maidens || 0}</TableCell>
+                    <TableCell className="text-right" data-testid={`text-runs-conceded-${stat.runs}`}>
+                      {stat.runs || 0}
+                    </TableCell>
+                    <TableCell className="text-right" data-testid={`text-wickets-${stat.wickets}`}>
+                      {stat.wickets || 0}
+                    </TableCell>
+                    <TableCell className="text-right">{stat.economy || '0.00'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
