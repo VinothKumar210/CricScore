@@ -268,6 +268,9 @@ export default function Scoreboard() {
         }
       });
       
+      // Debug: Log bowler stats before processing
+      console.log('DEBUG: bowlerStats at time of posting:', bowlerStats);
+      
       // Process bowler stats
       bowlerStats.forEach(stat => {
         const userId = findPlayerUserId(stat.player.name);
