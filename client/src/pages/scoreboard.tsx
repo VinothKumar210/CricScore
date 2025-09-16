@@ -690,43 +690,31 @@ export default function Scoreboard() {
           overs: battingTeamScore.overs + (battingTeamScore.balls / 6) 
         };
         
-        // Determine who batted first and second
+        // Determine team scores based on team identity, not batting order
         let homeTeamRuns, homeTeamWickets, homeTeamOvers;
         let awayTeamRuns, awayTeamWickets, awayTeamOvers;
         let result;
         
-        if (userTeamBatsFirst) {
-          // My team batted first, opponent batted second
-          homeTeamRuns = firstInningsScore.runs;
-          homeTeamWickets = firstInningsScore.wickets;
-          homeTeamOvers = firstInningsScore.overs;
-          awayTeamRuns = secondInningsScore.runs;
-          awayTeamWickets = secondInningsScore.wickets;
-          awayTeamOvers = secondInningsScore.overs;
-          
-          if (awayTeamRuns > homeTeamRuns) {
-            result = "AWAY_WIN";
-          } else if (homeTeamRuns > awayTeamRuns) {
-            result = "HOME_WIN";
-          } else {
-            result = "DRAW";
-          }
+        // Determine which team is home/away based on team identity
+        // My team (user's team) is always the home team in this setup
+        const myTeamScore = userTeamBatsFirst ? firstInningsScore : secondInningsScore;
+        const opponentTeamScore = userTeamBatsFirst ? secondInningsScore : firstInningsScore;
+        
+        // Assign scores based on actual team identity (home vs away)
+        homeTeamRuns = myTeamScore.runs;
+        homeTeamWickets = myTeamScore.wickets;
+        homeTeamOvers = myTeamScore.overs;
+        awayTeamRuns = opponentTeamScore.runs;
+        awayTeamWickets = opponentTeamScore.wickets;
+        awayTeamOvers = opponentTeamScore.overs;
+        
+        // Determine match result based on actual scores
+        if (homeTeamRuns > awayTeamRuns) {
+          result = "HOME_WIN";
+        } else if (awayTeamRuns > homeTeamRuns) {
+          result = "AWAY_WIN";
         } else {
-          // Opponent batted first, my team batted second
-          homeTeamRuns = secondInningsScore.runs;
-          homeTeamWickets = secondInningsScore.wickets;
-          homeTeamOvers = secondInningsScore.overs;
-          awayTeamRuns = firstInningsScore.runs;
-          awayTeamWickets = firstInningsScore.wickets;
-          awayTeamOvers = firstInningsScore.overs;
-          
-          if (homeTeamRuns > awayTeamRuns) {
-            result = "HOME_WIN";
-          } else if (awayTeamRuns > homeTeamRuns) {
-            result = "AWAY_WIN";
-          } else {
-            result = "DRAW";
-          }
+          result = "DRAW";
         }
 
         // Map player performances to team-based format
