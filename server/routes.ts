@@ -1588,16 +1588,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Map innings data to home/away team format for UI compatibility
+      // Check which team batted in which innings to correctly map the data
+      const homeTeamBattedFirst = matchSummary.firstInningsTeam === matchSummary.homeTeamName;
+      
       const mappedData = {
         ...matchSummary,
-        // Map first innings to home team (batting first)
-        homeTeamRuns: matchSummary.firstInningsRuns,
-        homeTeamWickets: matchSummary.firstInningsWickets,
-        homeTeamOvers: matchSummary.firstInningsOvers,
-        // Map second innings to away team (batting second)
-        awayTeamRuns: matchSummary.secondInningsRuns,
-        awayTeamWickets: matchSummary.secondInningsWickets,
-        awayTeamOvers: matchSummary.secondInningsOvers,
+        // Map home team data based on which innings they batted in
+        homeTeamRuns: homeTeamBattedFirst ? matchSummary.firstInningsRuns : matchSummary.secondInningsRuns,
+        homeTeamWickets: homeTeamBattedFirst ? matchSummary.firstInningsWickets : matchSummary.secondInningsWickets,
+        homeTeamOvers: homeTeamBattedFirst ? matchSummary.firstInningsOvers : matchSummary.secondInningsOvers,
+        // Map away team data based on which innings they batted in
+        awayTeamRuns: homeTeamBattedFirst ? matchSummary.secondInningsRuns : matchSummary.firstInningsRuns,
+        awayTeamWickets: homeTeamBattedFirst ? matchSummary.secondInningsWickets : matchSummary.firstInningsWickets,
+        awayTeamOvers: homeTeamBattedFirst ? matchSummary.secondInningsOvers : matchSummary.firstInningsOvers,
         // Remove "Local Ground" if it's the default venue
         venue: matchSummary.venue === 'Local Ground' ? '' : matchSummary.venue,
         // Fix match result mapping
