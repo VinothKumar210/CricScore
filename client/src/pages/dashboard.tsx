@@ -152,9 +152,14 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-            <Button variant="link" asChild className="w-full mt-4" data-testid="link-all-matches">
-              <Link href="/add-match">Add Match →</Link>
-            </Button>
+            <div className="flex gap-2 mt-4">
+              <Button variant="link" asChild className="flex-1" data-testid="link-add-match">
+                <Link href="/add-match">Add Match →</Link>
+              </Button>
+              <Button variant="outline" asChild className="flex-1" data-testid="link-local-match">
+                <Link href="/local-match">Local Match →</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
