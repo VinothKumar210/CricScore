@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import jwt from "jsonwebtoken";
-import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, insertLocalMatchSchema, insertMatchSpectatorSchema, teamMatchResultsSchema } from "@shared/schema";
+import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, insertLocalMatchSchema, insertMatchSpectatorSchema, teamMatchResultsSchema, insertMatchSummarySchema, insertPlayerMatchHistorySchema } from "@shared/schema";
 import { calculateManOfTheMatch } from "../shared/man-of-the-match";
 import { z } from "zod";
 
@@ -1560,6 +1560,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error sending notification:', error);
       res.status(500).json({ message: "Failed to send notification" });
+    }
+  });
+
+  // Match Summary API routes
+  
+  // Create match summary (allow without auth for local matches)
+  app.post("/api/match-summary", async (req: any, res) => {
+    try {
+      const validatedData = insertMatchSummarySchema.parse(req.body);
+      const matchSummary = await storage.createMatchSummary(validatedData);
+      res.status(201).json(matchSummary);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get specific match summary (allow without auth for local matches)
+  app.get("/api/match-summary/:id", async (req, res) => {
+    try {
+      const matchSummary = await storage.getMatchSummary(req.params.id);
+      if (!matchSummary) {
+        return res.status(404).json({ message: "Match summary not found" });
+      }
+      res.json(matchSummary);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get user match history with pagination
+  app.get("/api/user-match-history/:userId", authenticateToken, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const result = await storage.getUserMatchHistory(req.params.userId, page, limit);
+      res.json(result);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get team match history with pagination
+  app.get("/api/team-match-history/:teamId", authenticateToken, async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      
+      const result = await storage.getTeamMatchHistory(req.params.teamId, page, limit);
+      res.json(result);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Create player match history (allow without auth for local matches)
+  app.post("/api/player-match-history", async (req: any, res) => {
+    try {
+      const validatedData = insertPlayerMatchHistorySchema.parse(req.body);
+      const playerHistory = await storage.createPlayerMatchHistory(validatedData);
+      res.status(201).json(playerHistory);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get player histories for a match
+  app.get("/api/player-match-histories/:matchSummaryId", authenticateToken, async (req, res) => {
+    try {
+      const histories = await storage.getPlayerMatchHistories(req.params.matchSummaryId);
+      res.json(histories);
+    } catch (error) {
+      return handleDatabaseError(error, res);
     }
   });
 
