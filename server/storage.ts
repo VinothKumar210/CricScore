@@ -13,6 +13,8 @@ import type {
   LocalMatch,
   MatchSpectator,
   OverHistory,
+  MatchSummary,
+  PlayerMatchHistory,
 } from "@prisma/client";
 import type {
   InsertUser,
@@ -27,6 +29,8 @@ import type {
   InsertLocalMatch,
   InsertMatchSpectator,
   InsertOverHistory,
+  InsertMatchSummary,
+  InsertPlayerMatchHistory,
   ProfileSetup,
 } from "@shared/schema";
 
@@ -100,12 +104,22 @@ export interface IStorage {
   addMatchSpectator(spectator: InsertMatchSpectator): Promise<MatchSpectator>;
   removeMatchSpectator(localMatchId: string, userId: string): Promise<boolean>;
   getMatchSpectators(localMatchId: string): Promise<(MatchSpectator & { user: User })[]>;
-  getPendingNotifications(userId: string): Promise<any[]>;
+  getPendingNotifications(userId: string): Promise<(MatchSpectator & { localMatch: LocalMatch })[]>;
   markNotificationsAsRead(userId: string, matchIds: string[]): Promise<void>;
 
   // Over history operations
   createOverHistory(overHistory: InsertOverHistory): Promise<OverHistory>;
   getOverHistory(localMatchId: string): Promise<OverHistory[]>;
+
+  // Match summary operations
+  createMatchSummary(matchSummary: InsertMatchSummary): Promise<MatchSummary>;
+  getMatchSummary(id: string): Promise<(MatchSummary & { homeTeam: Team | null, awayTeam: Team | null, manOfTheMatchUser: User | null, playerHistory: (PlayerMatchHistory & { user: User, team: Team | null })[] }) | undefined>;
+  getUserMatchHistory(userId: string, page?: number, limit?: number): Promise<{ matches: { matchSummary: MatchSummary & { homeTeam: Team | null, awayTeam: Team | null, manOfTheMatchUser: User | null }, userPerformance: { runsScored: number, ballsFaced: number, wicketsTaken: number, oversBowled: number, isManOfTheMatch: boolean, teamName: string, playerName: string } }[], totalCount: number }>;
+  getTeamMatchHistory(teamId: string, page?: number, limit?: number): Promise<{ matches: (MatchSummary & { homeTeam: Team | null, awayTeam: Team | null, manOfTheMatchUser: User | null, playerHistory: (PlayerMatchHistory & { user: User, team: Team | null })[] })[], totalCount: number }>;
+  
+  // Player match history operations
+  createPlayerMatchHistory(playerHistory: InsertPlayerMatchHistory): Promise<PlayerMatchHistory>;
+  getPlayerMatchHistories(matchSummaryId: string): Promise<(PlayerMatchHistory & { user: User, team: Team | null })[]>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -1326,6 +1340,161 @@ export class PrismaStorage implements IStorage {
       }
     } catch (error) {
       console.error('Error calculating team statistics:', error);
+    }
+  }
+
+  // Match summary operations
+  async createMatchSummary(matchSummary: InsertMatchSummary): Promise<any> {
+    try {
+      const result = await prisma.matchSummary.create({
+        data: matchSummary
+      });
+      return result;
+    } catch (error) {
+      console.error('Error creating match summary:', error);
+      throw error;
+    }
+  }
+
+  async getMatchSummary(id: string): Promise<any | undefined> {
+    try {
+      const matchSummary = await prisma.matchSummary.findUnique({
+        where: { id },
+        include: {
+          homeTeam: true,
+          awayTeam: true,
+          manOfTheMatchUser: true,
+          playerHistory: {
+            include: {
+              user: true,
+              team: true
+            }
+          }
+        }
+      });
+      return matchSummary || undefined;
+    } catch (error) {
+      console.error('Error getting match summary:', error);
+      return undefined;
+    }
+  }
+
+  async getUserMatchHistory(userId: string, page: number = 1, limit: number = 10): Promise<{ matches: any[], totalCount: number }> {
+    try {
+      const skip = (page - 1) * limit;
+      
+      const [matches, totalCount] = await Promise.all([
+        prisma.playerMatchHistory.findMany({
+          where: { userId },
+          include: {
+            matchSummary: {
+              include: {
+                homeTeam: true,
+                awayTeam: true,
+                manOfTheMatchUser: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit
+        }),
+        prisma.playerMatchHistory.count({
+          where: { userId }
+        })
+      ]);
+
+      return {
+        matches: matches.map(m => ({
+          matchSummary: m.matchSummary,
+          userPerformance: {
+            runsScored: m.runsScored,
+            ballsFaced: m.ballsFaced,
+            wicketsTaken: m.wicketsTaken,
+            oversBowled: m.oversBowled,
+            isManOfTheMatch: m.isManOfTheMatch,
+            teamName: m.teamName,
+            playerName: m.playerName
+          }
+        })),
+        totalCount
+      };
+    } catch (error) {
+      console.error('Error getting user match history:', error);
+      return { matches: [], totalCount: 0 };
+    }
+  }
+
+  async getTeamMatchHistory(teamId: string, page: number = 1, limit: number = 10): Promise<{ matches: any[], totalCount: number }> {
+    try {
+      const skip = (page - 1) * limit;
+      
+      const [matches, totalCount] = await Promise.all([
+        prisma.matchSummary.findMany({
+          where: {
+            OR: [
+              { homeTeamId: teamId },
+              { awayTeamId: teamId }
+            ]
+          },
+          include: {
+            homeTeam: true,
+            awayTeam: true,
+            manOfTheMatchUser: true,
+            playerHistory: {
+              include: {
+                user: true,
+                team: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit
+        }),
+        prisma.matchSummary.count({
+          where: {
+            OR: [
+              { homeTeamId: teamId },
+              { awayTeamId: teamId }
+            ]
+          }
+        })
+      ]);
+
+      return { matches, totalCount };
+    } catch (error) {
+      console.error('Error getting team match history:', error);
+      return { matches: [], totalCount: 0 };
+    }
+  }
+
+  // Player match history operations
+  async createPlayerMatchHistory(playerHistory: InsertPlayerMatchHistory): Promise<any> {
+    try {
+      const result = await prisma.playerMatchHistory.create({
+        data: playerHistory
+      });
+      return result;
+    } catch (error) {
+      console.error('Error creating player match history:', error);
+      throw error;
+    }
+  }
+
+  async getPlayerMatchHistories(matchSummaryId: string): Promise<any[]> {
+    try {
+      const histories = await prisma.playerMatchHistory.findMany({
+        where: { matchSummaryId },
+        include: {
+          user: true,
+          team: true
+        }
+      });
+      return histories;
+    } catch (error) {
+      console.error('Error getting player match histories:', error);
+      return [];
     }
   }
 }

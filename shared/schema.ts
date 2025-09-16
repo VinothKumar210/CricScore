@@ -129,7 +129,7 @@ export const insertTeamStatisticsSchema = z.object({
 
 // Frontend form schema for match input
 export const matchFormSchema = insertMatchSchema.omit({ userId: true }).extend({
-  matchDate: z.string(),
+  matchDate: z.string().transform(str => new Date(str)),
 });
 
 // Local match player schema
@@ -176,7 +176,7 @@ export const insertOverHistorySchema = z.object({
 
 // Frontend form schema for local match
 export const localMatchFormSchema = insertLocalMatchSchema.omit({ creatorId: true }).extend({
-  matchDate: z.string(),
+  matchDate: z.string().transform(str => new Date(str)),
 });
 
 // Profile setup schema
@@ -273,8 +273,69 @@ export type InsertMatchSpectator = z.infer<typeof insertMatchSpectatorSchema>;
 export type InsertOverHistory = z.infer<typeof insertOverHistorySchema>;
 export type ProfileSetup = z.infer<typeof profileSetupSchema>;
 export type TeamMatchResults = z.infer<typeof teamMatchResultsSchema>;
+export type InsertMatchSummary = z.infer<typeof insertMatchSummarySchema>;
+export type InsertPlayerMatchHistory = z.infer<typeof insertPlayerMatchHistorySchema>;
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type RegisterRequest = z.infer<typeof registerSchema>;
 
+// Match summary schema - comprehensive match data storage
+export const insertMatchSummarySchema = z.object({
+  id: z.string().optional(), // Will be generated
+  matchDate: z.date(),
+  venue: z.string().min(1),
+  
+  // Team information
+  homeTeamName: z.string().min(1),
+  homeTeamId: z.string().optional(), // null if local team
+  awayTeamName: z.string().min(1),
+  awayTeamId: z.string().optional(), // null if local team
+  
+  // Match result
+  result: z.enum(["HOME_WIN", "AWAY_WIN", "DRAW"]),
+  winningTeam: z.string().min(1),
+  
+  // Innings scores
+  firstInningsTeam: z.string().min(1), // team name
+  firstInningsRuns: z.number().int().min(0),
+  firstInningsWickets: z.number().int().min(0).max(10),
+  firstInningsOvers: z.number().min(0),
+  
+  secondInningsTeam: z.string().min(1), // team name  
+  secondInningsRuns: z.number().int().min(0),
+  secondInningsWickets: z.number().int().min(0).max(10),
+  secondInningsOvers: z.number().min(0),
+  
+  // Match context
+  target: z.number().int().min(0).optional(),
+  totalOvers: z.number().int().min(1).max(50).default(20),
+  
+  // Man of the match
+  manOfTheMatchPlayerName: z.string().optional(),
+  manOfTheMatchUserId: z.string().optional(),
+  manOfTheMatchStats: z.any().optional(), // JSON object of stats
+  
+  // Complete player data (JSON)
+  firstInningsBatsmen: z.any(), // JSON array of batting stats
+  firstInningsBowlers: z.any(), // JSON array of bowling stats
+  secondInningsBatsmen: z.any(), // JSON array of batting stats  
+  secondInningsBowlers: z.any(), // JSON array of bowling stats
+});
+
+// Player match participation schema - links players to match summaries
+export const insertPlayerMatchHistorySchema = z.object({
+  userId: z.string(),
+  matchSummaryId: z.string(),
+  teamName: z.string().min(1), // which team they played for
+  teamId: z.string().optional(), // null if local team
+  playerName: z.string().min(1),
+  
+  // Performance summary
+  runsScored: z.number().int().min(0).default(0),
+  ballsFaced: z.number().int().min(0).default(0),
+  wicketsTaken: z.number().int().min(0).default(0),
+  oversBowled: z.number().min(0).default(0),
+  isManOfTheMatch: z.boolean().default(false),
+});
+
 // Re-export Prisma model types
-export type { User, CareerStats, Team, TeamMember, TeamInvitation, Match, TeamMatch, TeamMatchPlayer, TeamStatistics, LocalMatch, MatchSpectator, OverHistory } from "@prisma/client";
+export type { User, CareerStats, Team, TeamMember, TeamInvitation, Match, TeamMatch, TeamMatchPlayer, TeamStatistics, LocalMatch, MatchSpectator, OverHistory, MatchSummary, PlayerMatchHistory } from "@prisma/client";

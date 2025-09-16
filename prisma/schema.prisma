@@ -41,6 +41,8 @@ model User {
   createdLocalMatches LocalMatch[]
   spectatorOf     MatchSpectator[]
   addedSpectators MatchSpectator[] @relation("SpectatorAddedBy")
+  matchSummariesAsManOfTheMatch MatchSummary[] @relation("MatchSummaryManOfTheMatch")
+  playerMatchHistory PlayerMatchHistory[]
 
   @@map("users")
 }
@@ -94,6 +96,9 @@ model Team {
   teamMatchPlayers TeamMatchPlayer[]
   localMatchesAsMyTeam LocalMatch[] @relation("LocalMatchMyTeam")
   localMatchesAsOpponentTeam LocalMatch[] @relation("LocalMatchOpponentTeam")
+  matchSummariesAsHomeTeam MatchSummary[] @relation("MatchSummaryHomeTeam")
+  matchSummariesAsAwayTeam MatchSummary[] @relation("MatchSummaryAwayTeam")
+  playerMatchHistoryRecords PlayerMatchHistory[] @relation("PlayerMatchHistoryTeam")
 
   @@map("teams")
 }
@@ -351,4 +356,82 @@ enum LocalMatchStatus {
   ONGOING     @map("ongoing")
   COMPLETED   @map("completed")
   CANCELLED   @map("cancelled")
+}
+
+model MatchSummary {
+  id                       String   @id @default(auto()) @map("_id") @db.ObjectId
+  matchDate                DateTime
+  venue                    String
+  
+  // Team information
+  homeTeamName             String
+  homeTeamId               String?  @db.ObjectId
+  awayTeamName             String
+  awayTeamId               String?  @db.ObjectId
+  
+  // Match result
+  result                   MatchResult
+  winningTeam              String
+  
+  // Innings scores
+  firstInningsTeam         String
+  firstInningsRuns         Int
+  firstInningsWickets      Int
+  firstInningsOvers        Float
+  
+  secondInningsTeam        String
+  secondInningsRuns        Int
+  secondInningsWickets     Int
+  secondInningsOvers       Float
+  
+  // Match context
+  target                   Int?
+  totalOvers               Int      @default(20)
+  
+  // Man of the match
+  manOfTheMatchPlayerName  String?
+  manOfTheMatchUserId      String?  @db.ObjectId
+  manOfTheMatchStats       Json?    // Performance stats
+  
+  // Complete player data (JSON)
+  firstInningsBatsmen      Json     // Array of batting stats
+  firstInningsBowlers      Json     // Array of bowling stats
+  secondInningsBatsmen     Json     // Array of batting stats
+  secondInningsBowlers     Json     // Array of bowling stats
+  
+  createdAt                DateTime @default(now())
+  
+  // Relations
+  homeTeam                 Team?    @relation("MatchSummaryHomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam                 Team?    @relation("MatchSummaryAwayTeam", fields: [awayTeamId], references: [id])
+  manOfTheMatchUser        User?    @relation("MatchSummaryManOfTheMatch", fields: [manOfTheMatchUserId], references: [id])
+  playerHistory            PlayerMatchHistory[]
+  
+  @@map("match_summaries")
+}
+
+model PlayerMatchHistory {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  matchSummaryId String   @db.ObjectId
+  teamName       String   // which team they played for
+  teamId         String?  @db.ObjectId
+  playerName     String
+  
+  // Performance summary
+  runsScored       Int    @default(0)
+  ballsFaced       Int    @default(0)
+  wicketsTaken     Int    @default(0)
+  oversBowled      Float  @default(0)
+  isManOfTheMatch  Boolean @default(false)
+  
+  createdAt      DateTime @default(now())
+  
+  // Relations
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchSummary   MatchSummary @relation(fields: [matchSummaryId], references: [id], onDelete: Cascade)
+  team           Team?        @relation("PlayerMatchHistoryTeam", fields: [teamId], references: [id])
+  
+  @@unique([userId, matchSummaryId])
+  @@map("player_match_history")
 }
