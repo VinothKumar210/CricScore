@@ -207,12 +207,21 @@ export default function Statistics() {
               <div>
                 <h3 className="text-lg font-semibold mb-4">Bowling Performance</h3>
                 <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={matches.slice(0, 15).reverse().map((match, index) => ({
-                    match: index + 1,
-                    wickets: match.wicketsTaken,
-                    economy: match.oversBowled > 0 ? (match.runsConceded / match.oversBowled).toFixed(1) : 0,
-                    opponent: match.opponent
-                  }))}>
+                  <BarChart data={matches.slice(0, 15).reverse().map((match, index) => {
+                    // Convert cricket overs to decimal for proper economy calculation
+                    const convertOversToDecimal = (cricketOvers: number): number => {
+                      const wholeOvers = Math.floor(cricketOvers);
+                      const balls = Math.round((cricketOvers - wholeOvers) * 10);
+                      return wholeOvers + (balls / 6);
+                    };
+                    const decimalOvers = match.oversBowled ? convertOversToDecimal(match.oversBowled) : 0;
+                    return {
+                      match: index + 1,
+                      wickets: match.wicketsTaken,
+                      economy: decimalOvers > 0 ? (match.runsConceded / decimalOvers).toFixed(1) : 0,
+                      opponent: match.opponent
+                    };
+                  })}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="match" />
                     <YAxis />

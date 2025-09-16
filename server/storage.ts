@@ -374,6 +374,13 @@ export class PrismaStorage implements IStorage {
     return createdMatch;
   }
 
+  // Helper function to convert cricket overs (e.g., 1.2) to decimal overs (e.g., 1.333)
+  private convertOversToDecimal(cricketOvers: number): number {
+    const wholeOvers = Math.floor(cricketOvers);
+    const balls = Math.round((cricketOvers - wholeOvers) * 10); // Extract the ball count
+    return wholeOvers + (balls / 6);
+  }
+
   async updateCareerStatsFromMatch(userId: string, match: InsertMatch) {
     const stats = await this.getCareerStats(userId);
     if (!stats) return;
@@ -387,7 +394,9 @@ export class PrismaStorage implements IStorage {
     const newCatchesTaken = (stats.catchesTaken || 0) + match.catchesTaken;
 
     const strikeRate = newBallsFaced > 0 ? (newTotalRuns / newBallsFaced) * 100 : 0;
-    const economy = newOversBowled > 0 ? newRunsConceded / newOversBowled : 0;
+    // Convert cricket overs to decimal for proper economy calculation
+    const decimalOversBowled = this.convertOversToDecimal(newOversBowled);
+    const economy = decimalOversBowled > 0 ? newRunsConceded / decimalOversBowled : 0;
 
     await this.updateCareerStats(userId, {
       matchesPlayed: newMatchesPlayed,
