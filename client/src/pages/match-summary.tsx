@@ -275,11 +275,12 @@ export default function MatchSummaryPage() {
             🏏 {inningsTitle} - Batting
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Batsman</TableHead>
+        <CardContent className="overflow-visible">
+          <div className="overflow-x-auto">
+            <Table className="overflow-visible">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Batsman</TableHead>
                 <TableHead className="text-right">Runs</TableHead>
                 <TableHead className="text-right">Balls</TableHead>
                 <TableHead className="text-right">4s</TableHead>
@@ -318,6 +319,7 @@ export default function MatchSummaryPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     );
@@ -348,11 +350,12 @@ export default function MatchSummaryPage() {
             ⚾ {inningsTitle} - Bowling
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Bowler</TableHead>
+        <CardContent className="overflow-visible">
+          <div className="overflow-x-auto">
+            <Table className="overflow-visible">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Bowler</TableHead>
                 <TableHead className="text-right">Overs</TableHead>
                 <TableHead className="text-right">Maidens</TableHead>
                 <TableHead className="text-right">Runs</TableHead>
