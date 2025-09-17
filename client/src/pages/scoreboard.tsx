@@ -1361,13 +1361,13 @@ export default function Scoreboard() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 px-3 font-semibold">Batsman</th>
-                  <th className="text-center py-2 px-3 font-semibold">Runs</th>
-                  <th className="text-center py-2 px-3 font-semibold">Balls</th>
-                  <th className="text-center py-2 px-3 font-semibold">4's</th>
-                  <th className="text-center py-2 px-3 font-semibold">6's</th>
-                  <th className="text-center py-2 px-3 font-semibold">SR</th>
-                  <th className="text-center py-2 px-3 font-semibold">Dismissal</th>
+                  <th className="text-left py-2 px-2 font-semibold">Batsman</th>
+                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">R</th>
+                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">B</th>
+                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">4's</th>
+                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">6's</th>
+                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">SR</th>
+                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">Out</th>
                 </tr>
               </thead>
               <tbody>
@@ -1383,31 +1383,31 @@ export default function Scoreboard() {
                       className={`border-b ${isCurrentBatsman ? 'bg-sky-50 dark:bg-slate-800' : ''}`}
                       data-testid={`batting-stats-${index}`}
                     >
-                      <td className="py-2 px-3">
-                        <div className="flex items-center space-x-2">
-                          <span className={`font-medium ${batsman.player.name.length > 15 ? 'text-sm' : 'text-base'}`}>
+                      <td className="py-2 px-2">
+                        <div className="flex items-center space-x-1">
+                          <span className={`font-medium ${batsman.player.name.length > 15 ? 'text-xs' : 'text-sm'}`}>
                             {batsman.player.name}
                           </span>
                           {isStriker && <Badge variant="default" className="text-xs">*</Badge>}
                           {isNonStriker && !isStriker && <Badge variant="secondary" className="text-xs">•</Badge>}
                         </div>
                       </td>
-                      <td className="text-center py-2 px-3 font-medium" data-testid={`batsman-runs-${index}`}>
+                      <td className="text-center py-2 px-1 font-medium text-sm" data-testid={`batsman-runs-${index}`}>
                         {batsman.runs}
                       </td>
-                      <td className="text-center py-2 px-3" data-testid={`batsman-balls-${index}`}>
+                      <td className="text-center py-2 px-1 text-sm" data-testid={`batsman-balls-${index}`}>
                         {batsman.balls}
                       </td>
-                      <td className="text-center py-2 px-3" data-testid={`batsman-fours-${index}`}>
+                      <td className="text-center py-2 px-1 text-sm" data-testid={`batsman-fours-${index}`}>
                         {batsman.fours}
                       </td>
-                      <td className="text-center py-2 px-3" data-testid={`batsman-sixes-${index}`}>
+                      <td className="text-center py-2 px-1 text-sm" data-testid={`batsman-sixes-${index}`}>
                         {batsman.sixes}
                       </td>
-                      <td className="text-center py-2 px-3" data-testid={`batsman-sr-${index}`}>
+                      <td className="text-center py-2 px-1 text-sm" data-testid={`batsman-sr-${index}`}>
                         {batsman.strikeRate.toFixed(1)}
                       </td>
-                      <td className="text-center py-2 px-3 text-sm" data-testid={`batsman-dismissal-${index}`}>
+                      <td className="text-center py-2 px-1 text-xs" data-testid={`batsman-dismissal-${index}`}>
                         {batsman.isOut ? (
                           <div className="text-red-600 dark:text-red-400">
                             {batsman.dismissalType}
@@ -1427,22 +1427,22 @@ export default function Scoreboard() {
 
                 {/* Extras row */}
                 <tr className="border-b font-medium">
-                  <td className="py-2 px-3">Extras</td>
-                  <td className="text-center py-2 px-3" data-testid="extras-total">
+                  <td className="py-2 px-2 text-sm">Extras</td>
+                  <td className="text-center py-2 px-1 text-sm" data-testid="extras-total">
                     {battingTeamScore.extras.wides + battingTeamScore.extras.noBalls + battingTeamScore.extras.byes + battingTeamScore.extras.legByes}
                   </td>
-                  <td className="text-center py-2 px-3 text-xs" colSpan={5}>
+                  <td className="text-center py-2 px-1 text-xs" colSpan={5}>
                     (W {battingTeamScore.extras.wides}, NB {battingTeamScore.extras.noBalls}, B {battingTeamScore.extras.byes}, LB {battingTeamScore.extras.legByes})
                   </td>
                 </tr>
 
                 {/* Total runs row */}
                 <tr className="border-b font-bold">
-                  <td className="py-2 px-3">Total</td>
-                  <td className="text-center py-2 px-3" data-testid="team-total-runs">
+                  <td className="py-2 px-2 text-sm">Total</td>
+                  <td className="text-center py-2 px-1 text-sm" data-testid="team-total-runs">
                     {battingTeamScore.runs}
                   </td>
-                  <td className="text-center py-2 px-3 text-xs" colSpan={5}>
+                  <td className="text-center py-2 px-1 text-xs" colSpan={5}>
                     ({battingTeamScore.wickets} wkts, {formatOvers(battingTeamScore.balls)} ov)
                   </td>
                 </tr>
@@ -1452,11 +1452,11 @@ export default function Scoreboard() {
                   const yetToBatCount = battingTeamPlayers.length - batsmanStats.length;
                   return yetToBatCount > 0 ? (
                     <tr className="text-muted-foreground">
-                      <td className="py-2 px-3">Yet to bat</td>
-                      <td className="text-center py-2 px-3" data-testid="yet-to-bat-count">
+                      <td className="py-2 px-2 text-sm">Yet to bat</td>
+                      <td className="text-center py-2 px-1 text-sm" data-testid="yet-to-bat-count">
                         {yetToBatCount}
                       </td>
-                      <td className="text-center py-2 px-3 text-xs" colSpan={5}>
+                      <td className="text-center py-2 px-1 text-xs" colSpan={5}>
                         players remaining
                       </td>
                     </tr>
@@ -1478,11 +1478,11 @@ export default function Scoreboard() {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 px-3 font-semibold">Bowler</th>
-                  <th className="text-center py-2 px-3 font-semibold">Overs</th>
-                  <th className="text-center py-2 px-3 font-semibold">Runs</th>
-                  <th className="text-center py-2 px-3 font-semibold">Wickets</th>
-                  <th className="text-center py-2 px-3 font-semibold">Economy</th>
+                  <th className="text-left py-2 px-2 font-semibold">Bowler</th>
+                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">Ov</th>
+                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">R</th>
+                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">W</th>
+                  <th className="text-center py-2 px-1 font-semibold text-xs sm:text-sm">Econ</th>
                 </tr>
               </thead>
               <tbody>
@@ -1495,24 +1495,24 @@ export default function Scoreboard() {
                       className={`border-b ${isCurrentBowler ? 'bg-sky-50 dark:bg-slate-800' : ''}`}
                       data-testid={`bowling-stats-${index}`}
                     >
-                      <td className="py-2 px-3">
-                        <div className="flex items-center space-x-2">
-                          <span className={`font-medium ${bowler.player.name.length > 15 ? 'text-sm' : 'text-base'}`}>
+                      <td className="py-2 px-2">
+                        <div className="flex items-center space-x-1">
+                          <span className={`font-medium ${bowler.player.name.length > 15 ? 'text-xs' : 'text-sm'}`}>
                             {bowler.player.name}
                           </span>
                           {isCurrentBowler && <Badge variant="default" className="text-xs">•</Badge>}
                         </div>
                       </td>
-                      <td className="text-center py-2 px-3 font-medium" data-testid={`bowler-overs-${index}`}>
+                      <td className="text-center py-2 px-1 font-medium text-sm" data-testid={`bowler-overs-${index}`}>
                         {bowler.overs.toFixed(1)}
                       </td>
-                      <td className="text-center py-2 px-3" data-testid={`bowler-runs-${index}`}>
+                      <td className="text-center py-2 px-1 text-sm" data-testid={`bowler-runs-${index}`}>
                         {bowler.runs}
                       </td>
-                      <td className="text-center py-2 px-3" data-testid={`bowler-wickets-${index}`}>
+                      <td className="text-center py-2 px-1 text-sm" data-testid={`bowler-wickets-${index}`}>
                         {bowler.wickets}
                       </td>
-                      <td className="text-center py-2 px-3" data-testid={`bowler-economy-${index}`}>
+                      <td className="text-center py-2 px-1 text-sm" data-testid={`bowler-economy-${index}`}>
                         {bowler.economy.toFixed(2)}
                       </td>
                     </tr>
