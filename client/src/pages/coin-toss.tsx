@@ -201,17 +201,17 @@ export function CoinToss() {
               <h3 className="text-xl font-semibold">
                 {tossWinner === 'user' ? 'Choose Your Preference' : 'Choose Opponent\'s Preference'}
               </h3>
-              <div className="flex gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md mx-auto">
                 <Button 
                   onClick={() => handleBattingChoice('batting')}
-                  className="px-8 py-4 text-lg"
+                  className="w-full sm:w-auto px-4 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
                   data-testid="button-choose-batting"
                 >
                   🏏 Batting First
                 </Button>
                 <Button 
                   onClick={() => handleBattingChoice('bowling')}
-                  className="px-8 py-4 text-lg"
+                  className="w-full sm:w-auto px-4 sm:px-8 py-3 sm:py-4 text-base sm:text-lg"
                   data-testid="button-choose-bowling"
                 >
                   ⚾ Bowling First
@@ -236,12 +236,12 @@ export function CoinToss() {
           )}
 
           {/* Action Buttons */}
-          <div className="flex flex-col space-y-4 w-full max-w-xs">
+          <div className="flex flex-col space-y-4 w-full max-w-sm mx-auto px-4">
             {phase === 'toss' && (
               <Button 
                 onClick={handleToss}
                 disabled={isFlipping}
-                className="w-full py-3 text-lg"
+                className="w-full py-3 text-base sm:text-lg"
                 data-testid="button-toss-coin"
               >
                 {isFlipping ? 'Flipping...' : 'Toss Coin'}
@@ -251,7 +251,7 @@ export function CoinToss() {
             {phase === 'determine-winner' && (
               <Button 
                 onClick={handleShowBattingChoice}
-                className="w-full py-3 text-lg"
+                className="w-full py-3 text-base sm:text-lg"
                 data-testid="button-proceed-to-choice"
               >
                 Proceed to Choice
@@ -272,7 +272,7 @@ export function CoinToss() {
                     localStorage.setItem('matchData', JSON.stringify(matchData));
                     setLocation('/match-scoring');
                   }}
-                  className="w-full py-3 text-lg"
+                  className="w-full py-3 text-base sm:text-lg"
                   data-testid="button-start-match"
                 >
                   Start Match
@@ -280,7 +280,7 @@ export function CoinToss() {
                 <Button 
                   onClick={handleStartOver}
                   variant="outline"
-                  className="w-full"
+                  className="w-full py-2 text-sm sm:text-base"
                   data-testid="button-toss-again"
                 >
                   Toss Again
@@ -293,7 +293,7 @@ export function CoinToss() {
           <Button 
             onClick={() => setLocation('/local-match')}
             variant="ghost"
-            className="mt-4"
+            className="mt-4 text-sm sm:text-base"
             data-testid="button-back-to-setup"
           >
             ← Back to Match Setup
