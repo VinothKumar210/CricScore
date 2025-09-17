@@ -38,9 +38,13 @@ export default function LocalMatch() {
     isValidating: boolean;
     isValid: boolean | null;
     userId?: string;
+    lastValidatedUsername?: string;
   }>>({});
 
-  // Debounced username validation
+  // Track last validated usernames to prevent unnecessary API calls
+  const [lastValidatedUsernames, setLastValidatedUsernames] = useState<Record<string, string>>({});
+
+  // Debounced username validation - only when usernames actually change
   useEffect(() => {
     const validateUsernames = async () => {
       const allPlayers = [...myTeamPlayers, ...opponentTeamPlayers];
@@ -48,16 +52,41 @@ export default function LocalMatch() {
 
       allPlayers.forEach((player, index) => {
         const playerKey = index < 11 ? `my-${index}` : `opp-${index - 11}`;
+        const currentUsername = player.username || '';
+        const lastValidated = lastValidatedUsernames[playerKey] || '';
         
         if (player.hasAccount && player.username && player.username.length >= 3) {
-          const promise = validateUsername(player.username, playerKey);
-          validationPromises.push(promise);
+          // Only validate if username has changed
+          if (currentUsername !== lastValidated) {
+            const promise = validateUsername(player.username, playerKey);
+            validationPromises.push(promise);
+          }
         } else if (player.hasAccount) {
           // Clear validation for empty usernames
-          setUsernameValidation(prev => ({
-            ...prev,
-            [playerKey]: { isValidating: false, isValid: null }
-          }));
+          if (lastValidated !== '') {
+            setUsernameValidation(prev => ({
+              ...prev,
+              [playerKey]: { isValidating: false, isValid: null }
+            }));
+            setLastValidatedUsernames(prev => ({
+              ...prev,
+              [playerKey]: ''
+            }));
+          }
+        } else {
+          // Clear validation when hasAccount is false
+          if (lastValidated !== '') {
+            setUsernameValidation(prev => {
+              const newState = { ...prev };
+              delete newState[playerKey];
+              return newState;
+            });
+            setLastValidatedUsernames(prev => {
+              const newState = { ...prev };
+              delete newState[playerKey];
+              return newState;
+            });
+          }
         }
       });
 
@@ -66,7 +95,7 @@ export default function LocalMatch() {
 
     const timeoutId = setTimeout(validateUsernames, 500); // Debounce for 500ms
     return () => clearTimeout(timeoutId);
-  }, [myTeamPlayers, opponentTeamPlayers]);
+  }, [myTeamPlayers, opponentTeamPlayers, lastValidatedUsernames]);
 
   // Function to validate a single username
   const validateUsername = async (username: string, playerKey: string) => {
@@ -109,10 +138,21 @@ export default function LocalMatch() {
               } else {
                 updateOpponentTeamPlayer(playerIndex, 'userId', result.user.id);
               }
+
+              // Track this username as validated
+              setLastValidatedUsernames(prev => ({
+                ...prev,
+                [playerKey]: username
+              }));
             } else {
               setUsernameValidation(prev => ({
                 ...prev,
                 [playerKey]: { isValidating: false, isValid: true }
+              }));
+              
+              setLastValidatedUsernames(prev => ({
+                ...prev,
+                [playerKey]: username
               }));
             }
           } else {
@@ -120,11 +160,22 @@ export default function LocalMatch() {
               ...prev,
               [playerKey]: { isValidating: false, isValid: true }
             }));
+            
+            setLastValidatedUsernames(prev => ({
+              ...prev,
+              [playerKey]: username
+            }));
           }
         } else {
           setUsernameValidation(prev => ({
             ...prev,
             [playerKey]: { isValidating: false, isValid: false }
+          }));
+          
+          // Track this username as validated (even if invalid)
+          setLastValidatedUsernames(prev => ({
+            ...prev,
+            [playerKey]: username
           }));
         }
       } else {
@@ -132,11 +183,21 @@ export default function LocalMatch() {
           ...prev,
           [playerKey]: { isValidating: false, isValid: false }
         }));
+        
+        setLastValidatedUsernames(prev => ({
+          ...prev,
+          [playerKey]: username
+        }));
       }
     } catch (error) {
       setUsernameValidation(prev => ({
         ...prev,
         [playerKey]: { isValidating: false, isValid: false }
+      }));
+      
+      setLastValidatedUsernames(prev => ({
+        ...prev,
+        [playerKey]: username
       }));
     }
   };
