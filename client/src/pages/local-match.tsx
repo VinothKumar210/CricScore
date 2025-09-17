@@ -12,6 +12,8 @@ import { type LocalPlayer } from "@shared/schema";
 
 export default function LocalMatch() {
   const [, setLocation] = useLocation();
+  const [myTeamName, setMyTeamName] = useState<string>("");
+  const [opponentTeamName, setOpponentTeamName] = useState<string>("");
   const [overs, setOvers] = useState<string>("20");
   const [customOvers, setCustomOvers] = useState<string>("");
   const [maxOversPerBowler, setMaxOversPerBowler] = useState<string>("4");
@@ -403,6 +405,15 @@ export default function LocalMatch() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="mb-4">
+              <Input
+                placeholder="Enter team name"
+                value={myTeamName}
+                onChange={(e) => setMyTeamName(e.target.value)}
+                data-testid="input-my-team-name"
+                className="font-medium"
+              />
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -478,6 +489,15 @@ export default function LocalMatch() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="mb-4">
+              <Input
+                placeholder="Enter team name"
+                value={opponentTeamName}
+                onChange={(e) => setOpponentTeamName(e.target.value)}
+                data-testid="input-opponent-team-name"
+                className="font-medium"
+              />
+            </div>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -550,6 +570,8 @@ export default function LocalMatch() {
             // Store team data and match configuration for coin toss and scoring
             localStorage.setItem('myTeamPlayers', JSON.stringify(myTeamPlayers));
             localStorage.setItem('opponentTeamPlayers', JSON.stringify(opponentTeamPlayers));
+            localStorage.setItem('myTeamName', myTeamName);
+            localStorage.setItem('opponentTeamName', opponentTeamName);
             localStorage.setItem('matchOvers', getCurrentOvers());
             localStorage.setItem('maxOversPerBowler', maxOversPerBowler);
             localStorage.setItem('bowlersAtMaxOvers', bowlersAtMaxOvers);
