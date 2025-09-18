@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft } from 'lucide-react';
 import { type LocalPlayer } from '@shared/schema';
@@ -150,64 +149,55 @@ export default function BowlerSelection() {
   });
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setLocation('/scoreboard')}
-            data-testid="button-back-scoreboard"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-2xl font-bold">
-            {matchState?.currentInnings === 2 && !matchState.currentBowler.name 
-              ? "Select Opening Bowler (Second Innings)"
-              : "Select Next Bowler"}
-          </h1>
-        </div>
+    <div className="min-h-screen bg-background p-4 flex flex-col">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-8">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setLocation('/scoreboard')}
+          data-testid="button-back-scoreboard"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <h1 className="text-3xl font-bold">
+          {matchState?.currentInnings === 2 && !matchState.currentBowler.name 
+            ? "Select Opening Bowler (Second Innings)"
+            : "Select Next Bowler"}
+        </h1>
+      </div>
 
-        {/* Main Content */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {matchState?.currentInnings === 2 && !matchState.currentBowler.name 
-                ? "Select Opening Bowler (Second Innings)"
-                : "Select Next Bowler"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Over completed! Select the next bowler from the bowling team:
-            </p>
-            <ScrollArea className="h-60">
-              <div className="grid gap-2">
-                {availableBowlers.length > 0 ? (
-                  availableBowlers.map((player, index) => (
-                    <Button
-                      key={`${player.name}-${index}`}
-                      onClick={() => selectNewBowler(player)}
-                      variant="outline"
-                      className="justify-start"
-                      data-testid={`button-new-bowler-${index}`}
-                    >
-                      {player.name}
-                    </Button>
-                  ))
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground mb-2">No bowlers available</p>
-                    <p className="text-xs text-muted-foreground">
-                      This can happen due to bowling restrictions. Please check match rules.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+      {/* Main Content */}
+      <div className="space-y-6 flex-1 flex flex-col">
+        <p className="text-lg text-muted-foreground">
+          Over completed! Select the next bowler from the bowling team:
+        </p>
+        <div className="flex-1">
+          <ScrollArea className="h-full">
+            <div className="grid gap-3 w-full grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {availableBowlers.length > 0 ? (
+                availableBowlers.map((player, index) => (
+                  <Button
+                    key={`${player.name}-${index}`}
+                    onClick={() => selectNewBowler(player)}
+                    variant="outline"
+                    className="justify-start h-14 text-lg"
+                    data-testid={`button-new-bowler-${index}`}
+                  >
+                    {player.name}
+                  </Button>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-lg text-muted-foreground mb-3">No bowlers available</p>
+                  <p className="text-sm text-muted-foreground">
+                    This can happen due to bowling restrictions. Please check match rules.
+                  </p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
       </div>
     </div>
   );
