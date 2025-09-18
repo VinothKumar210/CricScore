@@ -152,8 +152,7 @@ export function CoinToss() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center">
-      <div className="container mx-auto p-6 max-w-2xl">
+    <div className="container mx-auto p-6 max-w-2xl">
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Coin Toss</CardTitle>
@@ -478,7 +477,6 @@ export function CoinToss() {
           100% { transform: rotateY(1800deg) rotateX(0deg); }
         }
       `}</style>
-      </div>
     </div>
   );
 }
