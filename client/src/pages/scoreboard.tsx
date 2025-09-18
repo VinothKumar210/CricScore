@@ -1138,8 +1138,10 @@ export default function Scoreboard() {
 
   // Centralized over completion handler
   const handleOverCompletion = (newBalls: number) => {
-    if (newBalls % 6 === 0) {
+    console.log('Over completion check:', { newBalls, modulo: newBalls % 6, matchOvers: matchState?.matchOvers });
+    if (newBalls % 6 === 0 && newBalls > 0) {
       const newOvers = Math.floor(newBalls / 6);
+      console.log('Over completed:', { newOvers, matchOvers: matchState?.matchOvers, canContinue: newOvers < (matchState?.matchOvers || 0) });
       if (matchState && newOvers < matchState.matchOvers) {
         // End of over but innings continues - set previous bowler and show dialog
         if (matchState.currentBowler) {
@@ -1147,14 +1149,11 @@ export default function Scoreboard() {
         }
         
         // Rotate strike only when over is actually completed and balls > 0
-        if (newBalls > 0) {
-          rotateStrike();
-        }
+        rotateStrike();
         
-        // Show bowler selection dialog
-        setTimeout(() => {
-          setShowBowlerDialog(true);
-        }, 500);
+        // Show bowler selection dialog immediately (removed timeout)
+        console.log('Showing bowler selection dialog');
+        setShowBowlerDialog(true);
       }
     }
   };
@@ -1434,7 +1433,10 @@ export default function Scoreboard() {
     handleOverCompletion(battingTeamScore.balls + 1);
     
     // Show dialog to select new batsman
-    setShowBatsmanDialog(true);
+    console.log('Showing batsman selection dialog after wicket');
+    setTimeout(() => {
+      setShowBatsmanDialog(true);
+    }, 100);
     setPendingWicket(dismissalType);
   };
 
@@ -1519,7 +1521,10 @@ export default function Scoreboard() {
     // Clean up and show new batsman dialog
     setShowFielderDialog(false);
     setPendingCaughtDismissal(null);
-    setShowBatsmanDialog(true);
+    console.log('Showing batsman selection dialog after caught wicket');
+    setTimeout(() => {
+      setShowBatsmanDialog(true);
+    }, 100);
     setPendingWicket(pendingCaughtDismissal);
   };
 
