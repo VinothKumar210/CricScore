@@ -155,6 +155,32 @@ export default function Scoreboard() {
       
       setMatchState(initialMatchState);
       
+      // Check if returning from bowler selection page
+      const bowlerSelected = localStorage.getItem('bowlerSelected');
+      const savedCurrentMatchState = localStorage.getItem('currentMatchState');
+      const savedCurrentBowlerStats = localStorage.getItem('currentBowlerStats');
+      
+      if (bowlerSelected && savedCurrentMatchState && savedCurrentBowlerStats) {
+        // Load updated state from bowler selection
+        const updatedMatchState = JSON.parse(savedCurrentMatchState);
+        const updatedBowlerStats = JSON.parse(savedCurrentBowlerStats);
+        
+        setMatchState(updatedMatchState);
+        setBowlerStats(updatedBowlerStats);
+        
+        // Clear the selection flag and temporary state
+        localStorage.removeItem('bowlerSelected');
+        localStorage.removeItem('currentMatchState');
+        localStorage.removeItem('currentBattingTeamScore');
+        localStorage.removeItem('currentBowlerStats');
+        localStorage.removeItem('currentPreviousBowler');
+        
+        // Reset current over display
+        setCurrentOverBalls([]);
+        
+        return; // Skip the normal initialization
+      }
+      
       // Initialize batsman stats
       setBatsmanStats([
         {
@@ -1151,9 +1177,14 @@ export default function Scoreboard() {
           rotateStrike();
         }
         
-        // Show bowler selection dialog
+        // Navigate to bowler selection page
         setTimeout(() => {
-          setShowBowlerDialog(true);
+          // Save current state to localStorage for the bowler selection page
+          localStorage.setItem('currentMatchState', JSON.stringify(matchState));
+          localStorage.setItem('currentBattingTeamScore', JSON.stringify(battingTeamScore));
+          localStorage.setItem('currentBowlerStats', JSON.stringify(bowlerStats));
+          localStorage.setItem('currentPreviousBowler', JSON.stringify(matchState.currentBowler));
+          setLocation('/bowler-selection');
         }, 500);
       }
     }
@@ -1717,7 +1748,12 @@ export default function Scoreboard() {
       
       setShowBatsmanDialog(false);
       // Now need to select opening bowler for second innings
-      setShowBowlerDialog(true);
+      // Save current state to localStorage for the bowler selection page
+      localStorage.setItem('currentMatchState', JSON.stringify(matchState));
+      localStorage.setItem('currentBattingTeamScore', JSON.stringify(battingTeamScore));
+      localStorage.setItem('currentBowlerStats', JSON.stringify(bowlerStats));
+      localStorage.setItem('currentPreviousBowler', JSON.stringify(previousBowler));
+      setLocation('/bowler-selection');
       return;
     }
     
