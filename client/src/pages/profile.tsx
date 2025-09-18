@@ -243,7 +243,7 @@ export default function Profile() {
 
           {/* Profile Card */}
           <Card>
-            <CardHeader className="text-center relative">
+            <CardHeader className="text-center relative pt-16">
               {isOwnProfile && (
                 <div className="absolute top-4 right-4">
                   {!isEditing ? (
