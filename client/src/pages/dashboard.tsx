@@ -40,7 +40,7 @@ export default function Dashboard() {
   }, [user, refetchStats, refetchMatches, refetchTeams, refetchInvitations]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 pb-24">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-primary to-sky-400 rounded-xl p-6 text-primary-foreground">
         <h2 className="text-2xl font-bold mb-2" data-testid="text-welcome">
