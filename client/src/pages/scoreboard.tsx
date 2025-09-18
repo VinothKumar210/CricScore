@@ -182,6 +182,12 @@ export default function Scoreboard() {
           setCurrentOverBalls(JSON.parse(savedCurrentOverBalls));
         }
         
+        // Initialize the ref with the restored balls count to prevent over completion loop
+        if (savedCurrentBattingTeamScore) {
+          const restoredScore = JSON.parse(savedCurrentBattingTeamScore);
+          prevBallsRef.current = restoredScore.balls;
+        }
+        
         // Clear the selection flag and temporary state
         localStorage.removeItem('bowlerSelected');
         localStorage.removeItem('currentMatchState');
