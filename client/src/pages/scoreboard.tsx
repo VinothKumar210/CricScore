@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -231,6 +231,22 @@ export default function Scoreboard() {
       setLocation('/match-scoring');
     }
   }, [setLocation]);
+
+  // Track previous ball count to detect over completion
+  const prevBallsRef = useRef(0);
+  
+  // Watch for over completion after state updates are complete
+  useEffect(() => {
+    // Only check if balls has actually changed and we're not in initial load
+    if (battingTeamScore.balls !== prevBallsRef.current && battingTeamScore.balls > 0) {
+      // Check if current ball count is a multiple of 6 (completed over)
+      if (battingTeamScore.balls % 6 === 0) {
+        handleOverCompletion(battingTeamScore.balls);
+      }
+      // Update the previous count
+      prevBallsRef.current = battingTeamScore.balls;
+    }
+  }, [battingTeamScore.balls]);
 
   if (!matchState) {
     return (
@@ -1241,8 +1257,7 @@ export default function Scoreboard() {
       rotateStrike();
     }
     
-    // Check for end of over using centralized handler
-    handleOverCompletion(battingTeamScore.balls + 1);
+    // Over completion will be handled by useEffect watching battingTeamScore.balls
   };
 
   const handleUndo = () => {
@@ -1476,12 +1491,15 @@ export default function Scoreboard() {
       return stat;
     }));
     
-    // Check for end of over after wicket using centralized handler
-    handleOverCompletion(battingTeamScore.balls + 1);
+    // Over completion will be handled by useEffect watching battingTeamScore.balls
     
-    // Show dialog to select new batsman
-    setShowBatsmanDialog(true);
-    setPendingWicket(dismissalType);
+    // Only show batsman dialog if this is not the last ball of the over
+    // If it's the 6th ball, let over completion handle the flow
+    const willBeLastBall = (battingTeamScore.balls + 1) % 6 === 0;
+    if (!willBeLastBall) {
+      setShowBatsmanDialog(true);
+      setPendingWicket(dismissalType);
+    }
   };
 
   const handleFielderSelection = (fielder: LocalPlayer) => {
@@ -1559,14 +1577,17 @@ export default function Scoreboard() {
       return stat;
     }));
     
-    // Check for end of over after wicket using centralized handler
-    handleOverCompletion(battingTeamScore.balls + 1);
+    // Over completion will be handled by useEffect watching battingTeamScore.balls
     
-    // Clean up and show new batsman dialog
+    // Clean up and show new batsman dialog (only if not last ball of over)
     setShowFielderDialog(false);
     setPendingCaughtDismissal(null);
-    setShowBatsmanDialog(true);
-    setPendingWicket(pendingCaughtDismissal);
+    
+    const willBeLastBall = (battingTeamScore.balls + 1) % 6 === 0;
+    if (!willBeLastBall) {
+      setShowBatsmanDialog(true);
+      setPendingWicket(pendingCaughtDismissal);
+    }
   };
 
   const handleRunOut = (runs: number) => {
@@ -1669,15 +1690,19 @@ export default function Scoreboard() {
       return stat;
     }));
     
-    // Check for end of over after run out using centralized handler  
-    handleOverCompletion(battingTeamScore.balls + 1);
+    // Over completion will be handled by useEffect watching battingTeamScore.balls
     
     // Track which batsman is out for replacement (don't rotate yet)
     setOutBatsmanIsStriker(isStriker);
     setPendingWicket('Run Out');
     
     setShowWhoIsOutDialog(false);
-    setShowBatsmanDialog(true);
+    
+    // Only show batsman dialog if this is not the last ball of the over
+    const willBeLastBall = (battingTeamScore.balls + 1) % 6 === 0;
+    if (!willBeLastBall) {
+      setShowBatsmanDialog(true);
+    }
   };
 
   const selectNewBowler = (newBowler: LocalPlayer) => {
