@@ -2728,7 +2728,7 @@ export default function Scoreboard() {
 
       {/* Innings Transition Dialog */}
       <Dialog open={showInningsTransition} onOpenChange={() => {}}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" aria-describedby="innings-transition-description">
+        <DialogContent className="w-screen h-screen max-w-none max-h-none overflow-y-auto" aria-describedby="innings-transition-description">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">🏏 First Innings Complete!</DialogTitle>
           </DialogHeader>
@@ -2756,7 +2756,7 @@ export default function Scoreboard() {
                   <CardHeader>
                     <CardTitle>First Innings - Batting Scorecard</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="max-h-64 overflow-y-auto">
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse">
                         <thead>
@@ -2820,7 +2820,7 @@ export default function Scoreboard() {
                   <CardHeader>
                     <CardTitle>First Innings - Bowling Scorecard</CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="max-h-64 overflow-y-auto">
                     <div className="overflow-x-auto">
                       <table className="w-full border-collapse">
                         <thead>
