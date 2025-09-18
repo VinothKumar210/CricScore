@@ -213,11 +213,12 @@ export default function Dashboard() {
       {/* Floating Local Match Button */}
       <Button 
         asChild 
-        className="fixed bottom-6 right-6 rounded-full w-16 h-16 shadow-lg hover:shadow-xl transition-shadow z-50" 
+        className="fixed bottom-6 right-6 rounded-lg px-4 py-3 shadow-lg hover:shadow-xl transition-shadow z-50" 
         data-testid="floating-local-match"
       >
-        <Link href="/local-match">
-          <Gamepad className="h-6 w-6" />
+        <Link href="/local-match" className="flex items-center space-x-2">
+          <Gamepad className="h-5 w-5" />
+          <span className="font-medium">Create Match</span>
         </Link>
       </Button>
     </div>
