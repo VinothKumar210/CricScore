@@ -63,6 +63,7 @@ export default function BowlerSelection() {
     const savedMatchState = localStorage.getItem('currentMatchState');
     const savedBattingTeamScore = localStorage.getItem('currentBattingTeamScore');
     const savedBowlerStats = localStorage.getItem('currentBowlerStats');
+    const savedBatsmanStats = localStorage.getItem('currentBatsmanStats');
     const savedPreviousBowler = localStorage.getItem('currentPreviousBowler');
 
     if (savedMatchState) {
