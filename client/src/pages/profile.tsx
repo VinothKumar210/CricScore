@@ -15,7 +15,12 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest, refreshUserStatistics } from "@/lib/queryClient";
 import { profileSetupSchema } from "@shared/schema";
 import { useParams, useLocation } from "wouter";
-import type { User as UserType, CareerStats, Match } from "@shared/schema";
+import type { User as UserType, Match, CareerStats as BaseCareerStats } from "@shared/schema";
+
+// Extended type to include timesOut field for batting average calculation
+type CareerStats = BaseCareerStats & {
+  timesOut?: number;
+};
 
 export default function Profile() {
   const { id } = useParams();
@@ -171,9 +176,9 @@ export default function Profile() {
     const recentMatches = playerMatches.slice(-10); // Last 10 matches
     const totalMatches = playerMatches.length;
 
-    const battingAverage = playerStats.totalRuns && playerStats.matchesPlayed
-      ? (playerStats.totalRuns / playerStats.matchesPlayed).toFixed(2)
-      : '0.00';
+    const battingAverage = playerStats.totalRuns && playerStats.timesOut && playerStats.timesOut > 0
+      ? (playerStats.totalRuns / playerStats.timesOut).toFixed(2)
+      : playerStats.totalRuns > 0 ? 'Not Out' : '0.00';
 
     const strikeRate = playerStats.totalRuns && playerStats.ballsFaced
       ? ((playerStats.totalRuns / playerStats.ballsFaced) * 100).toFixed(2)

@@ -7,6 +7,8 @@ import type {
   TeamMember,
   TeamInvitation,
   Match,
+} from "@prisma/client";
+import type {
   InsertUser,
   InsertCareerStats,
   InsertTeam,
@@ -388,6 +390,7 @@ export class PrismaStorage implements IStorage {
     const newMatchesPlayed = (stats.matchesPlayed || 0) + 1;
     const newTotalRuns = (stats.totalRuns || 0) + match.runsScored;
     const newBallsFaced = (stats.ballsFaced || 0) + match.ballsFaced;
+    const newTimesOut = (stats.timesOut || 0) + (match.wasDismissed ? 1 : 0);
     const newOversBowled = (stats.oversBowled || 0) + match.oversBowled;
     const newRunsConceded = (stats.runsConceded || 0) + match.runsConceded;
     const newWicketsTaken = (stats.wicketsTaken || 0) + match.wicketsTaken;
@@ -403,6 +406,7 @@ export class PrismaStorage implements IStorage {
       totalRuns: newTotalRuns,
       ballsFaced: newBallsFaced,
       strikeRate: parseFloat(strikeRate.toFixed(2)),
+      timesOut: newTimesOut,
       oversBowled: parseFloat(newOversBowled.toFixed(1)),
       runsConceded: newRunsConceded,
       wicketsTaken: newWicketsTaken,

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +25,7 @@ export default function AddMatch() {
       matchDate: new Date().toISOString().split('T')[0],
       runsScored: 0,
       ballsFaced: 0,
+      wasDismissed: false,
       oversBowled: 0,
       runsConceded: 0,
       wicketsTaken: 0,
@@ -158,6 +160,30 @@ export default function AddMatch() {
                             data-testid="input-balls-faced"
                             {...field}
                             onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="mt-4">
+                  <FormField
+                    control={form.control}
+                    name="wasDismissed"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between space-y-0 p-4 border rounded-lg">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Were you dismissed?</FormLabel>
+                          <div className="text-sm text-muted-foreground">
+                            Turn on if you got out in this match (affects batting average calculation)
+                          </div>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-was-dismissed"
                           />
                         </FormControl>
                         <FormMessage />
