@@ -12,6 +12,13 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
 
+  // Get first alphabetic letter from profile name
+  const getProfileInitial = (profileName?: string) => {
+    if (!profileName) return 'P';
+    const firstAlphabetic = profileName.match(/[a-zA-Z]/);
+    return firstAlphabetic ? firstAlphabetic[0].toUpperCase() : 'P';
+  };
+
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Gauge },
     { name: "My Statistics", href: "/statistics", icon: BarChart3 },
@@ -28,7 +35,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         <Link href="/profile" onClick={onNavigate}>
           <div className="flex items-center space-x-3 cursor-pointer hover:bg-accent rounded-md p-2 transition-colors" data-testid="nav-profile">
             <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">C</span>
+              <span className="text-primary-foreground font-bold">{getProfileInitial(user?.profileName)}</span>
             </div>
             <div>
               <h1 className="text-lg font-bold text-foreground">{user?.profileName || 'Player'}</h1>
