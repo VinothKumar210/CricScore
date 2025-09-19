@@ -1,5 +1,6 @@
-import { Menu, X } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 interface MobileHeaderProps {
   isMenuOpen: boolean;
@@ -19,7 +20,15 @@ export function MobileHeader({ isMenuOpen, onMenuToggle }: MobileHeaderProps) {
           {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
         <h1 className="text-lg font-semibold text-foreground">CricketScore Pro</h1>
-        <div className="w-8"></div>
+        <Link href="/profile">
+          <Button
+            variant="ghost"
+            size="sm"
+            data-testid="button-mobile-profile"
+          >
+            <User className="h-5 w-5" />
+          </Button>
+        </Link>
       </div>
     </header>
   );
