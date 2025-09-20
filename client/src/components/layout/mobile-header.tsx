@@ -6,9 +6,10 @@ import { useAuth } from "@/components/auth/auth-context";
 interface MobileHeaderProps {
   isMenuOpen: boolean;
   onMenuToggle: () => void;
+  hasPendingInvitations?: boolean;
 }
 
-export function MobileHeader({ isMenuOpen, onMenuToggle }: MobileHeaderProps) {
+export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }: MobileHeaderProps) {
   const { user } = useAuth();
 
   // Get first alphabetic letter from profile name
@@ -21,14 +22,19 @@ export function MobileHeader({ isMenuOpen, onMenuToggle }: MobileHeaderProps) {
   return (
     <header className="bg-card border-b border-border p-4 lg:hidden">
       <div className="flex items-center justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onMenuToggle}
-          data-testid="button-mobile-menu"
-        >
-          {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </Button>
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onMenuToggle}
+            data-testid="button-mobile-menu"
+          >
+            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+          {hasPendingInvitations && (
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-card" />
+          )}
+        </div>
         <h1 className="text-lg font-semibold text-foreground">CricketScore Pro</h1>
         <Link href="/profile">
           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center cursor-pointer">
