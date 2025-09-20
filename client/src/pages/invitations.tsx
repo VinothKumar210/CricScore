@@ -96,12 +96,12 @@ export default function Invitations() {
 
   if (invitationsLoading || teamsLoading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-muted rounded w-1/3"></div>
-          <div className="space-y-4">
+      <div className="p-4 sm:p-6">
+        <div className="animate-pulse space-y-4 sm:space-y-6">
+          <div className="h-6 sm:h-8 bg-muted rounded w-1/2 sm:w-1/3"></div>
+          <div className="space-y-3 sm:space-y-4">
             {[1, 2].map((i) => (
-              <div key={i} className="h-32 bg-muted rounded"></div>
+              <div key={i} className="h-24 sm:h-32 bg-muted rounded"></div>
             ))}
           </div>
         </div>
@@ -112,8 +112,8 @@ export default function Invitations() {
   const captainTeams = teams?.filter((team: Team) => team.captainId === team.captainId) || [];
 
   return (
-    <div className="p-6 space-y-6">
-      <h2 className="text-2xl font-bold text-foreground" data-testid="title-invitations">
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-foreground" data-testid="title-invitations">
         Team Invitations
       </h2>
       
@@ -135,29 +135,34 @@ export default function Invitations() {
                 invitations.map((invite: any) => (
                   <div
                     key={invite.id}
-                    className="flex items-center justify-between p-4 bg-muted/30 rounded-lg"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-muted/30 rounded-lg space-y-3 sm:space-y-0"
                     data-testid={`invitation-${invite.id}`}
                   >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                         <Users className="text-primary-foreground text-sm" />
                       </div>
-                      <div>
-                        <p className="font-medium text-foreground">{invite.team.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Invited by @{invite.inviter.username} • {new Date(invite.createdAt).toLocaleDateString()}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-foreground truncate">{invite.team.name}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
+                          Invited by @{invite.inviter.username}
+                        </p>
+                        <p className="text-xs text-muted-foreground sm:hidden">
+                          {new Date(invite.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 sm:flex-shrink-0">
                       <Button
                         size="sm"
                         onClick={() => acceptInvitation(invite.id)}
                         disabled={respondToInviteMutation.isPending}
                         data-testid={`button-accept-${invite.id}`}
+                        className="flex-1 sm:flex-none"
                       >
                         <Check className="mr-1 h-4 w-4" />
-                        Accept
+                        <span className="hidden xs:inline">Accept</span>
+                        <span className="xs:hidden">✓</span>
                       </Button>
                       <Button
                         size="sm"
@@ -165,9 +170,11 @@ export default function Invitations() {
                         onClick={() => rejectInvitation(invite.id)}
                         disabled={respondToInviteMutation.isPending}
                         data-testid={`button-reject-${invite.id}`}
+                        className="flex-1 sm:flex-none"
                       >
                         <X className="mr-1 h-4 w-4" />
-                        Decline
+                        <span className="hidden xs:inline">Decline</span>
+                        <span className="xs:hidden">✕</span>
                       </Button>
                     </div>
                   </div>
@@ -197,7 +204,7 @@ export default function Invitations() {
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="teamId"
