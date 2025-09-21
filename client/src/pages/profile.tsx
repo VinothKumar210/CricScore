@@ -331,7 +331,7 @@ export default function Profile() {
                 </div>
               )}
               <div 
-                className={`mx-auto w-20 h-20 bg-primary rounded-full flex items-center justify-center mb-4 overflow-hidden ${
+                className={`relative mx-auto w-20 h-20 bg-primary rounded-full flex items-center justify-center mb-4 overflow-hidden ${
                   isOwnProfile && isEditing ? "cursor-pointer hover:opacity-80 transition-opacity" : ""
                 }`}
                 onClick={handleProfilePictureClick}
@@ -348,7 +348,7 @@ export default function Profile() {
                   <User className="w-10 h-10 text-primary-foreground" />
                 )}
                 {isOwnProfile && isEditing && (
-                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
                     <Camera className="w-6 h-6 text-white" />
                   </div>
                 )}
