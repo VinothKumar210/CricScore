@@ -36,7 +36,8 @@ export interface IStorage {
   
   // Team operations
   getTeam(id: string): Promise<Team | undefined>;
-  getTeamsByUser(userId: string): Promise<Team[]>;
+  getTeamsByUser(userId: string): Promise<(Team & { captain: User, viceCaptain?: User })[]>;
+  searchTeams(query: string): Promise<(Team & { captain: User, viceCaptain?: User })[]>;
   createTeam(team: InsertTeam): Promise<Team>;
   updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined>;
   deleteTeam(id: string): Promise<boolean>;
@@ -194,7 +195,7 @@ export class PrismaStorage implements IStorage {
     }
   }
 
-  async getTeamsByUser(userId: string): Promise<Team[]> {
+  async getTeamsByUser(userId: string): Promise<(Team & { captain: User, viceCaptain?: User })[]> {
     try {
       const teams = await prisma.team.findMany({
         where: {
@@ -207,9 +208,86 @@ export class PrismaStorage implements IStorage {
               }
             }
           ]
+        },
+        include: {
+          captain: {
+            select: {
+              id: true,
+              username: true,
+              profileName: true,
+              email: true,
+              description: true,
+              role: true,
+              battingHand: true,
+              bowlingStyle: true,
+              profileComplete: true,
+              createdAt: true
+            }
+          },
+          viceCaptain: {
+            select: {
+              id: true,
+              username: true,
+              profileName: true,
+              email: true,
+              description: true,
+              role: true,
+              battingHand: true,
+              bowlingStyle: true,
+              profileComplete: true,
+              createdAt: true
+            }
+          }
         }
       });
-      return teams;
+      return teams as (Team & { captain: User, viceCaptain?: User })[];
+    } catch {
+      return [];
+    }
+  }
+
+  async searchTeams(query: string): Promise<(Team & { captain: User, viceCaptain?: User })[]> {
+    try {
+      const teams = await prisma.team.findMany({
+        where: {
+          name: {
+            contains: query,
+            mode: 'insensitive'
+          }
+        },
+        include: {
+          captain: {
+            select: {
+              id: true,
+              username: true,
+              profileName: true,
+              email: true,
+              description: true,
+              role: true,
+              battingHand: true,
+              bowlingStyle: true,
+              profileComplete: true,
+              createdAt: true
+            }
+          },
+          viceCaptain: {
+            select: {
+              id: true,
+              username: true,
+              profileName: true,
+              email: true,
+              description: true,
+              role: true,
+              battingHand: true,
+              bowlingStyle: true,
+              profileComplete: true,
+              createdAt: true
+            }
+          }
+        },
+        take: 20
+      });
+      return teams as (Team & { captain: User, viceCaptain?: User })[];
     } catch {
       return [];
     }

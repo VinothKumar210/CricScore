@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,13 +8,20 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, AlertTriangle, Clock, Check, X, Loader2, ArrowLeft } from "lucide-react";
-import { type LocalPlayer } from "@shared/schema";
+import { Users, AlertTriangle, Clock, Check, X, Loader2, ArrowLeft, Search, Crown } from "lucide-react";
+import { type LocalPlayer, type Team, type User } from "@shared/schema";
+import { useAuth } from "@/components/auth/auth-context";
 
 export default function LocalMatch() {
+  const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [myTeamName, setMyTeamName] = useState<string>("");
   const [opponentTeamName, setOpponentTeamName] = useState<string>("");
+  const [selectedMyTeam, setSelectedMyTeam] = useState<string>("");
+  const [selectedOpponentTeam, setSelectedOpponentTeam] = useState<string>("");
+  const [opponentTeamSearch, setOpponentTeamSearch] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<(Team & { captain: User, viceCaptain?: User })[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [overs, setOvers] = useState<string>("20");
   const [customOvers, setCustomOvers] = useState<string>("");
   const [maxOversPerBowler, setMaxOversPerBowler] = useState<string>("4");
@@ -45,6 +53,34 @@ export default function LocalMatch() {
 
   // Track last validated usernames to prevent unnecessary API calls
   const [lastValidatedUsernames, setLastValidatedUsernames] = useState<Record<string, string>>({});
+
+  // Fetch user's teams for "My Team" dropdown
+  const { data: userTeams, isLoading: userTeamsLoading } = useQuery<(Team & { captain: User, viceCaptain?: User })[]>({
+    queryKey: ["/api/teams"],
+  });
+
+  // Search teams mutation for opponent team search
+  const searchTeamsMutation = useMutation({
+    mutationFn: async (query: string) => {
+      const response = await fetch(`/api/teams/search?q=${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to search teams');
+      }
+      return response.json();
+    },
+    onSuccess: (results: (Team & { captain: User, viceCaptain?: User })[]) => {
+      setSearchResults(results);
+      setIsSearching(false);
+    },
+    onError: () => {
+      setSearchResults([]);
+      setIsSearching(false);
+    },
+  });
 
   // Debounced username validation - only when usernames actually change
   useEffect(() => {
@@ -98,6 +134,82 @@ export default function LocalMatch() {
     const timeoutId = setTimeout(validateUsernames, 500); // Debounce for 500ms
     return () => clearTimeout(timeoutId);
   }, [myTeamPlayers, opponentTeamPlayers, lastValidatedUsernames]);
+
+  // Debounced opponent team search
+  useEffect(() => {
+    if (opponentTeamSearch.trim().length >= 2) {
+      setIsSearching(true);
+      const timeoutId = setTimeout(() => {
+        searchTeamsMutation.mutate(opponentTeamSearch);
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSearchResults([]);
+      setIsSearching(false);
+    }
+  }, [opponentTeamSearch]);
+
+  // Fetch team members and populate player list
+  const populateTeamPlayers = async (teamId: string, isMyTeam: boolean) => {
+    try {
+      const response = await fetch(`/api/teams/${teamId}/members`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      
+      if (response.ok) {
+        const members = await response.json();
+        const populatedPlayers = members.slice(0, 11).map((member: any, index: number) => ({
+          name: member.profileName || member.username || `Player ${index + 1}`,
+          hasAccount: true,
+          username: member.username,
+          userId: member.id,
+        }));
+        
+        // Fill remaining slots with empty players
+        const remainingSlots = 11 - populatedPlayers.length;
+        const emptyPlayers = Array(remainingSlots).fill(null).map(() => ({
+          name: "",
+          hasAccount: false,
+          username: undefined,
+          userId: undefined,
+        }));
+        
+        const finalPlayersList = [...populatedPlayers, ...emptyPlayers];
+        
+        if (isMyTeam) {
+          setMyTeamPlayers(finalPlayersList);
+        } else {
+          setOpponentTeamPlayers(finalPlayersList);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching team members:', error);
+    }
+  };
+
+  // Handle My Team selection
+  const handleMyTeamSelect = (teamId: string) => {
+    setSelectedMyTeam(teamId);
+    const selectedTeam = userTeams?.find(team => team.id === teamId);
+    if (selectedTeam) {
+      setMyTeamName(selectedTeam.name);
+      populateTeamPlayers(teamId, true);
+    }
+  };
+
+  // Handle Opponent Team selection
+  const handleOpponentTeamSelect = (teamId: string) => {
+    setSelectedOpponentTeam(teamId);
+    const selectedTeam = searchResults.find(team => team.id === teamId);
+    if (selectedTeam) {
+      setOpponentTeamName(selectedTeam.name);
+      setOpponentTeamSearch("");
+      setSearchResults([]);
+      populateTeamPlayers(teamId, false);
+    }
+  };
 
   // Function to validate a single username
   const validateUsername = async (username: string, playerKey: string) => {
@@ -417,13 +529,69 @@ export default function LocalMatch() {
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <Input
-                placeholder="Enter team name"
-                value={myTeamName}
-                onChange={(e) => setMyTeamName(e.target.value)}
-                data-testid="input-my-team-name"
-                className="font-medium"
-              />
+              <Select value={selectedMyTeam} onValueChange={handleMyTeamSelect}>
+                <SelectTrigger data-testid="select-my-team">
+                  <SelectValue placeholder={selectedMyTeam ? myTeamName : "Select from your teams"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {userTeamsLoading ? (
+                    <div className="p-2 text-center text-sm text-muted-foreground">
+                      Loading teams...
+                    </div>
+                  ) : userTeams && userTeams.length > 0 ? (
+                    userTeams.map((team) => (
+                      <SelectItem key={team.id} value={team.id} data-testid={`option-my-team-${team.id}`}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{team.name}</span>
+                          <span className="text-xs text-muted-foreground flex items-center">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Captain: {team.captain.profileName || team.captain.username}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-center text-sm text-muted-foreground">
+                      No teams found. Create a team first.
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              
+              {/* Selected team display or manual input */}
+              {selectedMyTeam ? (
+                <div className="p-2 bg-muted rounded-md mt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">Selected: {myTeamName}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedMyTeam("");
+                        setMyTeamName("");
+                        // Clear all players when switching teams
+                        setMyTeamPlayers(Array(11).fill(null).map(() => ({
+                          name: "",
+                          hasAccount: false,
+                          username: undefined,
+                          userId: undefined,
+                        })));
+                      }}
+                      data-testid="button-clear-my-team"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Input
+                  placeholder="Or enter custom team name"
+                  value={myTeamName}
+                  onChange={(e) => setMyTeamName(e.target.value)}
+                  data-testid="input-my-team-name-custom"
+                  className="font-medium mt-2"
+                />
+              )}
             </div>
             <Table>
               <TableHeader>
@@ -500,14 +668,96 @@ export default function LocalMatch() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-4">
-              <Input
-                placeholder="Enter team name"
-                value={opponentTeamName}
-                onChange={(e) => setOpponentTeamName(e.target.value)}
-                data-testid="input-opponent-team-name"
-                className="font-medium"
-              />
+            <div className="mb-4 space-y-2">
+              <div className="relative">
+                <div className="relative">
+                  <Input
+                    placeholder="Search for opponent team..."
+                    value={opponentTeamSearch}
+                    onChange={(e) => {
+                      setOpponentTeamSearch(e.target.value);
+                      if (!e.target.value) {
+                        setSelectedOpponentTeam("");
+                        setOpponentTeamName("");
+                      }
+                    }}
+                    data-testid="input-opponent-team-search"
+                    className="font-medium pr-8"
+                  />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                </div>
+              
+                {/* Search Results Dropdown */}
+                {(opponentTeamSearch.trim().length >= 2 && (isSearching || searchResults.length > 0)) && (
+                  <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
+                    {isSearching ? (
+                      <div className="p-3 text-center text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" />
+                        Searching teams...
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="py-1">
+                        {searchResults.map((team) => (
+                          <div
+                            key={team.id}
+                            onClick={() => handleOpponentTeamSelect(team.id)}
+                            className="px-3 py-2 cursor-pointer hover:bg-muted transition-colors"
+                            data-testid={`option-opponent-team-${team.id}`}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">{team.name}</span>
+                              <span className="text-xs text-muted-foreground flex items-center">
+                                <Crown className="h-3 w-3 mr-1" />
+                                Captain: {team.captain.profileName || team.captain.username}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-3 text-center text-sm text-muted-foreground">
+                        No teams found matching "{opponentTeamSearch}"
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {/* Selected team display or manual input */}
+              {selectedOpponentTeam ? (
+                <div className="p-2 bg-muted rounded-md">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">Selected: {opponentTeamName}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedOpponentTeam("");
+                        setOpponentTeamName("");
+                        setOpponentTeamSearch("");
+                        // Clear all players when switching teams
+                        setOpponentTeamPlayers(Array(11).fill(null).map(() => ({
+                          name: "",
+                          hasAccount: false,
+                          username: undefined,
+                          userId: undefined,
+                        })));
+                      }}
+                      data-testid="button-clear-opponent-team"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : !opponentTeamSearch && (
+                <Input
+                  placeholder="Or enter custom team name"
+                  value={opponentTeamName}
+                  onChange={(e) => setOpponentTeamName(e.target.value)}
+                  data-testid="input-opponent-team-name-custom"
+                  className="font-medium"
+                />
+              )}
             </div>
             <Table>
               <TableHeader>
