@@ -185,31 +185,33 @@ export default function SearchPlayers() {
                           {suggestions.slice(0, 10).map((user, index) => (
                             <div
                               key={user.id}
-                              className={`px-3 py-2 cursor-pointer hover:bg-accent transition-colors ${
+                              className={`px-3 py-3 cursor-pointer hover:bg-accent transition-colors ${
                                 activeSuggestion === index ? 'bg-accent' : ''
                               }`}
                               onClick={() => selectSuggestion(user)}
                               data-testid={`suggestion-${user.id}`}
                             >
                               <div className="flex items-center space-x-3">
-                                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                                   <span className="text-primary-foreground text-sm font-medium">
                                     {user.username?.charAt(0).toUpperCase()}
                                   </span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm truncate">
+                                  <p className="font-medium text-sm truncate leading-tight">
                                     {user.profileName || user.username}
                                   </p>
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    @{user.username}
-                                  </p>
+                                  <div className="flex items-center justify-between mt-1">
+                                    <p className="text-xs text-muted-foreground truncate flex-1 min-w-0 mr-2">
+                                      @{user.username}
+                                    </p>
+                                    {user.role && (
+                                      <Badge variant="outline" className="text-xs py-0 px-2 h-5 flex-shrink-0">
+                                        {formatRole(user.role)}
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
-                                {user.role && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {formatRole(user.role)}
-                                  </Badge>
-                                )}
                               </div>
                             </div>
                           ))}
