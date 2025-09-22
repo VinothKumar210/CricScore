@@ -22,6 +22,12 @@ export default function LocalMatch() {
   const [opponentTeamSearch, setOpponentTeamSearch] = useState<string>("");
   const [searchResults, setSearchResults] = useState<(Team & { captain: User, viceCaptain?: User })[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Team member selection states
+  const [myTeamMembers, setMyTeamMembers] = useState<any[]>([]);
+  const [opponentTeamMembers, setOpponentTeamMembers] = useState<any[]>([]);
+  const [selectedMyTeamMembers, setSelectedMyTeamMembers] = useState<string[]>([]);
+  const [selectedOpponentTeamMembers, setSelectedOpponentTeamMembers] = useState<string[]>([]);
   const [overs, setOvers] = useState<string>("20");
   const [customOvers, setCustomOvers] = useState<string>("");
   const [maxOversPerBowler, setMaxOversPerBowler] = useState<string>("4");
@@ -149,8 +155,8 @@ export default function LocalMatch() {
     }
   }, [opponentTeamSearch]);
 
-  // Fetch team members and populate player list
-  const populateTeamPlayers = async (teamId: string, isMyTeam: boolean) => {
+  // Fetch team members for selection
+  const fetchTeamMembers = async (teamId: string, isMyTeam: boolean) => {
     try {
       const response = await fetch(`/api/teams/${teamId}/members`, {
         headers: {
@@ -160,28 +166,26 @@ export default function LocalMatch() {
       
       if (response.ok) {
         const members = await response.json();
-        const populatedPlayers = members.slice(0, 11).map((member: any, index: number) => ({
-          name: member.profileName || member.username || `Player ${index + 1}`,
-          hasAccount: true,
-          username: member.username,
-          userId: member.id,
-        }));
-        
-        // Fill remaining slots with empty players
-        const remainingSlots = 11 - populatedPlayers.length;
-        const emptyPlayers = Array(remainingSlots).fill(null).map(() => ({
-          name: "",
-          hasAccount: false,
-          username: undefined,
-          userId: undefined,
-        }));
-        
-        const finalPlayersList = [...populatedPlayers, ...emptyPlayers];
-        
         if (isMyTeam) {
-          setMyTeamPlayers(finalPlayersList);
+          setMyTeamMembers(members);
+          setSelectedMyTeamMembers([]);
+          // Clear playing XI table
+          setMyTeamPlayers(Array(11).fill(null).map(() => ({
+            name: "",
+            hasAccount: false,
+            username: undefined,
+            userId: undefined,
+          })));
         } else {
-          setOpponentTeamPlayers(finalPlayersList);
+          setOpponentTeamMembers(members);
+          setSelectedOpponentTeamMembers([]);
+          // Clear playing XI table
+          setOpponentTeamPlayers(Array(11).fill(null).map(() => ({
+            name: "",
+            hasAccount: false,
+            username: undefined,
+            userId: undefined,
+          })));
         }
       }
     } catch (error) {
@@ -195,7 +199,7 @@ export default function LocalMatch() {
     const selectedTeam = userTeams?.find(team => team.id === teamId);
     if (selectedTeam) {
       setMyTeamName(selectedTeam.name);
-      populateTeamPlayers(teamId, true);
+      fetchTeamMembers(teamId, true);
     }
   };
 
@@ -207,9 +211,91 @@ export default function LocalMatch() {
       setOpponentTeamName(selectedTeam.name);
       setOpponentTeamSearch("");
       setSearchResults([]);
-      populateTeamPlayers(teamId, false);
+      fetchTeamMembers(teamId, false);
     }
   };
+
+  // Handle player selection for playing XI
+  const togglePlayerSelection = (playerId: string, isMyTeam: boolean) => {
+    if (isMyTeam) {
+      const currentSelection = selectedMyTeamMembers;
+      const isSelected = currentSelection.includes(playerId);
+      
+      if (isSelected) {
+        // Remove player from selection
+        setSelectedMyTeamMembers(currentSelection.filter(id => id !== playerId));
+      } else {
+        // Add player to selection (max 11)
+        if (currentSelection.length < 11) {
+          setSelectedMyTeamMembers([...currentSelection, playerId]);
+        }
+      }
+    } else {
+      const currentSelection = selectedOpponentTeamMembers;
+      const isSelected = currentSelection.includes(playerId);
+      
+      if (isSelected) {
+        // Remove player from selection
+        setSelectedOpponentTeamMembers(currentSelection.filter(id => id !== playerId));
+      } else {
+        // Add player to selection (max 11)
+        if (currentSelection.length < 11) {
+          setSelectedOpponentTeamMembers([...currentSelection, playerId]);
+        }
+      }
+    }
+  };
+
+  // Update playing XI when selections change
+  useEffect(() => {
+    if (selectedMyTeam && myTeamMembers.length > 0) {
+      const selectedPlayers = selectedMyTeamMembers.map(playerId => {
+        const member = myTeamMembers.find(m => m.id === playerId);
+        return {
+          name: member?.profileName || member?.username || '',
+          hasAccount: true,
+          username: member?.username,
+          userId: member?.id,
+        };
+      });
+      
+      // Fill remaining slots with empty players
+      const emptySlots = 11 - selectedPlayers.length;
+      const emptyPlayers = Array(emptySlots).fill(null).map(() => ({
+        name: "",
+        hasAccount: false,
+        username: undefined,
+        userId: undefined,
+      }));
+      
+      setMyTeamPlayers([...selectedPlayers, ...emptyPlayers]);
+    }
+  }, [selectedMyTeamMembers, myTeamMembers, selectedMyTeam]);
+
+  useEffect(() => {
+    if (selectedOpponentTeam && opponentTeamMembers.length > 0) {
+      const selectedPlayers = selectedOpponentTeamMembers.map(playerId => {
+        const member = opponentTeamMembers.find(m => m.id === playerId);
+        return {
+          name: member?.profileName || member?.username || '',
+          hasAccount: true,
+          username: member?.username,
+          userId: member?.id,
+        };
+      });
+      
+      // Fill remaining slots with empty players
+      const emptySlots = 11 - selectedPlayers.length;
+      const emptyPlayers = Array(emptySlots).fill(null).map(() => ({
+        name: "",
+        hasAccount: false,
+        username: undefined,
+        userId: undefined,
+      }));
+      
+      setOpponentTeamPlayers([...selectedPlayers, ...emptyPlayers]);
+    }
+  }, [selectedOpponentTeamMembers, opponentTeamMembers, selectedOpponentTeam]);
 
   // Function to validate a single username
   const validateUsername = async (username: string, playerKey: string) => {
@@ -569,7 +655,9 @@ export default function LocalMatch() {
                       onClick={() => {
                         setSelectedMyTeam("");
                         setMyTeamName("");
-                        // Clear all players when switching teams
+                        // Clear team members and selection
+                        setMyTeamMembers([]);
+                        setSelectedMyTeamMembers([]);
                         setMyTeamPlayers(Array(11).fill(null).map(() => ({
                           name: "",
                           hasAccount: false,
@@ -593,6 +681,63 @@ export default function LocalMatch() {
                 />
               )}
             </div>
+            
+            {/* Player Selection Interface */}
+            {selectedMyTeam && myTeamMembers.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium">Select Playing XI ({selectedMyTeamMembers.length}/11)</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedMyTeamMembers([])}
+                    disabled={selectedMyTeamMembers.length === 0}
+                    data-testid="button-clear-my-team-selection"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {myTeamMembers.map((member) => {
+                    const isSelected = selectedMyTeamMembers.includes(member.id);
+                    const canSelect = selectedMyTeamMembers.length < 11;
+                    
+                    return (
+                      <div
+                        key={member.id}
+                        onClick={() => togglePlayerSelection(member.id, true)}
+                        className={`
+                          p-2 rounded-lg border cursor-pointer transition-all
+                          ${isSelected 
+                            ? 'bg-green-100 dark:bg-green-900/20 border-green-500 text-green-800 dark:text-green-200' 
+                            : canSelect 
+                              ? 'bg-background border-border hover:bg-muted hover:border-muted-foreground' 
+                              : 'bg-muted/50 border-muted text-muted-foreground cursor-not-allowed'
+                          }
+                        `}
+                        data-testid={`player-card-my-${member.id}`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-green-500' : 'bg-muted-foreground'}`}></div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {member.profileName || member.username}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              @{member.username}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Click on player cards to select them for your playing XI
+                </div>
+              </div>
+            )}
+            
             <Table>
               <TableHeader>
                 <TableRow>
@@ -735,7 +880,9 @@ export default function LocalMatch() {
                         setSelectedOpponentTeam("");
                         setOpponentTeamName("");
                         setOpponentTeamSearch("");
-                        // Clear all players when switching teams
+                        // Clear team members and selection
+                        setOpponentTeamMembers([]);
+                        setSelectedOpponentTeamMembers([]);
                         setOpponentTeamPlayers(Array(11).fill(null).map(() => ({
                           name: "",
                           hasAccount: false,
@@ -759,6 +906,63 @@ export default function LocalMatch() {
                 />
               )}
             </div>
+            
+            {/* Player Selection Interface */}
+            {selectedOpponentTeam && opponentTeamMembers.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium">Select Playing XI ({selectedOpponentTeamMembers.length}/11)</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedOpponentTeamMembers([])}
+                    disabled={selectedOpponentTeamMembers.length === 0}
+                    data-testid="button-clear-opponent-team-selection"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {opponentTeamMembers.map((member) => {
+                    const isSelected = selectedOpponentTeamMembers.includes(member.id);
+                    const canSelect = selectedOpponentTeamMembers.length < 11;
+                    
+                    return (
+                      <div
+                        key={member.id}
+                        onClick={() => togglePlayerSelection(member.id, false)}
+                        className={`
+                          p-2 rounded-lg border cursor-pointer transition-all
+                          ${isSelected 
+                            ? 'bg-red-100 dark:bg-red-900/20 border-red-500 text-red-800 dark:text-red-200' 
+                            : canSelect 
+                              ? 'bg-background border-border hover:bg-muted hover:border-muted-foreground' 
+                              : 'bg-muted/50 border-muted text-muted-foreground cursor-not-allowed'
+                          }
+                        `}
+                        data-testid={`player-card-opponent-${member.id}`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-red-500' : 'bg-muted-foreground'}`}></div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {member.profileName || member.username}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              @{member.username}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Click on player cards to select them for the playing XI
+                </div>
+              </div>
+            )}
+            
             <Table>
               <TableHeader>
                 <TableRow>
