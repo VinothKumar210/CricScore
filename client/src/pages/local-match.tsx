@@ -480,7 +480,7 @@ export default function LocalMatch() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h2 className="text-2xl font-bold text-foreground" data-testid="title-local-match">
-            Local Match - Select Playing XI
+            Create Match
           </h2>
         </div>
         <p className="text-muted-foreground mt-2">
