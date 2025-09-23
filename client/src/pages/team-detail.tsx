@@ -359,26 +359,26 @@ export default function TeamDetail() {
     return (
       <div
         key={member.id}
-        className="flex items-center justify-between p-4 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
+        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors space-y-3 sm:space-y-0"
         data-testid={`member-${member.id}`}
         onClick={() => setLocation(`/player/${member.id}`)}
       >
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+        <div className="flex items-center space-x-3 min-w-0 flex-1">
+          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shrink-0">
             <span className="text-primary-foreground font-medium">
               {member.username?.charAt(0).toUpperCase()}
             </span>
           </div>
-          <div>
-            <p className="font-medium text-foreground">
+          <div className="min-w-0 flex-1">
+            <p className="font-medium text-foreground truncate">
               {member.profileName || member.username}
             </p>
-            <div className="flex items-center space-x-2">
-              <p className="text-sm text-muted-foreground">
+            <div className="flex items-center space-x-2 mt-1">
+              <p className="text-sm text-muted-foreground truncate">
                 @{member.username}
               </p>
               {member.role && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs shrink-0">
                   {member.role}
                 </Badge>
               )}
@@ -386,7 +386,7 @@ export default function TeamDetail() {
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:gap-0">
           {/* Role badges */}
           {isMemberCaptain && (
             <Badge variant="default" className="flex items-center space-x-1">
