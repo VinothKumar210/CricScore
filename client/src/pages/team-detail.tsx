@@ -517,12 +517,12 @@ export default function TeamDetail() {
             <AlertDialogTrigger asChild>
               <Button
                 variant="destructive"
-                size="xs"
+                size="sm"
                 data-testid="button-delete-team"
               >
-                <Trash2 className="mr-1 h-3 w-3" />
-                <span className="hidden sm:inline">Delete</span>
-                <span className="sm:hidden">×</span>
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">Delete Team</span>
+                <span className="sm:hidden">Delete</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
