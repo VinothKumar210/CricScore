@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { apiRequest } from "@/lib/queryClient";
-import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search, Trash2 } from "lucide-react";
+import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search, Trash2, Edit } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Team, User } from "@shared/schema";
@@ -31,6 +33,8 @@ export default function TeamDetail() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchError, setSearchError] = useState<string>("");
   const [referrerPage, setReferrerPage] = useState<string>("/dashboard");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ name: "", description: "" });
 
   // Detect where the user came from
   useEffect(() => {
@@ -189,6 +193,29 @@ export default function TeamDetail() {
     },
   });
 
+  const updateTeamMutation = useMutation({
+    mutationFn: async (updates: { name?: string; description?: string }) => {
+      const response = await apiRequest('PUT', `/api/teams/${id}`, updates);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Team updated",
+        description: "Team information updated successfully!",
+      });
+      setIsEditDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update team",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Live search effect
   useEffect(() => {
     const performLiveSearch = async () => {
@@ -333,6 +360,29 @@ export default function TeamDetail() {
 
   const handleTransferCaptaincy = (memberId: string) => {
     transferCaptaincyMutation.mutate(memberId);
+  };
+
+  const handleEditTeam = () => {
+    setEditForm({
+      name: team?.name || "",
+      description: team?.description || ""
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateTeam = () => {
+    if (!editForm.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Team name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    updateTeamMutation.mutate({
+      name: editForm.name.trim(),
+      description: editForm.description.trim()
+    });
   };
 
   // Group members by role
@@ -523,41 +573,52 @@ export default function TeamDetail() {
         </Button>
       </div>
 
-      {/* Delete Team Button - Top Right Corner */}
-      {isCaptain && (
-        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="destructive"
-                size="sm"
-                data-testid="button-delete-team"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                <span className="hidden sm:inline">Delete Team</span>
-                <span className="sm:hidden">Delete</span>
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Team</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to permanently delete "{team.name}"? This action cannot be undone. All team members, invitations, and team data will be permanently removed.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteTeam}
-                  disabled={deleteTeamMutation.isPending}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  data-testid="confirm-delete-team"
+      {/* Action Buttons - Top Right Corner */}
+      {canManageMembers && (
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10 flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleEditTeam}
+            data-testid="button-edit-team"
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            <span className="hidden sm:inline">Edit</span>
+          </Button>
+          {isCaptain && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  data-testid="button-delete-team"
                 >
-                  {deleteTeamMutation.isPending ? "Deleting..." : "Delete Team"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Delete Team</span>
+                  <span className="sm:hidden">Delete</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Team</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to permanently delete "{team.name}"? This action cannot be undone. All team members, invitations, and team data will be permanently removed.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteTeam}
+                    disabled={deleteTeamMutation.isPending}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    data-testid="confirm-delete-team"
+                  >
+                    {deleteTeamMutation.isPending ? "Deleting..." : "Delete Team"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       )}
 
@@ -796,6 +857,58 @@ export default function TeamDetail() {
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
                 Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Edit Team Dialog */}
+      {canManageMembers && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Team</DialogTitle>
+              <DialogDescription>
+                Update your team's name and description.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="team-name">Team Name</Label>
+                <Input
+                  id="team-name"
+                  placeholder="Enter team name"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  data-testid="input-team-name"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="team-description">Description</Label>
+                <Textarea
+                  id="team-description"
+                  placeholder="Enter team description (optional)"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  rows={3}
+                  data-testid="textarea-team-description"
+                />
+              </div>
+            </div>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleUpdateTeam}
+                disabled={updateTeamMutation.isPending || !editForm.name.trim()}
+                data-testid="button-save-team"
+              >
+                {updateTeamMutation.isPending ? "Saving..." : "Save Changes"}
               </Button>
             </DialogFooter>
           </DialogContent>
