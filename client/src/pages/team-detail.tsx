@@ -510,6 +510,19 @@ export default function TeamDetail() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6 relative">
+      {/* Back button - at the start */}
+      <div className="flex items-center">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setLocation(referrerPage)}
+          data-testid="button-back"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {referrerPage === "/teams" ? "Back to Teams" : "Back to Dashboard"}
+        </Button>
+      </div>
+
       {/* Delete Team Button - Top Right Corner */}
       {isCaptain && (
         <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
@@ -550,19 +563,6 @@ export default function TeamDetail() {
 
       {/* Header */}
       <div className="space-y-4">
-        {/* Back button - full width on mobile */}
-        <div className="flex items-center">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setLocation(referrerPage)}
-            data-testid="button-back"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            {referrerPage === "/teams" ? "Back to Teams" : "Back to Dashboard"}
-          </Button>
-        </div>
-        
         {/* Team info and actions */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pr-16 sm:pr-20">
           <div className="flex-1 min-w-0">
