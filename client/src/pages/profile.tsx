@@ -367,63 +367,68 @@ export default function Profile() {
             <CardContent className="space-y-6">
               {!isEditing || !isOwnProfile ? (
                 <>
-                  {/* Basic Information */}
+                  {/* Profile Information */}
                   <div className="space-y-4">
-                    <h2 className="text-xl font-semibold border-b border-border pb-2">Basic Information</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center space-x-3">
-                        <Mail className="w-5 h-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Email</p>
-                          <p className="font-medium" data-testid="profile-email">{user.email}</p>
+                    <h2 className="text-xl font-semibold border-b border-border pb-2">Profile Information</h2>
+                    
+                    {/* Basic Info - Compact Layout */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center space-x-3">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Email</span>
                         </div>
+                        <span className="font-medium text-sm" data-testid="profile-email">{user.email}</span>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <User className="w-5 h-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Username</p>
-                          <p className="font-medium" data-testid="profile-username">{user.username}</p>
+                      
+                      <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center space-x-3">
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Username</span>
                         </div>
+                        <span className="font-medium text-sm" data-testid="profile-username">@{user.username}</span>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <Trophy className="w-5 h-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Profile Name</p>
-                          <p className="font-medium" data-testid="profile-name">{user.profileName || "Player"}</p>
+                      
+                      <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center space-x-3">
+                          <Trophy className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Profile Name</span>
                         </div>
+                        <span className="font-medium text-sm" data-testid="profile-name">{user.profileName || "Player"}</span>
                       </div>
-                      <div className="flex items-center space-x-3">
-                        <Calendar className="w-5 h-5 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm text-muted-foreground">Member Since</p>
-                          <p className="font-medium" data-testid="profile-created">
-                            {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
-                          </p>
+                      
+                      <div className="flex items-center justify-between py-2">
+                        <div className="flex items-center space-x-3">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Member Since</span>
                         </div>
+                        <span className="font-medium text-sm" data-testid="profile-created">
+                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
+                        </span>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Playing Style */}
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-semibold border-b border-border pb-2">Playing Style</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="text-center space-y-2">
-                        <p className="text-sm text-muted-foreground">Player Role</p>
-                        <Badge variant="secondary" className="text-sm" data-testid="profile-role">
-                          {user.role ? formatRole(user.role) : "Not specified"}
+                    
+                    {/* Playing Style - Horizontal Layout */}
+                    <div className="pt-4 border-t border-border">
+                      <h3 className="text-lg font-medium mb-3">Playing Style</h3>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="secondary" className="text-xs" data-testid="profile-role">
+                          {user.role ? formatRole(user.role) : "Role not specified"}
                         </Badge>
-                      </div>
-                      <div className="text-center space-y-2">
-                        <p className="text-sm text-muted-foreground">Batting Hand</p>
-                        <Badge variant="outline" className="text-sm" data-testid="profile-batting-hand">
-                          {user.battingHand ? formatBattingHand(user.battingHand) : "Not specified"}
+                        <Badge variant="outline" className="text-xs" data-testid="profile-batting-hand">
+                          {user.battingHand ? formatBattingHand(user.battingHand) : "Batting not specified"}
                         </Badge>
-                      </div>
-                      <div className="text-center space-y-2">
-                        <p className="text-sm text-muted-foreground">Bowling Style</p>
-                        <Badge variant="outline" className="text-sm" data-testid="profile-bowling-style">
-                          {user.bowlingStyle ? formatBowlingStyle(user.bowlingStyle) : "Not specified"}
+                        {user.bowlingStyle && (
+                          <Badge variant="outline" className="text-xs" data-testid="profile-bowling-style">
+                            {formatBowlingStyle(user.bowlingStyle)}
+                          </Badge>
+                        )}
+                        <Badge 
+                          variant={user.profileComplete ? "default" : "destructive"}
+                          className="text-xs"
+                          data-testid="profile-status"
+                        >
+                          {user.profileComplete ? "Profile Complete" : "Profile Incomplete"}
                         </Badge>
                       </div>
                     </div>
@@ -438,20 +443,6 @@ export default function Profile() {
                       </p>
                     </div>
                   )}
-
-                  {/* Profile Status */}
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-semibold border-b border-border pb-2">Account Status</h2>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Profile Completion</span>
-                      <Badge 
-                        variant={user.profileComplete ? "default" : "destructive"}
-                        data-testid="profile-status"
-                      >
-                        {user.profileComplete ? "Complete" : "Incomplete"}
-                      </Badge>
-                    </div>
-                  </div>
                 </>
               ) : (
                 <Form {...form}>
