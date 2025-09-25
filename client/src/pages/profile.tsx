@@ -673,48 +673,48 @@ export default function Profile() {
               <CardContent>
                 <div className="space-y-6">
                   {/* Row 1: Batting Stats */}
-                  <div className="flex flex-col sm:flex-row gap-6">
+                  <div className="flex gap-3 sm:gap-6">
                     {/* Batting Performance */}
-                    <div className="flex-1 text-center p-4 bg-muted/30 rounded-lg">
-                      <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Target className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    <div className="flex-1 text-center p-3 sm:p-4 bg-muted/30 rounded-lg">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                        <Target className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <h3 className="font-semibold text-lg mb-1">Batting Average</h3>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{performanceMetrics.battingAverage}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Runs per innings</p>
+                      <h3 className="font-semibold text-sm sm:text-lg mb-1">Batting Average</h3>
+                      <p className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{performanceMetrics.battingAverage}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">Runs per innings</p>
                     </div>
 
                     {/* Strike Rate */}
-                    <div className="flex-1 text-center p-4 bg-muted/30 rounded-lg">
-                      <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    <div className="flex-1 text-center p-3 sm:p-4 bg-muted/30 rounded-lg">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                        <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
                       </div>
-                      <h3 className="font-semibold text-lg mb-1">Strike Rate</h3>
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">{performanceMetrics.strikeRate}</p>
-                      <p className="text-sm text-muted-foreground mt-1">(Runs scored / Balls faced) × 100</p>
+                      <h3 className="font-semibold text-sm sm:text-lg mb-1">Strike Rate</h3>
+                      <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{performanceMetrics.strikeRate}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">(Runs scored / Balls faced) × 100</p>
                     </div>
                   </div>
 
                   {/* Row 2: Bowling Stats */}
-                  <div className="flex flex-col sm:flex-row gap-6">
+                  <div className="flex gap-3 sm:gap-6">
                     {/* Bowling Average */}
-                    <div className="flex-1 text-center p-4 bg-muted/30 rounded-lg">
-                      <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Award className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    <div className="flex-1 text-center p-3 sm:p-4 bg-muted/30 rounded-lg">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                        <Award className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
                       </div>
-                      <h3 className="font-semibold text-lg mb-1">Bowling Average</h3>
-                      <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{performanceMetrics.bowlingAverage}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Runs per wicket</p>
+                      <h3 className="font-semibold text-sm sm:text-lg mb-1">Bowling Average</h3>
+                      <p className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">{performanceMetrics.bowlingAverage}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">Runs per wicket</p>
                     </div>
 
                     {/* Economy Rate */}
-                    <div className="flex-1 text-center p-4 bg-muted/30 rounded-lg">
-                      <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <BarChart3 className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                    <div className="flex-1 text-center p-3 sm:p-4 bg-muted/30 rounded-lg">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-3">
+                        <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
                       </div>
-                      <h3 className="font-semibold text-lg mb-1">Economy Rate</h3>
-                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{performanceMetrics.economyRate}</p>
-                      <p className="text-sm text-muted-foreground mt-1">Runs per over</p>
+                      <h3 className="font-semibold text-sm sm:text-lg mb-1">Economy Rate</h3>
+                      <p className="text-xl sm:text-2xl font-bold text-orange-600 dark:text-orange-400">{performanceMetrics.economyRate}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">Runs per over</p>
                     </div>
                   </div>
                 </div>
