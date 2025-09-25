@@ -597,10 +597,6 @@ export default function Profile() {
                         <span className="text-sm">Strike Rate</span>
                         <span className="font-medium">{playerStats.strikeRate ? playerStats.strikeRate.toFixed(2) : '0.00'}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Matches</span>
-                        <span className="font-medium">{playerStats.matchesPlayed || 0}</span>
-                      </div>
                     </div>
                   </div>
 
@@ -635,24 +631,16 @@ export default function Profile() {
                         <span className="text-sm">Catches</span>
                         <span className="font-medium">{playerStats.catchesTaken || 0}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Total Matches</span>
-                        <span className="font-medium">{playerStats.matchesPlayed || 0}</span>
-                      </div>
                     </div>
                   </div>
 
-                  {/* Match Summary */}
+                  {/* Matches */}
                   <div className="space-y-3">
                     <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Matches</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm">Total Matches</span>
-                        <span className="font-medium">{performanceMetrics?.totalMatches || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm">Recent Matches</span>
-                        <span className="font-medium">{performanceMetrics?.recentMatches || 0}</span>
+                        <span className="font-medium">{playerStats.matchesPlayed || 0}</span>
                       </div>
                     </div>
                   </div>
