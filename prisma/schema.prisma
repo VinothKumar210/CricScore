@@ -32,6 +32,11 @@ model User {
   sentInvitations TeamInvitation[] @relation("InvitationSender")
   receivedInvitations TeamInvitation[] @relation("InvitationReceiver")
   matches         Match[]
+  teamMatchStats  TeamMatchPlayer[]
+  topRunScorerFor TeamStatistics[] @relation("TopRunScorer")
+  topWicketTakerFor TeamStatistics[] @relation("TopWicketTaker")
+  bestStrikeRateFor TeamStatistics[] @relation("BestStrikeRate")
+  bestEconomyFor  TeamStatistics[] @relation("BestEconomy")
 
   @@map("users")
 }
@@ -73,6 +78,10 @@ model Team {
   viceCaptain    User?    @relation("TeamViceCaptain", fields: [viceCaptainId], references: [id])
   members        TeamMember[]
   invitations    TeamInvitation[]
+  homeMatches    TeamMatch[] @relation("HomeTeam")
+  awayMatches    TeamMatch[] @relation("AwayTeam")
+  statistics     TeamStatistics?
+  teamMatchPlayers TeamMatchPlayer[]
 
   @@map("teams")
 }
@@ -145,6 +154,100 @@ enum BowlingStyle {
   FAST        @map("fast")
   MEDIUM_FAST @map("medium-fast")
   SPIN        @map("spin")
+}
+
+model TeamMatch {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  homeTeamId   String   @db.ObjectId
+  awayTeamId   String   @db.ObjectId
+  matchDate    DateTime
+  venue        String
+  status       MatchStatus @default(COMPLETED)
+  result       MatchResult? // null if match is ongoing/not completed
+  // Team scores
+  homeTeamRuns Int      @default(0)
+  homeTeamWickets Int   @default(0)
+  homeTeamOvers Float   @default(0)
+  awayTeamRuns Int      @default(0)
+  awayTeamWickets Int   @default(0)
+  awayTeamOvers Float   @default(0)
+  createdAt    DateTime @default(now())
+
+  // Relations
+  homeTeam     Team     @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam     Team     @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  playerStats  TeamMatchPlayer[]
+
+  @@map("team_matches")
+}
+
+model TeamMatchPlayer {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  teamMatchId  String   @db.ObjectId
+  userId       String   @db.ObjectId
+  teamId       String   @db.ObjectId
+  // Batting performance
+  runsScored   Int      @default(0)
+  ballsFaced   Int      @default(0)
+  wasDismissed Boolean  @default(false)
+  // Bowling performance
+  oversBowled  Float    @default(0)
+  runsConceded Int      @default(0)
+  wicketsTaken Int      @default(0)
+  // Fielding performance
+  catchesTaken Int      @default(0)
+
+  // Relations
+  teamMatch    TeamMatch @relation(fields: [teamMatchId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id])
+  team         Team      @relation(fields: [teamId], references: [id])
+
+  @@unique([teamMatchId, userId])
+  @@map("team_match_players")
+}
+
+model TeamStatistics {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  teamId         String   @unique @db.ObjectId
+  // Match statistics
+  matchesPlayed  Int      @default(0)
+  matchesWon     Int      @default(0)
+  matchesLost    Int      @default(0)
+  matchesDrawn   Int      @default(0)
+  winRatio       Float    @default(0)
+  // Top performers
+  topRunScorerId String?  @db.ObjectId
+  topRunScorerRuns Int    @default(0)
+  topWicketTakerId String? @db.ObjectId
+  topWicketTakerWickets Int @default(0)
+  // Best averages
+  bestStrikeRatePlayerId String? @db.ObjectId
+  bestStrikeRate Float    @default(0)
+  bestEconomyPlayerId String?  @db.ObjectId
+  bestEconomy    Float    @default(0)
+  updatedAt      DateTime @default(now()) @updatedAt
+
+  // Relations
+  team           Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  topRunScorer   User?    @relation("TopRunScorer", fields: [topRunScorerId], references: [id])
+  topWicketTaker User?    @relation("TopWicketTaker", fields: [topWicketTakerId], references: [id])
+  bestStrikeRatePlayer User? @relation("BestStrikeRate", fields: [bestStrikeRatePlayerId], references: [id])
+  bestEconomyPlayer User?    @relation("BestEconomy", fields: [bestEconomyPlayerId], references: [id])
+
+  @@map("team_statistics")
+}
+
+enum MatchStatus {
+  UPCOMING    @map("upcoming")
+  ONGOING     @map("ongoing")
+  COMPLETED   @map("completed")
+  CANCELLED   @map("cancelled")
+}
+
+enum MatchResult {
+  HOME_WIN    @map("home_win")
+  AWAY_WIN    @map("away_win")
+  DRAW        @map("draw")
 }
 
 enum InvitationStatus {
