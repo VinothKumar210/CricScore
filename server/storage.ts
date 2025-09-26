@@ -58,7 +58,7 @@ export interface IStorage {
   createMatch(match: InsertMatch): Promise<Match>;
   
   // Auth operations
-  validatePassword(email: string, password: string): Promise<User | null>;
+  validatePassword(email: string, password: string): Promise<{ user: User | null; errorType?: 'EMAIL_NOT_FOUND' | 'WRONG_PASSWORD' }>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -533,12 +533,18 @@ export class PrismaStorage implements IStorage {
     }
   }
 
-  async validatePassword(email: string, password: string): Promise<User | null> {
+  async validatePassword(email: string, password: string): Promise<{ user: User | null; errorType?: 'EMAIL_NOT_FOUND' | 'WRONG_PASSWORD' }> {
     const user = await this.getUserByEmail(email);
-    if (!user) return null;
+    if (!user) {
+      return { user: null, errorType: 'EMAIL_NOT_FOUND' };
+    }
     
     const isValid = await bcrypt.compare(password, user.password);
-    return isValid ? user : null;
+    if (!isValid) {
+      return { user: null, errorType: 'WRONG_PASSWORD' };
+    }
+    
+    return { user };
   }
 }
 

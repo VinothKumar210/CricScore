@@ -75,15 +75,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = loginSchema.parse(req.body);
       
-      const user = await storage.validatePassword(validatedData.email, validatedData.password);
-      if (!user) {
+      const result = await storage.validatePassword(validatedData.email, validatedData.password);
+      if (!result.user) {
+        if (result.errorType === 'EMAIL_NOT_FOUND') {
+          return res.status(401).json({ message: "No account found with this email address", field: "email" });
+        } else if (result.errorType === 'WRONG_PASSWORD') {
+          return res.status(401).json({ message: "Incorrect password", field: "password" });
+        }
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+      const token = jwt.sign({ userId: result.user.id }, JWT_SECRET, { expiresIn: '7d' });
       
       res.json({ 
-        user: { ...user, password: undefined }, 
+        user: { ...result.user, password: undefined }, 
         token 
       });
     } catch (error) {
