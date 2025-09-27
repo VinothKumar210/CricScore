@@ -42,6 +42,7 @@ interface BatsmanStats {
   isOut: boolean;
   dismissalType?: DismissalType;
   bowlerName?: string;
+  fielderName?: string;
 }
 
 interface BowlerStats {
@@ -93,6 +94,8 @@ export default function Scoreboard() {
   const [currentOverBalls, setCurrentOverBalls] = useState<string[]>([]);
   const [undoStack, setUndoStack] = useState<any[]>([]);
   const [showBowlerDialog, setShowBowlerDialog] = useState(false);
+  const [showFielderDialog, setShowFielderDialog] = useState(false);
+  const [pendingCaughtDismissal, setPendingCaughtDismissal] = useState<DismissalType | null>(null);
   
   // Auto stats posting functionality
   const [isPostingStats, setIsPostingStats] = useState(false);
@@ -749,7 +752,14 @@ export default function Scoreboard() {
       return;
     }
     
-    // For other dismissals (Bowled, LBW, Catch, etc.)
+    if (dismissalType === 'Caught') {
+      // For caught dismissals, show fielder selection first
+      setPendingCaughtDismissal(dismissalType);
+      setShowFielderDialog(true);
+      return;
+    }
+    
+    // For other dismissals (Bowled, LBW, Stumped, Hit Wicket, etc.)
     // Add to current over display
     setCurrentOverBalls(prev => [...prev, 'W']);
     
@@ -806,6 +816,64 @@ export default function Scoreboard() {
     // Show dialog to select new batsman
     setShowBatsmanDialog(true);
     setPendingWicket(dismissalType);
+  };
+
+  const handleFielderSelection = (fielder: LocalPlayer) => {
+    if (!pendingCaughtDismissal) return;
+    
+    // Add to current over display
+    setCurrentOverBalls(prev => [...prev, 'W']);
+    
+    // Update team wickets and balls (wicket counts as a legal delivery)
+    setBattingTeamScore(prev => {
+      const newBalls = prev.balls + 1;  // Wicket counts as 1 ball
+      const newOvers = Math.floor(newBalls / 6);
+      
+      const updatedScore = {
+        ...prev,
+        wickets: prev.wickets + 1,
+        balls: newBalls,
+        overs: newOvers
+      };
+      
+      // Check for first innings completion
+      if (matchState && !matchState.firstInningsComplete && (newOvers >= matchState.matchOvers || updatedScore.wickets >= 10)) {
+        setTimeout(() => handleInningsComplete(updatedScore), 100);
+      }
+      
+      // Check for match completion in second innings after wicket
+      if (matchState && matchState.currentInnings === 2 && !matchState.matchComplete) {
+        setTimeout(() => checkMatchCompletion(updatedScore), 100);
+      }
+      
+      return updatedScore;
+    });
+    
+    // Update bowler stats (bowler gets credit for caught dismissals)
+    updateBowlerStats(0, true, true);
+    
+    // Update striker's balls faced
+    updateBatsmanStats(matchState.strikeBatsman, 0);
+    
+    // Mark striker as out with dismissal details including fielder
+    setBatsmanStats(prev => prev.map(stat => {
+      if (stat.player.name === matchState.strikeBatsman.name) {
+        return {
+          ...stat,
+          isOut: true,
+          dismissalType: pendingCaughtDismissal,
+          bowlerName: matchState.currentBowler.name,
+          fielderName: fielder.name
+        };
+      }
+      return stat;
+    }));
+    
+    // Clean up and show new batsman dialog
+    setShowFielderDialog(false);
+    setPendingCaughtDismissal(null);
+    setShowBatsmanDialog(true);
+    setPendingWicket(pendingCaughtDismissal);
   };
 
   const handleRunOut = (runs: number) => {
@@ -1480,11 +1548,15 @@ export default function Scoreboard() {
                         {batsman.isOut ? (
                           <div className="text-red-600 dark:text-red-400">
                             {batsman.dismissalType}
-                            {batsman.bowlerName && (
+                            {batsman.dismissalType === 'Caught' && batsman.fielderName && batsman.bowlerName ? (
+                              <div className="text-xs text-muted-foreground">
+                                c {batsman.fielderName} b {batsman.bowlerName}
+                              </div>
+                            ) : batsman.bowlerName ? (
                               <div className="text-xs text-muted-foreground">
                                 b {batsman.bowlerName}
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         ) : (
                           <span className="text-green-600 dark:text-green-400">Not Out</span>
@@ -1613,6 +1685,35 @@ export default function Scoreboard() {
                 {type}
               </Button>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fielder Selection Dialog */}
+      <Dialog open={showFielderDialog} onOpenChange={() => {}}>
+        <DialogContent aria-describedby="fielder-selection-description">
+          <DialogHeader>
+            <DialogTitle>Select Fielder Who Took the Catch</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select the fielder from the bowling team who took the catch:
+            </p>
+            <ScrollArea className="h-60">
+              <div className="grid gap-2">
+                {bowlingTeamPlayers.map((player, index) => (
+                  <Button
+                    key={`${player.name}-${index}`}
+                    onClick={() => handleFielderSelection(player)}
+                    variant="outline"
+                    className="justify-start"
+                    data-testid={`button-fielder-${index}`}
+                  >
+                    {player.name}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         </DialogContent>
       </Dialog>
