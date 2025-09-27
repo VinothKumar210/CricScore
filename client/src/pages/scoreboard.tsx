@@ -312,6 +312,32 @@ export default function Scoreboard() {
         }
       });
 
+      // Calculate catches taken by fielders from caught dismissals
+      batsmanStats.forEach(stat => {
+        if (stat.dismissalType === 'Caught' && stat.fielderName) {
+          const fielderName = stat.fielderName;
+          
+          // Find or create entry for the fielder
+          if (playerPerformanceMap.has(fielderName)) {
+            const existing = playerPerformanceMap.get(fielderName)!;
+            existing.catchesTaken += 1;
+          } else {
+            // Fielder hasn't batted or bowled, create entry
+            const userId = findPlayerUserId(fielderName);
+            playerPerformanceMap.set(fielderName, {
+              userId: userId,
+              playerName: fielderName,
+              runsScored: 0,
+              ballsFaced: 0,
+              oversBowled: 0,
+              runsConceded: 0,
+              wicketsTaken: 0,
+              catchesTaken: 1
+            });
+          }
+        }
+      });
+
       // Ensure all players who participated are included (even if they only fielded)
       const allParticipatingPlayers = [...matchState.myTeamPlayers, ...matchState.opponentTeamPlayers]
         .filter(p => p.name.trim() !== ''); // Only include players with names
@@ -320,7 +346,7 @@ export default function Scoreboard() {
         const userId = findPlayerUserId(player.name);
         const playerName = player.name;
         
-        // If player not already in map (didn't bat or bowl), add them with zero stats
+        // If player not already in map (didn't bat, bowl, or field), add them with zero stats
         if (!playerPerformanceMap.has(playerName)) {
           playerPerformanceMap.set(playerName, {
             userId: userId,
