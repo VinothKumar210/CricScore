@@ -44,7 +44,7 @@ export default function Dashboard() {
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-primary to-sky-400 rounded-xl p-6 text-primary-foreground">
         <h2 className="text-2xl font-bold mb-2" data-testid="text-welcome">
-          Game on, {user?.username || 'Champion'}! 
+          Game on, {user?.profileName || user?.username || 'Champion'}! 
         </h2>
         <p className="opacity-90">Time to smash some records and track your cricket journey!</p>
       </div>
