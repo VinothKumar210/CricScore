@@ -39,6 +39,7 @@ export const insertCareerStatsSchema = z.object({
   wicketsTaken: z.number().int().min(0).optional(),
   economy: z.number().min(0).optional(),
   catchesTaken: z.number().int().min(0).optional(),
+  manOfTheMatchAwards: z.number().int().min(0).optional(),
 });
 
 export const insertTeamSchema = z.object({
@@ -71,6 +72,7 @@ export const insertMatchSchema = z.object({
   runsConceded: z.number().int().min(0),
   wicketsTaken: z.number().int().min(0),
   catchesTaken: z.number().int().min(0),
+  isManOfTheMatch: z.boolean().default(false),
 });
 
 export const insertTeamMatchSchema = z.object({
@@ -116,6 +118,8 @@ export const insertTeamStatisticsSchema = z.object({
   bestStrikeRate: z.number().min(0).default(0),
   bestEconomyPlayerId: z.string().optional(),
   bestEconomy: z.number().min(0).default(0),
+  mostManOfTheMatchPlayerId: z.string().optional(),
+  mostManOfTheMatchAwards: z.number().int().min(0).default(0),
 });
 
 // Frontend form schema for match input

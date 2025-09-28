@@ -34,6 +34,8 @@ interface TeamStatisticsData {
   bestStrikeRate: number;
   bestEconomyPlayer?: User;
   bestEconomy: number;
+  mostManOfTheMatchPlayer?: User;
+  mostManOfTheMatchAwards: number;
 }
 
 function TeamStatistics({ teamId }: { teamId: string }) {
@@ -159,6 +161,22 @@ function TeamStatistics({ teamId }: { teamId: string }) {
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">Minimum 5 overs required</div>
+            )}
+          </div>
+
+          {/* Most Man of the Match Awards */}
+          <div className="border rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Most Man of the Match</span>
+              <Trophy className="h-4 w-4 text-amber-500" />
+            </div>
+            {stats.mostManOfTheMatchPlayer && stats.mostManOfTheMatchAwards > 0 ? (
+              <div>
+                <div className="font-semibold">{stats.mostManOfTheMatchPlayer.profileName || stats.mostManOfTheMatchPlayer.username}</div>
+                <div className="text-2xl font-bold text-amber-600">{stats.mostManOfTheMatchAwards} 🏆</div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">No awards yet</div>
             )}
           </div>
         </div>

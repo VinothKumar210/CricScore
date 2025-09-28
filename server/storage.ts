@@ -494,6 +494,7 @@ export class PrismaStorage implements IStorage {
     const newRunsConceded = (stats.runsConceded || 0) + match.runsConceded;
     const newWicketsTaken = (stats.wicketsTaken || 0) + match.wicketsTaken;
     const newCatchesTaken = (stats.catchesTaken || 0) + match.catchesTaken;
+    const newManOfTheMatchAwards = (stats.manOfTheMatchAwards || 0) + (match.isManOfTheMatch ? 1 : 0);
 
     const strikeRate = newBallsFaced > 0 ? (newTotalRuns / newBallsFaced) * 100 : 0;
     // Convert cricket overs to decimal for proper economy calculation
@@ -511,6 +512,7 @@ export class PrismaStorage implements IStorage {
       wicketsTaken: newWicketsTaken,
       economy: parseFloat(economy.toFixed(2)),
       catchesTaken: newCatchesTaken,
+      manOfTheMatchAwards: newManOfTheMatchAwards,
     });
   }
 
@@ -635,7 +637,8 @@ export class PrismaStorage implements IStorage {
           topRunScorer: true,
           topWicketTaker: true,
           bestStrikeRatePlayer: true,
-          bestEconomyPlayer: true
+          bestEconomyPlayer: true,
+          mostManOfTheMatchPlayer: true
         }
       });
       return stats || undefined;
@@ -743,7 +746,8 @@ export class PrismaStorage implements IStorage {
       }
 
       // Find top performers
-      for (const [userId, stats] of playerAggregates) {
+      for (const userId of playerAggregates.keys()) {
+        const stats = playerAggregates.get(userId)!;
         // Top run scorer
         if (stats.runs > topRunScorerRuns) {
           topRunScorerRuns = stats.runs;
@@ -794,6 +798,8 @@ export class PrismaStorage implements IStorage {
           bestStrikeRate: parseFloat(bestStrikeRate.toFixed(2)),
           bestEconomyPlayerId,
           bestEconomy: bestEconomy === Infinity ? 0 : parseFloat(bestEconomy.toFixed(2)),
+          mostManOfTheMatchPlayerId: undefined,
+          mostManOfTheMatchAwards: 0,
         });
       } else {
         await this.createTeamStatistics({
@@ -811,6 +817,8 @@ export class PrismaStorage implements IStorage {
           bestStrikeRate: parseFloat(bestStrikeRate.toFixed(2)),
           bestEconomyPlayerId,
           bestEconomy: bestEconomy === Infinity ? 0 : parseFloat(bestEconomy.toFixed(2)),
+          mostManOfTheMatchPlayerId: undefined,
+          mostManOfTheMatchAwards: 0,
         });
       }
     } catch (error) {

@@ -102,6 +102,7 @@ export default function Scoreboard() {
   const [previousBowler, setPreviousBowler] = useState<LocalPlayer | null>(null);
   const [showInningsTransition, setShowInningsTransition] = useState(false);
   const [showMatchResult, setShowMatchResult] = useState(false);
+  const [manOfTheMatchData, setManOfTheMatchData] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -390,6 +391,11 @@ export default function Scoreboard() {
 
       if (response.ok) {
         const result = await response.json();
+        
+        // Store man of the match data
+        if (result.manOfTheMatch) {
+          setManOfTheMatchData(result.manOfTheMatch);
+        }
         
         // Invalidate stats and matches cache to ensure fresh data is loaded
         if (typeof window !== 'undefined' && window.location) {
@@ -2051,6 +2057,42 @@ export default function Scoreboard() {
                     </div>
                   )}
                 </div>
+                
+                {/* Man of the Match Section */}
+                {manOfTheMatchData && (
+                  <div className="border-t pt-4 mt-4">
+                    <div className="text-center space-y-2">
+                      <div className="flex justify-center items-center gap-2">
+                        <span className="text-2xl">🏆</span>
+                        <span className="text-lg font-semibold text-primary">Man of the Match</span>
+                      </div>
+                      <div className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                        {manOfTheMatchData.playerName}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Performance Score: {manOfTheMatchData.performanceScore} points
+                      </div>
+                      {manOfTheMatchData.breakdown && (
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          {manOfTheMatchData.breakdown.battingPoints > 0 && (
+                            <div>Batting: {manOfTheMatchData.breakdown.battingPoints} pts</div>
+                          )}
+                          {manOfTheMatchData.breakdown.bowlingPoints > 0 && (
+                            <div>Bowling: {manOfTheMatchData.breakdown.bowlingPoints} pts</div>
+                          )}
+                          {manOfTheMatchData.breakdown.fieldingPoints > 0 && (
+                            <div>Fielding: {manOfTheMatchData.breakdown.fieldingPoints} pts</div>
+                          )}
+                          {manOfTheMatchData.breakdown.bonuses.length > 0 && (
+                            <div className="text-green-600 font-medium">
+                              Bonuses: {manOfTheMatchData.breakdown.bonuses.join(', ')}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 
                 <div className="flex justify-center pt-4">
                   <Button

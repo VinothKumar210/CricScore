@@ -37,6 +37,7 @@ model User {
   topWicketTakerFor TeamStatistics[] @relation("TopWicketTaker")
   bestStrikeRateFor TeamStatistics[] @relation("BestStrikeRate")
   bestEconomyFor  TeamStatistics[] @relation("BestEconomy")
+  mostManOfTheMatchFor TeamStatistics[] @relation("MostManOfTheMatch")
 
   @@map("users")
 }
@@ -57,6 +58,8 @@ model CareerStats {
   economy        Float   @default(0)
   // Fielding stats
   catchesTaken   Int     @default(0)
+  // Achievement stats
+  manOfTheMatchAwards Int @default(0)
   updatedAt      DateTime @default(now()) @updatedAt
 
   // Relations
@@ -131,6 +134,8 @@ model Match {
   wicketsTaken Int
   // Fielding performance
   catchesTaken Int
+  // Achievement tracking
+  isManOfTheMatch Boolean @default(false)
   createdAt    DateTime @default(now())
 
   // Relations
@@ -225,6 +230,9 @@ model TeamStatistics {
   bestStrikeRate Float    @default(0)
   bestEconomyPlayerId String?  @db.ObjectId
   bestEconomy    Float    @default(0)
+  // Man of the match tracking
+  mostManOfTheMatchPlayerId String? @db.ObjectId
+  mostManOfTheMatchAwards Int @default(0)
   updatedAt      DateTime @default(now()) @updatedAt
 
   // Relations
@@ -233,6 +241,7 @@ model TeamStatistics {
   topWicketTaker User?    @relation("TopWicketTaker", fields: [topWicketTakerId], references: [id])
   bestStrikeRatePlayer User? @relation("BestStrikeRate", fields: [bestStrikeRatePlayerId], references: [id])
   bestEconomyPlayer User?    @relation("BestEconomy", fields: [bestEconomyPlayerId], references: [id])
+  mostManOfTheMatchPlayer User? @relation("MostManOfTheMatch", fields: [mostManOfTheMatchPlayerId], references: [id])
 
   @@map("team_statistics")
 }
