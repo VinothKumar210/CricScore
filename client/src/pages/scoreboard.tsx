@@ -103,6 +103,9 @@ export default function Scoreboard() {
   const [showInningsTransition, setShowInningsTransition] = useState(false);
   const [showMatchResult, setShowMatchResult] = useState(false);
   const [manOfTheMatchData, setManOfTheMatchData] = useState<any>(null);
+  const [showTossDialog, setShowTossDialog] = useState(false);
+  const [tossWinner, setTossWinner] = useState<'myTeam' | 'opponent' | null>(null);
+  const [tossDecision, setTossDecision] = useState<'bat' | 'bowl' | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -127,6 +130,15 @@ export default function Scoreboard() {
       
       if (!matchOvers) {
         console.error('Invalid match overs from localStorage');
+        return;
+      }
+      
+      // Check if toss has been completed
+      const tossCompleted = localStorage.getItem('tossCompleted');
+      
+      if (!tossCompleted) {
+        // Show toss dialog if not completed
+        setShowTossDialog(true);
         return;
       }
       
