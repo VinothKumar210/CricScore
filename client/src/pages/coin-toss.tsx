@@ -10,6 +10,11 @@ type Phase = 'toss-method' | 'choose-side' | 'toss' | 'determine-winner' | 'choo
 interface MatchData {
   myTeamPlayers: LocalPlayer[];
   opponentTeamPlayers: LocalPlayer[];
+  myTeamName: string;
+  opponentTeamName: string;
+  matchOvers?: string;
+  maxOversPerBowler?: string;
+  bowlersAtMaxOvers?: string;
 }
 
 export function CoinToss() {
@@ -27,9 +32,25 @@ export function CoinToss() {
 
   useEffect(() => {
     // Get match data from localStorage
-    const savedMatchData = localStorage.getItem('localMatchData');
-    if (savedMatchData) {
-      setMatchData(JSON.parse(savedMatchData));
+    const myTeamPlayers = localStorage.getItem('myTeamPlayers');
+    const opponentTeamPlayers = localStorage.getItem('opponentTeamPlayers');
+    const myTeamName = localStorage.getItem('myTeamName');
+    const opponentTeamName = localStorage.getItem('opponentTeamName');
+    const matchOvers = localStorage.getItem('matchOvers');
+    const maxOversPerBowler = localStorage.getItem('maxOversPerBowler');
+    const bowlersAtMaxOvers = localStorage.getItem('bowlersAtMaxOvers');
+    
+    if (myTeamPlayers && opponentTeamPlayers && myTeamName && opponentTeamName) {
+      const matchData = {
+        myTeamPlayers: JSON.parse(myTeamPlayers),
+        opponentTeamPlayers: JSON.parse(opponentTeamPlayers),
+        myTeamName,
+        opponentTeamName,
+        matchOvers: matchOvers || undefined,
+        maxOversPerBowler: maxOversPerBowler || undefined,
+        bowlersAtMaxOvers: bowlersAtMaxOvers || undefined
+      };
+      setMatchData(matchData);
     } else {
       // If no data, redirect back to setup
       setLocation('/local-match');
