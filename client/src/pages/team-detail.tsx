@@ -556,58 +556,82 @@ export default function TeamDetail() {
     return (
       <div
         key={member.id}
-        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors space-y-3 sm:space-y-0"
+        className="group relative p-4 bg-background border border-border rounded-xl hover:shadow-md hover:border-primary/20 transition-all duration-200 cursor-pointer"
         data-testid={`member-${member.id}`}
         onClick={() => setLocation(`/player/${member.id}`)}
       >
-        <div className="flex items-center space-x-3 min-w-0 flex-1">
-          <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground font-medium">
-              {member.username?.charAt(0).toUpperCase()}
-            </span>
+        <div className="flex items-start space-x-4">
+          {/* Avatar */}
+          <div className="relative">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center shrink-0 shadow-sm">
+              <span className="text-primary-foreground font-semibold text-lg">
+                {(member.profileName || member.username)?.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            {/* Online status indicator could go here if needed */}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-medium text-foreground truncate">
-              {member.profileName || member.username}
-            </p>
-            <div className="flex items-center space-x-2 mt-1">
-              <p className="text-sm text-muted-foreground truncate">
+          
+          {/* Player Info */}
+          <div className="flex-1 min-w-0 space-y-1">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-foreground text-base truncate pr-2">
+                {member.profileName || member.username}
+              </h4>
+              
+              {/* Role Badge */}
+              <div className="flex items-center space-x-2 shrink-0">
+                {isMemberCaptain && (
+                  <Badge variant="default" className="flex items-center space-x-1 bg-yellow-500 hover:bg-yellow-600">
+                    <Crown className="h-3 w-3" />
+                    <span className="text-xs font-medium">Captain</span>
+                  </Badge>
+                )}
+                {isMemberViceCaptain && (
+                  <Badge variant="secondary" className="flex items-center space-x-1 bg-blue-100 text-blue-700 hover:bg-blue-200">
+                    <Shield className="h-3 w-3" />
+                    <span className="text-xs font-medium">Vice Captain</span>
+                  </Badge>
+                )}
+                {!isMemberCaptain && !isMemberViceCaptain && (
+                  <Badge variant="outline" className="text-xs">Member</Badge>
+                )}
+              </div>
+            </div>
+            
+            {/* Username and Player Role */}
+            <div className="flex items-center space-x-3">
+              <p className="text-sm text-muted-foreground font-mono">
                 @{member.username}
               </p>
               {member.role && (
-                <Badge variant="outline" className="text-xs shrink-0">
-                  {member.role}
-                </Badge>
+                <div className="flex items-center">
+                  <div className="w-1 h-1 bg-muted-foreground/40 rounded-full"></div>
+                  <Badge variant="outline" className="ml-2 text-xs px-2 py-0.5">
+                    {member.role.replace('_', ' ')}
+                  </Badge>
+                </div>
               )}
             </div>
+            
+            {/* Additional info could go here */}
+            {isCurrentUser && (
+              <div className="flex items-center space-x-1 mt-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-xs text-green-600 font-medium">You</span>
+              </div>
+            )}
           </div>
         </div>
-        
-        <div className="flex flex-wrap items-center gap-2 sm:space-x-2 sm:gap-0">
-          {/* Role badges */}
-          {isMemberCaptain && (
-            <Badge variant="default" className="flex items-center space-x-1">
-              <Crown className="h-3 w-3" />
-              <span>Captain</span>
-            </Badge>
-          )}
-          {isMemberViceCaptain && (
-            <Badge variant="secondary" className="flex items-center space-x-1">
-              <Shield className="h-3 w-3" />
-              <span>Vice Captain</span>
-            </Badge>
-          )}
-          {!isMemberCaptain && !isMemberViceCaptain && (
-            <Badge variant="outline">Member</Badge>
-          )}
 
-          {/* Action dropdown */}
-          {canManageMembers && !isCurrentUser && (canTransferCaptaincy || canPromote || canDemote || canRemove) && (
+        {/* Action dropdown */}
+        {canManageMembers && !isCurrentUser && (canTransferCaptaincy || canPromote || canDemote || canRemove) && (
+          <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
+                  className="h-8 w-8 p-0 hover:bg-muted"
                   data-testid={`dropdown-actions-${member.id}`}
                 >
                   <MoreVertical className="h-4 w-4" />
@@ -699,8 +723,8 @@ export default function TeamDetail() {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -868,7 +892,7 @@ export default function TeamDetail() {
                     Members ({regularMembers.length})
                   </h3>
                   {regularMembers.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
                       {regularMembers.map((member) => renderMemberCard(member, 'member'))}
                     </div>
                   ) : (
