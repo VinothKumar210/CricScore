@@ -1032,6 +1032,13 @@ export default function LocalMatch() {
       <div className="mt-6 flex justify-center">
         <Button 
           onClick={() => {
+            console.log('Start Match button clicked');
+            console.log('Both teams have players:', bothTeamsHavePlayers);
+            console.log('Teams equal:', teamsEqual);
+            console.log('Valid custom config:', isValidCustomConfig());
+            console.log('My team size:', myTeamSize);
+            console.log('Opponent team size:', opponentTeamSize);
+            
             // Store team data and match configuration for coin toss and scoring
             localStorage.setItem('myTeamPlayers', JSON.stringify(myTeamPlayers));
             localStorage.setItem('opponentTeamPlayers', JSON.stringify(opponentTeamPlayers));
@@ -1040,6 +1047,8 @@ export default function LocalMatch() {
             localStorage.setItem('matchOvers', getCurrentOvers());
             localStorage.setItem('maxOversPerBowler', maxOversPerBowler);
             localStorage.setItem('bowlersAtMaxOvers', bowlersAtMaxOvers);
+            
+            console.log('Data saved to localStorage, navigating to /coin-toss');
             setLocation('/coin-toss');
           }}
           disabled={!bothTeamsHavePlayers || !teamsEqual || !isValidCustomConfig()}
