@@ -124,6 +124,7 @@ export function CoinToss() {
       };
       
       localStorage.setItem('matchData', JSON.stringify(finalMatchData));
+      localStorage.setItem('tossCompleted', 'true');
       setLocation('/match-scoring');
     }
   };
@@ -442,6 +443,7 @@ export function CoinToss() {
                       tossResult
                     };
                     localStorage.setItem('matchData', JSON.stringify(finalMatchData));
+                    localStorage.setItem('tossCompleted', 'true');
                     setLocation('/match-scoring');
                   }}
                   className="w-full py-3 text-base sm:text-lg"
