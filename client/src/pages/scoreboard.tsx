@@ -1335,26 +1335,45 @@ export default function Scoreboard() {
           <CardTitle>Ball-by-Ball Scoring</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Run Buttons */}
-          <div>
-            <h4 className="font-semibold mb-2">Runs Scored</h4>
-            <div className="grid grid-cols-6 gap-2">
-              {[0, 1, 2, 3, 4, 6].map(runs => (
-                <Button
-                  key={runs}
-                  onClick={() => handleRunScored(runs)}
-                  variant={runs === 4 || runs === 6 ? "default" : "outline"}
-                  className="h-12 text-lg font-bold"
-                  data-testid={`button-runs-${runs}`}
-                >
-                  {runs}
-                </Button>
-              ))}
+          <h4 className="font-semibold mb-2">Scoring Controls</h4>
+          
+          {/* 3 rows x 2 columns layout */}
+          <div className="grid grid-cols-2 gap-4">
+            
+            {/* Row 1: Run buttons 0,1,2 and 3,4,6 */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
+                {[0, 1, 2].map(runs => (
+                  <Button
+                    key={runs}
+                    onClick={() => handleRunScored(runs)}
+                    variant={runs === 4 || runs === 6 ? "default" : "outline"}
+                    className="h-12 text-lg font-bold"
+                    data-testid={`button-runs-${runs}`}
+                  >
+                    {runs}
+                  </Button>
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* Wicket and Extras */}
-          <div className="grid md:grid-cols-5 gap-4">
+            
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
+                {[3, 4, 6].map(runs => (
+                  <Button
+                    key={runs}
+                    onClick={() => handleRunScored(runs)}
+                    variant={runs === 4 || runs === 6 ? "default" : "outline"}
+                    className="h-12 text-lg font-bold"
+                    data-testid={`button-runs-${runs}`}
+                  >
+                    {runs}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Row 2: Wicket and Undo */}
             <Button
               onClick={() => {
                 saveStateForUndo();
@@ -1377,6 +1396,7 @@ export default function Scoreboard() {
               Undo
             </Button>
             
+            {/* Row 3: Extras - No Ball and Wide */}
             <Button
               onClick={() => {
                 saveStateForUndo();
@@ -1403,6 +1423,10 @@ export default function Scoreboard() {
               Wide (WD)
             </Button>
             
+          </div>
+          
+          {/* Additional extras on separate row */}
+          <div className="grid grid-cols-1 gap-2">
             <Button
               onClick={() => {
                 saveStateForUndo();
