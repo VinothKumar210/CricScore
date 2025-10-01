@@ -515,25 +515,16 @@ export default function LocalMatch() {
                 </Select>
                 {overs === "custom" && (
                   <Input
-                    type="number"
-                    placeholder="Enter number of overs"
+                    type="text"
+                    placeholder="Enter number of overs (1-50)"
                     value={customOvers}
                     onChange={(e) => {
                       const value = e.target.value;
-                      // Allow empty string and valid numbers
-                      if (value === '' || (!isNaN(Number(value)) && Number(value) >= 0)) {
+                      // Allow empty string or numbers only
+                      if (value === '' || /^\d+$/.test(value)) {
                         setCustomOvers(value);
                       }
                     }}
-                    onBlur={(e) => {
-                      // Only set minimum value if user tries to leave field empty after interaction
-                      const value = e.target.value;
-                      if (value === '' && customOvers !== '') {
-                        // Don't force a value, let it stay empty
-                      }
-                    }}
-                    min="1"
-                    max="50"
                     data-testid="input-custom-overs"
                     className="mt-2"
                   />
