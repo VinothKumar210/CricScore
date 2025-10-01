@@ -1212,6 +1212,17 @@ export default function Scoreboard() {
 
   return (
     <div className="p-4 max-w-6xl mx-auto space-y-6">
+      {/* Navigation Button */}
+      <div className="flex justify-end mb-4">
+        <Button 
+          onClick={() => setLocation('/local-match')}
+          variant="outline"
+          data-testid="button-create-match"
+        >
+          Create New Match
+        </Button>
+      </div>
+      
       {/* Match Header */}
       <Card>
         <CardHeader>
