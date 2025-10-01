@@ -673,7 +673,7 @@ export default function LocalMatch() {
                 </div>
               ) : (
                 <Input
-                  placeholder="Or enter custom team name"
+                  placeholder="Or enter custom team name (optional)"
                   value={myTeamName}
                   onChange={(e) => setMyTeamName(e.target.value)}
                   data-testid="input-my-team-name-custom"
@@ -898,7 +898,7 @@ export default function LocalMatch() {
                 </div>
               ) : !opponentTeamSearch && (
                 <Input
-                  placeholder="Or enter custom team name"
+                  placeholder="Or enter custom team name (optional)"
                   value={opponentTeamName}
                   onChange={(e) => setOpponentTeamName(e.target.value)}
                   data-testid="input-opponent-team-name-custom"
@@ -1035,8 +1035,8 @@ export default function LocalMatch() {
             // Store team data and match configuration for coin toss and scoring
             localStorage.setItem('myTeamPlayers', JSON.stringify(myTeamPlayers));
             localStorage.setItem('opponentTeamPlayers', JSON.stringify(opponentTeamPlayers));
-            localStorage.setItem('myTeamName', myTeamName);
-            localStorage.setItem('opponentTeamName', opponentTeamName);
+            localStorage.setItem('myTeamName', myTeamName || 'My Team');
+            localStorage.setItem('opponentTeamName', opponentTeamName || 'Opponent Team');
             localStorage.setItem('matchOvers', getCurrentOvers());
             localStorage.setItem('maxOversPerBowler', maxOversPerBowler);
             localStorage.setItem('bowlersAtMaxOvers', bowlersAtMaxOvers);
