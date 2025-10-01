@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trophy } from 'lucide-react';
+import { Loader2, Trophy, ArrowLeft } from 'lucide-react';
 import { type LocalPlayer } from '@shared/schema';
 
 interface MatchState {
@@ -1212,14 +1212,17 @@ export default function Scoreboard() {
 
   return (
     <div className="p-4 max-w-6xl mx-auto space-y-6">
-      {/* Navigation Button */}
-      <div className="flex justify-end mb-4">
+      {/* Back Button */}
+      <div className="flex justify-start mb-4">
         <Button 
           onClick={() => setLocation('/local-match')}
-          variant="outline"
-          data-testid="button-create-match"
+          variant="ghost"
+          size="sm"
+          data-testid="button-back-to-create-match"
+          className="flex items-center gap-2"
         >
-          Create New Match
+          <ArrowLeft className="h-4 w-4" />
+          Back to Create Match
         </Button>
       </div>
       
