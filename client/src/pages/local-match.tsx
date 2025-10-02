@@ -30,8 +30,6 @@ export default function LocalMatch() {
   const [selectedOpponentTeamMembers, setSelectedOpponentTeamMembers] = useState<string[]>([]);
   const [overs, setOvers] = useState<string>("20");
   const [customOvers, setCustomOvers] = useState<string>("");
-  const [maxOversPerBowler, setMaxOversPerBowler] = useState<string>("4");
-  const [bowlersAtMaxOvers, setBowlersAtMaxOvers] = useState<string>("5");
   const [myTeamPlayers, setMyTeamPlayers] = useState<LocalPlayer[]>(
     Array(11).fill(null).map((_, index) => ({
       name: "",
@@ -429,41 +427,18 @@ export default function LocalMatch() {
     return overs === "custom" ? customOvers : overs;
   };
 
-  // Validate custom bowling restrictions
+  // Validate custom configuration
   const isValidCustomConfig = () => {
     if (overs !== "custom") return true;
-    if (!customOvers || !maxOversPerBowler || !bowlersAtMaxOvers) return false;
+    if (!customOvers) return false;
     
     const totalOvers = parseInt(customOvers);
-    const maxOvers = parseInt(maxOversPerBowler);
-    const bowlers = parseInt(bowlersAtMaxOvers);
-    
-    // Basic validations
-    if (maxOvers > Math.floor(totalOvers / 2)) return false; // Max overs can't exceed half the total
-    if (bowlers > 11) return false; // Can't have more than 11 bowlers
-    if (maxOvers * bowlers > totalOvers) return false; // Total possible overs shouldn't exceed match overs
-    
-    return true;
+    return totalOvers > 0 && totalOvers <= 50;
   };
 
-  // Bowling restrictions based on overs and custom settings
+  // Bowling restrictions removed
   const getBowlingRestrictions = () => {
-    if (overs === "custom" && customOvers) {
-      return `Max ${maxOversPerBowler} overs per bowler (${bowlersAtMaxOvers} bowlers can bowl max overs)`;
-    }
-    
-    switch (overs) {
-      case "10":
-        return "Max 2 overs per bowler";
-      case "12":
-        return "Max 3 overs per bowler (2 bowlers only)";
-      case "15":
-        return "Max 3 overs per bowler";
-      case "20":
-        return "Max 4 overs per bowler";
-      default:
-        return "Standard bowling restrictions apply";
-    }
+    return "No bowling restrictions";
   };
 
   return (
@@ -543,44 +518,6 @@ export default function LocalMatch() {
               </div>
             </div>
 
-            {/* Custom Bowling Rules (only show for custom format) */}
-            {overs === "custom" && (
-              <div className="border-t pt-6">
-                <h4 className="text-sm font-medium mb-4">Custom Bowling Restrictions</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Max Overs Per Bowler</label>
-                    <Input
-                      type="number"
-                      placeholder="Enter max overs"
-                      value={maxOversPerBowler}
-                      onChange={(e) => setMaxOversPerBowler(e.target.value)}
-                      min="1"
-                      max={customOvers ? Math.floor(parseInt(customOvers) / 2).toString() : "10"}
-                      data-testid="input-max-overs-per-bowler"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Maximum overs any single bowler can bowl
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Bowlers at Max Overs</label>
-                    <Input
-                      type="number"
-                      placeholder="Enter number of bowlers"
-                      value={bowlersAtMaxOvers}
-                      onChange={(e) => setBowlersAtMaxOvers(e.target.value)}
-                      min="1"
-                      max="11"
-                      data-testid="input-bowlers-at-max-overs"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      How many bowlers can bowl the maximum overs
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -599,12 +536,7 @@ export default function LocalMatch() {
         <Alert className="mb-6 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
           <AlertTriangle className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-red-800 dark:text-red-200">
-            Invalid bowling configuration. Please check:
-            <ul className="list-disc list-inside mt-2 text-sm">
-              <li>Max overs per bowler can't exceed {Math.floor(parseInt(customOvers || "0") / 2)} (half of total overs)</li>
-              <li>Number of bowlers can't exceed 11</li>
-              <li>Total maximum overs ({parseInt(maxOversPerBowler || "0")} × {parseInt(bowlersAtMaxOvers || "0")}) shouldn't exceed match overs ({customOvers})</li>
-            </ul>
+            Invalid configuration. Overs must be between 1 and 50.
           </AlertDescription>
         </Alert>
       )}
@@ -1042,8 +974,6 @@ export default function LocalMatch() {
             localStorage.setItem('myTeamName', myTeamName || 'My Team');
             localStorage.setItem('opponentTeamName', opponentTeamName || 'Opponent Team');
             localStorage.setItem('matchOvers', getCurrentOvers());
-            localStorage.setItem('maxOversPerBowler', maxOversPerBowler);
-            localStorage.setItem('bowlersAtMaxOvers', bowlersAtMaxOvers);
             setLocation('/coin-toss');
           }}
           disabled={!bothTeamsHavePlayers || !teamsEqual || !isValidCustomConfig()}
