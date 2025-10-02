@@ -190,6 +190,7 @@ export class PrismaStorage implements IStorage {
         wicketsTaken: 0,
         economy: 0,
         catchesTaken: 0,
+        runOuts: 0,
       }
     });
   }
@@ -496,6 +497,7 @@ export class PrismaStorage implements IStorage {
     const newRunsConceded = (stats.runsConceded || 0) + match.runsConceded;
     const newWicketsTaken = (stats.wicketsTaken || 0) + match.wicketsTaken;
     const newCatchesTaken = (stats.catchesTaken || 0) + match.catchesTaken;
+    const newRunOuts = (stats.runOuts || 0) + match.runOuts;
     const newManOfTheMatchAwards = (stats.manOfTheMatchAwards || 0) + (match.isManOfTheMatch ? 1 : 0);
 
     const strikeRate = newBallsFaced > 0 ? (newTotalRuns / newBallsFaced) * 100 : 0;
@@ -515,6 +517,7 @@ export class PrismaStorage implements IStorage {
       wicketsTaken: newWicketsTaken,
       economy: parseFloat(economy.toFixed(2)),
       catchesTaken: newCatchesTaken,
+      runOuts: newRunOuts,
       manOfTheMatchAwards: newManOfTheMatchAwards,
     });
   }
