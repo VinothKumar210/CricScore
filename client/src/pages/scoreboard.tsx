@@ -546,8 +546,8 @@ export default function Scoreboard() {
       } : null);
       
       // Automatically post stats when match completes
-      setTimeout(() => {
-        postStatsAutomatically();
+      setTimeout(async () => {
+        await postStatsAutomatically();
         setShowMatchResult(true);
       }, 500);
     }
