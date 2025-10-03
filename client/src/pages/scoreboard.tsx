@@ -1024,8 +1024,8 @@ export default function Scoreboard() {
   };
 
   const selectNewBatsman = (newBatsman: LocalPlayer) => {
-    // For second innings, we need to select both openers if no batsmen are set yet
-    if (matchState?.currentInnings === 2 && batsmanStats.length === 0) {
+    // For second innings, we need to select both openers if current batsmen are not set yet
+    if (matchState?.currentInnings === 2 && !matchState.strikeBatsman.name) {
       // This is the first batsman for second innings - set as striker
       setBatsmanStats([{
         player: newBatsman,
@@ -1046,7 +1046,7 @@ export default function Scoreboard() {
       return;
     }
     
-    if (matchState?.currentInnings === 2 && batsmanStats.length === 1) {
+    if (matchState?.currentInnings === 2 && matchState.strikeBatsman.name && !matchState.nonStrikeBatsman.name) {
       // This is the second batsman for second innings - set as non-striker
       setBatsmanStats(prev => [
         ...prev,
@@ -1951,7 +1951,7 @@ export default function Scoreboard() {
         <DialogContent aria-describedby="bowler-selection-description">
           <DialogHeader>
             <DialogTitle>
-              {matchState?.currentInnings === 2 && bowlerStats.length === 0 
+              {matchState?.currentInnings === 2 && !matchState.currentBowler.name 
                 ? "Select Opening Bowler (Second Innings)"
                 : "Select Next Bowler"}
             </DialogTitle>
