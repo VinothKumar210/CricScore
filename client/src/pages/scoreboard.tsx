@@ -596,9 +596,8 @@ export default function Scoreboard() {
       extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0 }
     });
     
-    // Clear previous stats as new teams are batting/bowling
-    setBatsmanStats([]);
-    setBowlerStats([]);
+    // PRESERVE stats from first innings - DO NOT clear them
+    // Stats will accumulate across both innings for complete match performance
     
     // Close the transition dialog
     setShowInningsTransition(false);
