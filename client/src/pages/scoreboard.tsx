@@ -514,7 +514,7 @@ export default function Scoreboard() {
       };
       
       // Check for first innings completion
-      if (matchState && !matchState.firstInningsComplete && newOvers >= matchState.matchOvers) {
+      if (matchState && !matchState.firstInningsComplete && newOvers > matchState.matchOvers) {
         handleInningsComplete(updatedScore);
       }
       
@@ -673,7 +673,7 @@ export default function Scoreboard() {
           setShowBowlerDialog(true);
         }, 500);
       }
-      // If newOvers >= matchState.matchOvers, innings is complete and handleInningsComplete will handle it
+      // If newOvers > matchState.matchOvers, innings is complete and handleInningsComplete will handle it
     }
   };
 
@@ -754,7 +754,7 @@ export default function Scoreboard() {
             setShowBowlerDialog(true);
           }, 500);
         }
-        // If newOvers >= matchState.matchOvers, innings is complete and handleInningsComplete will handle it
+        // If newOvers > matchState.matchOvers, innings is complete and handleInningsComplete will handle it
       }
     } else {
       // Add to current over display
@@ -836,7 +836,7 @@ export default function Scoreboard() {
       };
       
       // Check for first innings completion
-      if (matchState && !matchState.firstInningsComplete && (newOvers >= matchState.matchOvers || updatedScore.wickets >= 10)) {
+      if (matchState && !matchState.firstInningsComplete && (newOvers > matchState.matchOvers || updatedScore.wickets >= 10)) {
         setTimeout(() => handleInningsComplete(updatedScore), 100);
       }
       
@@ -897,7 +897,7 @@ export default function Scoreboard() {
       };
       
       // Check for first innings completion
-      if (matchState && !matchState.firstInningsComplete && (newOvers >= matchState.matchOvers || updatedScore.wickets >= 10)) {
+      if (matchState && !matchState.firstInningsComplete && (newOvers > matchState.matchOvers || updatedScore.wickets >= 10)) {
         setTimeout(() => handleInningsComplete(updatedScore), 100);
       }
       
