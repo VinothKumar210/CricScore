@@ -515,7 +515,29 @@ export default function Scoreboard() {
       
       // Check for first innings completion
       if (matchState && !matchState.firstInningsComplete && newBalls >= matchState.matchOvers * 6) {
-        handleInningsComplete(updatedScore);
+        // Calculate the updated bowler stats that would include this final ball
+        const updatedBowlerStats = bowlerStats.map(stat => {
+          if (stat.player.name === matchState.currentBowler.name) {
+            const newBowlerBalls = stat.balls + 1;
+            const newBowlerRuns = stat.runs + runsToAdd;
+            const newOvers = Math.floor(newBowlerBalls / 6);
+            const remainingBalls = newBowlerBalls % 6;
+            const oversBowled = parseFloat(newOvers + '.' + remainingBalls);
+            const decimalOvers = newOvers + (remainingBalls / 6);
+            const newEconomy = decimalOvers > 0 ? newBowlerRuns / decimalOvers : 0;
+            
+            return {
+              ...stat,
+              runs: newBowlerRuns,
+              balls: newBowlerBalls,
+              overs: oversBowled,
+              economy: Math.round(newEconomy * 100) / 100
+            };
+          }
+          return stat;
+        });
+        
+        handleInningsComplete(updatedScore, batsmanStats, updatedBowlerStats);
       }
       
       // Check for second innings/match completion
@@ -572,16 +594,20 @@ export default function Scoreboard() {
     }
   };
   
-  const handleInningsComplete = (finalScore: TeamScore) => {
+  const handleInningsComplete = (finalScore: TeamScore, currentBatsmanStats?: BatsmanStats[], currentBowlerStats?: BowlerStats[]) => {
     if (!matchState) return;
     
     if (matchState.currentInnings === 1) {
       // First innings complete - store the score and capture stats
       const target = finalScore.runs + 1;
       
+      // Use provided stats or fall back to current state
+      const statsToCapture = currentBatsmanStats || batsmanStats;
+      const bowlerStatsToCapture = currentBowlerStats || bowlerStats;
+      
       // Capture first innings batting and bowling statistics
-      setFirstInningsBatsmanStats([...batsmanStats]);
-      setFirstInningsBowlerStats([...bowlerStats]);
+      setFirstInningsBatsmanStats([...statsToCapture]);
+      setFirstInningsBowlerStats([...bowlerStatsToCapture]);
       
       // Only update the first innings completion, don't start second innings yet
       setMatchState(prev => prev ? {
@@ -847,7 +873,31 @@ export default function Scoreboard() {
       
       // Check for first innings completion
       if (matchState && !matchState.firstInningsComplete && (newBalls >= matchState.matchOvers * 6 || updatedScore.wickets >= 10)) {
-        setTimeout(() => handleInningsComplete(updatedScore), 100);
+        setTimeout(() => {
+          // For wicket balls, calculate updated bowler stats manually
+          const updatedBowlerStats = bowlerStats.map(stat => {
+            if (stat.player.name === matchState.currentBowler.name) {
+              const newBowlerBalls = stat.balls + 1;
+              const newBowlerWickets = stat.wickets + 1; // Wicket ball
+              const newOvers = Math.floor(newBowlerBalls / 6);
+              const remainingBalls = newBowlerBalls % 6;
+              const oversBowled = parseFloat(newOvers + '.' + remainingBalls);
+              const decimalOvers = newOvers + (remainingBalls / 6);
+              const newEconomy = decimalOvers > 0 ? stat.runs / decimalOvers : 0;
+              
+              return {
+                ...stat,
+                balls: newBowlerBalls,
+                wickets: newBowlerWickets,
+                overs: oversBowled,
+                economy: Math.round(newEconomy * 100) / 100
+              };
+            }
+            return stat;
+          });
+          
+          handleInningsComplete(updatedScore, batsmanStats, updatedBowlerStats);
+        }, 100);
       }
       
       // Check for match completion in second innings after wicket
@@ -904,7 +954,31 @@ export default function Scoreboard() {
       
       // Check for first innings completion
       if (matchState && !matchState.firstInningsComplete && (newBalls >= matchState.matchOvers * 6 || updatedScore.wickets >= 10)) {
-        setTimeout(() => handleInningsComplete(updatedScore), 100);
+        setTimeout(() => {
+          // For wicket balls, calculate updated bowler stats manually
+          const updatedBowlerStats = bowlerStats.map(stat => {
+            if (stat.player.name === matchState.currentBowler.name) {
+              const newBowlerBalls = stat.balls + 1;
+              const newBowlerWickets = stat.wickets + 1; // Wicket ball
+              const newOvers = Math.floor(newBowlerBalls / 6);
+              const remainingBalls = newBowlerBalls % 6;
+              const oversBowled = parseFloat(newOvers + '.' + remainingBalls);
+              const decimalOvers = newOvers + (remainingBalls / 6);
+              const newEconomy = decimalOvers > 0 ? stat.runs / decimalOvers : 0;
+              
+              return {
+                ...stat,
+                balls: newBowlerBalls,
+                wickets: newBowlerWickets,
+                overs: oversBowled,
+                economy: Math.round(newEconomy * 100) / 100
+              };
+            }
+            return stat;
+          });
+          
+          handleInningsComplete(updatedScore, batsmanStats, updatedBowlerStats);
+        }, 100);
       }
       
       // Check for match completion in second innings after wicket
@@ -970,7 +1044,31 @@ export default function Scoreboard() {
       
       // Check for first innings completion
       if (matchState && !matchState.firstInningsComplete && updatedScore.wickets >= 10) {
-        setTimeout(() => handleInningsComplete(updatedScore), 100);
+        setTimeout(() => {
+          // For wicket balls, calculate updated bowler stats manually
+          const updatedBowlerStats = bowlerStats.map(stat => {
+            if (stat.player.name === matchState.currentBowler.name) {
+              const newBowlerBalls = stat.balls + 1;
+              const newBowlerWickets = stat.wickets + 1; // Wicket ball
+              const newOvers = Math.floor(newBowlerBalls / 6);
+              const remainingBalls = newBowlerBalls % 6;
+              const oversBowled = parseFloat(newOvers + '.' + remainingBalls);
+              const decimalOvers = newOvers + (remainingBalls / 6);
+              const newEconomy = decimalOvers > 0 ? stat.runs / decimalOvers : 0;
+              
+              return {
+                ...stat,
+                balls: newBowlerBalls,
+                wickets: newBowlerWickets,
+                overs: oversBowled,
+                economy: Math.round(newEconomy * 100) / 100
+              };
+            }
+            return stat;
+          });
+          
+          handleInningsComplete(updatedScore, batsmanStats, updatedBowlerStats);
+        }, 100);
       }
       
       // Check for match completion in second innings after wicket
