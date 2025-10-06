@@ -2,6 +2,7 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { useAuth } from "@/components/auth/auth-context";
+import { InstallPWAButton } from "@/components/install-pwa-button";
 
 interface MobileHeaderProps {
   isMenuOpen: boolean;
@@ -35,7 +36,10 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-card" />
           )}
         </div>
-        <h1 className="text-lg font-semibold text-foreground">CricScore</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-lg font-semibold text-foreground">CricScore</h1>
+          <InstallPWAButton />
+        </div>
         <Link href="/profile">
           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center cursor-pointer overflow-hidden">
             {(user as any)?.profilePictureUrl ? (
