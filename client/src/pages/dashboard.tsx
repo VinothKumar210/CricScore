@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useAuth } from "@/components/auth/auth-context";
-import { Gamepad, TrendingUp, Zap, Target, Users, Crown } from "lucide-react";
+import { Gamepad, TrendingUp, Zap, Target, Users, Crown, Radio, Plus } from "lucide-react";
 import { useEffect } from 'react';
 import { refreshUserStatistics } from "@/lib/queryClient";
 import type { CareerStats, Match, Team } from "@shared/schema";
@@ -155,6 +155,33 @@ export default function Dashboard() {
             <Button variant="link" asChild className="w-full mt-4" data-testid="link-add-match">
               <Link href="/add-match">Add Match →</Link>
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Live Matches */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Radio className="h-5 w-5" />
+              Live Matches
+            </CardTitle>
+            <CardDescription>
+              Create live matches with real-time scoring and spectator notifications
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-4">
+              <Radio className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground mb-4">
+                Start a live match and notify spectators to follow your game in real-time
+              </p>
+              <Button asChild className="w-full" data-testid="button-create-live-match">
+                <Link href="/live-match-setup" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Live Match
+                </Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

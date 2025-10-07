@@ -28,11 +28,17 @@ export const registerServiceWorker = async () => {
           });
         }
       });
+
+      // Return registration for push subscription
+      return registration;
       
     } catch (error) {
       console.error('Service Worker registration failed:', error);
+      throw error;
     }
   }
+  
+  throw new Error('Service Worker not supported');
 };
 
 // PWA Install Prompt
