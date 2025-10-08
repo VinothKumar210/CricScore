@@ -176,7 +176,7 @@ export default function Dashboard() {
                 Start a live match and notify spectators to follow your game in real-time
               </p>
               <Button asChild className="w-full" data-testid="button-create-live-match">
-                <Link href="/live-match-setup" className="flex items-center gap-2">
+                <Link href="/local-match" className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
                   Create Live Match
                 </Link>
