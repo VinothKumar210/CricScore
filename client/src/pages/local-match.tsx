@@ -8,9 +8,13 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Users, AlertTriangle, Clock, Check, X, Loader2, ArrowLeft, Search, Crown } from "lucide-react";
+import { Users, AlertTriangle, Clock, Check, X, Loader2, ArrowLeft, Search, Crown, Bell, Plus } from "lucide-react";
 import { type LocalPlayer, type Team, type User } from "@shared/schema";
 import { useAuth } from "@/components/auth/auth-context";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
 
 export default function LocalMatch() {
   const { user } = useAuth();
@@ -46,6 +50,18 @@ export default function LocalMatch() {
       userId: undefined,
     }))
   );
+
+  // Spectator functionality states
+  const [allowSpectators, setAllowSpectators] = useState(false);
+  const [spectatorUsernames, setSpectatorUsernames] = useState<string[]>([]);
+  const [spectatorInput, setSpectatorInput] = useState("");
+  const [validatingUsername, setValidatingUsername] = useState<string | null>(null);
+  const [spectatorValidation, setSpectatorValidation] = useState<Record<string, {
+    isValid: boolean;
+    userId?: string;
+    profileName?: string;
+  }>>({});
+  const { toast } = useToast();
 
   // Username validation states
   const [usernameValidation, setUsernameValidation] = useState<Record<string, {
@@ -138,6 +154,123 @@ export default function LocalMatch() {
     const timeoutId = setTimeout(validateUsernames, 500); // Debounce for 500ms
     return () => clearTimeout(timeoutId);
   }, [myTeamPlayers, opponentTeamPlayers, lastValidatedUsernames]);
+
+  // Spectator username validation
+  const validateSpectatorUsername = async (username: string) => {
+    if (!username || username.length < 3) return;
+    
+    setValidatingUsername(username);
+    
+    try {
+      const response = await fetch(`/api/users/lookup-username?username=${encodeURIComponent(username)}`);
+      const data = await response.json();
+      
+      setSpectatorValidation(prev => ({
+        ...prev,
+        [username]: {
+          isValid: data.found,
+          userId: data.user?.id,
+          profileName: data.user?.profileName
+        }
+      }));
+    } catch (error) {
+      console.error("Error validating username:", error);
+      setSpectatorValidation(prev => ({
+        ...prev,
+        [username]: { isValid: false }
+      }));
+    }
+    
+    setValidatingUsername(null);
+  };
+
+  // Debounced spectator username validation
+  useEffect(() => {
+    if (!spectatorInput) return;
+    
+    const timer = setTimeout(() => {
+      validateSpectatorUsername(spectatorInput);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [spectatorInput]);
+
+  // Add spectator function
+  const addSpectator = () => {
+    const username = spectatorInput.trim();
+    if (!username) return;
+    
+    if (username === user?.username) {
+      toast({
+        title: "Cannot add yourself",
+        description: "You are the match creator.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (spectatorUsernames.includes(username)) {
+      toast({
+        title: "Username already added",
+        description: "This spectator has already been added to the list.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const validation = spectatorValidation[username];
+    if (!validation?.isValid) {
+      toast({
+        title: "Invalid username",
+        description: "Please make sure the username exists and is spelled correctly.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSpectatorUsernames(prev => [...prev, username]);
+    setSpectatorInput("");
+  };
+
+  // Remove spectator function
+  const removeSpectator = (username: string) => {
+    setSpectatorUsernames(prev => prev.filter(u => u !== username));
+  };
+
+  // Add player from team to spectators
+  const addPlayerAsSpectator = (player: any) => {
+    if (!player.username) return;
+    
+    if (player.username === user?.username) {
+      toast({
+        title: "Cannot add yourself",
+        description: "You are the match creator.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (spectatorUsernames.includes(player.username)) {
+      toast({
+        title: "Player already added",
+        description: "This player has already been added as a spectator.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSpectatorUsernames(prev => [...prev, player.username]);
+    
+    // Update validation cache
+    setSpectatorValidation(prev => ({
+      ...prev,
+      [player.username]: {
+        isValid: true,
+        userId: player.id,
+        profileName: player.profileName || player.username
+      }
+    }));
+  };
 
   // Debounced opponent team search
   useEffect(() => {
@@ -518,9 +651,232 @@ export default function LocalMatch() {
               </div>
             </div>
 
+            {/* Allow Spectators Toggle */}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="allow-spectators"
+                checked={allowSpectators}
+                onCheckedChange={setAllowSpectators}
+                data-testid="switch-allow-spectators"
+              />
+              <Label htmlFor="allow-spectators" className="text-sm font-medium">
+                Allow Spectators
+              </Label>
+            </div>
+
           </div>
         </CardContent>
       </Card>
+
+      {/* Spectator Management - Only shown when allowed */}
+      {allowSpectators && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              Spectator Selection
+            </CardTitle>
+            <p className="text-sm text-gray-600">
+              Select players from teams or add by username. They'll receive notifications when the match starts.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Team Selection for My Team */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Select from My Teams</Label>
+              <div className="space-y-2">
+                {userTeamsLoading ? (
+                  <div className="p-3 text-center text-sm text-gray-500">
+                    <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" />
+                    Loading teams...
+                  </div>
+                ) : userTeams && Array.isArray(userTeams) && userTeams.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-2">
+                    {userTeams.map((team: any) => (
+                      <div
+                        key={team.id}
+                        className="p-3 border rounded-lg"
+                        data-testid={`card-my-team-${team.id}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">{team.name}</h4>
+                            <p className="text-xs text-gray-500 flex items-center">
+                              <Crown className="h-3 w-3 mr-1" />
+                              Captain: {team.captain?.profileName || team.captain?.username}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* My Team Players */}
+                        {selectedMyTeam === team.id && myTeamMembers.length > 0 && (
+                          <div className="mt-4">
+                            <h4 className="font-medium mb-2">Players from {team.name}</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                              {myTeamMembers.map((player: any) => (
+                                <div
+                                  key={player.id}
+                                  onClick={() => addPlayerAsSpectator(player)}
+                                  className={`p-2 border rounded-lg cursor-pointer transition-colors hover:border-sky-300 ${
+                                    spectatorUsernames.includes(player.username || '') ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                                  }`}
+                                  data-testid={`card-my-team-player-${player.id}`}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarFallback className="text-xs">
+                                        {(player.profileName || player.username || 'U').charAt(0).toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">{player.profileName || player.username}</p>
+                                      <p className="text-xs text-gray-500 truncate">@{player.username}</p>
+                                    </div>
+                                    {spectatorUsernames.includes(player.username || '') && (
+                                      <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 text-center text-sm text-gray-500">
+                    No teams found. Create a team first to select players.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Team Selection for Opponent Team */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Select from Opponent Teams</Label>
+              <div className="space-y-2">
+                {selectedOpponentTeam && opponentTeamMembers.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Players from {opponentTeamName}</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {opponentTeamMembers.map((player: any) => (
+                        <div
+                          key={player.id}
+                          onClick={() => addPlayerAsSpectator(player)}
+                          className={`p-2 border rounded-lg cursor-pointer transition-colors hover:border-sky-300 ${
+                            spectatorUsernames.includes(player.username || '') ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                          }`}
+                          data-testid={`card-opponent-team-player-${player.id}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="text-xs">
+                                {(player.profileName || player.username || 'U').charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{player.profileName || player.username}</p>
+                              <p className="text-xs text-gray-500 truncate">@{player.username}</p>
+                            </div>
+                            {spectatorUsernames.includes(player.username || '') && (
+                              <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Manual Username Input */}
+            <div>
+              <Label className="text-sm font-medium mb-2 block">Add by Username</Label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    value={spectatorInput}
+                    onChange={(e) => setSpectatorInput(e.target.value)}
+                    placeholder="Enter username to add as spectator"
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpectator())}
+                    data-testid="input-spectator-username"
+                  />
+                  {spectatorInput && (
+                    <div className="mt-1 text-sm">
+                      {validatingUsername === spectatorInput ? (
+                        <div className="flex items-center gap-1 text-gray-500">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Checking username...
+                        </div>
+                      ) : spectatorValidation[spectatorInput] ? (
+                        spectatorValidation[spectatorInput].isValid ? (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <Check className="h-3 w-3" />
+                            Found: {spectatorValidation[spectatorInput].profileName}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-red-600">
+                            <X className="h-3 w-3" />
+                            Username not found
+                          </div>
+                        )
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  type="button"
+                  onClick={addSpectator}
+                  disabled={!spectatorInput || validatingUsername === spectatorInput || !spectatorValidation[spectatorInput]?.isValid}
+                  data-testid="button-add-spectator"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Selected Spectators */}
+            {spectatorUsernames.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-2">Selected Spectators ({spectatorUsernames.length})</h4>
+                <div className="flex flex-wrap gap-2">
+                  {spectatorUsernames.map((username) => (
+                    <Badge key={username} variant="secondary" className="flex items-center gap-1">
+                      {username}
+                      {spectatorValidation[username]?.profileName && (
+                        <span className="text-xs text-gray-500">
+                          ({spectatorValidation[username].profileName})
+                        </span>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeSpectator(username)}
+                        className="h-4 w-4 p-0 hover:bg-red-100"
+                        data-testid={`button-remove-spectator-${username}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {allowSpectators && spectatorUsernames.length === 0 && (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  No spectators selected. Players can be added from teams above or by username.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
       {/* Team Size Validation Alert */}
       {bothTeamsHavePlayers && !teamsEqual && (
         <Alert className="mb-6 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
