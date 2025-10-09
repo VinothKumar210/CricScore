@@ -158,32 +158,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Live Matches */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Radio className="h-5 w-5" />
-              Live Matches
-            </CardTitle>
-            <CardDescription>
-              Create live matches with real-time scoring and spectator notifications
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-4">
-              <Radio className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground mb-4">
-                Start a live match and notify spectators to follow your game in real-time
-              </p>
-              <Button asChild className="w-full" data-testid="button-create-live-match">
-                <Link href="/live-match-setup" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create Live Match
-                </Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* My Teams */}
         <Card>
@@ -237,11 +211,11 @@ export default function Dashboard() {
         </Card>
       </div>
       
-      {/* Floating Local Match Button */}
+      {/* Floating Create Match Button */}
       <Button 
         asChild 
         className="fixed bottom-6 right-6 rounded-lg px-4 py-3 shadow-lg hover:shadow-xl transition-shadow z-50" 
-        data-testid="floating-local-match"
+        data-testid="floating-create-match"
       >
         <Link href="/local-match" className="flex items-center space-x-2">
           <Gamepad className="h-5 w-5" />

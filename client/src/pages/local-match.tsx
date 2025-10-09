@@ -805,7 +805,7 @@ export default function LocalMatch() {
               {/* My Team Players for Spectators */}
               {selectedMyTeamForSpectators && myTeamMembersForSpectators.length > 0 && (
                 <div className="mt-4">
-                  <h4 className="font-medium mb-2">Players from {userTeamsForSpectators?.find((t: any) => t.id === selectedMyTeamForSpectators)?.name}</h4>
+                  <h4 className="font-medium mb-2">Players from {Array.isArray(userTeamsForSpectators) ? userTeamsForSpectators.find((t: any) => t.id === selectedMyTeamForSpectators)?.name : 'Selected Team'}</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                     {myTeamMembersForSpectators.map((player: any) => (
                       <div
