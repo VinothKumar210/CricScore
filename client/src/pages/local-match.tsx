@@ -655,14 +655,14 @@ export default function LocalMatch() {
             </div>
 
             {/* Allow Spectators Toggle */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <Switch
                 id="allow-spectators"
                 checked={allowSpectators}
                 onCheckedChange={setAllowSpectators}
                 data-testid="switch-allow-spectators"
               />
-              <Label htmlFor="allow-spectators" className="text-sm font-medium">
+              <Label htmlFor="allow-spectators" className="text-sm font-medium text-blue-900 dark:text-blue-100">
                 Allow Spectators to Follow This Match
               </Label>
             </div>
