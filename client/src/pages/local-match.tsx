@@ -598,29 +598,27 @@ export default function LocalMatch() {
           Add players for each team and configure match details. Both teams must have equal number of players.
         </p>
       </div>
-      {/* Allow Spectators Toggle - MOVED TO TOP */}
-      <Card className="mb-6 border-2 border-green-500 bg-green-50">
-        <CardHeader>
-          <CardTitle className="flex items-center text-green-800">
-            <Bell className="mr-2 h-5 w-5 text-green-600" />
-            SPECTATOR NOTIFICATIONS
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-3 p-4 bg-green-100 rounded-lg border-2 border-green-300">
-            <Switch
-              id="allow-spectators"
-              checked={allowSpectators}
-              onCheckedChange={setAllowSpectators}
-              data-testid="switch-allow-spectators"
-              className="data-[state=checked]:bg-green-600"
-            />
-            <Label htmlFor="allow-spectators" className="text-lg font-bold text-green-900">
-              Allow Spectators to Follow This Match
-            </Label>
-          </div>
-        </CardContent>
-      </Card>
+      {/* TEST BUTTON - SHOULD BE VERY VISIBLE */}
+      <div style={{backgroundColor: 'red', padding: '20px', margin: '20px', border: '5px solid black'}}>
+        <h1 style={{color: 'white', fontSize: '24px'}}>🔔 TEST - CAN YOU SEE THIS RED BOX? 🔔</h1>
+        <button 
+          onClick={() => setAllowSpectators(!allowSpectators)}
+          style={{
+            backgroundColor: allowSpectators ? 'green' : 'blue',
+            color: 'white',
+            padding: '15px 30px',
+            fontSize: '18px',
+            border: '3px solid white',
+            borderRadius: '10px',
+            cursor: 'pointer'
+          }}
+        >
+          {allowSpectators ? '✅ SPECTATORS ENABLED' : '❌ ENABLE SPECTATORS'}
+        </button>
+        <p style={{color: 'yellow', fontSize: '16px', marginTop: '10px'}}>
+          Current state: {allowSpectators ? 'ON' : 'OFF'}
+        </p>
+      </div>
 
       {/* Match Configuration */}
       <Card className="mb-6">
