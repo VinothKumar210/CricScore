@@ -73,35 +73,12 @@ export default function LocalMatch() {
     userId?: string;
     profileName?: string;
   }>>({});
-  const [selectedMyTeamForSpectators, setSelectedMyTeamForSpectators] = useState<string>("");
-  const [selectedOpponentTeamForSpectators, setSelectedOpponentTeamForSpectators] = useState<string>("");
-  const [myTeamMembersForSpectators, setMyTeamMembersForSpectators] = useState<any[]>([]);
-  const [opponentTeamMembersForSpectators, setOpponentTeamMembersForSpectators] = useState<any[]>([]);
-  const [opponentTeamSearchForSpectators, setOpponentTeamSearchForSpectators] = useState<string>("");
-  const [searchResultsForSpectators, setSearchResultsForSpectators] = useState<any[]>([]);
-  const [isSearchingForSpectators, setIsSearchingForSpectators] = useState(false);
 
   // Fetch user's teams for "My Team" dropdown
   const { data: userTeams, isLoading: userTeamsLoading } = useQuery<(Team & { captain: User, viceCaptain?: User })[]>({
     queryKey: ["/api/teams"],
   });
 
-  // Fetch user teams for spectator selection
-  const { data: userTeamsForSpectators, isLoading: userTeamsForSpectatorsLoading } = useQuery({
-    queryKey: ['/api/teams'],
-    enabled: allowSpectators,
-  });
-
-  // Fetch team members for spectator selection when team is selected
-  const { data: myTeamMembersDataForSpectators, isLoading: myTeamMembersLoadingForSpectators } = useQuery({
-    queryKey: ['/api/teams', selectedMyTeamForSpectators, 'members'],
-    enabled: allowSpectators && selectedMyTeamForSpectators !== "",
-  });
-
-  const { data: opponentTeamMembersDataForSpectators, isLoading: opponentTeamMembersLoadingForSpectators } = useQuery({
-    queryKey: ['/api/teams', selectedOpponentTeamForSpectators, 'members'],
-    enabled: allowSpectators && selectedOpponentTeamForSpectators !== "",
-  });
 
   // Search teams mutation for opponent team search
   const searchTeamsMutation = useMutation({
@@ -193,18 +170,6 @@ export default function LocalMatch() {
     }
   }, [opponentTeamSearch]);
 
-  // Update team members for spectators when data changes
-  useEffect(() => {
-    if (myTeamMembersDataForSpectators) {
-      setMyTeamMembersForSpectators(Array.isArray(myTeamMembersDataForSpectators) ? myTeamMembersDataForSpectators : []);
-    }
-  }, [myTeamMembersDataForSpectators]);
-
-  useEffect(() => {
-    if (opponentTeamMembersDataForSpectators) {
-      setOpponentTeamMembersForSpectators(Array.isArray(opponentTeamMembersDataForSpectators) ? opponentTeamMembersDataForSpectators : []);
-    }
-  }, [opponentTeamMembersDataForSpectators]);
 
   // Validate spectator username with debounce
   const validateSpectatorUsername = async (username: string) => {
@@ -246,34 +211,6 @@ export default function LocalMatch() {
     return () => clearTimeout(timer);
   }, [spectatorInput]);
 
-  // Search teams for spectator opponent selection
-  useEffect(() => {
-    if (!opponentTeamSearchForSpectators.trim() || opponentTeamSearchForSpectators.length < 2 || !allowSpectators) {
-      setSearchResultsForSpectators([]);
-      return;
-    }
-
-    const searchTeams = async () => {
-      setIsSearchingForSpectators(true);
-      try {
-        const response = await fetch(`/api/teams/search?q=${encodeURIComponent(opponentTeamSearchForSpectators)}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          },
-        });
-        if (response.ok) {
-          const results = await response.json();
-          setSearchResultsForSpectators(results);
-        }
-      } catch (error) {
-        console.error('Error searching teams:', error);
-      }
-      setIsSearchingForSpectators(false);
-    };
-
-    const timer = setTimeout(searchTeams, 300);
-    return () => clearTimeout(timer);
-  }, [opponentTeamSearchForSpectators, allowSpectators]);
 
   // Fetch team members for selection
   const fetchTeamMembers = async (teamId: string, isMyTeam: boolean) => {
@@ -579,19 +516,6 @@ export default function LocalMatch() {
     setSpectatorUsernames(prev => prev.filter(u => u !== username));
   };
 
-  // Handle team selection for spectators
-  const handleMyTeamSelectForSpectators = (teamId: string) => {
-    setSelectedMyTeamForSpectators(teamId);
-  };
-
-  const handleOpponentTeamSelectForSpectators = (teamId: string) => {
-    setSelectedOpponentTeamForSpectators(teamId);
-    const team = searchResultsForSpectators.find((t: any) => t.id === teamId);
-    if (team) {
-      setOpponentTeamSearchForSpectators(team.name);
-      setSearchResultsForSpectators([]);
-    }
-  };
 
   // Add player from team to spectators
   const addPlayerAsSpectator = (player: any) => {
@@ -760,171 +684,83 @@ export default function LocalMatch() {
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Team Selection for My Team */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Select from My Teams</Label>
-              <div className="space-y-2">
-                {userTeamsForSpectatorsLoading ? (
-                  <div className="p-3 text-center text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" />
-                    Loading teams...
-                  </div>
-                ) : userTeamsForSpectators && Array.isArray(userTeamsForSpectators) && userTeamsForSpectators.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-2">
-                    {userTeamsForSpectators.map((team: any) => (
-                      <div
-                        key={team.id}
-                        onClick={() => handleMyTeamSelectForSpectators(team.id)}
-                        className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                          selectedMyTeamForSpectators === team.id ? 'border-sky-500 bg-sky-50' : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        data-testid={`card-spectator-my-team-${team.id}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium">{team.name}</h4>
-                            <p className="text-xs text-muted-foreground flex items-center">
-                              <Crown className="h-3 w-3 mr-1" />
-                              Captain: {team.captain?.profileName || team.captain?.username}
-                            </p>
-                          </div>
-                          {selectedMyTeamForSpectators === team.id && (
-                            <Check className="h-5 w-5 text-sky-600" />
-                          )}
+            {/* Players from My Team */}
+            {selectedMyTeam && myTeamMembers.length > 0 && (
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Players from {myTeamName} (All Team Members)</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {myTeamMembers.map((player: any) => (
+                    <div
+                      key={player.id}
+                      onClick={() => addPlayerAsSpectator(player)}
+                      className={`p-2 border rounded-lg cursor-pointer transition-colors hover:border-sky-300 ${
+                        spectatorUsernames.includes(player.username || '') ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                      }`}
+                      data-testid={`card-spectator-my-team-player-${player.id}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="text-xs">
+                            {(player.profileName || player.username || 'U').charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{player.profileName || player.username}</p>
+                          <p className="text-xs text-muted-foreground truncate">@{player.username}</p>
                         </div>
+                        {spectatorUsernames.includes(player.username || '') && (
+                          <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                        )}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-3 text-center text-sm text-muted-foreground">
-                    No teams found. Create a team first to select players.
-                  </div>
-                )}
+                    </div>
+                  ))}
+                </div>
               </div>
+            )}
 
-              {/* My Team Players for Spectators */}
-              {selectedMyTeamForSpectators && myTeamMembersForSpectators.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="font-medium mb-2">Players from {Array.isArray(userTeamsForSpectators) ? userTeamsForSpectators.find((t: any) => t.id === selectedMyTeamForSpectators)?.name : 'Selected Team'}</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {myTeamMembersForSpectators.map((player: any) => (
-                      <div
-                        key={player.id}
-                        onClick={() => addPlayerAsSpectator(player)}
-                        className={`p-2 border rounded-lg cursor-pointer transition-colors hover:border-sky-300 ${
-                          spectatorUsernames.includes(player.username || '') ? 'border-green-500 bg-green-50' : 'border-gray-200'
-                        }`}
-                        data-testid={`card-spectator-my-team-player-${player.id}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {(player.profileName || player.username || 'U').charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{player.profileName || player.username}</p>
-                            <p className="text-xs text-muted-foreground truncate">@{player.username}</p>
-                          </div>
-                          {spectatorUsernames.includes(player.username || '') && (
-                            <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                          )}
+            {/* Players from Opponent Team */}
+            {selectedOpponentTeam && opponentTeamMembers.length > 0 && (
+              <div>
+                <Label className="text-sm font-medium mb-2 block">Players from {opponentTeamName} (All Team Members)</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {opponentTeamMembers.map((player: any) => (
+                    <div
+                      key={player.id}
+                      onClick={() => addPlayerAsSpectator(player)}
+                      className={`p-2 border rounded-lg cursor-pointer transition-colors hover:border-sky-300 ${
+                        spectatorUsernames.includes(player.username || '') ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                      }`}
+                      data-testid={`card-spectator-opponent-team-player-${player.id}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="text-xs">
+                            {(player.profileName || player.username || 'U').charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{player.profileName || player.username}</p>
+                          <p className="text-xs text-muted-foreground truncate">@{player.username}</p>
                         </div>
+                        {spectatorUsernames.includes(player.username || '') && (
+                          <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                        )}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
-
-            {/* Team Selection for Opponent Team */}
-            <div>
-              <Label className="text-sm font-medium mb-2 block">Select from Opponent Teams</Label>
-              <div className="relative">
-                <Input
-                  placeholder="Search for opponent team..."
-                  value={opponentTeamSearchForSpectators}
-                  onChange={(e) => {
-                    setOpponentTeamSearchForSpectators(e.target.value);
-                    if (!e.target.value) {
-                      setSelectedOpponentTeamForSpectators("");
-                    }
-                  }}
-                  data-testid="input-spectator-opponent-team-search"
-                  className="pr-8"
-                />
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
+            )}
 
-              {/* Search Results for Spectators */}
-              {(opponentTeamSearchForSpectators.trim().length >= 2 && (isSearchingForSpectators || searchResultsForSpectators.length > 0)) && (
-                <div className="mt-2 border border-gray-200 rounded-lg bg-white shadow-sm max-h-48 overflow-y-auto">
-                  {isSearchingForSpectators ? (
-                    <div className="p-3 text-center text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" />
-                      Searching teams...
-                    </div>
-                  ) : searchResultsForSpectators.length > 0 ? (
-                    <div className="py-1">
-                      {searchResultsForSpectators.map((team: any) => (
-                        <div
-                          key={team.id}
-                          onClick={() => handleOpponentTeamSelectForSpectators(team.id)}
-                          className="px-3 py-2 cursor-pointer hover:bg-gray-50 transition-colors"
-                          data-testid={`option-spectator-opponent-team-${team.id}`}
-                        >
-                          <div>
-                            <p className="font-medium">{team.name}</p>
-                            <p className="text-xs text-muted-foreground flex items-center">
-                              <Crown className="h-3 w-3 mr-1" />
-                              Captain: {team.captain?.profileName || team.captain?.username}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-3 text-center text-sm text-muted-foreground">
-                      No teams found matching "{opponentTeamSearchForSpectators}"
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Opponent Team Players for Spectators */}
-              {selectedOpponentTeamForSpectators && opponentTeamMembersForSpectators.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="font-medium mb-2">Players from {searchResultsForSpectators.find((t: any) => t.id === selectedOpponentTeamForSpectators)?.name}</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {opponentTeamMembersForSpectators.map((player: any) => (
-                      <div
-                        key={player.id}
-                        onClick={() => addPlayerAsSpectator(player)}
-                        className={`p-2 border rounded-lg cursor-pointer transition-colors hover:border-sky-300 ${
-                          spectatorUsernames.includes(player.username || '') ? 'border-green-500 bg-green-50' : 'border-gray-200'
-                        }`}
-                        data-testid={`card-spectator-opponent-team-player-${player.id}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {(player.profileName || player.username || 'U').charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{player.profileName || player.username}</p>
-                            <p className="text-xs text-muted-foreground truncate">@{player.username}</p>
-                          </div>
-                          {spectatorUsernames.includes(player.username || '') && (
-                            <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Info message when no teams are selected */}
+            {(!selectedMyTeam && !selectedOpponentTeam) && (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Select teams in the match configuration above to see all team members available as spectators.
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Add Spectator by Username */}
             <div>
