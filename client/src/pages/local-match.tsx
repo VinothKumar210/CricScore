@@ -598,6 +598,30 @@ export default function LocalMatch() {
           Add players for each team and configure match details. Both teams must have equal number of players.
         </p>
       </div>
+      {/* Allow Spectators Toggle - MOVED TO TOP */}
+      <Card className="mb-6 border-2 border-green-500 bg-green-50">
+        <CardHeader>
+          <CardTitle className="flex items-center text-green-800">
+            <Bell className="mr-2 h-5 w-5 text-green-600" />
+            SPECTATOR NOTIFICATIONS
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-3 p-4 bg-green-100 rounded-lg border-2 border-green-300">
+            <Switch
+              id="allow-spectators"
+              checked={allowSpectators}
+              onCheckedChange={setAllowSpectators}
+              data-testid="switch-allow-spectators"
+              className="data-[state=checked]:bg-green-600"
+            />
+            <Label htmlFor="allow-spectators" className="text-lg font-bold text-green-900">
+              Allow Spectators to Follow This Match
+            </Label>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Match Configuration */}
       <Card className="mb-6">
         <CardHeader>
@@ -652,19 +676,6 @@ export default function LocalMatch() {
                   </p>
                 </div>
               </div>
-            </div>
-
-            {/* Allow Spectators Toggle */}
-            <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-              <Switch
-                id="allow-spectators"
-                checked={allowSpectators}
-                onCheckedChange={setAllowSpectators}
-                data-testid="switch-allow-spectators"
-              />
-              <Label htmlFor="allow-spectators" className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                Allow Spectators to Follow This Match
-              </Label>
             </div>
 
           </div>
