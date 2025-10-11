@@ -598,26 +598,20 @@ export default function LocalMatch() {
           Add players for each team and configure match details. Both teams must have equal number of players.
         </p>
       </div>
-      {/* TEST BUTTON - SHOULD BE VERY VISIBLE */}
-      <div style={{backgroundColor: 'red', padding: '20px', margin: '20px', border: '5px solid black'}}>
-        <h1 style={{color: 'white', fontSize: '24px'}}>🔔 TEST - CAN YOU SEE THIS RED BOX? 🔔</h1>
-        <button 
-          onClick={() => setAllowSpectators(!allowSpectators)}
-          style={{
-            backgroundColor: allowSpectators ? 'green' : 'blue',
-            color: 'white',
-            padding: '15px 30px',
-            fontSize: '18px',
-            border: '3px solid white',
-            borderRadius: '10px',
-            cursor: 'pointer'
-          }}
-        >
-          {allowSpectators ? '✅ SPECTATORS ENABLED' : '❌ ENABLE SPECTATORS'}
-        </button>
-        <p style={{color: 'yellow', fontSize: '16px', marginTop: '10px'}}>
-          Current state: {allowSpectators ? 'ON' : 'OFF'}
-        </p>
+      
+      <h1 style={{color: 'red', fontSize: '48px', textAlign: 'center', backgroundColor: 'yellow', padding: '20px'}}>
+        🚨 HELLO! CAN YOU SEE THIS BIG TEXT? 🚨
+      </h1>
+      
+      <div style={{border: '10px solid red', padding: '20px', margin: '20px', backgroundColor: 'blue'}}>
+        <h2 style={{color: 'white', fontSize: '24px'}}>SPECTATOR TOGGLE</h2>
+        <input 
+          type="checkbox" 
+          checked={allowSpectators}
+          onChange={(e) => setAllowSpectators(e.target.checked)}
+          style={{width: '30px', height: '30px', margin: '10px'}}
+        />
+        <span style={{color: 'white', fontSize: '20px'}}>Allow Spectators</span>
       </div>
 
       {/* Match Configuration */}
