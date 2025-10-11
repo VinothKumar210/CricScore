@@ -63,6 +63,9 @@ export default function LocalMatch() {
   // Track last validated usernames to prevent unnecessary API calls
   const [lastValidatedUsernames, setLastValidatedUsernames] = useState<Record<string, string>>({});
 
+  // Player selection mode toggle states
+  const [useTeamSelection, setUseTeamSelection] = useState(true); // true = team selection, false = username search
+  
   // Spectator notification system states
   const [allowSpectators, setAllowSpectators] = useState(false);
   const [spectatorInput, setSpectatorInput] = useState("");
@@ -169,6 +172,23 @@ export default function LocalMatch() {
       setIsSearching(false);
     }
   }, [opponentTeamSearch]);
+
+  // Handle mode switching
+  useEffect(() => {
+    if (!useTeamSelection) {
+      // When switching to username search mode, enable hasAccount for all players
+      setMyTeamPlayers(prev => prev.map(player => ({ ...player, hasAccount: true })));
+      setOpponentTeamPlayers(prev => prev.map(player => ({ ...player, hasAccount: true })));
+      
+      // Clear team selections when switching to username mode
+      setSelectedMyTeam("");
+      setSelectedOpponentTeam("");
+      setMyTeamMembers([]);
+      setOpponentTeamMembers([]);
+      setSelectedMyTeamMembers([]);
+      setSelectedOpponentTeamMembers([]);
+    }
+  }, [useTeamSelection]);
 
 
   // Validate spectator username with debounce
@@ -599,20 +619,52 @@ export default function LocalMatch() {
         </p>
       </div>
       
-      <h1 style={{color: 'red', fontSize: '48px', textAlign: 'center', backgroundColor: 'yellow', padding: '20px'}}>
-        🚨 HELLO! CAN YOU SEE THIS BIG TEXT? 🚨
-      </h1>
-      
-      <div style={{border: '10px solid red', padding: '20px', margin: '20px', backgroundColor: 'blue'}}>
-        <h2 style={{color: 'white', fontSize: '24px'}}>SPECTATOR TOGGLE</h2>
-        <input 
-          type="checkbox" 
-          checked={allowSpectators}
-          onChange={(e) => setAllowSpectators(e.target.checked)}
-          style={{width: '30px', height: '30px', margin: '10px'}}
-        />
-        <span style={{color: 'white', fontSize: '20px'}}>Allow Spectators</span>
-      </div>
+      {/* Player Selection Mode Toggle */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="mr-2 h-5 w-5 text-blue-600" />
+            Player Selection Mode
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={useTeamSelection}
+                  onCheckedChange={setUseTeamSelection}
+                  data-testid="toggle-selection-mode"
+                />
+                <Label className="text-sm font-medium">
+                  {useTeamSelection ? "Select from Teams" : "Search by Username"}
+                </Label>
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {useTeamSelection 
+                ? "Choose players from existing teams" 
+                : "Search and add players by their username"
+              }
+            </div>
+          </div>
+          
+          {/* Spectator Toggle */}
+          <div className="mt-4 pt-4 border-t">
+            <div className="flex items-center space-x-2">
+              <Switch
+                checked={allowSpectators}
+                onCheckedChange={setAllowSpectators}
+                data-testid="toggle-spectators"
+              />
+              <Label className="text-sm font-medium">Allow Spectators</Label>
+              <span className="text-xs text-muted-foreground">
+                - Players can watch and receive match notifications
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Match Configuration */}
       <Card className="mb-6">
@@ -868,76 +920,88 @@ export default function LocalMatch() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-4">
-              <Select value={selectedMyTeam} onValueChange={handleMyTeamSelect}>
-                <SelectTrigger data-testid="select-my-team">
-                  <SelectValue placeholder={myTeamName || "Select from your teams"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {userTeamsLoading ? (
-                    <div className="p-2 text-center text-sm text-muted-foreground">
-                      Loading teams...
+            {useTeamSelection ? (
+              <div className="mb-4">
+                <Select value={selectedMyTeam} onValueChange={handleMyTeamSelect}>
+                  <SelectTrigger data-testid="select-my-team">
+                    <SelectValue placeholder={myTeamName || "Select from your teams"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userTeamsLoading ? (
+                      <div className="p-2 text-center text-sm text-muted-foreground">
+                        Loading teams...
+                      </div>
+                    ) : userTeams && userTeams.length > 0 ? (
+                      userTeams.map((team) => (
+                        <SelectItem key={team.id} value={team.id} data-testid={`option-my-team-${team.id}`}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{team.name}</span>
+                            <span className="text-xs text-muted-foreground flex items-center">
+                              <Crown className="h-3 w-3 mr-1" />
+                              Captain: {team.captain.profileName || team.captain.username}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-center text-sm text-muted-foreground">
+                        No teams found. Create a team first.
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+                
+                {/* Selected team display or manual input */}
+                {selectedMyTeam ? (
+                  <div className="p-2 bg-muted rounded-md mt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm">Selected: {myTeamName}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedMyTeam("");
+                          setMyTeamName("");
+                          // Clear team members and selection
+                          setMyTeamMembers([]);
+                          setSelectedMyTeamMembers([]);
+                          setMyTeamPlayers(Array(11).fill(null).map(() => ({
+                            name: "",
+                            hasAccount: false,
+                            username: undefined,
+                            userId: undefined,
+                          })));
+                        }}
+                        data-testid="button-clear-my-team"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
-                  ) : userTeams && userTeams.length > 0 ? (
-                    userTeams.map((team) => (
-                      <SelectItem key={team.id} value={team.id} data-testid={`option-my-team-${team.id}`}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{team.name}</span>
-                          <span className="text-xs text-muted-foreground flex items-center">
-                            <Crown className="h-3 w-3 mr-1" />
-                            Captain: {team.captain.profileName || team.captain.username}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="p-2 text-center text-sm text-muted-foreground">
-                      No teams found. Create a team first.
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
-              
-              {/* Selected team display or manual input */}
-              {selectedMyTeam ? (
-                <div className="p-2 bg-muted rounded-md mt-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm">Selected: {myTeamName}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedMyTeam("");
-                        setMyTeamName("");
-                        // Clear team members and selection
-                        setMyTeamMembers([]);
-                        setSelectedMyTeamMembers([]);
-                        setMyTeamPlayers(Array(11).fill(null).map(() => ({
-                          name: "",
-                          hasAccount: false,
-                          username: undefined,
-                          userId: undefined,
-                        })));
-                      }}
-                      data-testid="button-clear-my-team"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
                   </div>
-                </div>
-              ) : (
+                ) : (
+                  <Input
+                    placeholder="Or enter custom team name (optional)"
+                    value={myTeamName}
+                    onChange={(e) => setMyTeamName(e.target.value)}
+                    data-testid="input-my-team-name-custom"
+                    className="font-medium mt-2"
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="mb-4">
                 <Input
-                  placeholder="Or enter custom team name (optional)"
+                  placeholder="Enter team name"
                   value={myTeamName}
                   onChange={(e) => setMyTeamName(e.target.value)}
-                  data-testid="input-my-team-name-custom"
-                  className="font-medium mt-2"
+                  data-testid="input-my-team-name-search"
+                  className="font-medium"
                 />
-              )}
-            </div>
+              </div>
+            )}
             
-            {/* Player Selection Interface */}
-            {selectedMyTeam && myTeamMembers.length > 0 && (
+            {/* Player Selection Interface - Only for Team Selection Mode */}
+            {useTeamSelection && selectedMyTeam && myTeamMembers.length > 0 && (
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-medium">Select Playing XI ({selectedMyTeamMembers.length}/11)</h4>
@@ -1010,10 +1074,10 @@ export default function LocalMatch() {
                           onChange={(e) => updateMyTeamPlayer(index, "name", e.target.value)}
                           data-testid={`input-my-team-player-${index + 1}`}
                         />
-                        {player.hasAccount && (
+                        {(useTeamSelection ? player.hasAccount : true) && (
                           <div className="relative">
                             <Input
-                              placeholder="@username"
+                              placeholder={useTeamSelection ? "@username" : "@username (required)"}
                               value={player.username || ""}
                               onChange={(e) => updateMyTeamPlayer(index, "username", e.target.value)}
                               data-testid={`input-my-team-username-${index + 1}`}
@@ -1041,13 +1105,16 @@ export default function LocalMatch() {
                     </TableCell>
                     <TableCell className="text-center">
                       <Switch
-                        checked={player.hasAccount}
+                        checked={useTeamSelection ? player.hasAccount : true}
                         onCheckedChange={(checked) => {
-                          updateMyTeamPlayer(index, "hasAccount", checked);
-                          if (!checked) {
-                            updateMyTeamPlayer(index, "username", undefined);
+                          if (useTeamSelection) {
+                            updateMyTeamPlayer(index, "hasAccount", checked);
+                            if (!checked) {
+                              updateMyTeamPlayer(index, "username", undefined);
+                            }
                           }
                         }}
+                        disabled={!useTeamSelection}
                         data-testid={`switch-my-team-account-${index + 1}`}
                       />
                     </TableCell>
@@ -1067,102 +1134,114 @@ export default function LocalMatch() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-4 space-y-2">
-              <div className="relative">
+            {useTeamSelection ? (
+              <div className="mb-4 space-y-2">
                 <div className="relative">
-                  <Input
-                    placeholder="Search for opponent team..."
-                    value={opponentTeamSearch}
-                    onChange={(e) => {
-                      setOpponentTeamSearch(e.target.value);
-                      if (!e.target.value) {
-                        setSelectedOpponentTeam("");
-                        setOpponentTeamName("");
-                      }
-                    }}
-                    data-testid="input-opponent-team-search"
-                    className="font-medium pr-8"
-                  />
-                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                </div>
-              
-                {/* Search Results Dropdown */}
-                {(opponentTeamSearch.trim().length >= 2 && (isSearching || searchResults.length > 0)) && (
-                  <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
-                    {isSearching ? (
-                      <div className="p-3 text-center text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" />
-                        Searching teams...
-                      </div>
-                    ) : searchResults.length > 0 ? (
-                      <div className="py-1">
-                        {searchResults.map((team) => (
-                          <div
-                            key={team.id}
-                            onClick={() => handleOpponentTeamSelect(team.id)}
-                            className="px-3 py-2 cursor-pointer hover:bg-muted transition-colors"
-                            data-testid={`option-opponent-team-${team.id}`}
-                          >
-                            <div className="flex flex-col">
-                              <span className="font-medium">{team.name}</span>
-                              <span className="text-xs text-muted-foreground flex items-center">
-                                <Crown className="h-3 w-3 mr-1" />
-                                Captain: {team.captain.profileName || team.captain.username}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-3 text-center text-sm text-muted-foreground">
-                        No teams found matching "{opponentTeamSearch}"
-                      </div>
-                    )}
+                  <div className="relative">
+                    <Input
+                      placeholder="Search for opponent team..."
+                      value={opponentTeamSearch}
+                      onChange={(e) => {
+                        setOpponentTeamSearch(e.target.value);
+                        if (!e.target.value) {
+                          setSelectedOpponentTeam("");
+                          setOpponentTeamName("");
+                        }
+                      }}
+                      data-testid="input-opponent-team-search"
+                      className="font-medium pr-8"
+                    />
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   </div>
+                
+                  {/* Search Results Dropdown */}
+                  {(opponentTeamSearch.trim().length >= 2 && (isSearching || searchResults.length > 0)) && (
+                    <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
+                      {isSearching ? (
+                        <div className="p-3 text-center text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" />
+                          Searching teams...
+                        </div>
+                      ) : searchResults.length > 0 ? (
+                        <div className="py-1">
+                          {searchResults.map((team) => (
+                            <div
+                              key={team.id}
+                              onClick={() => handleOpponentTeamSelect(team.id)}
+                              className="px-3 py-2 cursor-pointer hover:bg-muted transition-colors"
+                              data-testid={`option-opponent-team-${team.id}`}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">{team.name}</span>
+                                <span className="text-xs text-muted-foreground flex items-center">
+                                  <Crown className="h-3 w-3 mr-1" />
+                                  Captain: {team.captain.profileName || team.captain.username}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-3 text-center text-sm text-muted-foreground">
+                          No teams found matching "{opponentTeamSearch}"
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Selected team display or manual input */}
+                {selectedOpponentTeam ? (
+                  <div className="p-2 bg-muted rounded-md">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm">Selected: {opponentTeamName}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedOpponentTeam("");
+                          setOpponentTeamName("");
+                          setOpponentTeamSearch("");
+                          // Clear team members and selection
+                          setOpponentTeamMembers([]);
+                          setSelectedOpponentTeamMembers([]);
+                          setOpponentTeamPlayers(Array(11).fill(null).map(() => ({
+                            name: "",
+                            hasAccount: false,
+                            username: undefined,
+                            userId: undefined,
+                          })));
+                        }}
+                        data-testid="button-clear-opponent-team"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : !opponentTeamSearch && (
+                  <Input
+                    placeholder="Or enter custom team name (optional)"
+                    value={opponentTeamName}
+                    onChange={(e) => setOpponentTeamName(e.target.value)}
+                    data-testid="input-opponent-team-name-custom"
+                    className="font-medium"
+                  />
                 )}
               </div>
-              
-              {/* Selected team display or manual input */}
-              {selectedOpponentTeam ? (
-                <div className="p-2 bg-muted rounded-md">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm">Selected: {opponentTeamName}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedOpponentTeam("");
-                        setOpponentTeamName("");
-                        setOpponentTeamSearch("");
-                        // Clear team members and selection
-                        setOpponentTeamMembers([]);
-                        setSelectedOpponentTeamMembers([]);
-                        setOpponentTeamPlayers(Array(11).fill(null).map(() => ({
-                          name: "",
-                          hasAccount: false,
-                          username: undefined,
-                          userId: undefined,
-                        })));
-                      }}
-                      data-testid="button-clear-opponent-team"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ) : !opponentTeamSearch && (
+            ) : (
+              <div className="mb-4">
                 <Input
-                  placeholder="Or enter custom team name (optional)"
+                  placeholder="Enter opponent team name"
                   value={opponentTeamName}
                   onChange={(e) => setOpponentTeamName(e.target.value)}
-                  data-testid="input-opponent-team-name-custom"
+                  data-testid="input-opponent-team-name-search"
                   className="font-medium"
                 />
-              )}
-            </div>
+              </div>
+            )}
             
-            {/* Player Selection Interface */}
-            {selectedOpponentTeam && opponentTeamMembers.length > 0 && (
+            {/* Player Selection Interface - Only for Team Selection Mode */}
+            {useTeamSelection && selectedOpponentTeam && opponentTeamMembers.length > 0 && (
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-medium">Select Playing XI ({selectedOpponentTeamMembers.length}/11)</h4>
@@ -1235,10 +1314,10 @@ export default function LocalMatch() {
                           onChange={(e) => updateOpponentTeamPlayer(index, "name", e.target.value)}
                           data-testid={`input-opponent-team-player-${index + 1}`}
                         />
-                        {player.hasAccount && (
+                        {(useTeamSelection ? player.hasAccount : true) && (
                           <div className="relative">
                             <Input
-                              placeholder="@username"
+                              placeholder={useTeamSelection ? "@username" : "@username (required)"}
                               value={player.username || ""}
                               onChange={(e) => updateOpponentTeamPlayer(index, "username", e.target.value)}
                               data-testid={`input-opponent-team-username-${index + 1}`}
@@ -1266,13 +1345,16 @@ export default function LocalMatch() {
                     </TableCell>
                     <TableCell className="text-center">
                       <Switch
-                        checked={player.hasAccount}
+                        checked={useTeamSelection ? player.hasAccount : true}
                         onCheckedChange={(checked) => {
-                          updateOpponentTeamPlayer(index, "hasAccount", checked);
-                          if (!checked) {
-                            updateOpponentTeamPlayer(index, "username", undefined);
+                          if (useTeamSelection) {
+                            updateOpponentTeamPlayer(index, "hasAccount", checked);
+                            if (!checked) {
+                              updateOpponentTeamPlayer(index, "username", undefined);
+                            }
                           }
                         }}
+                        disabled={!useTeamSelection}
                         data-testid={`switch-opponent-team-account-${index + 1}`}
                       />
                     </TableCell>
