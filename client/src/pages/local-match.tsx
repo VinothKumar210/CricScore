@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,19 +8,13 @@ import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Users, AlertTriangle, Clock, Check, X, Loader2, ArrowLeft, Search, Crown, Bell, Plus, UserPlus } from "lucide-react";
+import { Users, AlertTriangle, Clock, Check, X, Loader2, ArrowLeft, Search, Crown } from "lucide-react";
 import { type LocalPlayer, type Team, type User } from "@shared/schema";
 import { useAuth } from "@/components/auth/auth-context";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
 
 export default function LocalMatch() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
   const [myTeamName, setMyTeamName] = useState<string>("");
   const [opponentTeamName, setOpponentTeamName] = useState<string>("");
   const [selectedMyTeam, setSelectedMyTeam] = useState<string>("");
@@ -53,25 +47,6 @@ export default function LocalMatch() {
     }))
   );
 
-  // Track last validated usernames to prevent unnecessary API calls
-  const [lastValidatedUsernames, setLastValidatedUsernames] = useState<Record<string, string>>({});
-
-  // Selection mode - true for team selection, false for manual entry
-  const [useTeamSelection, setUseTeamSelection] = useState(true);
-  const [showMyTeamDropdown, setShowMyTeamDropdown] = useState(false);
-  const [showOpponentTeamDropdown, setShowOpponentTeamDropdown] = useState(false);
-  
-  // Spectator notification system states
-  const [allowSpectators, setAllowSpectators] = useState(false);
-  const [spectatorInput, setSpectatorInput] = useState("");
-  const [spectatorUsernames, setSpectatorUsernames] = useState<string[]>([]);
-  const [validatingSpectatorUsername, setValidatingSpectatorUsername] = useState<string | null>(null);
-  const [spectatorUsernameValidation, setSpectatorUsernameValidation] = useState<Record<string, {
-    isValid: boolean;
-    userId?: string;
-    profileName?: string;
-  }>>({});
-
   // Username validation states
   const [usernameValidation, setUsernameValidation] = useState<Record<string, {
     isValidating: boolean;
@@ -79,6 +54,9 @@ export default function LocalMatch() {
     userId?: string;
     lastValidatedUsername?: string;
   }>>({});
+
+  // Track last validated usernames to prevent unnecessary API calls
+  const [lastValidatedUsernames, setLastValidatedUsernames] = useState<Record<string, string>>({});
 
   // Fetch user's teams for "My Team" dropdown
   const { data: userTeams, isLoading: userTeamsLoading } = useQuery<(Team & { captain: User, viceCaptain?: User })[]>({
@@ -108,222 +86,360 @@ export default function LocalMatch() {
     },
   });
 
-  // Fetch team members when teams are selected
-  const { data: myTeamMembersData } = useQuery<User[]>({
-    queryKey: ["/api/teams", selectedMyTeam, "members"],
-    enabled: !!selectedMyTeam,
-  });
+  // Debounced username validation - only when usernames actually change
+  useEffect(() => {
+    const validateUsernames = async () => {
+      const allPlayers = [...myTeamPlayers, ...opponentTeamPlayers];
+      const validationPromises: Promise<void>[] = [];
 
-  const { data: opponentTeamMembersData } = useQuery<User[]>({
-    queryKey: ["/api/teams", selectedOpponentTeam, "members"],
-    enabled: !!selectedOpponentTeam,
-  });
+      allPlayers.forEach((player, index) => {
+        const playerKey = index < 11 ? `my-${index}` : `opp-${index - 11}`;
+        const currentUsername = player.username || '';
+        const lastValidated = lastValidatedUsernames[playerKey] || '';
+        
+        if (player.hasAccount && player.username && player.username.length >= 3) {
+          // Only validate if username has changed
+          if (currentUsername !== lastValidated) {
+            const promise = validateUsername(player.username, playerKey);
+            validationPromises.push(promise);
+          }
+        } else if (player.hasAccount) {
+          // Clear validation for empty usernames
+          if (lastValidated !== '') {
+            setUsernameValidation(prev => ({
+              ...prev,
+              [playerKey]: { isValidating: false, isValid: null }
+            }));
+            setLastValidatedUsernames(prev => ({
+              ...prev,
+              [playerKey]: ''
+            }));
+          }
+        } else {
+          // Clear validation when hasAccount is false
+          if (lastValidated !== '') {
+            setUsernameValidation(prev => {
+              const newState = { ...prev };
+              delete newState[playerKey];
+              return newState;
+            });
+            setLastValidatedUsernames(prev => {
+              const newState = { ...prev };
+              delete newState[playerKey];
+              return newState;
+            });
+          }
+        }
+      });
 
-  // Username validation mutation
-  const validateUsernameMutation = useMutation({
-    mutationFn: async (username: string) => {
-      const response = await fetch(`/api/users/lookup-username?username=${encodeURIComponent(username)}`);
-      if (!response.ok) {
-        throw new Error('Failed to validate username');
-      }
-      return response.json();
-    },
-  });
+      await Promise.all(validationPromises);
+    };
 
-  // Spectator username validation
-  const validateSpectatorMutation = useMutation({
-    mutationFn: async (username: string) => {
-      const response = await fetch(`/api/users/lookup-username?username=${encodeURIComponent(username)}`);
-      if (!response.ok) {
-        throw new Error('Failed to validate username');
-      }
-      return response.json();
-    },
-  });
+    const timeoutId = setTimeout(validateUsernames, 500); // Debounce for 500ms
+    return () => clearTimeout(timeoutId);
+  }, [myTeamPlayers, opponentTeamPlayers, lastValidatedUsernames]);
 
-  // Handle team selection
-  const handleMyTeamSelect = useCallback((teamId: string, teamName: string) => {
-    setSelectedMyTeam(teamId);
-    setMyTeamName(teamName);
-    setShowMyTeamDropdown(false);
-  }, []);
-
-  const handleOpponentTeamSelect = useCallback((teamId: string, teamName: string) => {
-    setSelectedOpponentTeam(teamId);
-    setOpponentTeamName(teamName);
-    setShowOpponentTeamDropdown(false);
-  }, []);
-
-  // Handle opponent team search
-  const handleOpponentTeamSearch = useCallback((query: string) => {
-    setOpponentTeamSearch(query);
-    if (query.length > 2) {
+  // Debounced opponent team search
+  useEffect(() => {
+    if (opponentTeamSearch.trim().length >= 2) {
       setIsSearching(true);
-      searchTeamsMutation.mutate(query);
+      const timeoutId = setTimeout(() => {
+        searchTeamsMutation.mutate(opponentTeamSearch);
+      }, 500);
+      return () => clearTimeout(timeoutId);
     } else {
       setSearchResults([]);
       setIsSearching(false);
     }
-  }, [searchTeamsMutation]);
+  }, [opponentTeamSearch]);
 
-  // Handle player username validation
-  const validatePlayerUsername = useCallback(async (username: string, teamType: 'my' | 'opponent', index: number) => {
-    if (!username.trim()) {
-      // Clear validation for empty username
-      setUsernameValidation(prev => ({
-        ...prev,
-        [`${teamType}-${index}`]: {
-          isValidating: false,
-          isValid: null,
-          lastValidatedUsername: ''
+  // Fetch team members for selection
+  const fetchTeamMembers = async (teamId: string, isMyTeam: boolean) => {
+    try {
+      const response = await fetch(`/api/teams/${teamId}/members`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      
+      if (response.ok) {
+        const members = await response.json();
+        if (isMyTeam) {
+          setMyTeamMembers(members);
+          setSelectedMyTeamMembers([]);
+          // Clear playing XI table
+          setMyTeamPlayers(Array(11).fill(null).map(() => ({
+            name: "",
+            hasAccount: false,
+            username: undefined,
+            userId: undefined,
+          })));
+        } else {
+          setOpponentTeamMembers(members);
+          setSelectedOpponentTeamMembers([]);
+          // Clear playing XI table
+          setOpponentTeamPlayers(Array(11).fill(null).map(() => ({
+            name: "",
+            hasAccount: false,
+            username: undefined,
+            userId: undefined,
+          })));
         }
-      }));
-      return;
+      }
+    } catch (error) {
+      console.error('Error fetching team members:', error);
     }
+  };
 
-    // Avoid redundant API calls
-    const validationKey = `${teamType}-${index}`;
-    const lastValidated = usernameValidation[validationKey]?.lastValidatedUsername;
-    if (lastValidated === username) return;
+  // Handle My Team selection
+  const handleMyTeamSelect = (teamId: string) => {
+    setSelectedMyTeam(teamId);
+    const selectedTeam = userTeams?.find(team => team.id === teamId);
+    if (selectedTeam) {
+      setMyTeamName(selectedTeam.name);
+      fetchTeamMembers(teamId, true);
+    }
+  };
 
+  // Handle Opponent Team selection
+  const handleOpponentTeamSelect = (teamId: string) => {
+    setSelectedOpponentTeam(teamId);
+    const selectedTeam = searchResults.find(team => team.id === teamId);
+    if (selectedTeam) {
+      setOpponentTeamName(selectedTeam.name);
+      setOpponentTeamSearch("");
+      setSearchResults([]);
+      fetchTeamMembers(teamId, false);
+    }
+  };
+
+  // Handle player selection for playing XI
+  const togglePlayerSelection = (playerId: string, isMyTeam: boolean) => {
+    if (isMyTeam) {
+      const currentSelection = selectedMyTeamMembers;
+      const isSelected = currentSelection.includes(playerId);
+      
+      if (isSelected) {
+        // Remove player from selection
+        setSelectedMyTeamMembers(currentSelection.filter(id => id !== playerId));
+      } else {
+        // Add player to selection (max 11)
+        if (currentSelection.length < 11) {
+          setSelectedMyTeamMembers([...currentSelection, playerId]);
+        }
+      }
+    } else {
+      const currentSelection = selectedOpponentTeamMembers;
+      const isSelected = currentSelection.includes(playerId);
+      
+      if (isSelected) {
+        // Remove player from selection
+        setSelectedOpponentTeamMembers(currentSelection.filter(id => id !== playerId));
+      } else {
+        // Add player to selection (max 11)
+        if (currentSelection.length < 11) {
+          setSelectedOpponentTeamMembers([...currentSelection, playerId]);
+        }
+      }
+    }
+  };
+
+  // Update playing XI when selections change
+  useEffect(() => {
+    if (selectedMyTeam && myTeamMembers.length > 0) {
+      const selectedPlayers = selectedMyTeamMembers.map(playerId => {
+        const member = myTeamMembers.find(m => m.id === playerId);
+        return {
+          name: member?.profileName || member?.username || '',
+          hasAccount: true,
+          username: member?.username,
+          userId: member?.id,
+        };
+      });
+      
+      // Fill remaining slots with empty players
+      const emptySlots = 11 - selectedPlayers.length;
+      const emptyPlayers = Array(emptySlots).fill(null).map(() => ({
+        name: "",
+        hasAccount: false,
+        username: undefined,
+        userId: undefined,
+      }));
+      
+      setMyTeamPlayers([...selectedPlayers, ...emptyPlayers]);
+    }
+  }, [selectedMyTeamMembers, myTeamMembers, selectedMyTeam]);
+
+  useEffect(() => {
+    if (selectedOpponentTeam && opponentTeamMembers.length > 0) {
+      const selectedPlayers = selectedOpponentTeamMembers.map(playerId => {
+        const member = opponentTeamMembers.find(m => m.id === playerId);
+        return {
+          name: member?.profileName || member?.username || '',
+          hasAccount: true,
+          username: member?.username,
+          userId: member?.id,
+        };
+      });
+      
+      // Fill remaining slots with empty players
+      const emptySlots = 11 - selectedPlayers.length;
+      const emptyPlayers = Array(emptySlots).fill(null).map(() => ({
+        name: "",
+        hasAccount: false,
+        username: undefined,
+        userId: undefined,
+      }));
+      
+      setOpponentTeamPlayers([...selectedPlayers, ...emptyPlayers]);
+    }
+  }, [selectedOpponentTeamMembers, opponentTeamMembers, selectedOpponentTeam]);
+
+  // Function to validate a single username
+  const validateUsername = async (username: string, playerKey: string) => {
     setUsernameValidation(prev => ({
       ...prev,
-      [validationKey]: {
-        isValidating: true,
-        isValid: null,
-        lastValidatedUsername: username
-      }
+      [playerKey]: { isValidating: true, isValid: null }
     }));
 
     try {
-      const result = await validateUsernameMutation.mutateAsync(username);
+      const response = await fetch(`/api/users/check-username?username=${encodeURIComponent(username)}`);
+      const data = await response.json();
       
-      setUsernameValidation(prev => ({
-        ...prev,
-        [validationKey]: {
-          isValidating: false,
-          isValid: result.found,
-          userId: result.found ? result.user.id : undefined,
-          lastValidatedUsername: username
-        }
-      }));
+      if (response.ok) {
+        // Username exists (available = false means username is taken, which is what we want)
+        const userExists = !data.available;
+        
+        if (userExists) {
+          // Get user details to store userId using public endpoint
+          const userResponse = await fetch(`/api/users/lookup-username?username=${encodeURIComponent(username)}`);
+          
+          if (userResponse.ok) {
+            const result = await userResponse.json();
+            
+            if (result.found) {
+              setUsernameValidation(prev => ({
+                ...prev,
+                [playerKey]: { 
+                  isValidating: false, 
+                  isValid: true,
+                  userId: result.user.id 
+                }
+              }));
 
-      // Update player data with account info
-      if (teamType === 'my') {
-        setMyTeamPlayers(prev => prev.map((player, i) => 
-          i === index ? {
-            ...player,
-            hasAccount: result.found,
-            username: result.found ? username : undefined,
-            userId: result.found ? result.user.id : undefined
-          } : player
-        ));
-      } else {
-        setOpponentTeamPlayers(prev => prev.map((player, i) => 
-          i === index ? {
-            ...player,
-            hasAccount: result.found,
-            username: result.found ? username : undefined,
-            userId: result.found ? result.user.id : undefined
-          } : player
-        ));
-      }
-    } catch (error) {
-      setUsernameValidation(prev => ({
-        ...prev,
-        [validationKey]: {
-          isValidating: false,
-          isValid: false,
-          lastValidatedUsername: username
-        }
-      }));
-    }
-  }, [usernameValidation, validateUsernameMutation]);
+              // Update the player's userId
+              const isMyTeam = playerKey.startsWith('my-');
+              const playerIndex = parseInt(playerKey.split('-')[1]);
+              
+              if (isMyTeam) {
+                updateMyTeamPlayer(playerIndex, 'userId', result.user.id);
+              } else {
+                updateOpponentTeamPlayer(playerIndex, 'userId', result.user.id);
+              }
 
-  // Handle spectator username addition
-  const handleAddSpectator = useCallback(async () => {
-    if (!spectatorInput.trim()) return;
-
-    setValidatingSpectatorUsername(spectatorInput);
-    
-    try {
-      const result = await validateSpectatorMutation.mutateAsync(spectatorInput);
-      
-      if (result.found) {
-        if (!spectatorUsernames.includes(spectatorInput)) {
-          setSpectatorUsernames(prev => [...prev, spectatorInput]);
-          setSpectatorUsernameValidation(prev => ({
-            ...prev,
-            [spectatorInput]: {
-              isValid: true,
-              userId: result.user.id,
-              profileName: result.user.profileName
+              // Track this username as validated
+              setLastValidatedUsernames(prev => ({
+                ...prev,
+                [playerKey]: username
+              }));
+            } else {
+              setUsernameValidation(prev => ({
+                ...prev,
+                [playerKey]: { isValidating: false, isValid: true }
+              }));
+              
+              setLastValidatedUsernames(prev => ({
+                ...prev,
+                [playerKey]: username
+              }));
             }
+          } else {
+            setUsernameValidation(prev => ({
+              ...prev,
+              [playerKey]: { isValidating: false, isValid: true }
+            }));
+            
+            setLastValidatedUsernames(prev => ({
+              ...prev,
+              [playerKey]: username
+            }));
+          }
+        } else {
+          setUsernameValidation(prev => ({
+            ...prev,
+            [playerKey]: { isValidating: false, isValid: false }
+          }));
+          
+          // Track this username as validated (even if invalid)
+          setLastValidatedUsernames(prev => ({
+            ...prev,
+            [playerKey]: username
           }));
         }
-        setSpectatorInput('');
       } else {
-        toast({
-          title: "Username not found",
-          description: "No user found with this username",
-          variant: "destructive"
-        });
+        setUsernameValidation(prev => ({
+          ...prev,
+          [playerKey]: { isValidating: false, isValid: false }
+        }));
+        
+        setLastValidatedUsernames(prev => ({
+          ...prev,
+          [playerKey]: username
+        }));
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to validate username",
-        variant: "destructive"
-      });
-    } finally {
-      setValidatingSpectatorUsername(null);
+      setUsernameValidation(prev => ({
+        ...prev,
+        [playerKey]: { isValidating: false, isValid: false }
+      }));
+      
+      setLastValidatedUsernames(prev => ({
+        ...prev,
+        [playerKey]: username
+      }));
     }
-  }, [spectatorInput, spectatorUsernames, validateSpectatorMutation, toast]);
+  };
 
-  // Remove spectator
-  const removeSpectator = useCallback((username: string) => {
-    setSpectatorUsernames(prev => prev.filter(u => u !== username));
-    setSpectatorUsernameValidation(prev => {
-      const newValidation = { ...prev };
-      delete newValidation[username];
-      return newValidation;
+  const updateMyTeamPlayer = (index: number, field: keyof LocalPlayer, value: any) => {
+    setMyTeamPlayers(prev => {
+      const updatedPlayers = [...prev];
+      updatedPlayers[index] = { ...updatedPlayers[index], [field]: value };
+      return updatedPlayers;
     });
-  }, []);
+  };
 
-  // Handle match start
-  const handleStartMatch = useCallback(() => {
-    // Validate that both teams have players
-    const myPlayersWithNames = myTeamPlayers.filter(p => p.name.trim() !== '');
-    const opponentPlayersWithNames = opponentTeamPlayers.filter(p => p.name.trim() !== '');
+  const updateOpponentTeamPlayer = (index: number, field: keyof LocalPlayer, value: any) => {
+    setOpponentTeamPlayers(prev => {
+      const updatedPlayers = [...prev];
+      updatedPlayers[index] = { ...updatedPlayers[index], [field]: value };
+      return updatedPlayers;
+    });
+  };
+
+  // Calculate team sizes and bowling restrictions
+  const myTeamSize = myTeamPlayers.filter(p => p.name.trim() !== "").length;
+  const opponentTeamSize = opponentTeamPlayers.filter(p => p.name.trim() !== "").length;
+  const teamsEqual = myTeamSize === opponentTeamSize;
+  const bothTeamsHavePlayers = myTeamSize > 0 && opponentTeamSize > 0;
+
+  // Get current overs value (custom or preset)
+  const getCurrentOvers = () => {
+    return overs === "custom" ? customOvers : overs;
+  };
+
+  // Validate custom configuration
+  const isValidCustomConfig = () => {
+    if (overs !== "custom") return true;
+    if (!customOvers) return false;
     
-    if (myPlayersWithNames.length === 0 || opponentPlayersWithNames.length === 0) {
-      toast({
-        title: "Teams Required",
-        description: "Both teams must have at least one player",
-        variant: "destructive"
-      });
-      return;
-    }
+    const totalOvers = parseInt(customOvers);
+    return totalOvers > 0 && totalOvers <= 50;
+  };
 
-    if (myPlayersWithNames.length !== opponentPlayersWithNames.length) {
-      toast({
-        title: "Team Size Mismatch",
-        description: "Both teams must have the same number of players",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Store match data in localStorage
-    localStorage.setItem('myTeamPlayers', JSON.stringify(myPlayersWithNames));
-    localStorage.setItem('opponentTeamPlayers', JSON.stringify(opponentPlayersWithNames));
-    localStorage.setItem('myTeamName', myTeamName);
-    localStorage.setItem('opponentTeamName', opponentTeamName);
-    localStorage.setItem('matchOvers', overs === "custom" ? customOvers : overs);
-    localStorage.setItem('spectatorUsernames', JSON.stringify(spectatorUsernames));
-    
-    setLocation('/coin-toss');
-  }, [myTeamPlayers, opponentTeamPlayers, myTeamName, opponentTeamName, overs, customOvers, spectatorUsernames, toast, setLocation]);
+  // Bowling restrictions removed
+  const getBowlingRestrictions = () => {
+    return "No bowling restrictions";
+  };
 
   return (
     <div className="p-6">
@@ -346,138 +462,6 @@ export default function LocalMatch() {
           Add players for each team and configure match details. Both teams must have equal number of players.
         </p>
       </div>
-      
-      {/* Spectator Toggle */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Bell className="mr-2 h-5 w-5 text-blue-600" />
-            Spectator Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2 mb-4">
-            <Switch
-              checked={allowSpectators}
-              onCheckedChange={setAllowSpectators}
-              data-testid="toggle-spectators"
-            />
-            <Label className="text-sm font-medium">Allow Spectators</Label>
-            <span className="text-xs text-muted-foreground">
-              - Players can watch and receive match notifications
-            </span>
-          </div>
-
-          {allowSpectators && (
-            <div className="space-y-4">
-              {/* Dynamic spectator display based on team selection */}
-              {(selectedMyTeam || selectedOpponentTeam) && (
-                <div className="space-y-3">
-                  {selectedMyTeam && myTeamMembersData && (
-                    <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
-                      <h4 className="font-medium text-green-700 dark:text-green-300 mb-2 flex items-center">
-                        <Users className="h-4 w-4 mr-1" />
-                        {myTeamName} Members
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {myTeamMembersData.map((member) => (
-                          <Badge key={member.id} variant="outline" className="bg-white dark:bg-gray-800">
-                            <Avatar className="h-4 w-4 mr-1">
-                              <AvatarFallback className="text-xs">
-                                {member.profileName?.charAt(0) || member.username?.charAt(0) || '?'}
-                              </AvatarFallback>
-                            </Avatar>
-                            {member.profileName || member.username}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedOpponentTeam && opponentTeamMembersData && (
-                    <div className="p-3 bg-red-50 dark:bg-red-950 rounded-lg">
-                      <h4 className="font-medium text-red-700 dark:text-red-300 mb-2 flex items-center">
-                        <Users className="h-4 w-4 mr-1" />
-                        {opponentTeamName} Members
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {opponentTeamMembersData.map((member) => (
-                          <Badge key={member.id} variant="outline" className="bg-white dark:bg-gray-800">
-                            <Avatar className="h-4 w-4 mr-1">
-                              <AvatarFallback className="text-xs">
-                                {member.profileName?.charAt(0) || member.username?.charAt(0) || '?'}
-                              </AvatarFallback>
-                            </Avatar>
-                            {member.profileName || member.username}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Manual spectator addition (always available when spectators enabled) */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Add Spectators by Username</Label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter username to add as spectator"
-                    value={spectatorInput}
-                    onChange={(e) => setSpectatorInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddSpectator()}
-                    data-testid="input-spectator-username"
-                  />
-                  <Button
-                    onClick={handleAddSpectator}
-                    disabled={!spectatorInput.trim() || validatingSpectatorUsername === spectatorInput}
-                    size="sm"
-                    data-testid="button-add-spectator"
-                  >
-                    {validatingSpectatorUsername === spectatorInput ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <UserPlus className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Added spectators list */}
-              {spectatorUsernames.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Added Spectators</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {spectatorUsernames.map((username) => {
-                      const validation = spectatorUsernameValidation[username];
-                      return (
-                        <Badge key={username} variant="secondary" className="flex items-center gap-1">
-                          <Avatar className="h-4 w-4">
-                            <AvatarFallback className="text-xs">
-                              {validation?.profileName?.charAt(0) || username.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          {validation?.profileName || username}
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                            onClick={() => removeSpectator(username)}
-                            data-testid={`button-remove-spectator-${username}`}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Match Configuration */}
       <Card className="mb-6">
         <CardHeader>
@@ -488,6 +472,7 @@ export default function LocalMatch() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
+            {/* Overs Configuration */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Match Format</label>
@@ -510,6 +495,7 @@ export default function LocalMatch() {
                     value={customOvers}
                     onChange={(e) => {
                       const value = e.target.value;
+                      // Allow empty string or numbers only
                       if (value === '' || /^\d+$/.test(value)) {
                         setCustomOvers(value);
                       }
@@ -525,18 +511,36 @@ export default function LocalMatch() {
                   <p className="text-sm font-semibold">
                     {overs === "custom" && customOvers ? `${customOvers} Overs Match` : `${overs} Overs Match`}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    No bowling restrictions
+                  <p className="text-xs text-muted-foreground mt-1" data-testid="bowling-restrictions">
+                    {getBowlingRestrictions()}
                   </p>
                 </div>
               </div>
             </div>
+
           </div>
         </CardContent>
       </Card>
-
-      {/* Teams Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      {/* Team Size Validation Alert */}
+      {bothTeamsHavePlayers && !teamsEqual && (
+        <Alert className="mb-6 border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-800 dark:text-orange-200">
+            Teams must have equal number of players. My Team: {myTeamSize} players, Opponent Team: {opponentTeamSize} players.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {/* Custom Configuration Validation Alert */}
+      {overs === "custom" && !isValidCustomConfig() && customOvers && (
+        <Alert className="mb-6 border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800 dark:text-red-200">
+            Invalid configuration. Overs must be between 1 and 50.
+          </AlertDescription>
+        </Alert>
+      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* My Team */}
         <Card>
           <CardHeader>
@@ -545,106 +549,194 @@ export default function LocalMatch() {
               My Team
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Team Selection */}
-            <div className="relative">
-              <Input
-                placeholder="Select from your teams"
-                value={myTeamName}
-                onChange={(e) => {
-                  setMyTeamName(e.target.value);
-                  setShowMyTeamDropdown(e.target.value.length > 0);
-                }}
-                onFocus={() => setShowMyTeamDropdown(true)}
-                data-testid="input-my-team-name"
-                className="font-medium"
-              />
-              {showMyTeamDropdown && userTeams && (
-                <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
-                  {userTeams
-                    .filter(team => team.name.toLowerCase().includes(myTeamName.toLowerCase()))
-                    .map((team) => (
+          <CardContent>
+            <div className="mb-4">
+              <Select value={selectedMyTeam} onValueChange={handleMyTeamSelect}>
+                <SelectTrigger data-testid="select-my-team">
+                  <SelectValue placeholder={myTeamName || "Select from your teams"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {userTeamsLoading ? (
+                    <div className="p-2 text-center text-sm text-muted-foreground">
+                      Loading teams...
+                    </div>
+                  ) : userTeams && userTeams.length > 0 ? (
+                    userTeams.map((team) => (
+                      <SelectItem key={team.id} value={team.id} data-testid={`option-my-team-${team.id}`}>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{team.name}</span>
+                          <span className="text-xs text-muted-foreground flex items-center">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Captain: {team.captain.profileName || team.captain.username}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-center text-sm text-muted-foreground">
+                      No teams found. Create a team first.
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              
+              {/* Selected team display or manual input */}
+              {selectedMyTeam ? (
+                <div className="p-2 bg-muted rounded-md mt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">Selected: {myTeamName}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedMyTeam("");
+                        setMyTeamName("");
+                        // Clear team members and selection
+                        setMyTeamMembers([]);
+                        setSelectedMyTeamMembers([]);
+                        setMyTeamPlayers(Array(11).fill(null).map(() => ({
+                          name: "",
+                          hasAccount: false,
+                          username: undefined,
+                          userId: undefined,
+                        })));
+                      }}
+                      data-testid="button-clear-my-team"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Input
+                  placeholder="Or enter custom team name (optional)"
+                  value={myTeamName}
+                  onChange={(e) => setMyTeamName(e.target.value)}
+                  data-testid="input-my-team-name-custom"
+                  className="font-medium mt-2"
+                />
+              )}
+            </div>
+            
+            {/* Player Selection Interface */}
+            {selectedMyTeam && myTeamMembers.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium">Select Playing XI ({selectedMyTeamMembers.length}/11)</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedMyTeamMembers([])}
+                    disabled={selectedMyTeamMembers.length === 0}
+                    data-testid="button-clear-my-team-selection"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {myTeamMembers.map((member) => {
+                    const isSelected = selectedMyTeamMembers.includes(member.id);
+                    const canSelect = selectedMyTeamMembers.length < 11;
+                    
+                    return (
                       <div
-                        key={team.id}
-                        className="p-3 hover:bg-accent cursor-pointer border-b last:border-b-0"
-                        onClick={() => handleMyTeamSelect(team.id, team.name)}
-                        data-testid={`option-my-team-${team.id}`}
+                        key={member.id}
+                        onClick={() => togglePlayerSelection(member.id, true)}
+                        className={`
+                          p-2 rounded-lg border cursor-pointer transition-all
+                          ${isSelected 
+                            ? 'bg-green-100 dark:bg-green-900/20 border-green-500 text-green-800 dark:text-green-200' 
+                            : canSelect 
+                              ? 'bg-background border-border hover:bg-muted hover:border-muted-foreground' 
+                              : 'bg-muted/50 border-muted text-muted-foreground cursor-not-allowed'
+                          }
+                        `}
+                        data-testid={`player-card-my-${member.id}`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">{team.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Captain: {team.captain.profileName || team.captain.username}
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-green-500' : 'bg-muted-foreground'}`}></div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {member.profileName || member.username}
                             </p>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <Crown className="h-4 w-4 text-yellow-500" />
-                            {team.viceCaptain && (
-                              <Badge variant="outline" className="text-xs">
-                                VC: {team.viceCaptain.profileName || team.viceCaptain.username}
-                              </Badge>
-                            )}
+                            <p className="text-xs text-muted-foreground">
+                              @{member.username}
+                            </p>
                           </div>
                         </div>
                       </div>
-                  ))}
-                  {userTeams.filter(team => team.name.toLowerCase().includes(myTeamName.toLowerCase())).length === 0 && (
-                    <div className="p-3 text-center text-muted-foreground">
-                      No teams found
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-
-            {/* Manual Player Entry */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Playing 11</Label>
-              {myTeamPlayers.map((player, index) => (
-                <div key={index} className="grid grid-cols-2 gap-2">
-                  <Input
-                    placeholder={`Player ${index + 1} Name`}
-                    value={player.name}
-                    onChange={(e) => {
-                      const newPlayers = [...myTeamPlayers];
-                      newPlayers[index] = { ...newPlayers[index], name: e.target.value };
-                      setMyTeamPlayers(newPlayers);
-                    }}
-                    data-testid={`input-my-player-${index}-name`}
-                  />
-                  <div className="relative">
-                    <Input
-                      placeholder="Username (optional)"
-                      value={player.username || ''}
-                      onChange={(e) => {
-                        const newPlayers = [...myTeamPlayers];
-                        newPlayers[index] = { ...newPlayers[index], username: e.target.value };
-                        setMyTeamPlayers(newPlayers);
-                      }}
-                      onBlur={() => {
-                        if (player.username) {
-                          validatePlayerUsername(player.username, 'my', index);
-                        }
-                      }}
-                      data-testid={`input-my-player-${index}-username`}
-                      className={`pr-8 ${
-                        usernameValidation[`my-${index}`]?.isValid === true ? 'border-green-500' :
-                        usernameValidation[`my-${index}`]?.isValid === false ? 'border-red-500' : ''
-                      }`}
-                    />
-                    {usernameValidation[`my-${index}`]?.isValidating && (
-                      <Loader2 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin" />
-                    )}
-                    {usernameValidation[`my-${index}`]?.isValid === true && (
-                      <Check className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
-                    )}
-                    {usernameValidation[`my-${index}`]?.isValid === false && (
-                      <X className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
-                    )}
-                  </div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Click on player cards to select them for your playing XI
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+            
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Player Details</TableHead>
+                  <TableHead className="text-center">Has Account</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {myTeamPlayers.map((player, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <Input
+                          placeholder={`Player ${index + 1}`}
+                          value={player.name}
+                          onChange={(e) => updateMyTeamPlayer(index, "name", e.target.value)}
+                          data-testid={`input-my-team-player-${index + 1}`}
+                        />
+                        {player.hasAccount && (
+                          <div className="relative">
+                            <Input
+                              placeholder="@username"
+                              value={player.username || ""}
+                              onChange={(e) => updateMyTeamPlayer(index, "username", e.target.value)}
+                              data-testid={`input-my-team-username-${index + 1}`}
+                              className="text-sm pr-8"
+                            />
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              {(() => {
+                                const validation = usernameValidation[`my-${index}`];
+                                if (!player.username || player.username.length < 3) return null;
+                                if (validation?.isValidating) {
+                                  return <Loader2 className="h-4 w-4 animate-spin text-gray-400" />;
+                                }
+                                if (validation?.isValid === true) {
+                                  return <Check className="h-4 w-4 text-green-500" data-testid={`icon-valid-my-${index + 1}`} />;
+                                }
+                                if (validation?.isValid === false) {
+                                  return <X className="h-4 w-4 text-red-500" data-testid={`icon-invalid-my-${index + 1}`} />;
+                                }
+                                return null;
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={player.hasAccount}
+                        onCheckedChange={(checked) => {
+                          updateMyTeamPlayer(index, "hasAccount", checked);
+                          if (!checked) {
+                            updateMyTeamPlayer(index, "username", undefined);
+                          }
+                        }}
+                        data-testid={`switch-my-team-account-${index + 1}`}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
 
@@ -656,135 +748,247 @@ export default function LocalMatch() {
               Opponent Team
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Team Search */}
-            <div className="relative">
-              <Input
-                placeholder="Search for opponent team..."
-                value={opponentTeamSearch}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setOpponentTeamSearch(value);
-                  setShowOpponentTeamDropdown(value.length > 0);
-                  handleOpponentTeamSearch(value);
-                }}
-                onFocus={() => setShowOpponentTeamDropdown(opponentTeamSearch.length > 0)}
-                data-testid="input-opponent-team-search"
-                className="font-medium"
-              />
-              {showOpponentTeamDropdown && (
-                <div className="absolute z-10 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
-                  {isSearching ? (
-                    <div className="p-3 text-center">
-                      <Loader2 className="h-4 w-4 animate-spin mx-auto" />
-                    </div>
-                  ) : searchResults.length > 0 ? (
-                    searchResults.map((team) => (
-                      <div
-                        key={team.id}
-                        className="p-3 hover:bg-accent cursor-pointer border-b last:border-b-0"
-                        onClick={() => handleOpponentTeamSelect(team.id, team.name)}
-                        data-testid={`option-opponent-team-${team.id}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">{team.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              Captain: {team.captain.profileName || team.captain.username}
-                            </p>
+          <CardContent>
+            <div className="mb-4 space-y-2">
+              <div className="relative">
+                <div className="relative">
+                  <Input
+                    placeholder="Search for opponent team..."
+                    value={opponentTeamSearch}
+                    onChange={(e) => {
+                      setOpponentTeamSearch(e.target.value);
+                      if (!e.target.value) {
+                        setSelectedOpponentTeam("");
+                        setOpponentTeamName("");
+                      }
+                    }}
+                    data-testid="input-opponent-team-search"
+                    className="font-medium pr-8"
+                  />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                </div>
+              
+                {/* Search Results Dropdown */}
+                {(opponentTeamSearch.trim().length >= 2 && (isSearching || searchResults.length > 0)) && (
+                  <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
+                    {isSearching ? (
+                      <div className="p-3 text-center text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" />
+                        Searching teams...
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="py-1">
+                        {searchResults.map((team) => (
+                          <div
+                            key={team.id}
+                            onClick={() => handleOpponentTeamSelect(team.id)}
+                            className="px-3 py-2 cursor-pointer hover:bg-muted transition-colors"
+                            data-testid={`option-opponent-team-${team.id}`}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">{team.name}</span>
+                              <span className="text-xs text-muted-foreground flex items-center">
+                                <Crown className="h-3 w-3 mr-1" />
+                                Captain: {team.captain.profileName || team.captain.username}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <Crown className="h-4 w-4 text-yellow-500" />
-                            {team.viceCaptain && (
-                              <Badge variant="outline" className="text-xs">
-                                VC: {team.viceCaptain.profileName || team.viceCaptain.username}
-                              </Badge>
-                            )}
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-3 text-center text-sm text-muted-foreground">
+                        No teams found matching "{opponentTeamSearch}"
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {/* Selected team display or manual input */}
+              {selectedOpponentTeam ? (
+                <div className="p-2 bg-muted rounded-md">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">Selected: {opponentTeamName}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedOpponentTeam("");
+                        setOpponentTeamName("");
+                        setOpponentTeamSearch("");
+                        // Clear team members and selection
+                        setOpponentTeamMembers([]);
+                        setSelectedOpponentTeamMembers([]);
+                        setOpponentTeamPlayers(Array(11).fill(null).map(() => ({
+                          name: "",
+                          hasAccount: false,
+                          username: undefined,
+                          userId: undefined,
+                        })));
+                      }}
+                      data-testid="button-clear-opponent-team"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : !opponentTeamSearch && (
+                <Input
+                  placeholder="Or enter custom team name (optional)"
+                  value={opponentTeamName}
+                  onChange={(e) => setOpponentTeamName(e.target.value)}
+                  data-testid="input-opponent-team-name-custom"
+                  className="font-medium"
+                />
+              )}
+            </div>
+            
+            {/* Player Selection Interface */}
+            {selectedOpponentTeam && opponentTeamMembers.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium">Select Playing XI ({selectedOpponentTeamMembers.length}/11)</h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedOpponentTeamMembers([])}
+                    disabled={selectedOpponentTeamMembers.length === 0}
+                    data-testid="button-clear-opponent-team-selection"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {opponentTeamMembers.map((member) => {
+                    const isSelected = selectedOpponentTeamMembers.includes(member.id);
+                    const canSelect = selectedOpponentTeamMembers.length < 11;
+                    
+                    return (
+                      <div
+                        key={member.id}
+                        onClick={() => togglePlayerSelection(member.id, false)}
+                        className={`
+                          p-2 rounded-lg border cursor-pointer transition-all
+                          ${isSelected 
+                            ? 'bg-red-100 dark:bg-red-900/20 border-red-500 text-red-800 dark:text-red-200' 
+                            : canSelect 
+                              ? 'bg-background border-border hover:bg-muted hover:border-muted-foreground' 
+                              : 'bg-muted/50 border-muted text-muted-foreground cursor-not-allowed'
+                          }
+                        `}
+                        data-testid={`player-card-opponent-${member.id}`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-red-500' : 'bg-muted-foreground'}`}></div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {member.profileName || member.username}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              @{member.username}
+                            </p>
                           </div>
                         </div>
                       </div>
-                    ))
-                  ) : opponentTeamSearch.length > 2 ? (
-                    <div className="p-3 text-center text-muted-foreground">
-                      No teams found
-                    </div>
-                  ) : (
-                    <div className="p-3 text-center text-muted-foreground text-xs">
-                      Type at least 3 characters to search
-                    </div>
-                  )}
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-
-            {/* Show selected team name */}
-            {opponentTeamName && (
-              <div className="p-2 bg-muted rounded-md">
-                <p className="text-sm font-medium">{opponentTeamName}</p>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Click on player cards to select them for the playing XI
+                </div>
               </div>
             )}
-
-            {/* Manual Player Entry */}
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Playing 11</Label>
-              {opponentTeamPlayers.map((player, index) => (
-                <div key={index} className="grid grid-cols-2 gap-2">
-                  <Input
-                    placeholder={`Player ${index + 1} Name`}
-                    value={player.name}
-                    onChange={(e) => {
-                      const newPlayers = [...opponentTeamPlayers];
-                      newPlayers[index] = { ...newPlayers[index], name: e.target.value };
-                      setOpponentTeamPlayers(newPlayers);
-                    }}
-                    data-testid={`input-opponent-player-${index}-name`}
-                  />
-                  <div className="relative">
-                    <Input
-                      placeholder="Username (optional)"
-                      value={player.username || ''}
-                      onChange={(e) => {
-                        const newPlayers = [...opponentTeamPlayers];
-                        newPlayers[index] = { ...newPlayers[index], username: e.target.value };
-                        setOpponentTeamPlayers(newPlayers);
-                      }}
-                      onBlur={() => {
-                        if (player.username) {
-                          validatePlayerUsername(player.username, 'opponent', index);
-                        }
-                      }}
-                      data-testid={`input-opponent-player-${index}-username`}
-                      className={`pr-8 ${
-                        usernameValidation[`opponent-${index}`]?.isValid === true ? 'border-green-500' :
-                        usernameValidation[`opponent-${index}`]?.isValid === false ? 'border-red-500' : ''
-                      }`}
-                    />
-                    {usernameValidation[`opponent-${index}`]?.isValidating && (
-                      <Loader2 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin" />
-                    )}
-                    {usernameValidation[`opponent-${index}`]?.isValid === true && (
-                      <Check className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-green-500" />
-                    )}
-                    {usernameValidation[`opponent-${index}`]?.isValid === false && (
-                      <X className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Player Details</TableHead>
+                  <TableHead className="text-center">Has Account</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {opponentTeamPlayers.map((player, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <Input
+                          placeholder={`Player ${index + 1}`}
+                          value={player.name}
+                          onChange={(e) => updateOpponentTeamPlayer(index, "name", e.target.value)}
+                          data-testid={`input-opponent-team-player-${index + 1}`}
+                        />
+                        {player.hasAccount && (
+                          <div className="relative">
+                            <Input
+                              placeholder="@username"
+                              value={player.username || ""}
+                              onChange={(e) => updateOpponentTeamPlayer(index, "username", e.target.value)}
+                              data-testid={`input-opponent-team-username-${index + 1}`}
+                              className="text-sm pr-8"
+                            />
+                            <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                              {(() => {
+                                const validation = usernameValidation[`opp-${index}`];
+                                if (!player.username || player.username.length < 3) return null;
+                                if (validation?.isValidating) {
+                                  return <Loader2 className="h-4 w-4 animate-spin text-gray-400" />;
+                                }
+                                if (validation?.isValid === true) {
+                                  return <Check className="h-4 w-4 text-green-500" data-testid={`icon-valid-opp-${index + 1}`} />;
+                                }
+                                if (validation?.isValid === false) {
+                                  return <X className="h-4 w-4 text-red-500" data-testid={`icon-invalid-opp-${index + 1}`} />;
+                                }
+                                return null;
+                              })()}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch
+                        checked={player.hasAccount}
+                        onCheckedChange={(checked) => {
+                          updateOpponentTeamPlayer(index, "hasAccount", checked);
+                          if (!checked) {
+                            updateOpponentTeamPlayer(index, "username", undefined);
+                          }
+                        }}
+                        data-testid={`switch-opponent-team-account-${index + 1}`}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
-
-      <div className="flex justify-center">
+      <div className="mt-6 flex justify-center">
         <Button 
-          onClick={handleStartMatch}
+          onClick={() => {
+            // Store team data and match configuration for coin toss and scoring
+            localStorage.setItem('myTeamPlayers', JSON.stringify(myTeamPlayers));
+            localStorage.setItem('opponentTeamPlayers', JSON.stringify(opponentTeamPlayers));
+            localStorage.setItem('myTeamName', myTeamName || 'My Team');
+            localStorage.setItem('opponentTeamName', opponentTeamName || 'Opponent Team');
+            localStorage.setItem('matchOvers', getCurrentOvers());
+            setLocation('/coin-toss');
+          }}
+          disabled={!bothTeamsHavePlayers || !teamsEqual || !isValidCustomConfig()}
           data-testid="button-save-local-match"
           className="px-8"
-        >
-          Start Match
-        </Button>
+        >Start Match</Button>
       </div>
+      {/* Additional Info */}
+      {bothTeamsHavePlayers && teamsEqual && (
+        <div className="mt-4 text-center">
+          <p className="text-sm text-green-600 dark:text-green-400" data-testid="teams-ready">
+            ✓ Both teams ready with {myTeamSize} players each
+          </p>
+        </div>
+      )}
     </div>
   );
 }

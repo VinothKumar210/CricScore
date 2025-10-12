@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useAuth } from "@/components/auth/auth-context";
-import { Gamepad, TrendingUp, Zap, Target, Users, Crown, Radio, Plus } from "lucide-react";
+import { Gamepad, TrendingUp, Zap, Target, Users, Crown } from "lucide-react";
 import { useEffect } from 'react';
 import { refreshUserStatistics } from "@/lib/queryClient";
 import type { CareerStats, Match, Team } from "@shared/schema";
@@ -158,7 +158,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-
         {/* My Teams */}
         <Card>
           <CardHeader>
@@ -211,11 +210,11 @@ export default function Dashboard() {
         </Card>
       </div>
       
-      {/* Floating Create Match Button */}
+      {/* Floating Local Match Button */}
       <Button 
         asChild 
         className="fixed bottom-6 right-6 rounded-lg px-4 py-3 shadow-lg hover:shadow-xl transition-shadow z-50" 
-        data-testid="floating-create-match"
+        data-testid="floating-local-match"
       >
         <Link href="/local-match" className="flex items-center space-x-2">
           <Gamepad className="h-5 w-5" />
