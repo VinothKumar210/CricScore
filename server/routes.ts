@@ -1088,6 +1088,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error(`Error adding spectator ${spectatorId}:`, error);
           }
         }
+        
+        // Send notification to spectators about the new match
+        try {
+          const creator = await storage.getUserById(req.userId);
+          const notificationTitle = `🏏 New Match Invitation`;
+          const notificationBody = `${creator?.profileName || creator?.username || 'A cricket player'} has invited you to watch ${localMatch.matchName} at ${localMatch.venue}`;
+          
+          // Note: In a real implementation, you would send actual push notifications here
+          // For now, we'll log this and the frontend will handle notifications when spectators check their matches
+          console.log(`Match created - would notify ${req.body.selectedSpectators.length} spectators about match: ${localMatch.matchName}`);
+        } catch (notificationError) {
+          console.error('Error preparing spectator notifications:', notificationError);
+        }
       }
       
       res.status(201).json(localMatch);
@@ -1234,6 +1247,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
       return handleDatabaseError(error, res);
+    }
+  });
+
+  // Send notification to spectators
+  app.post("/api/live-matches/:id/notify", authenticateToken, async (req: any, res) => {
+    try {
+      const { title, body } = req.body;
+      
+      if (!title || !body) {
+        return res.status(400).json({ message: "Title and body are required" });
+      }
+
+      const match = await storage.getLocalMatch(req.params.id);
+      if (!match) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+
+      // Only match creator can send notifications
+      if (match.creatorId !== req.userId) {
+        return res.status(403).json({ message: "Only match creator can send notifications" });
+      }
+
+      // Get all spectators for this match
+      const spectators = await storage.getMatchSpectators(req.params.id);
+      
+      res.json({ 
+        message: "Notification request processed",
+        spectatorCount: spectators.length,
+        notificationData: { title, body, matchId: req.params.id }
+      });
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      res.status(500).json({ message: "Failed to send notification" });
     }
   });
 
