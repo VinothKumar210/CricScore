@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-context";
 import { useQuery } from "@tanstack/react-query";
-import { Users, BarChart3, Plus, Mail, LogOut, Gauge, Search, UserPlus } from "lucide-react";
+import { Users, BarChart3, Plus, Mail, LogOut, Gauge, Search, UserPlus, Eye } from "lucide-react";
 
 interface SidebarProps {
   className?: string;
@@ -29,6 +29,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Gauge },
+    { name: "Live Scoreboard", href: "/live-scoreboard", icon: Eye },
     { name: "My Statistics", href: "/statistics", icon: BarChart3 },
     { name: "Create Match", href: "/local-match", icon: UserPlus },
     { name: "My Teams", href: "/teams", icon: Users },

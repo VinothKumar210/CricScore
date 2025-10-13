@@ -38,6 +38,9 @@ model User {
   bestStrikeRateFor TeamStatistics[] @relation("BestStrikeRate")
   bestEconomyFor  TeamStatistics[] @relation("BestEconomy")
   mostManOfTheMatchFor TeamStatistics[] @relation("MostManOfTheMatch")
+  createdLocalMatches LocalMatch[]
+  spectatorOf     MatchSpectator[]
+  addedSpectators MatchSpectator[] @relation("SpectatorAddedBy")
 
   @@map("users")
 }
@@ -87,6 +90,8 @@ model Team {
   awayMatches    TeamMatch[] @relation("AwayTeam")
   statistics     TeamStatistics?
   teamMatchPlayers TeamMatchPlayer[]
+  localMatchesAsMyTeam LocalMatch[] @relation("LocalMatchMyTeam")
+  localMatchesAsOpponentTeam LocalMatch[] @relation("LocalMatchOpponentTeam")
 
   @@map("teams")
 }
@@ -266,4 +271,82 @@ enum InvitationStatus {
   PENDING  @map("pending")
   ACCEPTED @map("accepted")
   REJECTED @map("rejected")
+}
+
+model LocalMatch {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  creatorId             String   @db.ObjectId
+  matchName             String
+  venue                 String
+  matchDate             DateTime
+  overs                 Int      @default(20)
+  myTeamName            String?
+  myTeamId              String?  @db.ObjectId
+  opponentTeamName      String?
+  opponentTeamId        String?  @db.ObjectId
+  myTeamPlayers         Json     // Array of LocalPlayer objects
+  opponentTeamPlayers   Json     // Array of LocalPlayer objects
+  allowSpectators       Boolean  @default(false)
+  status                LocalMatchStatus @default(CREATED)
+  currentInnings        Int      @default(1)
+  currentOver           Int      @default(0)
+  currentBall           Int      @default(0)
+  // Live scoring data
+  myTeamScore           Int      @default(0)
+  myTeamWickets         Int      @default(0)
+  myTeamOvers           Float    @default(0)
+  opponentTeamScore     Int      @default(0)
+  opponentTeamWickets   Int      @default(0)
+  opponentTeamOvers     Float    @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  creator               User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  myTeam                Team?    @relation("LocalMatchMyTeam", fields: [myTeamId], references: [id])
+  opponentTeam          Team?    @relation("LocalMatchOpponentTeam", fields: [opponentTeamId], references: [id])
+  spectators            MatchSpectator[]
+  overHistory           OverHistory[]
+
+  @@map("local_matches")
+}
+
+model MatchSpectator {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  localMatchId  String   @db.ObjectId
+  userId        String   @db.ObjectId
+  addedBy       String   @db.ObjectId
+  addedAt       DateTime @default(now())
+  notified      Boolean  @default(false)
+
+  // Relations
+  localMatch    LocalMatch @relation(fields: [localMatchId], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addedByUser   User       @relation("SpectatorAddedBy", fields: [addedBy], references: [id])
+
+  @@unique([localMatchId, userId])
+  @@map("match_spectators")
+}
+
+model OverHistory {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  localMatchId  String   @db.ObjectId
+  overNumber    Int
+  innings       Int      // 1 or 2
+  balls         Json     // Array of ball-by-ball data
+  totalRuns     Int      @default(0)
+  wickets       Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  // Relations
+  localMatch    LocalMatch @relation(fields: [localMatchId], references: [id], onDelete: Cascade)
+
+  @@map("over_history")
+}
+
+enum LocalMatchStatus {
+  CREATED     @map("created")
+  ONGOING     @map("ongoing")
+  COMPLETED   @map("completed")
+  CANCELLED   @map("cancelled")
 }

@@ -57,6 +57,13 @@ export default function LocalMatch() {
 
   // Track last validated usernames to prevent unnecessary API calls
   const [lastValidatedUsernames, setLastValidatedUsernames] = useState<Record<string, string>>({});
+  
+  // Spectator functionality states
+  const [allowSpectators, setAllowSpectators] = useState<boolean>(false);
+  const [selectedSpectators, setSelectedSpectators] = useState<string[]>([]);
+  const [spectatorSearch, setSpectatorSearch] = useState<string>("");
+  const [spectatorSearchResults, setSpectatorSearchResults] = useState<User[]>([]);
+  const [isSearchingSpectators, setIsSearchingSpectators] = useState(false);
 
   // Fetch user's teams for "My Team" dropdown
   const { data: userTeams, isLoading: userTeamsLoading } = useQuery<(Team & { captain: User, viceCaptain?: User })[]>({
@@ -83,6 +90,29 @@ export default function LocalMatch() {
     onError: () => {
       setSearchResults([]);
       setIsSearching(false);
+    },
+  });
+
+  // Search players mutation for spectator search
+  const searchSpectatorsMutation = useMutation({
+    mutationFn: async (query: string) => {
+      const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to search players');
+      }
+      return response.json();
+    },
+    onSuccess: (results: User[]) => {
+      setSpectatorSearchResults(results);
+      setIsSearchingSpectators(false);
+    },
+    onError: () => {
+      setSpectatorSearchResults([]);
+      setIsSearchingSpectators(false);
     },
   });
 
@@ -152,6 +182,20 @@ export default function LocalMatch() {
       setIsSearching(false);
     }
   }, [opponentTeamSearch]);
+
+  // Debounced spectator search
+  useEffect(() => {
+    if (spectatorSearch.trim().length >= 3) {
+      setIsSearchingSpectators(true);
+      const timeoutId = setTimeout(() => {
+        searchSpectatorsMutation.mutate(spectatorSearch);
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSpectatorSearchResults([]);
+      setIsSearchingSpectators(false);
+    }
+  }, [spectatorSearch]);
 
   // Fetch team members for selection
   const fetchTeamMembers = async (teamId: string, isMyTeam: boolean) => {
@@ -540,6 +584,217 @@ export default function LocalMatch() {
           </AlertDescription>
         </Alert>
       )}
+
+      {/* Spectator Configuration */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="mr-2 h-5 w-5 text-purple-600" />
+            Match Spectators
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Allow Spectators Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Allow Spectators</label>
+                <p className="text-xs text-muted-foreground">
+                  Let other players watch this match live
+                </p>
+              </div>
+              <Switch
+                checked={allowSpectators}
+                onCheckedChange={setAllowSpectators}
+                data-testid="switch-allow-spectators"
+              />
+            </div>
+
+            {/* Spectator Selection Section - Only show when toggle is ON */}
+            {allowSpectators && (
+              <div className="border-t pt-4">
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium">Add Spectators</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Selected spectators will receive notifications when the match starts and can watch the live scoreboard.
+                  </p>
+                  
+                  {/* Team Members Section */}
+                  {(selectedMyTeam || selectedOpponentTeam) && (
+                    <div className="space-y-4">
+                      {/* My Team Members */}
+                      {selectedMyTeam && myTeamMembers.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-medium mb-2">{myTeamName} Members</h5>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                            {myTeamMembers.map((member) => {
+                              const isSelected = selectedSpectators.includes(member.id);
+                              return (
+                                <div
+                                  key={member.id}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setSelectedSpectators(prev => prev.filter(id => id !== member.id));
+                                    } else {
+                                      setSelectedSpectators(prev => [...prev, member.id]);
+                                    }
+                                  }}
+                                  className={`
+                                    p-2 rounded-lg border cursor-pointer transition-all
+                                    ${isSelected 
+                                      ? 'bg-purple-100 dark:bg-purple-900/20 border-purple-500 text-purple-800 dark:text-purple-200' 
+                                      : 'bg-background border-border hover:bg-muted hover:border-muted-foreground'
+                                    }
+                                  `}
+                                  data-testid={`spectator-card-my-${member.id}`}
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-purple-500' : 'bg-muted-foreground'}`}></div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">
+                                        {member.profileName || member.username}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        @{member.username}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Opponent Team Members */}
+                      {selectedOpponentTeam && opponentTeamMembers.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-medium mb-2">{opponentTeamName} Members</h5>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                            {opponentTeamMembers.map((member) => {
+                              const isSelected = selectedSpectators.includes(member.id);
+                              return (
+                                <div
+                                  key={member.id}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setSelectedSpectators(prev => prev.filter(id => id !== member.id));
+                                    } else {
+                                      setSelectedSpectators(prev => [...prev, member.id]);
+                                    }
+                                  }}
+                                  className={`
+                                    p-2 rounded-lg border cursor-pointer transition-all
+                                    ${isSelected 
+                                      ? 'bg-purple-100 dark:bg-purple-900/20 border-purple-500 text-purple-800 dark:text-purple-200' 
+                                      : 'bg-background border-border hover:bg-muted hover:border-muted-foreground'
+                                    }
+                                  `}
+                                  data-testid={`spectator-card-opponent-${member.id}`}
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <div className={`w-2 h-2 rounded-full ${isSelected ? 'bg-purple-500' : 'bg-muted-foreground'}`}></div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">
+                                        {member.profileName || member.username}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">
+                                        @{member.username}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Search Players Section */}
+                  <div className="space-y-3">
+                    <h5 className="text-sm font-medium">Search Players</h5>
+                    <div className="relative">
+                      <Input
+                        placeholder="Search players by username..."
+                        value={spectatorSearch}
+                        onChange={(e) => setSpectatorSearch(e.target.value)}
+                        data-testid="input-spectator-search"
+                        className="pr-8"
+                      />
+                      <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
+                    
+                    {/* Search Results */}
+                    {spectatorSearch.trim().length >= 3 && (
+                      <div className="border border-border rounded-md max-h-48 overflow-y-auto">
+                        {isSearchingSpectators ? (
+                          <div className="p-3 text-center text-sm text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" />
+                            Searching players...
+                          </div>
+                        ) : spectatorSearchResults.length > 0 ? (
+                          <div className="py-1">
+                            {spectatorSearchResults.map((player) => {
+                              const isSelected = selectedSpectators.includes(player.id);
+                              return (
+                                <div
+                                  key={player.id}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setSelectedSpectators(prev => prev.filter(id => id !== player.id));
+                                    } else {
+                                      setSelectedSpectators(prev => [...prev, player.id]);
+                                    }
+                                  }}
+                                  className={`px-3 py-2 cursor-pointer hover:bg-muted transition-colors flex items-center justify-between ${isSelected ? 'bg-purple-50 dark:bg-purple-900/10' : ''}`}
+                                  data-testid={`spectator-search-result-${player.id}`}
+                                >
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{player.profileName || player.username}</span>
+                                    <span className="text-xs text-muted-foreground">@{player.username}</span>
+                                  </div>
+                                  {isSelected && (
+                                    <Check className="h-4 w-4 text-purple-600" />
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="p-3 text-center text-sm text-muted-foreground">
+                            No players found matching "{spectatorSearch}"
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Selected Spectators Summary */}
+                  {selectedSpectators.length > 0 && (
+                    <div className="bg-muted rounded-md p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">
+                          {selectedSpectators.length} spectator{selectedSpectators.length !== 1 ? 's' : ''} selected
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedSpectators([])}
+                          data-testid="button-clear-spectators"
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* My Team */}
         <Card>

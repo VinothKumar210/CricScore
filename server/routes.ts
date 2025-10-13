@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import jwt from "jsonwebtoken";
-import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema } from "@shared/schema";
+import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, insertLocalMatchSchema, insertMatchSpectatorSchema } from "@shared/schema";
 import { z } from "zod";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
@@ -1059,6 +1059,181 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error processing local match results:', error);
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // ============== SPECTATOR AND LIVE MATCH ROUTES ==============
+
+  // Create local match with spectators
+  app.post("/api/local-matches", authenticateToken, async (req: any, res) => {
+    try {
+      const validatedData = insertLocalMatchSchema.parse({
+        ...req.body,
+        creatorId: req.userId,
+        matchDate: new Date(req.body.matchDate)
+      });
+
+      const localMatch = await storage.createLocalMatch(validatedData);
+      
+      // Add spectators if provided
+      if (req.body.selectedSpectators && Array.isArray(req.body.selectedSpectators)) {
+        for (const spectatorId of req.body.selectedSpectators) {
+          try {
+            await storage.addMatchSpectator({
+              localMatchId: localMatch.id,
+              userId: spectatorId,
+              addedBy: req.userId
+            });
+          } catch (error) {
+            console.error(`Error adding spectator ${spectatorId}:`, error);
+          }
+        }
+      }
+      
+      res.status(201).json(localMatch);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get matches where user is a spectator
+  app.get("/api/local-matches/spectator", authenticateToken, async (req: any, res) => {
+    try {
+      const matches = await storage.getSpectatorMatches(req.userId);
+      res.json(matches);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get all ongoing matches for discovery
+  app.get("/api/local-matches/ongoing", authenticateToken, async (req: any, res) => {
+    try {
+      const matches = await storage.getOngoingMatches();
+      res.json(matches);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get specific local match details for spectators
+  app.get("/api/local-matches/:id", authenticateToken, async (req, res) => {
+    try {
+      const match = await storage.getLocalMatch(req.params.id);
+      if (!match) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+      res.json(match);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Add spectator to match
+  app.post("/api/local-matches/:id/spectators", authenticateToken, async (req: any, res) => {
+    try {
+      const spectatorData = insertMatchSpectatorSchema.parse({
+        ...req.body,
+        localMatchId: req.params.id,
+        addedBy: req.userId
+      });
+
+      const spectator = await storage.addMatchSpectator(spectatorData);
+      res.status(201).json(spectator);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Remove spectator from match
+  app.delete("/api/local-matches/:id/spectators/:userId", authenticateToken, async (req: any, res) => {
+    try {
+      // Only match creator or the spectator themselves can remove
+      const match = await storage.getLocalMatch(req.params.id);
+      if (!match) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+      
+      if (match.creatorId !== req.userId && req.params.userId !== req.userId) {
+        return res.status(403).json({ message: "Not authorized to remove this spectator" });
+      }
+
+      const removed = await storage.removeMatchSpectator(req.params.id, req.params.userId);
+      if (!removed) {
+        return res.status(404).json({ message: "Spectator not found" });
+      }
+      
+      res.json({ message: "Spectator removed successfully" });
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Search users for spectators
+  app.get("/api/users/search", authenticateToken, async (req, res) => {
+    try {
+      const { q } = req.query;
+      
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ message: "Search query parameter 'q' required" });
+      }
+      
+      if (q.trim().length < 3) {
+        return res.status(400).json({ message: "Search query must be at least 3 characters" });
+      }
+      
+      const users = await storage.searchUsers(q.trim());
+      res.json(users);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Update match status and score (for match creators during live scoring)
+  app.patch("/api/local-matches/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const match = await storage.getLocalMatch(req.params.id);
+      if (!match) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+      
+      // Only match creator can update
+      if (match.creatorId !== req.userId) {
+        return res.status(403).json({ message: "Only match creator can update match" });
+      }
+
+      const updateSchema = z.object({
+        status: z.enum(["CREATED", "ONGOING", "COMPLETED", "CANCELLED"]).optional(),
+        currentInnings: z.number().int().min(1).max(2).optional(),
+        currentOver: z.number().min(0).optional(),
+        currentBall: z.number().int().min(0).max(5).optional(),
+        myTeamScore: z.number().int().min(0).optional(),
+        myTeamWickets: z.number().int().min(0).max(10).optional(),
+        myTeamOvers: z.number().min(0).optional(),
+        opponentTeamScore: z.number().int().min(0).optional(),
+        opponentTeamWickets: z.number().int().min(0).max(10).optional(),
+        opponentTeamOvers: z.number().min(0).optional()
+      });
+
+      const validatedData = updateSchema.parse(req.body);
+      const updatedMatch = await storage.updateLocalMatch(req.params.id, validatedData);
+      
+      if (!updatedMatch) {
+        return res.status(500).json({ message: "Failed to update match" });
+      }
+      
+      res.json(updatedMatch);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      return handleDatabaseError(error, res);
     }
   });
 

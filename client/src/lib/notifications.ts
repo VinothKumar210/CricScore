@@ -1,244 +1,155 @@
-// Push Notification Management Utilities
-import { registerServiceWorker } from "@/sw-register";
-
-// VAPID public key - In production, this should be from environment variables
-// For now, using a placeholder that would be replaced with actual VAPID key
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BPLyN3_LPBPyFVWkjWE6LPcvXfD-Y3-8-yKF2Hy_-QV4DjT5SH3YzU2F-9-ztAeVjXlT3FnGztCYcOQF2nO9XPw';
-
-// Convert VAPID key to Uint8Array
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
-
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
+// Simple notification utility for PWA notifications
+export interface NotificationData {
+  title: string;
+  body: string;
+  icon?: string;
+  badge?: string;
+  data?: any;
+  tag?: string;
 }
 
-// Check if notifications are supported
-export const isNotificationSupported = (): boolean => {
-  return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
-};
+class NotificationService {
+  public isSupported: boolean = false;
+  public permission: NotificationPermission = 'default';
 
-// Check current notification permission status
-export const getNotificationPermission = (): NotificationPermission => {
-  if (!isNotificationSupported()) {
-    return 'denied';
-  }
-  return Notification.permission;
-};
-
-// Request notification permission
-export const requestNotificationPermission = async (): Promise<NotificationPermission> => {
-  if (!isNotificationSupported()) {
-    throw new Error('Notifications are not supported in this browser');
+  constructor() {
+    this.isSupported = 'Notification' in window;
+    if (this.isSupported) {
+      this.permission = Notification.permission;
+    }
   }
 
-  // If already granted or denied, return current status
-  if (Notification.permission !== 'default') {
-    return Notification.permission;
+  // Check if notifications are supported and permitted
+  get canNotify(): boolean {
+    return this.isSupported && this.permission === 'granted';
   }
 
-  // Request permission
-  const permission = await Notification.requestPermission();
-  console.log('Notification permission:', permission);
-  
-  return permission;
-};
-
-// Subscribe to push notifications
-export const subscribeToPushNotifications = async (): Promise<PushSubscription | null> => {
-  try {
-    // First request notification permission
-    const permission = await requestNotificationPermission();
-    if (permission !== 'granted') {
-      console.log('Notification permission not granted');
-      return null;
+  // Request permission for notifications
+  async requestPermission(): Promise<NotificationPermission> {
+    if (!this.isSupported) {
+      return 'denied';
     }
 
-    // Register service worker
-    const registration = await registerServiceWorker();
-    if (!registration) {
-      throw new Error('Service worker registration failed');
+    if (this.permission === 'default') {
+      this.permission = await Notification.requestPermission();
     }
 
-    // Check if already subscribed
-    let subscription = await registration.pushManager.getSubscription();
-    if (subscription) {
-      console.log('Already subscribed to push notifications');
-      return subscription;
+    return this.permission;
+  }
+
+  // Show a notification
+  async showNotification(data: NotificationData): Promise<void> {
+    // Request permission if not already granted
+    if (this.permission !== 'granted') {
+      await this.requestPermission();
     }
 
-    // Subscribe to push notifications
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    if (!this.canNotify) {
+      console.warn('Notifications not supported or permission denied');
+      return;
+    }
+
+    try {
+      const notification = new Notification(data.title, {
+        body: data.body,
+        icon: data.icon || '/icon-192x192.png',
+        badge: data.badge || '/icon-192x192.png',
+        data: data.data,
+        tag: data.tag,
+        requireInteraction: true, // Keep notification visible until user interacts
+      });
+
+      // Auto-close after 10 seconds if not interacted with
+      setTimeout(() => {
+        notification.close();
+      }, 10000);
+
+      // Handle notification click
+      notification.onclick = (event) => {
+        event.preventDefault();
+        notification.close();
+        
+        // Focus window and navigate to match if data contains match ID
+        window.focus();
+        if (data.data?.matchId) {
+          window.location.href = `/match-view/${data.data.matchId}`;
+        }
+      };
+
+    } catch (error) {
+      console.error('Failed to show notification:', error);
+    }
+  }
+
+  // Show match start notification
+  async notifyMatchStart(matchName: string, venue: string, matchId: string): Promise<void> {
+    await this.showNotification({
+      title: '🏏 Match Starting Soon!',
+      body: `${matchName} at ${venue} is about to begin`,
+      tag: `match-start-${matchId}`,
+      data: { 
+        type: 'match-start',
+        matchId 
+      }
     });
-
-    console.log('Successfully subscribed to push notifications');
-    return subscription;
-
-  } catch (error) {
-    console.error('Error subscribing to push notifications:', error);
-    throw error;
   }
-};
 
-// Unsubscribe from push notifications
-export const unsubscribeFromPushNotifications = async (): Promise<boolean> => {
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
-    
-    if (!subscription) {
-      console.log('No push subscription found');
-      return true;
-    }
-
-    const successful = await subscription.unsubscribe();
-    console.log('Successfully unsubscribed from push notifications');
-    return successful;
-
-  } catch (error) {
-    console.error('Error unsubscribing from push notifications:', error);
-    return false;
-  }
-};
-
-// Get current push subscription
-export const getCurrentPushSubscription = async (): Promise<PushSubscription | null> => {
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    const subscription = await registration.pushManager.getSubscription();
-    return subscription;
-  } catch (error) {
-    console.error('Error getting push subscription:', error);
-    return null;
-  }
-};
-
-// Send subscription to server
-export const sendSubscriptionToServer = async (subscription: PushSubscription, username: string): Promise<boolean> => {
-  try {
-    const response = await fetch('/api/push/subscribe', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-      },
-      body: JSON.stringify({
-        subscription,
-        username
-      })
+  // Show match update notification
+  async notifyMatchUpdate(matchName: string, update: string, matchId: string): Promise<void> {
+    await this.showNotification({
+      title: `🏏 ${matchName}`,
+      body: update,
+      tag: `match-update-${matchId}`,
+      data: { 
+        type: 'match-update',
+        matchId 
+      }
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to send subscription to server');
-    }
-
-    console.log('Subscription sent to server successfully');
-    return true;
-
-  } catch (error) {
-    console.error('Error sending subscription to server:', error);
-    return false;
-  }
-};
-
-// Remove subscription from server
-export const removeSubscriptionFromServer = async (username: string): Promise<boolean> => {
-  try {
-    const response = await fetch('/api/push/unsubscribe', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-      },
-      body: JSON.stringify({ username })
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to remove subscription from server');
-    }
-
-    console.log('Subscription removed from server successfully');
-    return true;
-
-  } catch (error) {
-    console.error('Error removing subscription from server:', error);
-    return false;
-  }
-};
-
-// Show a local notification (for testing)
-export const showLocalNotification = async (title: string, options?: NotificationOptions): Promise<void> => {
-  const permission = await requestNotificationPermission();
-  if (permission !== 'granted') {
-    throw new Error('Notification permission not granted');
   }
 
-  const defaultOptions: NotificationOptions = {
-    body: 'This is a test notification',
-    icon: '/icon-192x192.png',
-    badge: '/icon-192x192.png',
-    tag: 'test-notification',
-    requireInteraction: false,
-    silent: false,
+  // Check if we should show permission request
+  shouldRequestPermission(): boolean {
+    return this.isSupported && this.permission === 'default';
+  }
+}
+
+// Export singleton instance
+export const notificationService = new NotificationService();
+
+// Hook for React components
+import { useState, useEffect } from 'react';
+
+export function useNotifications() {
+  const [permission, setPermission] = useState<NotificationPermission>(notificationService.permission);
+  const [isSupported] = useState(notificationService.isSupported);
+
+  useEffect(() => {
+    // Update permission state if it changes
+    const checkPermission = () => {
+      if (notificationService.permission !== permission) {
+        setPermission(notificationService.permission);
+      }
+    };
+
+    // Check periodically in case permission changes
+    const interval = setInterval(checkPermission, 1000);
+    return () => clearInterval(interval);
+  }, [permission]);
+
+  const requestPermission = async () => {
+    const newPermission = await notificationService.requestPermission();
+    setPermission(newPermission);
+    return newPermission;
   };
 
-  new Notification(title, { ...defaultOptions, ...options });
-};
-
-// Initialize notifications for a user
-export const initializeNotifications = async (username: string): Promise<boolean> => {
-  try {
-    if (!isNotificationSupported()) {
-      console.log('Notifications not supported');
-      return false;
-    }
-
-    const permission = await requestNotificationPermission();
-    if (permission !== 'granted') {
-      console.log('Notification permission not granted');
-      return false;
-    }
-
-    const subscription = await subscribeToPushNotifications();
-    if (!subscription) {
-      console.log('Failed to subscribe to push notifications');
-      return false;
-    }
-
-    const serverSuccess = await sendSubscriptionToServer(subscription, username);
-    if (!serverSuccess) {
-      console.log('Failed to send subscription to server');
-      return false;
-    }
-
-    console.log('Notifications initialized successfully');
-    return true;
-
-  } catch (error) {
-    console.error('Error initializing notifications:', error);
-    return false;
-  }
-};
-
-// Cleanup notifications for a user
-export const cleanupNotifications = async (username: string): Promise<boolean> => {
-  try {
-    const unsubscribed = await unsubscribeFromPushNotifications();
-    const serverRemoved = await removeSubscriptionFromServer(username);
-    
-    return unsubscribed && serverRemoved;
-  } catch (error) {
-    console.error('Error cleaning up notifications:', error);
-    return false;
-  }
-};
+  return {
+    permission,
+    isSupported,
+    canNotify: notificationService.canNotify,
+    requestPermission,
+    showNotification: notificationService.showNotification.bind(notificationService),
+    notifyMatchStart: notificationService.notifyMatchStart.bind(notificationService),
+    notifyMatchUpdate: notificationService.notifyMatchUpdate.bind(notificationService),
+    shouldRequestPermission: notificationService.shouldRequestPermission(),
+  };
+}

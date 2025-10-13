@@ -144,8 +144,31 @@ export const insertLocalMatchSchema = z.object({
   matchName: z.string().min(1, "Match name is required"),
   venue: z.string().min(1, "Venue is required"),
   matchDate: z.date(),
+  overs: z.number().int().min(1).max(50).default(20),
+  myTeamName: z.string().optional(),
+  myTeamId: z.string().optional(),
+  opponentTeamName: z.string().optional(),
+  opponentTeamId: z.string().optional(),
   myTeamPlayers: z.array(localPlayerSchema).length(11, "Each team must have exactly 11 players"),
   opponentTeamPlayers: z.array(localPlayerSchema).length(11, "Each team must have exactly 11 players"),
+  allowSpectators: z.boolean().default(false),
+});
+
+// Match spectator schema
+export const insertMatchSpectatorSchema = z.object({
+  localMatchId: z.string(),
+  userId: z.string(),
+  addedBy: z.string(),
+});
+
+// Over history schema  
+export const insertOverHistorySchema = z.object({
+  localMatchId: z.string(),
+  overNumber: z.number().int().min(0),
+  innings: z.number().int().min(1).max(2),
+  balls: z.array(z.any()), // Ball-by-ball data as JSON
+  totalRuns: z.number().int().min(0).default(0),
+  wickets: z.number().int().min(0).default(0),
 });
 
 // Frontend form schema for local match
@@ -196,9 +219,11 @@ export type InsertTeamStatistics = z.infer<typeof insertTeamStatisticsSchema>;
 export type LocalPlayer = z.infer<typeof localPlayerSchema>;
 export type InsertLocalMatch = z.infer<typeof insertLocalMatchSchema>;
 export type LocalMatchForm = z.infer<typeof localMatchFormSchema>;
+export type InsertMatchSpectator = z.infer<typeof insertMatchSpectatorSchema>;
+export type InsertOverHistory = z.infer<typeof insertOverHistorySchema>;
 export type ProfileSetup = z.infer<typeof profileSetupSchema>;
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type RegisterRequest = z.infer<typeof registerSchema>;
 
 // Re-export Prisma model types
-export type { User, CareerStats, Team, TeamMember, TeamInvitation, Match, TeamMatch, TeamMatchPlayer, TeamStatistics } from "@prisma/client";
+export type { User, CareerStats, Team, TeamMember, TeamInvitation, Match, TeamMatch, TeamMatchPlayer, TeamStatistics, LocalMatch, MatchSpectator, OverHistory } from "@prisma/client";
