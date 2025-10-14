@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +11,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Users, AlertTriangle, Clock, Check, X, Loader2, ArrowLeft, Search, Crown } from "lucide-react";
 import { type LocalPlayer, type Team, type User } from "@shared/schema";
 import { useAuth } from "@/components/auth/auth-context";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LocalMatch() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [myTeamName, setMyTeamName] = useState<string>("");
   const [opponentTeamName, setOpponentTeamName] = useState<string>("");
   const [selectedMyTeam, setSelectedMyTeam] = useState<string>("");
@@ -113,6 +117,51 @@ export default function LocalMatch() {
     onError: () => {
       setSpectatorSearchResults([]);
       setIsSearchingSpectators(false);
+    },
+  });
+
+  // Create live match mutation for when spectators are enabled
+  const createLiveMatchMutation = useMutation({
+    mutationFn: async () => {
+      const matchData = {
+        matchName: `${myTeamName || 'My Team'} vs ${opponentTeamName || 'Opponent Team'}`,
+        venue: "Local Match",
+        matchDate: new Date().toISOString(),
+        overs: parseInt(getCurrentOvers()),
+        myTeamName: myTeamName || 'My Team',
+        opponentTeamName: opponentTeamName || 'Opponent Team',
+        myTeamPlayers,
+        opponentTeamPlayers,
+        allowSpectators: true,
+        selectedSpectators,
+      };
+
+      const response = await apiRequest('POST', '/api/local-matches', matchData);
+      return response.json();
+    },
+    onSuccess: (match) => {
+      toast({
+        title: "Success",
+        description: `Live match created! ${selectedSpectators.length} spectator${selectedSpectators.length !== 1 ? 's' : ''} notified.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/local-matches/spectator"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/local-matches/ongoing"] });
+      
+      // Store match data for local scoring and continue to coin toss
+      localStorage.setItem('myTeamPlayers', JSON.stringify(myTeamPlayers));
+      localStorage.setItem('opponentTeamPlayers', JSON.stringify(opponentTeamPlayers));
+      localStorage.setItem('myTeamName', myTeamName || 'My Team');
+      localStorage.setItem('opponentTeamName', opponentTeamName || 'Opponent Team');
+      localStorage.setItem('matchOvers', getCurrentOvers());
+      localStorage.setItem('liveMatchId', match.id); // Store for potential future sync
+      setLocation('/coin-toss');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create live match",
+        variant: "destructive",
+      });
     },
   });
 
@@ -1223,18 +1272,25 @@ export default function LocalMatch() {
       <div className="mt-6 flex justify-center">
         <Button 
           onClick={() => {
-            // Store team data and match configuration for coin toss and scoring
-            localStorage.setItem('myTeamPlayers', JSON.stringify(myTeamPlayers));
-            localStorage.setItem('opponentTeamPlayers', JSON.stringify(opponentTeamPlayers));
-            localStorage.setItem('myTeamName', myTeamName || 'My Team');
-            localStorage.setItem('opponentTeamName', opponentTeamName || 'Opponent Team');
-            localStorage.setItem('matchOvers', getCurrentOvers());
-            setLocation('/coin-toss');
+            if (allowSpectators && selectedSpectators.length > 0) {
+              // Create live match with spectators and send notifications
+              createLiveMatchMutation.mutate();
+            } else {
+              // Regular local match flow - store in localStorage only
+              localStorage.setItem('myTeamPlayers', JSON.stringify(myTeamPlayers));
+              localStorage.setItem('opponentTeamPlayers', JSON.stringify(opponentTeamPlayers));
+              localStorage.setItem('myTeamName', myTeamName || 'My Team');
+              localStorage.setItem('opponentTeamName', opponentTeamName || 'Opponent Team');
+              localStorage.setItem('matchOvers', getCurrentOvers());
+              setLocation('/coin-toss');
+            }
           }}
-          disabled={!bothTeamsHavePlayers || !teamsEqual || !isValidCustomConfig()}
+          disabled={!bothTeamsHavePlayers || !teamsEqual || !isValidCustomConfig() || createLiveMatchMutation.isPending}
           data-testid="button-save-local-match"
           className="px-8"
-        >Start Match</Button>
+        >
+          {createLiveMatchMutation.isPending ? "Creating Live Match..." : "Start Match"}
+        </Button>
       </div>
       {/* Additional Info */}
       {bothTeamsHavePlayers && teamsEqual && (
