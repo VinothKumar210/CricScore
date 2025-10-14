@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { useAuth } from "@/components/auth/auth-context";
-import { Gamepad, TrendingUp, Zap, Target, Users, Crown } from "lucide-react";
+import { Gamepad, TrendingUp, Zap, Target, Users, Crown, Activity } from "lucide-react";
 import { useEffect } from 'react';
 import { refreshUserStatistics } from "@/lib/queryClient";
 import type { CareerStats, Match, Team } from "@shared/schema";
@@ -50,7 +50,7 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
         <Card className="hover:shadow-lg transition-shadow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -110,6 +110,22 @@ export default function Dashboard() {
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                 <Target className="text-red-600 h-6 w-6" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Economy Rate</p>
+                <p className="text-2xl font-bold text-foreground" data-testid="text-economy">
+                  {stats?.economy || "0.00"}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                <Activity className="text-blue-600 h-6 w-6" />
               </div>
             </div>
           </CardContent>
