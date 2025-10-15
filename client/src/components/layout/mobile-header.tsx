@@ -1,4 +1,4 @@
-import { Menu, X } from "lucide-react";
+import { Menu, X, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { useAuth } from "@/components/auth/auth-context";
@@ -21,7 +21,7 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
   };
 
   return (
-    <header className="bg-card border-b border-border p-4 lg:hidden">
+    <header className="glassmorphism border-0 border-b border-white/10 p-4 lg:hidden backdrop-blur-xl shadow-modern">
       <div className="flex items-center justify-between">
         <div className="relative">
           <Button
@@ -29,30 +29,43 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
             size="sm"
             onClick={onMenuToggle}
             data-testid="button-mobile-menu"
+            className="w-12 h-12 rounded-2xl bg-gradient-to-br from-background/50 to-background/30 border border-white/10 hover:border-primary/30 hover:bg-gradient-to-br hover:from-primary/10 hover:to-sky-500/10 transition-all duration-300 shadow-sm"
           >
-            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {isMenuOpen ? <X className="h-5 w-5 text-foreground" /> : <Menu className="h-5 w-5 text-foreground" />}
           </Button>
           {hasPendingInvitations && (
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full border-2 border-card" />
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-red-500 to-rose-600 rounded-full border-2 border-white flex items-center justify-center shadow-lg animate-bounce">
+              <div className="w-2 h-2 bg-white rounded-full"></div>
+            </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-lg font-semibold text-foreground">CricScore</h1>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-sky-500 rounded-xl flex items-center justify-center shadow-lg">
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-sky-500 bg-clip-text text-transparent">
+              CricScore
+            </h1>
+          </div>
           <InstallPWAButton />
         </div>
         <Link href="/profile">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center cursor-pointer overflow-hidden">
-            {(user as any)?.profilePictureUrl ? (
-              <img 
-                src={(user as any).profilePictureUrl} 
-                alt="Profile picture" 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-primary-foreground font-bold text-sm">
-                {getProfileInitial(user?.profileName)}
-              </span>
-            )}
+          <div className="relative group">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center cursor-pointer overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
+              {(user as any)?.profilePictureUrl ? (
+                <img 
+                  src={(user as any).profilePictureUrl} 
+                  alt="Profile picture" 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-white font-bold text-lg">
+                  {getProfileInitial(user?.profileName)}
+                </span>
+              )}
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full border-2 border-white animate-pulse"></div>
           </div>
         </Link>
       </div>
