@@ -98,7 +98,7 @@ export default function Dashboard() {
 
       {/* Quick Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-        <Card className="glassmorphism border-0 group relative overflow-hidden">
+        <Card className="glassmorphism border-0 group relative overflow-hidden stagger-item scale-interaction interactive-glow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
@@ -111,7 +111,7 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <Progress 
                     value={getMatchesProgress(stats?.matchesPlayed || 0)} 
-                    className="h-2 bg-gradient-to-r from-primary/10 to-sky-500/10" 
+                    className="h-2 bg-gradient-to-r from-primary/10 to-sky-500/10 progress-animated" 
                   />
                   <div className="flex items-center space-x-1 text-xs">
                     <ArrowUpRight className="w-3 h-3 text-green-500" />
@@ -127,7 +127,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="glassmorphism border-0 group relative overflow-hidden">
+        <Card className="glassmorphism border-0 group relative overflow-hidden stagger-item scale-interaction interactive-glow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
@@ -140,7 +140,7 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <Progress 
                     value={getRunsProgress(stats?.totalRuns || 0)} 
-                    className="h-2 bg-gradient-to-r from-green-500/10 to-emerald-600/10" 
+                    className="h-2 bg-gradient-to-r from-green-500/10 to-emerald-600/10 progress-animated" 
                   />
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-1">
@@ -159,7 +159,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="glassmorphism border-0 group relative overflow-hidden">
+        <Card className="glassmorphism border-0 group relative overflow-hidden stagger-item scale-interaction interactive-glow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
@@ -172,7 +172,7 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <Progress 
                     value={getStrikeRatePercentage(Number(stats?.strikeRate) || 0)} 
-                    className="h-2 bg-gradient-to-r from-orange-500/10 to-yellow-500/10" 
+                    className="h-2 bg-gradient-to-r from-orange-500/10 to-yellow-500/10 progress-animated" 
                   />
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-1">
@@ -193,7 +193,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="glassmorphism border-0 group relative overflow-hidden">
+        <Card className="glassmorphism border-0 group relative overflow-hidden stagger-item scale-interaction interactive-glow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
@@ -206,7 +206,7 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <Progress 
                     value={getWicketsProgress(stats?.wicketsTaken || 0)} 
-                    className="h-2 bg-gradient-to-r from-red-500/10 to-rose-600/10" 
+                    className="h-2 bg-gradient-to-r from-red-500/10 to-rose-600/10 progress-animated" 
                   />
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-1">
@@ -227,7 +227,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="glassmorphism border-0 group relative overflow-hidden">
+        <Card className="glassmorphism border-0 group relative overflow-hidden stagger-item scale-interaction interactive-glow">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
@@ -240,7 +240,7 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <Progress 
                     value={getEconomyProgress(Number(stats?.economy) || 0)} 
-                    className="h-2 bg-gradient-to-r from-blue-500/10 to-indigo-600/10" 
+                    className="h-2 bg-gradient-to-r from-blue-500/10 to-indigo-600/10 progress-animated" 
                   />
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-1">
@@ -313,7 +313,7 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-            <Button variant="ghost" asChild className="w-full mt-6 btn-modern group bg-gradient-to-r from-primary/5 to-sky-500/5 hover:from-primary/10 hover:to-sky-500/10 border border-primary/20 rounded-xl" data-testid="link-add-match">
+            <Button variant="ghost" asChild className="w-full mt-6 btn-modern btn-interactive ripple-effect group bg-gradient-to-r from-primary/5 to-sky-500/5 hover:from-primary/10 hover:to-sky-500/10 border border-primary/20 rounded-xl" data-testid="link-add-match">
               <Link href="/add-match" className="flex items-center justify-center space-x-2 font-medium">
                 <span>Add New Match</span>
                 <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
@@ -392,7 +392,7 @@ export default function Dashboard() {
       {/* Floating Local Match Button */}
       <Button 
         asChild 
-        className="fixed bottom-6 right-6 rounded-2xl px-6 py-4 shadow-modern hover:shadow-modern-hover transition-all duration-300 z-50 btn-modern bg-gradient-to-r from-primary to-sky-500 hover:from-primary-hover hover:to-sky-600 border-0 group" 
+        className="fixed bottom-6 right-6 rounded-2xl px-6 py-4 shadow-modern hover:shadow-modern-hover transition-all duration-300 z-50 btn-modern btn-interactive ripple-effect interactive-glow bg-gradient-to-r from-primary to-sky-500 hover:from-primary-hover hover:to-sky-600 border-0 group" 
         data-testid="floating-local-match"
       >
         <Link href="/local-match" className="flex items-center space-x-3 text-white">
