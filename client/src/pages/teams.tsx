@@ -181,9 +181,9 @@ export default function Teams() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-foreground" data-testid="title-teams">
+    <div className="container-mobile space-mobile-lg">
+      <div className="mobile-stack">
+        <h2 className="text-mobile-h1" data-testid="title-teams">
           Team Management
         </h2>
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>

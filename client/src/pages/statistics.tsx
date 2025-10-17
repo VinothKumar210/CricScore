@@ -28,10 +28,10 @@ export default function Statistics() {
 
   if (isLoading || matchesLoading) {
     return (
-      <div className="p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-muted rounded w-1/3"></div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="container-mobile">
+        <div className="animate-pulse space-mobile-lg">
+          <div className="h-6 sm:h-8 bg-muted rounded w-1/3"></div>
+          <div className="grid-mobile-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-64 bg-muted rounded"></div>
             ))}
@@ -42,23 +42,23 @@ export default function Statistics() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-foreground" data-testid="title-statistics">
+    <div className="container-mobile space-mobile-lg">
+      <div className="mobile-stack">
+        <h2 className="text-mobile-h1" data-testid="title-statistics">
           Career Statistics
         </h2>
-        <div className="text-sm text-muted-foreground" data-testid="text-last-updated">
+        <div className="text-mobile-caption text-right sm:text-left" data-testid="text-last-updated">
           Last updated: {stats?.updatedAt ? new Date(stats.updatedAt).toLocaleDateString() : "Never"}
         </div>
       </div>
 
       {/* Detailed Stats Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid-mobile-3">
         {/* Batting Statistics */}
-        <Card>
+        <Card className="card-mobile stagger-mobile">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <BarChart3 className="text-green-600 mr-2" />
+            <CardTitle className="flex items-center text-mobile-h3">
+              <BarChart3 className="text-green-600 mr-2 w-5 h-5 sm:w-6 sm:h-6" />
               Batting Statistics
             </CardTitle>
           </CardHeader>
@@ -93,7 +93,7 @@ export default function Statistics() {
         </Card>
 
         {/* Bowling Statistics */}
-        <Card>
+        <Card className="card-mobile stagger-mobile">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Target className="text-red-600 mr-2" />
@@ -131,7 +131,7 @@ export default function Statistics() {
         </Card>
 
         {/* Fielding Statistics */}
-        <Card>
+        <Card className="card-mobile stagger-mobile">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Hand className="text-blue-600 mr-2" />
