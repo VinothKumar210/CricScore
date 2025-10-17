@@ -105,12 +105,15 @@ export default function ProfileSetup() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold">Complete Your Cricket Profile</CardTitle>
-            <CardDescription>Set up your cricket profile to start tracking your career</CardDescription>
+    <div className="min-h-screen min-h-dvh bg-background safe-area-top safe-area-bottom">
+      <div className="container-mobile py-4 sm:py-8 max-w-2xl">
+        <Card className="card-mobile">
+          <CardHeader className="text-center space-y-3">
+            <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-4 shadow-lg">
+              <span className="text-primary-foreground text-2xl">🏏</span>
+            </div>
+            <CardTitle className="text-mobile-h2">Complete Your Cricket Profile</CardTitle>
+            <CardDescription className="text-mobile-caption">Set up your cricket profile to start tracking your career</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
