@@ -38,7 +38,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const hasPendingInvitations = invitations && invitations.length > 0;
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen h-dvh bg-background safe-area-top safe-area-bottom">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar />
@@ -54,19 +54,21 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden touch-feedback"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto scroll-mobile">
         <MobileHeader
           isMenuOpen={isMobileMenuOpen}
           onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           hasPendingInvitations={hasPendingInvitations}
         />
-        {children}
+        <div className="min-h-full">
+          {children}
+        </div>
       </main>
     </div>
   );
