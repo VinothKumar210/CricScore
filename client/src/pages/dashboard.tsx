@@ -350,19 +350,19 @@ export default function Dashboard() {
       {/* Floating Local Match Button */}
       <Button 
         asChild 
-        size="mobile"
-        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 rounded-2xl shadow-modern hover:shadow-modern-hover transition-all duration-300 z-50 btn-modern btn-interactive ripple-effect interactive-glow bg-gradient-to-r from-primary to-sky-500 hover:from-primary-hover hover:to-sky-600 border-0 group touch-feedback safe-area-bottom" 
+        className="fixed bottom-6 right-6 w-auto h-auto p-4 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 z-[9999] bg-gradient-to-r from-primary via-sky-500 to-primary hover:from-primary-hover hover:via-sky-600 hover:to-primary-hover border-0 group backdrop-blur-sm" 
+        style={{ position: 'fixed' }}
         data-testid="floating-local-match"
       >
-        <Link href="/local-match" className="flex items-center space-x-3 text-white">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
-            <Gamepad className="h-6 w-6" />
+        <Link href="/local-match" className="flex items-center space-x-3 text-white px-2 py-1">
+          <div className="w-12 h-12 bg-white/25 rounded-2xl flex items-center justify-center group-hover:bg-white/35 transition-all duration-300 shadow-lg">
+            <Gamepad className="h-7 w-7 drop-shadow-sm" />
           </div>
-          <div className="text-left">
-            <div className="font-bold text-sm">Create Match</div>
-            <div className="text-xs opacity-90">Start playing now</div>
+          <div className="text-left pr-2">
+            <div className="font-bold text-base tracking-tight drop-shadow-sm">Create Match</div>
+            <div className="text-sm opacity-95 font-medium drop-shadow-sm">Start playing now</div>
           </div>
-          <ArrowUpRight className="h-5 w-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+          <ArrowUpRight className="h-6 w-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300 drop-shadow-sm" />
         </Link>
       </Button>
     </div>
