@@ -8,7 +8,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
       <input
         type={type}
         className={cn(
-          "flex h-14 sm:h-12 w-full rounded-2xl sm:rounded-xl border border-slate-200/30 bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm px-4 py-3 text-base sm:text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground/70 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-0 focus-visible:border-blue-500/50 focus-visible:bg-white/20 hover:border-slate-300/50 hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50 font-medium touch-feedback-subtle will-change-transform",
+          "flex h-12 sm:h-11 w-full rounded-2xl border bg-background/50 backdrop-blur-sm px-4 py-3 text-base sm:text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground/70 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 focus-visible:border-primary/50 hover:border-border/80 disabled:cursor-not-allowed disabled:opacity-50 font-medium shadow-sm hover:shadow-md focus-visible:shadow-lg",
           className
         )}
         ref={ref}
@@ -44,7 +44,7 @@ const FloatingInput = React.forwardRef<HTMLInputElement,
       <input
         type={type}
         className={cn(
-          "peer flex h-16 sm:h-14 w-full rounded-2xl sm:rounded-xl border border-slate-200/30 bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm px-4 pt-6 pb-2 text-base sm:text-sm ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-0 focus-visible:border-blue-500/50 focus-visible:bg-white/20 hover:border-slate-300/50 hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-50 font-medium placeholder:text-transparent touch-feedback-subtle will-change-transform",
+          "peer flex h-14 sm:h-13 w-full rounded-2xl border bg-background/50 backdrop-blur-sm px-4 pt-6 pb-2 text-base sm:text-sm ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-0 focus-visible:border-primary/50 hover:border-border/80 disabled:cursor-not-allowed disabled:opacity-50 font-medium placeholder:text-transparent shadow-sm hover:shadow-md focus-visible:shadow-lg",
           className
         )}
         ref={ref}
