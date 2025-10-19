@@ -39,8 +39,8 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
   ];
 
   return (
-    <aside className={cn("w-72 sm:w-64 bg-background/95 border-0 border-r border-border/20 backdrop-blur-md shadow-xl safe-area-left", className)}>
-      <div className="p-4 sm:p-6 border-b border-border/20 bg-muted/20">
+    <aside className={cn("w-72 sm:w-64 bg-background border-0 border-r border-border shadow-2xl safe-area-left", className)}>
+      <div className="p-4 sm:p-6 border-b border-border bg-muted/50">
         <Link href="/profile" onClick={onNavigate}>
           <div className="flex items-center space-x-3 sm:space-x-4 cursor-pointer hover:bg-gradient-to-r hover:from-primary/10 hover:to-sky-500/10 rounded-2xl p-3 transition-all duration-300 group touch-feedback-subtle" data-testid="nav-profile">
             <div className="relative">
@@ -82,14 +82,14 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
                 "flex items-center space-x-4 px-4 py-3 rounded-2xl transition-all duration-300 relative group border",
                 isActive
                   ? "bg-gradient-to-r from-primary to-sky-500 text-white shadow-lg border-primary/30 transform scale-105"
-                  : "text-muted-foreground hover:bg-gradient-to-r hover:from-primary/20 hover:to-sky-500/20 hover:text-foreground border-transparent hover:border-primary/30 hover:shadow-md"
+                  : "text-foreground/80 hover:bg-gradient-to-r hover:from-primary/30 hover:to-sky-500/30 hover:text-foreground border-transparent hover:border-primary/50 hover:shadow-md"
               )}
             >
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
                 isActive 
                   ? "bg-white/20 text-white" 
-                  : "bg-muted/50 group-hover:bg-primary/10 group-hover:text-primary"
+                  : "bg-muted group-hover:bg-primary/20 group-hover:text-primary"
               )}>
                 <Icon className="w-5 h-5" />
               </div>
@@ -106,13 +106,13 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
           );
         })}
         
-        <div className="pt-4 mt-4 border-t border-border/20">
+        <div className="pt-4 mt-4 border-t border-border">
           <button
             onClick={logout}
             data-testid="button-logout"
-            className="w-full flex items-center space-x-4 px-4 py-3 rounded-2xl text-muted-foreground hover:bg-gradient-to-r hover:from-red-500/20 hover:to-rose-600/20 hover:text-red-600 transition-all duration-300 group border border-transparent hover:border-red-500/30"
+            className="w-full flex items-center space-x-4 px-4 py-3 rounded-2xl text-foreground/80 hover:bg-gradient-to-r hover:from-red-500/30 hover:to-rose-600/30 hover:text-red-600 transition-all duration-300 group border border-transparent hover:border-red-500/50"
           >
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted/50 group-hover:bg-red-500/10 transition-all duration-300">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-muted group-hover:bg-red-500/20 transition-all duration-300">
               <LogOut className="w-5 h-5 group-hover:text-red-500" />
             </div>
             <span className="font-medium flex-1 text-left">Sign Out</span>
