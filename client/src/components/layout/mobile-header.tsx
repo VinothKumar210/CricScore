@@ -21,7 +21,7 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
   };
 
   return (
-    <header className="glassmorphism border-0 border-b border-white/10 p-3 sm:p-4 lg:hidden backdrop-blur-xl shadow-modern safe-area-top">
+    <header className="glassmorphism border-0 border-b border-border/30 p-4 lg:hidden backdrop-blur-xl shadow-lg safe-area-top">
       <div className="flex items-center justify-between">
         <div className="relative">
           <Button
@@ -29,7 +29,7 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
             size="sm"
             onClick={onMenuToggle}
             data-testid="button-mobile-menu"
-            className="w-12 h-12 rounded-2xl bg-gradient-to-br from-background/50 to-background/30 border border-white/10 hover:border-primary/30 hover:bg-gradient-to-br hover:from-primary/10 hover:to-sky-500/10 transition-all duration-300 shadow-sm"
+            className="w-11 h-11 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/30 hover:border-primary/40 hover:bg-primary/10 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-105"
           >
             {isMenuOpen ? <X className="h-5 w-5 text-foreground" /> : <Menu className="h-5 w-5 text-foreground" />}
           </Button>
@@ -40,11 +40,11 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
           )}
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-sky-500 rounded-xl flex items-center justify-center shadow-lg">
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 bg-gradient-to-br from-primary to-sky-500 rounded-xl flex items-center justify-center shadow-lg">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-sky-500 bg-clip-text text-transparent">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-sky-500 bg-clip-text text-transparent tracking-tight">
               CricScore
             </h1>
           </div>
@@ -52,7 +52,7 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
         </div>
         <Link href="/profile">
           <div className="relative group">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center cursor-pointer overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
+            <div className="w-11 h-11 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center cursor-pointer overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
               {(user as any)?.profilePictureUrl ? (
                 <img 
                   src={(user as any).profilePictureUrl} 
