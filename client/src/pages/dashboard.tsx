@@ -69,23 +69,23 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container-mobile space-mobile-lg pb-24 sm:pb-8 min-h-screen min-h-dvh">
+    <div className="container-responsive content-spacing pb-24 sm:pb-8 min-h-screen min-h-dvh">
       {/* Welcome Section - Enhanced */}
-      <div className="relative overflow-hidden gradient-primary rounded-2xl p-6 sm:p-8 text-primary-foreground shadow-modern stagger-mobile touch-feedback-subtle">
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary via-sky-500 to-primary rounded-3xl p-8 sm:p-10 text-primary-foreground shadow-xl stagger-mobile hover:shadow-2xl transition-all duration-500">
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-mobile-h1 mb-3" data-testid="text-welcome">
+              <h2 className="heading-secondary mb-4" data-testid="text-welcome">
                 Game on, {user?.profileName || user?.username || 'Champion'}! 
               </h2>
-              <p className="text-base sm:text-lg opacity-90 font-medium">Time to smash some records and track your cricket journey!</p>
+              <p className="text-lead opacity-95">Time to smash some records and track your cricket journey!</p>
             </div>
             <div className="hidden md:flex items-center space-x-2">
               <Sparkles className="w-8 h-8 text-yellow-300 float-animation" />
             </div>
           </div>
-          <div className="flex items-center space-x-4 mt-6">
-            <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
+          <div className="flex items-center space-x-4 mt-8">
+            <div className="flex items-center space-x-2 bg-white/25 backdrop-blur-sm rounded-xl px-5 py-3 shadow-lg">
               <TrendingUp className="w-4 h-4" />
               <span className="text-sm font-medium">Level Up Your Game</span>
             </div>
@@ -97,9 +97,9 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Stats Overview */}
-      <div className="grid-mobile-5">
-        <Card className="card-compact border-0 group relative overflow-hidden stagger-mobile scale-interaction interactive-glow">
-          <CardContent className="p-3 sm:p-4">
+      <div className="grid-responsive">
+        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
@@ -121,8 +121,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="card-compact border-0 group relative overflow-hidden stagger-mobile scale-interaction interactive-glow">
-          <CardContent className="p-3 sm:p-4">
+        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
@@ -144,8 +144,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="card-compact border-0 group relative overflow-hidden stagger-mobile scale-interaction interactive-glow">
-          <CardContent className="p-3 sm:p-4">
+        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
@@ -169,8 +169,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="card-compact border-0 group relative overflow-hidden stagger-mobile scale-interaction interactive-glow">
-          <CardContent className="p-3 sm:p-4">
+        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
@@ -194,8 +194,8 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="card-compact border-0 group relative overflow-hidden stagger-mobile scale-interaction interactive-glow">
-          <CardContent className="p-3 sm:p-4">
+        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300">
+          <CardContent className="p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
                 <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
