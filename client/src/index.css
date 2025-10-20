@@ -551,7 +551,7 @@ html {
 }
 
 .form-section {
-  @apply space-y-4 p-6 bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm rounded-2xl border border-white/10;
+  @apply space-y-4 p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10;
 }
 
 .form-section-title {
@@ -590,7 +590,7 @@ html {
 
 /* Modern select and textarea styling */
 select, textarea {
-  @apply rounded-2xl border border-slate-200/30 bg-gradient-to-r from-white/10 to-white/5 backdrop-blur-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-0 focus-visible:border-blue-500/50 focus-visible:bg-white/20 hover:border-slate-300/50 hover:bg-white/15;
+  @apply rounded-2xl border border-slate-200/30 bg-white/10 backdrop-blur-sm transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-0 focus-visible:border-blue-500/50 focus-visible:bg-white/20 hover:border-slate-300/50 hover:bg-white/15;
 }
 
 textarea {
@@ -948,7 +948,7 @@ textarea {
 
 /* Enhanced loading states */
 .skeleton {
-  @apply animate-pulse bg-gradient-to-r from-muted via-muted/50 to-muted rounded;
+  @apply animate-pulse bg-muted rounded;
 }
 
 .skeleton-text {
@@ -969,21 +969,21 @@ textarea {
 }
 
 .form-section-divider {
-  @apply border-t border-border/50 my-8 pt-8;
+  @apply border-t border-border my-8 pt-8;
 }
 
 .form-actions {
-  @apply flex flex-col sm:flex-row gap-4 pt-6 border-t border-border/50;
+  @apply flex flex-col sm:flex-row gap-4 pt-6 border-t border-border;
 }
 
 /* Enhanced focus states */
 .focus-ring-professional {
-  @apply focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background;
+  @apply focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background;
 }
 
 /* Modern data visualization */
 .stat-card {
-  @apply bg-gradient-to-br from-white/95 to-white/85 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300;
+  @apply bg-white/95 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300;
 }
 
 .stat-value {
@@ -1008,7 +1008,7 @@ textarea {
 
 /* Professional navigation */
 .nav-item {
-  @apply flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 hover:bg-primary/10 hover:text-primary;
+  @apply flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-300 hover:bg-accent hover:text-primary;
 }
 
 .nav-item-active {
