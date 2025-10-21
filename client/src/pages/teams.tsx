@@ -48,7 +48,8 @@ export default function Teams() {
   };
 
   const { data: teams, isLoading } = useQuery<Team[]>({
-    queryKey: ["/api/teams"],
+    queryKey: ["/api/teams", user?.id],
+    enabled: !!user?.id,
   });
 
   const form = useForm<TeamFormData>({
@@ -76,7 +77,7 @@ export default function Teams() {
         title: "Success",
         description: "Team created successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", user?.id] });
       setIsCreateModalOpen(false);
       form.reset();
     },

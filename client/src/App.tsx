@@ -28,11 +28,13 @@ import MatchView from "@/pages/match-view";
 import { useEffect, useState } from "react";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Fetch pending invitations to show notification badge
   const { data: invitations } = useQuery<any[]>({
-    queryKey: ["/api/invitations"],
+    queryKey: ["/api/invitations", user?.id],
+    enabled: !!user?.id,
   });
 
   const hasPendingInvitations = invitations && invitations.length > 0;

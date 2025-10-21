@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/auth/auth-context";
 import { useForm } from "react-hook-form";
 import { apiRequest } from "@/lib/queryClient";
 import { Users, Mail, Check, X, Send } from "lucide-react";
@@ -21,15 +22,18 @@ const inviteFormSchema = z.object({
 type InviteFormData = z.infer<typeof inviteFormSchema>;
 
 export default function Invitations() {
+  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const { data: invitations, isLoading: invitationsLoading } = useQuery<any[]>({
-    queryKey: ["/api/invitations"],
+    queryKey: ["/api/invitations", user?.id],
+    enabled: !!user?.id,
   });
 
   const { data: teams, isLoading: teamsLoading } = useQuery<Team[]>({
-    queryKey: ["/api/teams"],
+    queryKey: ["/api/teams", user?.id],
+    enabled: !!user?.id,
   });
 
   const form = useForm<InviteFormData>({

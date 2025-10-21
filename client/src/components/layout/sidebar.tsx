@@ -15,7 +15,8 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
 
   // Fetch pending invitations to show notification badge
   const { data: invitations } = useQuery<any[]>({
-    queryKey: ["/api/invitations"],
+    queryKey: ["/api/invitations", user?.id],
+    enabled: !!user?.id,
   });
 
   const hasPendingInvitations = invitations && invitations.length > 0;
