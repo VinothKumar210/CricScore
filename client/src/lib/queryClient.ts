@@ -97,32 +97,38 @@ export const queryClient = new QueryClient({
  * Utility function to refresh user statistics data
  * This invalidates and refetches statistics and matches data from the API
  */
-export const refreshUserStatistics = async (): Promise<void> => {
-  // Invalidate and force refetch statistics and matches data
+export const refreshUserStatistics = async (userId?: string): Promise<void> => {
+  if (!userId) {
+    // Clear all cached queries if no specific user
+    await queryClient.clear();
+    return;
+  }
+
+  // Invalidate and force refetch statistics and matches data for specific user
   await Promise.all([
     queryClient.invalidateQueries({ 
-      queryKey: ["/api/stats"], 
+      queryKey: ["/api/stats", userId], 
       refetchType: 'active' 
     }),
     queryClient.invalidateQueries({ 
-      queryKey: ["/api/matches"], 
+      queryKey: ["/api/matches", userId], 
       refetchType: 'active' 
     }),
     queryClient.invalidateQueries({ 
-      queryKey: ["/api/teams"], 
+      queryKey: ["/api/teams", userId], 
       refetchType: 'active' 
     }),
     queryClient.invalidateQueries({ 
-      queryKey: ["/api/invitations"], 
+      queryKey: ["/api/invitations", userId], 
       refetchType: 'active' 
     })
   ]);
   
   // Force refetch of statistics data to ensure fresh data from database
   await Promise.all([
-    queryClient.refetchQueries({ queryKey: ["/api/stats"] }),
-    queryClient.refetchQueries({ queryKey: ["/api/matches"] }),
-    queryClient.refetchQueries({ queryKey: ["/api/teams"] }),
-    queryClient.refetchQueries({ queryKey: ["/api/invitations"] })
+    queryClient.refetchQueries({ queryKey: ["/api/stats", userId] }),
+    queryClient.refetchQueries({ queryKey: ["/api/matches", userId] }),
+    queryClient.refetchQueries({ queryKey: ["/api/teams", userId] }),
+    queryClient.refetchQueries({ queryKey: ["/api/invitations", userId] })
   ]);
 };

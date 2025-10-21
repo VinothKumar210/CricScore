@@ -14,19 +14,23 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   const { data: stats, refetch: refetchStats } = useQuery<CareerStats>({
-    queryKey: ["/api/stats"],
+    queryKey: ["/api/stats", user?.id],
+    enabled: !!user?.id,
   });
 
   const { data: recentMatches, refetch: refetchMatches } = useQuery<Match[]>({
-    queryKey: ["/api/matches"],
+    queryKey: ["/api/matches", user?.id],
+    enabled: !!user?.id,
   });
 
   const { data: teams, refetch: refetchTeams } = useQuery<Team[]>({
-    queryKey: ["/api/teams"],
+    queryKey: ["/api/teams", user?.id],
+    enabled: !!user?.id,
   });
 
   const { data: invitations, refetch: refetchInvitations } = useQuery<any[]>({
-    queryKey: ["/api/invitations"],
+    queryKey: ["/api/invitations", user?.id],
+    enabled: !!user?.id,
   });
 
   // Refresh all data when user changes or dashboard mounts
