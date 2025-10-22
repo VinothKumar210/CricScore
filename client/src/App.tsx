@@ -33,7 +33,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
   // Fetch pending invitations to show notification badge
   const { data: invitations } = useQuery<any[]>({
-    queryKey: ["/api/invitations", user?.id],
+    queryKey: ["/api/invitations"],
     enabled: !!user?.id,
   });
 
