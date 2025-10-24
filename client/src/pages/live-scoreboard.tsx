@@ -1,18 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Clock, Users, Calendar, MapPin } from "lucide-react";
+import { Eye, Clock, Users, Calendar, MapPin, Bell } from "lucide-react";
 import { type LocalMatch, type User } from "@shared/schema";
 import { useAuth } from "@/components/auth/auth-context";
 import { NotificationPermission, useNotificationPermissionState } from "@/components/notifications/notification-permission";
+import { notificationService } from "@/lib/notifications";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LiveScoreboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { shouldShow: showNotificationPermission, dismiss: dismissNotificationPermission } = useNotificationPermissionState();
 
   // Fetch ongoing matches where user is a spectator
@@ -25,6 +29,7 @@ export default function LiveScoreboard() {
   >({
     queryKey: ["/api/local-matches/spectator"],
     enabled: !!user, // Only fetch when user is authenticated
+    refetchInterval: 5000, // Auto-refresh every 5 seconds
   });
 
   // Fetch all ongoing matches for discovery
@@ -37,12 +42,54 @@ export default function LiveScoreboard() {
   >({
     queryKey: ["/api/local-matches/ongoing"],
     enabled: !!user, // Only fetch when user is authenticated
+    refetchInterval: 10000, // Auto-refresh every 10 seconds
   });
+
+  // Fetch pending notifications for this user
+  const { data: pendingNotifications } = useQuery<any[]>({
+    queryKey: ["/api/notifications/pending"],
+    enabled: !!user,
+    refetchInterval: 15000, // Check for new notifications every 15 seconds
+  });
+
+  // Handle pending notifications
+  useEffect(() => {
+    if (pendingNotifications && pendingNotifications.length > 0) {
+      pendingNotifications.forEach(async (notification: any) => {
+        const match = notification.localMatch;
+        await notificationService.notifyMatchStart(
+          match.matchName,
+          match.venue,
+          match.id
+        );
+      });
+      
+      // Mark notifications as read
+      const matchIds = pendingNotifications.map((n: any) => n.localMatch.id);
+      fetch('/api/notifications/mark-read', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+        body: JSON.stringify({ matchIds }),
+      }).then(() => {
+        // Invalidate notifications query to refresh
+        queryClient.invalidateQueries({ queryKey: ["/api/notifications/pending"] });
+        
+        toast({
+          title: "Match Notifications",
+          description: `You have ${pendingNotifications.length} new match invitation${pendingNotifications.length !== 1 ? 's' : ''}!`,
+        });
+      });
+    }
+  }, [pendingNotifications, queryClient, toast]);
 
   // Debug logging
   console.log("LiveScoreboard - User:", user ? `${user.username} (${user.id})` : 'Not authenticated');
   console.log("LiveScoreboard - Spectator matches:", { spectatorMatches, spectatorMatchesLoading, spectatorError });
   console.log("LiveScoreboard - Ongoing matches:", { ongoingMatches, ongoingMatchesLoading, ongoingError });
+  console.log("LiveScoreboard - Pending notifications:", pendingNotifications);
 
   const getMatchStatusBadge = (status: string) => {
     switch (status) {
