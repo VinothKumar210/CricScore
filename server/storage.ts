@@ -750,7 +750,7 @@ export class PrismaStorage implements IStorage {
     }
   }
 
-  async updateLocalMatch(id: string, updates: Partial<LocalMatch>): Promise<LocalMatch | undefined> {
+  async updateLocalMatch(id: string, updates: Partial<Omit<LocalMatch, 'id' | 'createdAt' | 'updatedAt'>>): Promise<LocalMatch | undefined> {
     try {
       const match = await prisma.localMatch.update({
         where: { id },
@@ -1000,7 +1000,7 @@ export class PrismaStorage implements IStorage {
       }
 
       // Find top performers
-      for (const userId of playerAggregates.keys()) {
+      for (const userId of Array.from(playerAggregates.keys())) {
         const stats = playerAggregates.get(userId)!;
         // Top run scorer
         if (stats.runs > topRunScorerRuns) {
