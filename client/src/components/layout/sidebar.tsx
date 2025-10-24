@@ -32,7 +32,6 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
     { name: "Dashboard", href: "/dashboard", icon: Gauge },
     { name: "Live Scoreboard", href: "/live-scoreboard", icon: Eye },
     { name: "My Statistics", href: "/statistics", icon: BarChart3 },
-    { name: "Create Live Match", href: "/create-live-match", icon: Play },
     { name: "Create Match", href: "/local-match", icon: UserPlus },
     { name: "My Teams", href: "/teams", icon: Users },
     { name: "Search Players", href: "/search", icon: Search },
