@@ -514,7 +514,7 @@ export default function LocalMatch() {
   const opponentTeamSize = opponentTeamPlayers.filter(p => p.name.trim() !== "").length;
   const teamsEqual = myTeamSize === opponentTeamSize;
   const bothTeamsHavePlayers = myTeamSize === 11 && opponentTeamSize === 11;
-  const bothTeamsComplete = myTeamSize === 11 && opponentTeamSize === 11;
+  const bothTeamsComplete = myTeamSize > 0 && opponentTeamSize > 0;
 
   // Get current overs value (custom or preset)
   const getCurrentOvers = () => {
@@ -1305,7 +1305,7 @@ export default function LocalMatch() {
       {(myTeamSize > 0 || opponentTeamSize > 0) && !bothTeamsComplete && (
         <div className="mt-4 text-center">
           <p className="text-sm text-amber-600 dark:text-amber-400" data-testid="teams-incomplete">
-            ⚠️ Each team needs exactly 11 players (My Team: {myTeamSize}/11, Opponent: {opponentTeamSize}/11)
+            ⚠️ Both teams need at least 1 player each (My Team: {myTeamSize} players, Opponent: {opponentTeamSize} players)
           </p>
         </div>
       )}
