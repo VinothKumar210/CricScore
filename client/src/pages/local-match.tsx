@@ -513,7 +513,8 @@ export default function LocalMatch() {
   const myTeamSize = myTeamPlayers.filter(p => p.name.trim() !== "").length;
   const opponentTeamSize = opponentTeamPlayers.filter(p => p.name.trim() !== "").length;
   const teamsEqual = myTeamSize === opponentTeamSize;
-  const bothTeamsHavePlayers = myTeamSize > 0 && opponentTeamSize > 0;
+  const bothTeamsHavePlayers = myTeamSize === 11 && opponentTeamSize === 11;
+  const bothTeamsComplete = myTeamSize === 11 && opponentTeamSize === 11;
 
   // Get current overs value (custom or preset)
   const getCurrentOvers = () => {
@@ -1285,7 +1286,7 @@ export default function LocalMatch() {
               setLocation('/coin-toss');
             }
           }}
-          disabled={!bothTeamsHavePlayers || !teamsEqual || !isValidCustomConfig() || createLiveMatchMutation.isPending}
+          disabled={!bothTeamsComplete || !isValidCustomConfig() || createLiveMatchMutation.isPending}
           data-testid="button-save-local-match"
           className="px-8"
         >
@@ -1293,10 +1294,18 @@ export default function LocalMatch() {
         </Button>
       </div>
       {/* Additional Info */}
-      {bothTeamsHavePlayers && teamsEqual && (
+      {bothTeamsComplete && (
         <div className="mt-4 text-center">
           <p className="text-sm text-green-600 dark:text-green-400" data-testid="teams-ready">
             ✓ Both teams ready with {myTeamSize} players each
+          </p>
+        </div>
+      )}
+      {/* Team validation warnings */}
+      {(myTeamSize > 0 || opponentTeamSize > 0) && !bothTeamsComplete && (
+        <div className="mt-4 text-center">
+          <p className="text-sm text-amber-600 dark:text-amber-400" data-testid="teams-incomplete">
+            ⚠️ Each team needs exactly 11 players (My Team: {myTeamSize}/11, Opponent: {opponentTeamSize}/11)
           </p>
         </div>
       )}
