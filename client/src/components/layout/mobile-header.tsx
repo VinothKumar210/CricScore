@@ -21,7 +21,7 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
   };
 
   return (
-    <header className="glassmorphism border-0 border-b border-border/30 p-4 lg:hidden backdrop-blur-xl shadow-lg safe-area-top">
+    <header className="glassmorphism border-0 border-b border-border/30 p-4 lg:hidden backdrop-blur-xl shadow-xl safe-area-top bg-gradient-to-r from-white/95 to-blue-50/95">
       <div className="flex items-center justify-between">
         <div className="relative">
           <Button
@@ -29,9 +29,9 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
             size="sm"
             onClick={onMenuToggle}
             data-testid="button-mobile-menu"
-            className="w-11 h-11 rounded-2xl bg-background/60 backdrop-blur-sm border border-border/30 hover:border-primary/40 hover:bg-primary/10 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-105"
+            className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/10 to-blue-500/10 backdrop-blur-sm border border-primary/30 hover:border-primary/50 hover:bg-primary/15 transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105"
           >
-            {isMenuOpen ? <X className="h-5 w-5 text-foreground" /> : <Menu className="h-5 w-5 text-foreground" />}
+            {isMenuOpen ? <X className="h-5 w-5 text-primary" /> : <Menu className="h-5 w-5 text-primary" />}
           </Button>
           {hasPendingInvitations && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-br from-red-500 to-rose-600 rounded-full border-2 border-white flex items-center justify-center shadow-lg animate-bounce">
@@ -40,11 +40,11 @@ export function MobileHeader({ isMenuOpen, onMenuToggle, hasPendingInvitations }
           )}
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-primary to-sky-500 rounded-xl flex items-center justify-center shadow-lg">
-              <Sparkles className="w-4 h-4 text-white" />
+          <div className="flex items-center space-x-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-500 rounded-xl flex items-center justify-center shadow-xl">
+              <Sparkles className="w-5 h-5 text-white drop-shadow-md" />
             </div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-sky-500 bg-clip-text text-transparent tracking-tight">
+            <h1 className="text-xl font-black bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent tracking-tight">
               CricScore
             </h1>
           </div>

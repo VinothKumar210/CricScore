@@ -75,151 +75,172 @@ export default function Dashboard() {
   return (
     <div className="container-responsive content-spacing pb-24 sm:pb-8 min-h-screen min-h-dvh">
       {/* Welcome Section - Enhanced */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary via-sky-500 to-primary rounded-3xl p-8 sm:p-10 text-primary-foreground shadow-xl stagger-mobile hover:shadow-2xl transition-all duration-500">
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary via-blue-500 to-primary rounded-3xl p-8 sm:p-12 text-primary-foreground shadow-2xl stagger-mobile hover:shadow-[0_32px_64px_-12px_rgba(100,116,255,0.4)] transition-all duration-500 border border-white/20">
         <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="heading-secondary mb-4" data-testid="text-welcome">
-                Game on, {user?.profileName || user?.username || 'Champion'}! 
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex-1">
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-4">
+                <div className="w-2 h-2 bg-yellow-300 rounded-full animate-pulse"></div>
+                <span className="text-sm font-semibold">Welcome Back</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4 tracking-tight drop-shadow-lg" data-testid="text-welcome">
+                Hey, {user?.profileName || user?.username || 'Champion'}!
               </h2>
-              <p className="text-lead opacity-95">Time to smash some records and track your cricket journey!</p>
+              <p className="text-lg sm:text-xl opacity-95 font-medium leading-relaxed max-w-2xl">Time to smash some records and track your cricket journey!</p>
             </div>
             <div className="hidden md:flex items-center space-x-2">
-              <Sparkles className="w-8 h-8 text-yellow-300 float-animation" />
+              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                <Sparkles className="w-10 h-10 text-yellow-300 float-animation drop-shadow-lg" />
+              </div>
             </div>
           </div>
-          <div className="flex items-center space-x-4 mt-8">
-            <div className="flex items-center space-x-2 bg-white/25 backdrop-blur-sm rounded-xl px-5 py-3 shadow-lg">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-medium">Level Up Your Game</span>
+          <div className="flex flex-wrap items-center gap-3 mt-8">
+            <div className="flex items-center gap-2 bg-white/25 backdrop-blur-sm rounded-xl px-5 py-3 shadow-lg border border-white/30">
+              <TrendingUp className="w-5 h-5" />
+              <span className="text-sm font-semibold">Level Up Your Game</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/25 backdrop-blur-sm rounded-xl px-5 py-3 shadow-lg border border-white/30">
+              <Activity className="w-5 h-5" />
+              <span className="text-sm font-semibold">Track Every Match</span>
             </div>
           </div>
         </div>
-        {/* Background decorations */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl opacity-50 animate-pulse"></div>
-        <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
+        {/* Enhanced Background decorations */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl opacity-50 animate-pulse"></div>
+        <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
+        <div className="absolute top-1/2 right-1/4 w-32 h-32 bg-yellow-300/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
       </div>
 
       {/* Quick Stats Overview */}
       <div className="grid-responsive">
-        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300">
-          <CardContent className="p-5">
+        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300 bg-gradient-to-br from-white to-blue-50/30">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
+                <p className="text-xs font-bold text-primary/70 mb-3 tracking-wider uppercase">
                   Matches Played
                 </p>
-                <p className="text-2xl sm:text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-matches-played">
+                <p className="text-3xl sm:text-4xl font-black text-foreground mb-3 tracking-tight" data-testid="text-matches-played">
                   {stats?.matchesPlayed || 0}
                 </p>
-                <div className="flex items-center space-x-1 text-xs">
-                  <ArrowUpRight className="w-3 h-3 text-green-500" />
-                  <span className="text-green-600 font-medium">Active Player</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-lg">
+                    <ArrowUpRight className="w-3 h-3" />
+                    <span className="text-xs font-bold">Active</span>
+                  </div>
                 </div>
               </div>
-              <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Gamepad className="text-white h-7 w-7" />
+              <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-primary to-blue-500 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <Gamepad className="text-white h-8 w-8 drop-shadow-md" />
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-sky-500 rounded-b-lg"></div>
+            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-blue-500 to-primary rounded-b-lg"></div>
           </CardContent>
         </Card>
 
-        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300">
-          <CardContent className="p-5">
+        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300 bg-gradient-to-br from-white to-green-50/30">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
+                <p className="text-xs font-bold text-green-600/70 mb-3 tracking-wider uppercase">
                   Total Runs
                 </p>
-                <p className="text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-total-runs">
+                <p className="text-3xl sm:text-4xl font-black text-foreground mb-3 tracking-tight" data-testid="text-total-runs">
                   {stats?.totalRuns || 0}
                 </p>
-                <div className="flex items-center space-x-1 text-xs">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-green-600 font-medium">Scoring Well</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-lg">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs font-bold">Scoring</span>
+                  </div>
                 </div>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <TrendingUp className="text-white h-7 w-7" />
+              <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <TrendingUp className="text-white h-8 w-8 drop-shadow-md" />
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-600 rounded-b-lg"></div>
+            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 rounded-b-lg"></div>
           </CardContent>
         </Card>
 
-        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300">
-          <CardContent className="p-5">
+        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300 bg-gradient-to-br from-white to-orange-50/30">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
+                <p className="text-xs font-bold text-orange-600/70 mb-3 tracking-wider uppercase">
                   Strike Rate
                 </p>
-                <p className="text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-strike-rate">
+                <p className="text-3xl sm:text-4xl font-black text-foreground mb-3 tracking-tight" data-testid="text-strike-rate">
                   {stats?.strikeRate || "0.00"}
                 </p>
-                <div className="flex items-center space-x-1 text-xs">
-                  <Zap className="w-3 h-3 text-orange-500" />
-                  <span className="text-orange-600 font-medium">
-                    {Number(stats?.strikeRate) >= 130 ? "Explosive" : Number(stats?.strikeRate) >= 100 ? "Aggressive" : "Building"}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-lg">
+                    <Zap className="w-3 h-3" />
+                    <span className="text-xs font-bold">
+                      {Number(stats?.strikeRate) >= 130 ? "Explosive" : Number(stats?.strikeRate) >= 100 ? "Aggressive" : "Building"}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Zap className="text-white h-7 w-7" />
+              <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <Zap className="text-white h-8 w-8 drop-shadow-md" />
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-b-lg"></div>
+            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-600 rounded-b-lg"></div>
           </CardContent>
         </Card>
 
-        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300">
-          <CardContent className="p-5">
+        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300 bg-gradient-to-br from-white to-red-50/30">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
+                <p className="text-xs font-bold text-red-600/70 mb-3 tracking-wider uppercase">
                   Wickets Taken
                 </p>
-                <p className="text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-wickets">
+                <p className="text-3xl sm:text-4xl font-black text-foreground mb-3 tracking-tight" data-testid="text-wickets">
                   {stats?.wicketsTaken || 0}
                 </p>
-                <div className="flex items-center space-x-1 text-xs">
-                  <Target className="w-3 h-3 text-red-500" />
-                  <span className="text-red-600 font-medium">
-                    {(stats?.wicketsTaken || 0) >= 20 ? "Lethal" : (stats?.wicketsTaken || 0) >= 10 ? "Sharp" : "Building"}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded-lg">
+                    <Target className="w-3 h-3" />
+                    <span className="text-xs font-bold">
+                      {(stats?.wicketsTaken || 0) >= 20 ? "Lethal" : (stats?.wicketsTaken || 0) >= 10 ? "Sharp" : "Building"}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Target className="text-white h-7 w-7" />
+              <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <Target className="text-white h-8 w-8 drop-shadow-md" />
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-rose-600 rounded-b-lg"></div>
+            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-500 via-rose-500 to-red-600 rounded-b-lg"></div>
           </CardContent>
         </Card>
 
-        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300">
-          <CardContent className="p-5">
+        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300 bg-gradient-to-br from-white to-cyan-50/30">
+          <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1">
-                <p className="text-sm font-medium text-muted-foreground mb-2 tracking-wide uppercase">
+                <p className="text-xs font-bold text-cyan-600/70 mb-3 tracking-wider uppercase">
                   Economy Rate
                 </p>
-                <p className="text-3xl font-bold text-foreground mb-2 tracking-tight" data-testid="text-economy">
+                <p className="text-3xl sm:text-4xl font-black text-foreground mb-3 tracking-tight" data-testid="text-economy">
                   {stats?.economy || "0.00"}
                 </p>
-                <div className="flex items-center space-x-1 text-xs">
-                  <Activity className="w-3 h-3 text-blue-500" />
-                  <span className="text-blue-600 font-medium">
-                    {Number(stats?.economy) <= 6 ? "Excellent" : Number(stats?.economy) <= 8 ? "Good" : "Improving"}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 bg-cyan-100 text-cyan-700 px-2 py-1 rounded-lg">
+                    <Activity className="w-3 h-3" />
+                    <span className="text-xs font-bold">
+                      {Number(stats?.economy) <= 6 ? "Excellent" : Number(stats?.economy) <= 8 ? "Good" : "Improving"}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Activity className="text-white h-7 w-7" />
+              <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                <Activity className="text-white h-8 w-8 drop-shadow-md" />
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-b-lg"></div>
+            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-600 rounded-b-lg"></div>
           </CardContent>
         </Card>
       </div>
@@ -352,21 +373,21 @@ export default function Dashboard() {
       </div>
       
       {/* Floating Local Match Button */}
-      <Button 
-        asChild 
-        className="fixed bottom-6 right-6 w-auto h-auto p-4 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 z-[9999] bg-gradient-to-r from-primary via-sky-500 to-primary hover:from-primary-hover hover:via-sky-600 hover:to-primary-hover border-0 group backdrop-blur-sm" 
+      <Button
+        asChild
+        className="fixed bottom-6 right-6 w-auto h-auto p-5 rounded-3xl shadow-[0_20px_40px_rgba(100,116,255,0.4)] hover:shadow-[0_24px_48px_rgba(100,116,255,0.5)] transition-all duration-300 z-[9999] bg-gradient-to-r from-primary via-blue-500 to-primary hover:from-primary-hover hover:via-blue-600 hover:to-primary-hover border-2 border-white/20 group backdrop-blur-sm hover:scale-105"
         style={{ position: 'fixed' }}
         data-testid="floating-local-match"
       >
-        <Link href="/local-match" className="flex items-center space-x-3 text-white px-2 py-1">
-          <div className="w-12 h-12 bg-white/25 rounded-2xl flex items-center justify-center group-hover:bg-white/35 transition-all duration-300 shadow-lg">
-            <Gamepad className="h-7 w-7 drop-shadow-sm" />
+        <Link href="/local-match" className="flex items-center space-x-3 text-white px-1">
+          <div className="w-14 h-14 bg-white/25 rounded-2xl flex items-center justify-center group-hover:bg-white/35 transition-all duration-300 shadow-lg group-hover:rotate-6">
+            <Gamepad className="h-8 w-8 drop-shadow-md" />
           </div>
-          <div className="text-left pr-2">
-            <div className="font-bold text-base tracking-tight drop-shadow-sm">Create Match</div>
-            <div className="text-sm opacity-95 font-medium drop-shadow-sm">Start playing now</div>
+          <div className="text-left pr-1">
+            <div className="font-black text-base tracking-tight drop-shadow-md">Create Match</div>
+            <div className="text-sm opacity-95 font-semibold drop-shadow-sm">Start playing now</div>
           </div>
-          <ArrowUpRight className="h-6 w-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300 drop-shadow-sm" />
+          <ArrowUpRight className="h-7 w-7 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300 drop-shadow-md" />
         </Link>
       </Button>
     </div>

@@ -41,10 +41,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
   ];
 
   return (
-    <aside className={cn("w-80 sm:w-72 bg-background/95 backdrop-blur-xl border-0 border-r border-border/50 shadow-2xl safe-area-left", className)}>
-      <div className="p-5 sm:p-6 border-b border-border/50 bg-gradient-to-r from-primary/5 to-sky-500/5">
+    <aside className={cn("w-80 sm:w-72 bg-gradient-to-b from-white to-blue-50/30 backdrop-blur-xl border-0 border-r border-border/50 shadow-2xl safe-area-left", className)}>
+      <div className="p-5 sm:p-6 border-b border-border/50 bg-gradient-to-br from-primary/8 to-blue-500/8">
         <Link href="/profile" onClick={onNavigate}>
-          <div className="flex items-center space-x-3 sm:space-x-4 cursor-pointer hover:bg-gradient-to-r hover:from-primary/20 hover:to-sky-500/20 rounded-2xl p-4 transition-all duration-300 group touch-feedback-subtle border border-transparent hover:border-primary/30 hover:shadow-lg" data-testid="nav-profile">
+          <div className="flex items-center space-x-3 sm:space-x-4 cursor-pointer hover:bg-gradient-to-r hover:from-primary/15 hover:to-blue-500/15 rounded-2xl p-4 transition-all duration-300 group touch-feedback-subtle border border-transparent hover:border-primary/40 hover:shadow-xl" data-testid="nav-profile">
             <div className="relative">
               <div className="w-14 h-14 bg-gradient-to-br from-primary to-sky-500 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
                 {(user as any)?.profilePictureUrl ? (
@@ -81,10 +81,10 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               onClick={onNavigate}
               data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
               className={cn(
-                "flex items-center space-x-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative group border",
+                "flex items-center space-x-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative group border font-medium",
                 isActive
-                  ? "bg-gradient-to-r from-primary to-sky-500 text-white shadow-lg border-primary/30 transform scale-[1.02]"
-                  : "text-foreground/80 hover:bg-gradient-to-r hover:from-primary/15 hover:to-sky-500/15 hover:text-foreground border-transparent hover:border-primary/30 hover:shadow-md hover:scale-[1.01]"
+                  ? "bg-gradient-to-r from-primary to-blue-500 text-white shadow-xl border-primary/40 transform scale-[1.02]"
+                  : "text-foreground/80 hover:bg-gradient-to-r hover:from-primary/12 hover:to-blue-500/12 hover:text-foreground border-transparent hover:border-primary/40 hover:shadow-lg hover:scale-[1.01]"
               )}
             >
               <div className={cn(
