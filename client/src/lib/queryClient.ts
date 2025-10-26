@@ -107,11 +107,11 @@ export const refreshUserStatistics = async (userId?: string): Promise<void> => {
   // Invalidate and force refetch statistics and matches data for specific user
   await Promise.all([
     queryClient.invalidateQueries({ 
-      queryKey: ["/api/stats"], 
+      queryKey: ["/api/stats", userId], 
       refetchType: 'active' 
     }),
     queryClient.invalidateQueries({ 
-      queryKey: ["/api/matches"], 
+      queryKey: ["/api/matches", userId], 
       refetchType: 'active' 
     }),
     queryClient.invalidateQueries({ 
@@ -126,8 +126,8 @@ export const refreshUserStatistics = async (userId?: string): Promise<void> => {
   
   // Force refetch of statistics data to ensure fresh data from database
   await Promise.all([
-    queryClient.refetchQueries({ queryKey: ["/api/stats"] }),
-    queryClient.refetchQueries({ queryKey: ["/api/matches"] }),
+    queryClient.refetchQueries({ queryKey: ["/api/stats", userId] }),
+    queryClient.refetchQueries({ queryKey: ["/api/matches", userId] }),
     queryClient.refetchQueries({ queryKey: ["/api/teams"] }),
     queryClient.refetchQueries({ queryKey: ["/api/invitations"] })
   ]);
