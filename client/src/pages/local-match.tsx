@@ -285,24 +285,42 @@ export default function LocalMatch() {
   };
 
   // Handle My Team selection
-  const handleMyTeamSelect = (teamId: string) => {
-    setSelectedMyTeam(teamId);
-    const selectedTeam = userTeams?.find(team => team.id === teamId);
-    if (selectedTeam) {
-      setMyTeamName(selectedTeam.name);
-      fetchTeamMembers(teamId, true);
+  const handleMyTeamSelect = async (teamId: string) => {
+    try {
+      setSelectedMyTeam(teamId);
+      const selectedTeam = userTeams?.find(team => team.id === teamId);
+      if (selectedTeam) {
+        setMyTeamName(selectedTeam.name);
+        await fetchTeamMembers(teamId, true);
+      }
+    } catch (error) {
+      console.error('Error selecting team:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load team members. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   // Handle Opponent Team selection
-  const handleOpponentTeamSelect = (teamId: string) => {
-    setSelectedOpponentTeam(teamId);
-    const selectedTeam = searchResults.find(team => team.id === teamId);
-    if (selectedTeam) {
-      setOpponentTeamName(selectedTeam.name);
-      setOpponentTeamSearch("");
-      setSearchResults([]);
-      fetchTeamMembers(teamId, false);
+  const handleOpponentTeamSelect = async (teamId: string) => {
+    try {
+      setSelectedOpponentTeam(teamId);
+      const selectedTeam = searchResults.find(team => team.id === teamId);
+      if (selectedTeam) {
+        setOpponentTeamName(selectedTeam.name);
+        setOpponentTeamSearch("");
+        setSearchResults([]);
+        await fetchTeamMembers(teamId, false);
+      }
+    } catch (error) {
+      console.error('Error selecting opponent team:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load team members. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
