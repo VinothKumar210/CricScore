@@ -123,6 +123,10 @@ export default function LocalMatch() {
   // Create live match mutation for when spectators are enabled
   const createLiveMatchMutation = useMutation({
     mutationFn: async () => {
+      // Filter out empty players
+      const filteredMyTeamPlayers = myTeamPlayers.filter(p => p.name.trim() !== "");
+      const filteredOpponentTeamPlayers = opponentTeamPlayers.filter(p => p.name.trim() !== "");
+      
       const matchData = {
         matchName: `${myTeamName || 'My Team'} vs ${opponentTeamName || 'Opponent Team'}`,
         venue: "Local Match",
@@ -130,8 +134,8 @@ export default function LocalMatch() {
         overs: parseInt(getCurrentOvers()),
         myTeamName: myTeamName || 'My Team',
         opponentTeamName: opponentTeamName || 'Opponent Team',
-        myTeamPlayers,
-        opponentTeamPlayers,
+        myTeamPlayers: filteredMyTeamPlayers,
+        opponentTeamPlayers: filteredOpponentTeamPlayers,
         allowSpectators: true,
         selectedSpectators,
       };
@@ -1296,8 +1300,12 @@ export default function LocalMatch() {
               createLiveMatchMutation.mutate();
             } else {
               // Regular local match flow - store in localStorage only
-              localStorage.setItem('myTeamPlayers', JSON.stringify(myTeamPlayers));
-              localStorage.setItem('opponentTeamPlayers', JSON.stringify(opponentTeamPlayers));
+              // Filter out empty players
+              const filteredMyTeamPlayers = myTeamPlayers.filter(p => p.name.trim() !== "");
+              const filteredOpponentTeamPlayers = opponentTeamPlayers.filter(p => p.name.trim() !== "");
+              
+              localStorage.setItem('myTeamPlayers', JSON.stringify(filteredMyTeamPlayers));
+              localStorage.setItem('opponentTeamPlayers', JSON.stringify(filteredOpponentTeamPlayers));
               localStorage.setItem('myTeamName', myTeamName || 'My Team');
               localStorage.setItem('opponentTeamName', opponentTeamName || 'Opponent Team');
               localStorage.setItem('matchOvers', getCurrentOvers());

@@ -149,8 +149,8 @@ export const insertLocalMatchSchema = z.object({
   myTeamId: z.string().optional(),
   opponentTeamName: z.string().optional(),
   opponentTeamId: z.string().optional(),
-  myTeamPlayers: z.array(localPlayerSchema).length(11, "Each team must have exactly 11 players"),
-  opponentTeamPlayers: z.array(localPlayerSchema).length(11, "Each team must have exactly 11 players"),
+  myTeamPlayers: z.array(localPlayerSchema).min(1, "Each team must have at least 1 player"),
+  opponentTeamPlayers: z.array(localPlayerSchema).min(1, "Each team must have at least 1 player"),
   allowSpectators: z.boolean().default(false),
 });
 
