@@ -352,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Local match results endpoint - handles comprehensive match data from scoreboard
-  app.post("/api/local-match-results", async (req, res) => {
+  app.post("/api/local-match-results", authenticateToken, async (req: any, res) => {
     console.log('Received local match results:', JSON.stringify(req.body, null, 2));
     try {
       const localMatchResultsSchema = z.object({
@@ -382,6 +382,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = localMatchResultsSchema.parse(req.body);
       const results = [];
       let playersWithAccounts = 0;
+
+      // Authorization check: Ensure the authenticated user is included in the match results
+      // This prevents users from submitting arbitrary stats for players they have no connection to
+      const authenticatedUserInMatch = validatedData.playerPerformances.some(
+        performance => performance.userId === req.userId
+      );
+      
+      if (!authenticatedUserInMatch) {
+        return res.status(403).json({ 
+          message: "Unauthorized: You can only submit match results for matches you participated in" 
+        });
+      }
 
       // Process each player's performance
       for (const performance of validatedData.playerPerformances) {
