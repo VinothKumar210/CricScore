@@ -592,7 +592,14 @@ export default function LocalMatch() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Match Format</label>
-                <Select value={overs} onValueChange={setOvers}>
+                <Select value={overs || "20"} onValueChange={(value) => {
+                  try {
+                    setOvers(value || "20");
+                  } catch (error) {
+                    console.error('Error setting overs:', error);
+                    setOvers("20");
+                  }
+                }}>
                   <SelectTrigger data-testid="select-overs">
                     <SelectValue placeholder="Select format" />
                   </SelectTrigger>
@@ -625,7 +632,7 @@ export default function LocalMatch() {
                 <label className="text-sm font-medium">Current Configuration</label>
                 <div className="p-3 bg-muted rounded-md">
                   <p className="text-sm font-semibold">
-                    {overs === "custom" && customOvers ? `${customOvers} Overs Match` : `${overs} Overs Match`}
+                    {overs === "custom" && customOvers ? `${customOvers} Overs Match` : `${overs || "20"} Overs Match`}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1" data-testid="bowling-restrictions">
                     {getBowlingRestrictions()}
