@@ -894,7 +894,7 @@ export default function LocalMatch() {
                           <span className="font-medium">{team.name}</span>
                           <span className="text-xs text-muted-foreground flex items-center">
                             <Crown className="h-3 w-3 mr-1" />
-                            Captain: {team.captain.profileName || team.captain.username}
+                            Captain: {team.captain?.profileName || team.captain?.username || "Unknown"}
                           </span>
                         </div>
                       </SelectItem>
