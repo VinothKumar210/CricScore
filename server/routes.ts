@@ -383,27 +383,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const results = [];
       let playersWithAccounts = 0;
 
-      // Authorization check: Ensure the authenticated user is included in the match results
-      // This prevents users from submitting arbitrary stats for players they have no connection to
-      const authenticatedUserInMatch = validatedData.playerPerformances.some(
-        performance => performance.userId === req.userId
-      );
-      
-      if (!authenticatedUserInMatch) {
-        return res.status(403).json({ 
-          message: "Unauthorized: You can only submit match results for matches you participated in" 
-        });
+      // Authorization check: Users can only update their own statistics
+      // This prevents privilege escalation where users modify other players' stats
+      for (const performance of validatedData.playerPerformances) {
+        if (performance.userId && performance.userId !== req.userId) {
+          return res.status(403).json({ 
+            message: "Unauthorized: You can only update your own statistics" 
+          });
+        }
       }
 
       // Process each player's performance
       for (const performance of validatedData.playerPerformances) {
-        // Skip players without user accounts
-        if (!performance.userId) {
+        // Skip players without user accounts or skip non-authenticated users
+        if (!performance.userId || performance.userId !== req.userId) {
           continue;
         }
 
         try {
-          // Get user to verify they exist
+          // Get user to verify they exist (should be the authenticated user)
           const user = await storage.getUser(performance.userId);
           if (!user) {
             results.push({
