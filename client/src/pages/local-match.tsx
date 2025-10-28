@@ -14,6 +14,35 @@ import { useAuth } from "@/components/auth/auth-context";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
+// Error boundary component for select dropdown
+function SafeSelect({ value, onValueChange, children, ...props }: any) {
+  const [hasError, setHasError] = useState(false);
+  
+  const handleValueChange = (newValue: string) => {
+    try {
+      setHasError(false);
+      onValueChange?.(newValue);
+    } catch (error) {
+      console.error('Select error:', error);
+      setHasError(true);
+    }
+  };
+
+  if (hasError) {
+    return (
+      <div className="p-2 border border-red-200 rounded text-red-600 text-sm">
+        Error loading dropdown. Please refresh the page.
+      </div>
+    );
+  }
+
+  return (
+    <Select value={value} onValueChange={handleValueChange} {...props}>
+      {children}
+    </Select>
+  );
+}
+
 export default function LocalMatch() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
@@ -592,14 +621,10 @@ export default function LocalMatch() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Match Format</label>
-                <Select value={overs || "20"} onValueChange={(value) => {
-                  try {
-                    setOvers(value || "20");
-                  } catch (error) {
-                    console.error('Error setting overs:', error);
-                    setOvers("20");
-                  }
-                }}>
+                <SafeSelect 
+                  value={overs || "20"} 
+                  onValueChange={(value: string) => setOvers(value || "20")}
+                >
                   <SelectTrigger data-testid="select-overs">
                     <SelectValue placeholder="Select format" />
                   </SelectTrigger>
@@ -610,7 +635,7 @@ export default function LocalMatch() {
                     <SelectItem value="20">20 Overs</SelectItem>
                     <SelectItem value="custom">Custom Format</SelectItem>
                   </SelectContent>
-                </Select>
+                </SafeSelect>
                 {overs === "custom" && (
                   <Input
                     type="text"
@@ -885,7 +910,7 @@ export default function LocalMatch() {
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <Select value={selectedMyTeam} onValueChange={handleMyTeamSelect}>
+              <SafeSelect value={selectedMyTeam} onValueChange={handleMyTeamSelect}>
                 <SelectTrigger data-testid="select-my-team">
                   <SelectValue placeholder={myTeamName || "Select from your teams"} />
                 </SelectTrigger>
@@ -912,7 +937,7 @@ export default function LocalMatch() {
                     </div>
                   )}
                 </SelectContent>
-              </Select>
+              </SafeSelect>
               
               {/* Selected team display or manual input */}
               {selectedMyTeam ? (
