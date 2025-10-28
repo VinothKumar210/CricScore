@@ -2192,7 +2192,7 @@ export default function Scoreboard() {
       </Dialog>
 
       {/* Bowler Selection Dialog */}
-      <Dialog open={showBowlerDialog} onOpenChange={setShowBowlerDialog}>
+      <Dialog open={showBowlerDialog} onOpenChange={() => {}}>
         <DialogContent aria-describedby="bowler-selection-description">
           <DialogHeader>
             <DialogTitle>
