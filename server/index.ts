@@ -7,6 +7,20 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
+// Prevent HTML caching in development to fix preview refresh issues
+if (app.get("env") === "development") {
+  app.use((req, res, next) => {
+    if (req.headers.accept && req.headers.accept.includes('text/html')) {
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+    }
+    next();
+  });
+}
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -76,6 +90,57 @@ async function verifyDatabaseConnection() {
   // Verify database connection before starting the server
   await verifyDatabaseConnection();
   
+  // Add nuclear cache-clearing endpoint for development
+  if (app.get("env") === "development") {
+    app.get('/__nuke', (req, res) => {
+      const timestamp = Date.now();
+      res.set('Content-Type', 'text/html');
+      res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Cache Nuke</title></head>
+        <body>
+          <h3>🧹 Clearing all caches...</h3>
+          <script>
+            (async () => {
+              console.log('🧹 Nuclear cache clearing started...');
+              
+              // Unregister all service workers
+              if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                  await registration.unregister();
+                  console.log('🗑️ Unregistered SW:', registration.scope);
+                }
+              }
+              
+              // Clear all caches
+              if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                for (const cacheName of cacheNames) {
+                  await caches.delete(cacheName);
+                  console.log('🗑️ Deleted cache:', cacheName);
+                }
+              }
+              
+              // Clear storage
+              localStorage.clear();
+              sessionStorage.clear();
+              
+              console.log('✅ Cache clearing complete! Redirecting...');
+              
+              // Redirect to fresh path
+              setTimeout(() => {
+                location.replace('/__rpv_${timestamp}/');
+              }, 500);
+            })();
+          </script>
+        </body>
+        </html>
+      `);
+    });
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

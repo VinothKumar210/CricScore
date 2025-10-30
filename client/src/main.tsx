@@ -5,13 +5,11 @@ import { registerServiceWorker } from "./sw-register";
 
 // Force Replit preview proxy to fetch fresh HTML in development
 if (import.meta.env.DEV) {
-  const u = new URL(window.location.href);
-  
-  // Add cache-busting query parameter if not already present
-  if (!u.searchParams.has('__rpv') && !sessionStorage.getItem('rpv-cache-busted')) {
-    u.searchParams.set('__rpv', Date.now().toString());
+  // Use path-based cache busting (more effective than query params)
+  if (!location.pathname.includes('__rpv_') && !sessionStorage.getItem('rpv-cache-busted')) {
+    const timestamp = Date.now();
     sessionStorage.setItem('rpv-cache-busted', '1');
-    window.location.replace(u.toString());
+    window.location.replace(`/__rpv_${timestamp}/`);
   }
 }
 
