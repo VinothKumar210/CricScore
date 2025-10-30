@@ -75,14 +75,14 @@ export default function Dashboard() {
   return (
     <div className="container-responsive content-spacing pb-24 sm:pb-8 min-h-screen min-h-dvh">
       {/* Welcome Section - Enhanced */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-green-500 via-emerald-500 to-green-600 rounded-3xl p-8 sm:p-10 text-white shadow-xl stagger-mobile hover:shadow-2xl transition-all duration-500">
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary via-sky-500 to-primary rounded-3xl p-8 sm:p-10 text-primary-foreground shadow-xl stagger-mobile hover:shadow-2xl transition-all duration-500">
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="heading-secondary mb-4" data-testid="text-welcome">
-                🟢 LATEST UPDATE - GREEN TEXT! {user?.profileName || user?.username || 'Champion'}! 
+                Game on, {user?.profileName || user?.username || 'Champion'}! 
               </h2>
-              <p className="text-lead opacity-95">🟢 UPDATED: Green text means preview is WORKING!</p>
+              <p className="text-lead opacity-95">Time to smash some records and track your cricket journey!</p>
             </div>
             <div className="hidden md:flex items-center space-x-2">
               <Sparkles className="w-8 h-8 text-yellow-300 float-animation" />
