@@ -10,12 +10,12 @@ export default function Statistics() {
   const { user } = useAuth();
   
   const { data: stats, isLoading, refetch: refetchStats } = useQuery<CareerStats>({
-    queryKey: ["/api/stats", user?.id],
+    queryKey: ["/api/stats"],
     enabled: !!user?.id,
   });
 
   const { data: matches, isLoading: matchesLoading, refetch: refetchMatches } = useQuery<Match[]>({
-    queryKey: ["/api/matches", user?.id],
+    queryKey: ["/api/matches"],
     enabled: !!user?.id,
   });
 
