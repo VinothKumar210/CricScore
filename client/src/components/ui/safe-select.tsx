@@ -15,8 +15,8 @@ export const SafeSelect: React.FC<SafeSelectProps> = ({
   children, 
   ...props 
 }) => {
-  // Only pass value prop if it's not undefined, otherwise let Select use its internal state
-  const selectProps = value !== undefined ? { value } : {};
+  // Only pass value prop if it's not null/undefined, otherwise let Select use its internal state
+  const selectProps = value != null ? { value } : {};
   
   return (
     <Select 
