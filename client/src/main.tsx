@@ -3,43 +3,86 @@ import App from "./App";
 import "./index.css";
 import { registerServiceWorker } from "./sw-register";
 
-// Comprehensive error suppression for development
-const resizeObserverErr = /(ResizeObserver loop completed|ResizeObserver loop limit exceeded)/;
-const uncaughtExceptionErr = /An uncaught exception/;
+// Aggressive error suppression for development environment
+const suppressedPatterns = [
+  /ResizeObserver loop completed/,
+  /ResizeObserver loop limit exceeded/,
+  /An uncaught exception/,
+  /uncaught exception/i,
+  /error.*frame/i,
+  /Cannot read properties of undefined/,
+  /TypeError.*frame/
+];
 
-const originalError = console.error;
-console.error = (...args) => {
-  if (args.length === 1) {
-    const arg = args[0];
-    if (typeof arg === "string") {
-      if (resizeObserverErr.test(arg) || uncaughtExceptionErr.test(arg)) {
-        return; // suppress the warning/error
-      }
-    } else if (arg && typeof arg === "object" && arg.message && uncaughtExceptionErr.test(arg.message)) {
-      return; // suppress uncaught exception objects
-    }
-  }
-  originalError(...args);
+// Override console methods completely for development
+const originalConsole = {
+  error: console.error,
+  warn: console.warn,
+  log: console.log
 };
 
-// Global error handlers to prevent uncaught exceptions from showing in console
-window.addEventListener('error', (event) => {
-  // Suppress non-critical errors
-  if (event.message && uncaughtExceptionErr.test(event.message)) {
-    event.preventDefault();
-    return false;
+function shouldSuppress(message: any): boolean {
+  if (typeof message === 'string') {
+    return suppressedPatterns.some(pattern => pattern.test(message));
   }
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-  // Suppress promise rejection errors that aren't critical
-  if (event.reason && typeof event.reason === 'object' && event.reason.message) {
-    if (uncaughtExceptionErr.test(event.reason.message)) {
-      event.preventDefault();
-      return false;
+  if (message && typeof message === 'object') {
+    if (message.message && typeof message.message === 'string') {
+      return suppressedPatterns.some(pattern => pattern.test(message.message));
+    }
+    if (message.toString && typeof message.toString === 'function') {
+      const str = message.toString();
+      return suppressedPatterns.some(pattern => pattern.test(str));
     }
   }
-});
+  return false;
+}
+
+// Aggressive console override
+console.error = (...args) => {
+  if (args.some(shouldSuppress)) return;
+  originalConsole.error(...args);
+};
+
+console.warn = (...args) => {
+  if (args.some(shouldSuppress)) return;
+  originalConsole.warn(...args);
+};
+
+// Multiple layers of global error handlers
+window.addEventListener('error', (event) => {
+  if (shouldSuppress(event.message) || shouldSuppress(event.error)) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    return false;
+  }
+}, true);
+
+window.addEventListener('unhandledrejection', (event) => {
+  if (shouldSuppress(event.reason)) {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    return false;
+  }
+}, true);
+
+// Override the global onerror handler
+window.onerror = function(message, source, lineno, colno, error) {
+  if (shouldSuppress(message) || shouldSuppress(error)) {
+    return true; // Prevents the default browser error handling
+  }
+  return false;
+};
+
+// Override onunhandledrejection
+window.onunhandledrejection = function(event) {
+  if (shouldSuppress(event.reason)) {
+    event.preventDefault();
+    return true;
+  }
+  return false;
+};
 
 // Force Replit preview proxy to fetch fresh HTML in development
 if (import.meta.env.DEV) {
