@@ -202,7 +202,7 @@ export function CoinToss() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Who won the toss?</label>
-                  <SafeSelect value={manualTossWinner || ""} onValueChange={(value: 'my-team' | 'opponent-team') => setManualTossWinner(value)}>
+                  <SafeSelect value={manualTossWinner || ""} onValueChange={(value: string) => setManualTossWinner(value as 'my-team' | 'opponent-team')}>
                     <SelectTrigger data-testid="select-toss-winner">
                       <SelectValue placeholder="Select toss winner" />
                     </SelectTrigger>
@@ -215,7 +215,7 @@ export function CoinToss() {
 
                 <div>
                   <label className="block text-sm font-medium mb-2">What did the winning team choose?</label>
-                  <SafeSelect value={manualBattingChoice || ""} onValueChange={(value: 'batting' | 'bowling') => setManualBattingChoice(value)}>
+                  <SafeSelect value={manualBattingChoice || ""} onValueChange={(value: string) => setManualBattingChoice(value as 'batting' | 'bowling')}>
                     <SelectTrigger data-testid="select-batting-choice">
                       <SelectValue placeholder="Select choice" />
                     </SelectTrigger>
