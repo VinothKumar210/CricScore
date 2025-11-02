@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SafeSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/safe-select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { User, Mail, Calendar, Trophy, Edit, Save, X, ArrowLeft, Target, TrendingUp, Award, BarChart3, Camera, Upload } from "lucide-react";
@@ -472,7 +472,7 @@ export default function Profile() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Player Role</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <SafeSelect onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                   <SelectTrigger data-testid="edit-role">
                                     <SelectValue placeholder="Select your role" />
@@ -483,7 +483,7 @@ export default function Profile() {
                                   <SelectItem value="BOWLER">Bowler</SelectItem>
                                   <SelectItem value="ALL_ROUNDER">All-rounder</SelectItem>
                                 </SelectContent>
-                              </Select>
+                              </SafeSelect>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -495,7 +495,7 @@ export default function Profile() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Batting Hand</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <SafeSelect onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                   <SelectTrigger data-testid="edit-batting-hand">
                                     <SelectValue placeholder="Select batting hand" />
@@ -505,7 +505,7 @@ export default function Profile() {
                                   <SelectItem value="RIGHT">Right Hand</SelectItem>
                                   <SelectItem value="LEFT">Left Hand</SelectItem>
                                 </SelectContent>
-                              </Select>
+                              </SafeSelect>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -517,7 +517,7 @@ export default function Profile() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Bowling Style (Optional)</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <SafeSelect onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                   <SelectTrigger data-testid="edit-bowling-style">
                                     <SelectValue placeholder="Select bowling style" />
@@ -528,7 +528,7 @@ export default function Profile() {
                                   <SelectItem value="MEDIUM_FAST">Medium Fast</SelectItem>
                                   <SelectItem value="SPIN">Spin</SelectItem>
                                 </SelectContent>
-                              </Select>
+                              </SafeSelect>
                               <FormMessage />
                             </FormItem>
                           )}

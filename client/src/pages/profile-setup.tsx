@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SafeSelect, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/safe-select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { useForm } from "react-hook-form";
@@ -184,7 +184,7 @@ export default function ProfileSetup() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Player Role *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <SafeSelect onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-role">
                                 <SelectValue placeholder="Select your role" />
@@ -195,7 +195,7 @@ export default function ProfileSetup() {
                               <SelectItem value="BOWLER">Bowler</SelectItem>
                               <SelectItem value="ALL_ROUNDER">All-rounder</SelectItem>
                             </SelectContent>
-                          </Select>
+                          </SafeSelect>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -254,7 +254,7 @@ export default function ProfileSetup() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Batting Hand *</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <SafeSelect onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                               <SelectTrigger data-testid="select-batting-hand">
                                 <SelectValue placeholder="Select batting hand" />
@@ -264,7 +264,7 @@ export default function ProfileSetup() {
                               <SelectItem value="RIGHT">Right Hand</SelectItem>
                               <SelectItem value="LEFT">Left Hand</SelectItem>
                             </SelectContent>
-                          </Select>
+                          </SafeSelect>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -277,7 +277,7 @@ export default function ProfileSetup() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Bowling Style {selectedRole === "BOWLER" ? "*" : ""}</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <SafeSelect onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-bowling-style">
                                   <SelectValue placeholder="Select bowling style" />
@@ -288,7 +288,7 @@ export default function ProfileSetup() {
                                 <SelectItem value="MEDIUM_FAST">Medium Fast</SelectItem>
                                 <SelectItem value="SPIN">Spin</SelectItem>
                               </SelectContent>
-                            </Select>
+                            </SafeSelect>
                             <p className="text-xs text-muted-foreground">Required for Bowlers and All-rounders</p>
                             <FormMessage />
                           </FormItem>
