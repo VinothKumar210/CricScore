@@ -60,6 +60,8 @@ model CareerStats {
   runsConceded   Int     @default(0)
   wicketsTaken   Int     @default(0)
   economy        Float   @default(0)
+  bestBowlingWickets Int @default(0)
+  bestBowlingRuns    Int @default(0)
   // Fielding stats
   catchesTaken   Int     @default(0)
   runOuts        Int     @default(0)

@@ -39,6 +39,8 @@ export const insertCareerStatsSchema = z.object({
   runsConceded: z.number().int().min(0).optional(),
   wicketsTaken: z.number().int().min(0).optional(),
   economy: z.number().min(0).optional(),
+  bestBowlingWickets: z.number().int().min(0).optional(),
+  bestBowlingRuns: z.number().int().min(0).optional(),
   catchesTaken: z.number().int().min(0).optional(),
   runOuts: z.number().int().min(0).optional(),
   manOfTheMatchAwards: z.number().int().min(0).optional(),
