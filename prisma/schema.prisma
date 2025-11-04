@@ -294,6 +294,8 @@ model LocalMatch {
   myTeamPlayers         Json     // Array of LocalPlayer objects
   opponentTeamPlayers   Json     // Array of LocalPlayer objects
   allowSpectators       Boolean  @default(false)
+  isRoomMatch           Boolean  @default(false)
+  roomPassword          String?
   status                LocalMatchStatus @default(CREATED)
   currentInnings        Int      @default(1)
   currentOver           Int      @default(0)

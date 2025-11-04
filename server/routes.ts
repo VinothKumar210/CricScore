@@ -1428,9 +1428,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add spectator to match
   app.post("/api/local-matches/:id/spectators", authenticateToken, async (req: any, res) => {
     try {
+      // Get the match to check if it's a room match
+      const match = await storage.getLocalMatch(req.params.id);
+      if (!match) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+
+      // If it's a room match, validate the password
+      if (match.isRoomMatch) {
+        const { password } = req.body;
+        
+        if (!password) {
+          return res.status(400).json({ message: "Password required for this match room" });
+        }
+
+        if (password !== match.roomPassword) {
+          return res.status(403).json({ message: "Incorrect password" });
+        }
+      }
+
       const spectatorData = insertMatchSpectatorSchema.parse({
         ...req.body,
         localMatchId: req.params.id,
+        userId: req.userId,
         addedBy: req.userId
       });
 

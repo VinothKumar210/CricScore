@@ -155,6 +155,8 @@ export const insertLocalMatchSchema = z.object({
   myTeamPlayers: z.array(localPlayerSchema).min(1, "Each team must have at least 1 player"),
   opponentTeamPlayers: z.array(localPlayerSchema).min(1, "Each team must have at least 1 player"),
   allowSpectators: z.boolean().default(false),
+  isRoomMatch: z.boolean().default(false),
+  roomPassword: z.string().optional(),
 });
 
 // Match spectator schema

@@ -77,6 +77,10 @@ export default function LocalMatch() {
   const [spectatorSearch, setSpectatorSearch] = useState<string>("");
   const [spectatorSearchResults, setSpectatorSearchResults] = useState<User[]>([]);
   const [isSearchingSpectators, setIsSearchingSpectators] = useState(false);
+  
+  // Room match states
+  const [isRoomMatch, setIsRoomMatch] = useState<boolean>(false);
+  const [roomPassword, setRoomPassword] = useState<string>("");
 
   // Fetch user's teams for "My Team" dropdown
   const { data: userTeams, isLoading: userTeamsLoading } = useQuery<(Team & { captain: User, viceCaptain?: User })[]>({
@@ -146,6 +150,8 @@ export default function LocalMatch() {
         myTeamPlayers: filteredMyTeamPlayers,
         opponentTeamPlayers: filteredOpponentTeamPlayers,
         allowSpectators: true,
+        isRoomMatch,
+        roomPassword: isRoomMatch ? roomPassword : undefined,
         selectedSpectators,
       };
 
@@ -876,6 +882,55 @@ export default function LocalMatch() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Room Match Configuration */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Users className="mr-2 h-5 w-5 text-indigo-600" />
+            Room Match Mode
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Room Match Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Enable Room Match</label>
+                <p className="text-xs text-muted-foreground">
+                  Create a private match room with password protection
+                </p>
+              </div>
+              <Switch
+                checked={isRoomMatch}
+                onCheckedChange={setIsRoomMatch}
+                data-testid="switch-room-match"
+              />
+            </div>
+
+            {/* Password Field - Only show when Room Match is ON */}
+            {isRoomMatch && (
+              <div className="border-t pt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Room Password</label>
+                  <Input
+                    type="password"
+                    placeholder="Set a password for this match room"
+                    value={roomPassword}
+                    onChange={(e) => setRoomPassword(e.target.value)}
+                    data-testid="input-room-password"
+                    className="max-w-md"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Spectators will need this password to join and watch your match
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* My Team */}
         <Card>
