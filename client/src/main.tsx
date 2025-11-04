@@ -86,11 +86,12 @@ window.onunhandledrejection = function(event) {
 
 // Force Replit preview proxy to fetch fresh HTML in development
 if (import.meta.env.DEV) {
-  // Use path-based cache busting (more effective than query params)
-  if (!location.pathname.includes('__rpv_') && !sessionStorage.getItem('rpv-cache-busted')) {
-    const timestamp = Date.now();
+  // Use query param cache busting to preserve pathname for routing
+  if (!sessionStorage.getItem('rpv-cache-busted')) {
     sessionStorage.setItem('rpv-cache-busted', '1');
-    window.location.replace(`/__rpv_${timestamp}/`);
+    const url = new URL(window.location.href);
+    url.searchParams.set('__rpv', Date.now().toString());
+    window.location.replace(url.toString());
   }
 }
 
