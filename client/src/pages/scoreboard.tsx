@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trophy, ArrowLeft, Search, X } from 'lucide-react';
 import { type LocalPlayer } from '@shared/schema';
@@ -1929,39 +1930,188 @@ export default function Scoreboard() {
   };
 
   return (
-    <div className="p-4 max-w-6xl mx-auto space-y-6">
-      {/* Back Button */}
-      <div className="flex justify-start mb-4">
-        <Button 
-          onClick={() => setLocation('/local-match')}
-          variant="ghost"
-          size="sm"
-          data-testid="button-back-to-create-match"
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Create Match
-        </Button>
-      </div>
-      
-      {/* Match Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center text-2xl">
-            {userTeamBatsFirst ? 'Your Team' : 'Opponent Team'} Batting
-            <Badge className="ml-2" variant={matchState.currentInnings === 1 ? "default" : "secondary"}>
-              {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center">
-            <div className="text-4xl font-bold text-primary mb-2">
-              {battingTeamScore.runs}/{battingTeamScore.wickets}
+    <div className="min-h-screen flex flex-col">
+      {/* Header with Back Button */}
+      <div className="border-b bg-background sticky top-0 z-10">
+        <div className="flex items-center p-4 max-w-6xl mx-auto">
+          <Button 
+            onClick={() => setLocation('/local-match')}
+            variant="ghost"
+            size="icon"
+            data-testid="button-back-to-create-match"
+            className="mr-4"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-xl font-bold">Match Centre</h1>
+        </div>
+        
+        {/* Tabs Navigation */}
+        <Tabs defaultValue="scoring" className="w-full">
+          <div className="border-b px-4">
+            <TabsList className="bg-transparent border-b-0 h-auto p-0 w-full justify-start overflow-x-auto">
+              <TabsTrigger 
+                value="scoring" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+                data-testid="tab-scoring"
+              >
+                Scoring
+              </TabsTrigger>
+              <TabsTrigger 
+                value="scorecard"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+                data-testid="tab-scorecard"
+              >
+                Scorecard
+              </TabsTrigger>
+              <TabsTrigger 
+                value="stats"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+                data-testid="tab-stats"
+              >
+                Stats
+              </TabsTrigger>
+              <TabsTrigger 
+                value="super-stars"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+                data-testid="tab-super-stars"
+              >
+                Super Stars
+              </TabsTrigger>
+              <TabsTrigger 
+                value="balls"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+                data-testid="tab-balls"
+              >
+                Balls
+              </TabsTrigger>
+              <TabsTrigger 
+                value="info"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
+                data-testid="tab-info"
+              >
+                Info
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          {/* Scoring Tab Content */}
+          <TabsContent value="scoring" className="flex-1 mt-0">
+            <div className="p-4 max-w-6xl mx-auto space-y-6 pb-32">
+              {/* Team and Score Display */}
+              <div className="text-center space-y-2">
+                <h2 className="text-xl font-bold">
+                  {userTeamBatsFirst ? matchState.myTeamPlayers[0]?.name.split(' ')[0] || 'Your Team' : matchState.opponentTeamPlayers[0]?.name.split(' ')[0] || 'Opponent'}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
+                </p>
+                
+                <div className="text-5xl font-bold text-green-600 dark:text-green-500 my-4">
+                  {battingTeamScore.runs}-{battingTeamScore.wickets}
+                </div>
+                
+                {/* Match Info Row */}
+                <div className="flex justify-center gap-8 text-sm text-muted-foreground">
+                  <span>Extras - {battingTeamScore.extras.wides + battingTeamScore.extras.noBalls + battingTeamScore.extras.byes + battingTeamScore.extras.legByes}</span>
+                  <span>Overs - {formatOvers(battingTeamScore.balls)} / {matchState.matchOvers}</span>
+                  <span>CRR - {battingTeamScore.balls > 0 ? (battingTeamScore.runs / (battingTeamScore.balls / 6)).toFixed(2) : '0.00'}</span>
+                </div>
+                
+                {/* Partnership */}
+                <div className="text-sm text-muted-foreground mt-2">
+                  Partnership - {getCurrentBatsmanStats(true).runs + getCurrentBatsmanStats(false).runs}({getCurrentBatsmanStats(true).balls + getCurrentBatsmanStats(false).balls})
+                </div>
+              </div>
+              
+              {/* Current Batsmen Table */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-medium">✏️ Batsman</span>
+                </div>
+                <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded-lg">
+                  <table className="w-full">
+                    <thead className="border-b">
+                      <tr className="text-xs text-muted-foreground">
+                        <th className="text-left p-2 font-medium">R</th>
+                        <th className="text-center p-2 font-medium">B</th>
+                        <th className="text-center p-2 font-medium">4s</th>
+                        <th className="text-center p-2 font-medium">6s</th>
+                        <th className="text-center p-2 font-medium">SR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b">
+                        <td className="p-2 text-sm" data-testid="batsman-1-name">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2 text-sm" data-testid="batsman-2-name">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              {/* Current Bowler Table */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-medium">✏️ Bowler</span>
+                </div>
+                <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded-lg">
+                  <table className="w-full">
+                    <thead className="border-b">
+                      <tr className="text-xs text-muted-foreground">
+                        <th className="text-left p-2 font-medium">O</th>
+                        <th className="text-center p-2 font-medium">M</th>
+                        <th className="text-center p-2 font-medium">R</th>
+                        <th className="text-center p-2 font-medium">W</th>
+                        <th className="text-center p-2 font-medium">Eco</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td className="p-2 text-sm" data-testid="bowler-name">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                        <td className="text-center p-2 text-sm">-</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
-            <div className="text-lg text-muted-foreground mb-2">
-              Overs: {formatOvers(battingTeamScore.balls)}/{matchState.matchOvers}
-            </div>
+          </TabsContent>
+          
+          {/* Scorecard Tab - Original Full Scorecard */}
+          <TabsContent value="scorecard" className="flex-1 mt-0">
+            <div className="p-4 max-w-6xl mx-auto space-y-6">
+              {/* Original scoring controls and full scorecard go here */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-center text-2xl">
+                    {userTeamBatsFirst ? 'Your Team' : 'Opponent Team'} Batting
+                    <Badge className="ml-2" variant={matchState.currentInnings === 1 ? "default" : "secondary"}>
+                      {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-primary mb-2">
+                      {battingTeamScore.runs}/{battingTeamScore.wickets}
+                    </div>
+                    <div className="text-lg text-muted-foreground mb-2">
+                      Overs: {formatOvers(battingTeamScore.balls)}/{matchState.matchOvers}
+                    </div>
             
             {/* Target and Required Run Rate for 2nd Innings */}
             {matchState.currentInnings === 2 && matchState.target && (
