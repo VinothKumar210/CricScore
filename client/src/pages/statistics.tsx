@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Target, Hand } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
-import type { CareerStats, Match } from "@shared/schema";
+import type { CareerStats } from "@shared/schema";
 
 export default function Statistics() {
   const { user } = useAuth();
@@ -12,10 +12,6 @@ export default function Statistics() {
     enabled: !!user?.id,
   });
 
-  const { data: matches, isLoading: matchesLoading, refetch: refetchMatches } = useQuery<Match[]>({
-    queryKey: ["/api/matches"],
-    enabled: !!user?.id,
-  });
 
   // Calculate batting average
   const calculateBattingAverage = (totalRuns?: number, timesOut?: number) => {
@@ -25,26 +21,29 @@ export default function Statistics() {
     return totalRuns && totalRuns > 0 ? 'Not Out' : '0.00';
   };
 
-  // Calculate best bowling figures from matches
-  const getBestBowlingFigures = (matches: Match[]) => {
-    if (!matches || matches.length === 0) return '0/0';
+  // Get best bowling figures from stored career stats
+  const getBestBowlingFigures = (stats: CareerStats | undefined) => {
+    if (!stats) {
+      return '0/0';
+    }
     
-    let bestWickets = 0;
-    let bestRuns = Infinity;
+    // Access the new fields safely - they might not be in types yet but will be in runtime data
+    const bestWickets = (stats as any).bestBowlingWickets;
+    const bestRuns = (stats as any).bestBowlingRuns;
     
-    matches.forEach(match => {
-      if (match.wicketsTaken > bestWickets) {
-        bestWickets = match.wicketsTaken;
-        bestRuns = match.runsConceded;
-      } else if (match.wicketsTaken === bestWickets && match.runsConceded < bestRuns) {
-        bestRuns = match.runsConceded;
-      }
-    });
+    if (bestWickets == null || bestRuns == null) {
+      return '0/0';
+    }
     
-    return bestWickets > 0 ? `${bestWickets}/${bestRuns}` : '0/0';
+    // If no wickets have been taken, show 0/0
+    if (bestWickets === 0) {
+      return '0/0';
+    }
+    
+    return `${bestWickets}/${bestRuns}`;
   };
 
-  if (isLoading || matchesLoading) {
+  if (isLoading) {
     return (
       <div className="container-mobile">
         <div className="animate-pulse space-mobile-lg">
@@ -215,7 +214,7 @@ export default function Statistics() {
               <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
                 <span className="text-sm font-medium">Best Bowling</span>
                 <span className="font-bold text-lg" data-testid="stat-best-bowling">
-                  {getBestBowlingFigures(matches || [])}
+                  {getBestBowlingFigures(stats)}
                 </span>
               </div>
             </div>
