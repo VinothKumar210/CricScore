@@ -71,7 +71,7 @@ export default function Statistics() {
 
       {/* Key Performance Metrics */}
       <div className="mb-6">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800">
             <CardContent className="p-4">
               <div className="text-center">
@@ -119,6 +119,16 @@ export default function Statistics() {
                   {stats?.economy ? stats.economy.toFixed(2) : "0.00"}
                 </div>
                 <div className="text-sm text-red-600 dark:text-red-400">Economy Rate</div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-800">
+            <CardContent className="p-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-300" data-testid="stat-man-of-match">
+                  {stats?.manOfTheMatchAwards || 0}
+                </div>
+                <div className="text-sm text-yellow-600 dark:text-yellow-400">Man of the Match</div>
               </div>
             </CardContent>
           </Card>
@@ -247,12 +257,6 @@ export default function Statistics() {
                 <span className="text-sm font-medium">Total Dismissals</span>
                 <span className="font-bold text-lg" data-testid="stat-total-dismissals">
                   {(stats?.catchesTaken || 0) + (stats?.runOuts || 0)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center p-2 rounded-lg bg-muted/50">
-                <span className="text-sm font-medium">Man of the Match</span>
-                <span className="font-bold text-lg" data-testid="stat-man-of-match">
-                  {stats?.manOfTheMatchAwards || 0}
                 </span>
               </div>
             </div>
