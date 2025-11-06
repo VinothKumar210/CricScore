@@ -64,7 +64,7 @@ export default function Statistics() {
       {/* Back Button */}
       <div className="mb-4">
         <Link href="/dashboard">
-          <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="button-back-dashboard">
+          <button className="flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors" data-testid="button-back-dashboard">
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </button>
