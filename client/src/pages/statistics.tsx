@@ -63,7 +63,7 @@ export default function Statistics() {
     <div className="container-mobile space-mobile-lg">
       {/* Page Header */}
       <div className="mobile-stack">
-        <h2 className="text-mobile-h1" data-testid="title-statistics">
+        <h2 className="text-mobile-h1 mt-6" data-testid="title-statistics">
           Career Statistics
         </h2>
         <div className="text-mobile-caption text-right sm:text-left" data-testid="text-last-updated">
