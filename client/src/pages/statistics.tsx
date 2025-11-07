@@ -24,24 +24,29 @@ export default function Statistics() {
 
   // Get best bowling figures from stored career stats
   const getBestBowlingFigures = (stats: CareerStats | undefined) => {
-    if (!stats) {
+    try {
+      if (!stats) {
+        return '0/0';
+      }
+      
+      // Access the new fields safely - they might not be in types yet but will be in runtime data
+      const bestWickets = (stats as any)?.bestBowlingWickets;
+      const bestRuns = (stats as any)?.bestBowlingRuns;
+      
+      if (bestWickets == null || bestRuns == null || typeof bestWickets !== 'number' || typeof bestRuns !== 'number') {
+        return '0/0';
+      }
+      
+      // If no wickets have been taken, show 0/0
+      if (bestWickets === 0) {
+        return '0/0';
+      }
+      
+      return `${bestWickets}/${bestRuns}`;
+    } catch (error) {
+      console.warn('Error calculating best bowling figures:', error);
       return '0/0';
     }
-    
-    // Access the new fields safely - they might not be in types yet but will be in runtime data
-    const bestWickets = (stats as any).bestBowlingWickets;
-    const bestRuns = (stats as any).bestBowlingRuns;
-    
-    if (bestWickets == null || bestRuns == null) {
-      return '0/0';
-    }
-    
-    // If no wickets have been taken, show 0/0
-    if (bestWickets === 0) {
-      return '0/0';
-    }
-    
-    return `${bestWickets}/${bestRuns}`;
   };
 
   if (isLoading) {
