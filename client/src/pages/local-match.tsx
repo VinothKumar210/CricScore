@@ -593,25 +593,18 @@ export default function LocalMatch() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Match Format</label>
-                <SafeSelect 
-                  value={overs} 
-                  onValueChange={(value: string) => {
-                    if (value && typeof value === 'string') {
-                      setOvers(value);
-                    }
-                  }}
+                <select
+                  value={overs}
+                  onChange={(e) => setOvers(e.target.value)}
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  data-testid="select-overs"
                 >
-                  <SelectTrigger data-testid="select-overs">
-                    <SelectValue placeholder="Select format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10 Overs</SelectItem>
-                    <SelectItem value="12">12 Overs</SelectItem>
-                    <SelectItem value="15">15 Overs</SelectItem>
-                    <SelectItem value="20">20 Overs</SelectItem>
-                    <SelectItem value="custom">Custom Format</SelectItem>
-                  </SelectContent>
-                </SafeSelect>
+                  <option value="10">10 Overs</option>
+                  <option value="12">12 Overs</option>
+                  <option value="15">15 Overs</option>
+                  <option value="20">20 Overs</option>
+                  <option value="custom">Custom Format</option>
+                </select>
                 {overs === "custom" && (
                   <Input
                     type="text"
