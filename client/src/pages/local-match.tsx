@@ -879,34 +879,28 @@ export default function LocalMatch() {
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <Select value={selectedMyTeam} onValueChange={handleMyTeamSelect}>
-                <SelectTrigger data-testid="select-my-team">
-                  <SelectValue placeholder={myTeamName || "Select from your teams"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {userTeamsLoading ? (
-                    <div className="p-2 text-center text-sm text-muted-foreground">
-                      Loading teams...
-                    </div>
-                  ) : userTeams && userTeams.length > 0 ? (
-                    userTeams.map((team) => (
-                      <SelectItem key={team.id} value={team.id} data-testid={`option-my-team-${team.id}`}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{team.name}</span>
-                          <span className="text-xs text-muted-foreground flex items-center">
-                            <Crown className="h-3 w-3 mr-1" />
-                            Captain: {team.captain?.profileName || team.captain?.username || "Unknown"}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="p-2 text-center text-sm text-muted-foreground">
-                      No teams found. Create a team first.
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
+              <select
+                value={selectedMyTeam}
+                onChange={(e) => handleMyTeamSelect(e.target.value)}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 pr-10 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 hover:bg-accent transition-colors appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke-width%3D%221.5%22%20stroke%3D%22currentColor%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20d%3D%22M8.25%2015L12%2018.75%2015.75%2015m-7.5-6L12%205.25%2015.75%209%22%20/%3E%3C/svg%3E')] bg-[length:1rem] bg-[position:right_0.75rem_center] bg-no-repeat text-foreground dark:text-foreground"
+                data-testid="select-my-team"
+                disabled={userTeamsLoading}
+              >
+                <option value="" disabled hidden>
+                  {myTeamName || "Select from your teams"}
+                </option>
+                {userTeamsLoading ? (
+                  <option disabled>Loading teams...</option>
+                ) : userTeams && userTeams.length > 0 ? (
+                  userTeams.map((team) => (
+                    <option key={team.id} value={team.id} data-testid={`option-my-team-${team.id}`}>
+                      {team.name} - Captain: {team.captain?.profileName || team.captain?.username || "Unknown"}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No teams found. Create a team first.</option>
+                )}
+              </select>
               
               {/* Selected team display or manual input */}
               {selectedMyTeam ? (
