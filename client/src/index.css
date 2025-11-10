@@ -1087,3 +1087,57 @@ textarea {
 .safe-area-right {
   padding-right: env(safe-area-inset-right);
 }
+
+/* Enhanced styling for select dropdown options */
+select option {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  padding: 8px 12px;
+  border: none;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+select option:disabled {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dark mode option styling */
+.dark select option {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.dark select option:hover,
+.dark select option:focus,
+.dark select option:checked {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+/* Enhanced NativeSelect styling with better theming */
+.native-select {
+  background-color: hsl(var(--background));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+}
+
+.native-select:focus {
+  border-color: hsl(var(--ring));
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+}
+
+.native-select:hover {
+  background-color: hsl(var(--accent));
+}
