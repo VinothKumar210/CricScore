@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { NativeSelect } from "@/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Users, AlertTriangle, Clock, Check, X, Loader2, ArrowLeft, Search, Crown } from "lucide-react";
 import { type LocalPlayer, type Team, type User } from "@shared/schema";
@@ -593,17 +599,18 @@ export default function LocalMatch() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Match Format</label>
-                <NativeSelect
-                  value={overs}
-                  onChange={(e) => setOvers(e.target.value)}
-                  data-testid="select-overs"
-                >
-                  <option value="10">10 Overs</option>
-                  <option value="12">12 Overs</option>
-                  <option value="15">15 Overs</option>
-                  <option value="20">20 Overs</option>
-                  <option value="custom">Custom Format</option>
-                </NativeSelect>
+                <Select value={overs} onValueChange={setOvers}>
+                  <SelectTrigger data-testid="select-overs">
+                    <SelectValue placeholder="Select match format" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 Overs</SelectItem>
+                    <SelectItem value="12">12 Overs</SelectItem>
+                    <SelectItem value="15">15 Overs</SelectItem>
+                    <SelectItem value="20">20 Overs</SelectItem>
+                    <SelectItem value="custom">Custom Format</SelectItem>
+                  </SelectContent>
+                </Select>
                 {overs === "custom" && (
                   <Input
                     type="text"
@@ -878,27 +885,28 @@ export default function LocalMatch() {
           </CardHeader>
           <CardContent>
             <div className="mb-4">
-              <NativeSelect
+              <Select
                 value={selectedMyTeam}
-                onChange={(e) => handleMyTeamSelect(e.target.value)}
-                data-testid="select-my-team"
+                onValueChange={handleMyTeamSelect}
                 disabled={userTeamsLoading}
               >
-                <option value="" disabled hidden>
-                  {myTeamName || "Select from your teams"}
-                </option>
-                {userTeamsLoading ? (
-                  <option disabled>Loading teams...</option>
-                ) : userTeams && userTeams.length > 0 ? (
-                  userTeams.map((team) => (
-                    <option key={team.id} value={team.id} data-testid={`option-my-team-${team.id}`}>
-                      {team.name} - Captain: {team.captain?.profileName || team.captain?.username || "Unknown"}
-                    </option>
-                  ))
-                ) : (
-                  <option disabled>No teams found. Create a team first.</option>
-                )}
-              </NativeSelect>
+                <SelectTrigger data-testid="select-my-team">
+                  <SelectValue placeholder={myTeamName || "Select from your teams"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {userTeamsLoading ? (
+                    <SelectItem value="" disabled>Loading teams...</SelectItem>
+                  ) : userTeams && userTeams.length > 0 ? (
+                    userTeams.map((team) => (
+                      <SelectItem key={team.id} value={team.id} data-testid={`option-my-team-${team.id}`}>
+                        {team.name} - Captain: {team.captain?.profileName || team.captain?.username || "Unknown"}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>No teams found. Create a team first.</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
               
               {/* Selected team display or manual input */}
               {selectedMyTeam ? (
