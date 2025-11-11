@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { useForm } from "react-hook-form";
@@ -214,20 +214,18 @@ export default function Invitations() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Select Team</FormLabel>
-                          <NativeSelect
-                            {...field}
-                            data-testid="select-team"
-                            disabled={teamsLoading}
-                          >
-                            <option value="" disabled hidden>
-                              Choose a team
-                            </option>
-                            {captainTeams.map((team: any) => (
-                              <option key={team.id} value={team.id}>
-                                {team.name}
-                              </option>
-                            ))}
-                          </NativeSelect>
+                          <Select onValueChange={field.onChange} value={field.value} disabled={teamsLoading}>
+                            <SelectTrigger data-testid="select-team">
+                              <SelectValue placeholder="Choose a team" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {captainTeams.map((team: any) => (
+                                <SelectItem key={team.id} value={team.id}>
+                                  {team.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
