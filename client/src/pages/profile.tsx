@@ -2,7 +2,7 @@ import { useAuth } from "@/components/auth/auth-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -472,17 +472,16 @@ export default function Profile() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Player Role</FormLabel>
-                              <NativeSelect
-                                {...field}
-                                data-testid="edit-role"
-                              >
-                                <option value="" disabled hidden>
-                                  Select your role
-                                </option>
-                                <option value="BATSMAN">Batsman</option>
-                                <option value="BOWLER">Bowler</option>
-                                <option value="ALL_ROUNDER">All-rounder</option>
-                              </NativeSelect>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <SelectTrigger data-testid="edit-role">
+                                  <SelectValue placeholder="Select your role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="BATSMAN">Batsman</SelectItem>
+                                  <SelectItem value="BOWLER">Bowler</SelectItem>
+                                  <SelectItem value="ALL_ROUNDER">All-rounder</SelectItem>
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -494,16 +493,15 @@ export default function Profile() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Batting Hand</FormLabel>
-                              <NativeSelect
-                                {...field}
-                                data-testid="edit-batting-hand"
-                              >
-                                <option value="" disabled hidden>
-                                  Select batting hand
-                                </option>
-                                <option value="RIGHT">Right Hand</option>
-                                <option value="LEFT">Left Hand</option>
-                              </NativeSelect>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <SelectTrigger data-testid="edit-batting-hand">
+                                  <SelectValue placeholder="Select batting hand" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="RIGHT">Right Hand</SelectItem>
+                                  <SelectItem value="LEFT">Left Hand</SelectItem>
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -515,17 +513,16 @@ export default function Profile() {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Bowling Style (Optional)</FormLabel>
-                              <NativeSelect
-                                {...field}
-                                data-testid="edit-bowling-style"
-                              >
-                                <option value="" disabled hidden>
-                                  Select bowling style
-                                </option>
-                                <option value="FAST">Fast</option>
-                                <option value="MEDIUM_FAST">Medium Fast</option>
-                                <option value="SPIN">Spin</option>
-                              </NativeSelect>
+                              <Select onValueChange={field.onChange} value={field.value}>
+                                <SelectTrigger data-testid="edit-bowling-style">
+                                  <SelectValue placeholder="Select bowling style" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="FAST">Fast</SelectItem>
+                                  <SelectItem value="MEDIUM_FAST">Medium Fast</SelectItem>
+                                  <SelectItem value="SPIN">Spin</SelectItem>
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}
