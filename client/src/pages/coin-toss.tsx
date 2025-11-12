@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { NativeSelect } from '@/components/ui/native-select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLocation } from 'wouter';
 import { type LocalPlayer } from '@shared/schema';
 
@@ -202,32 +202,34 @@ export function CoinToss() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Who won the toss?</label>
-                  <NativeSelect
+                  <Select
                     value={manualTossWinner || ""}
-                    onChange={(e) => setManualTossWinner(e.target.value as 'my-team' | 'opponent-team')}
-                    data-testid="select-toss-winner"
+                    onValueChange={(value) => setManualTossWinner(value as 'my-team' | 'opponent-team')}
                   >
-                    <option value="" disabled hidden>
-                      Select toss winner
-                    </option>
-                    <option value="my-team">My Team</option>
-                    <option value="opponent-team">Opponent Team</option>
-                  </NativeSelect>
+                    <SelectTrigger data-testid="select-toss-winner">
+                      <SelectValue placeholder="Select toss winner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="my-team">My Team</SelectItem>
+                      <SelectItem value="opponent-team">Opponent Team</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-2">What did the winning team choose?</label>
-                  <NativeSelect
+                  <Select
                     value={manualBattingChoice || ""}
-                    onChange={(e) => setManualBattingChoice(e.target.value as 'batting' | 'bowling')}
-                    data-testid="select-batting-choice"
+                    onValueChange={(value) => setManualBattingChoice(value as 'batting' | 'bowling')}
                   >
-                    <option value="" disabled hidden>
-                      Select choice
-                    </option>
-                    <option value="batting">Batting First</option>
-                    <option value="bowling">Bowling First</option>
-                  </NativeSelect>
+                    <SelectTrigger data-testid="select-batting-choice">
+                      <SelectValue placeholder="Select choice" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="batting">Batting First</SelectItem>
+                      <SelectItem value="bowling">Bowling First</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="flex gap-3 pt-4">
