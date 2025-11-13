@@ -66,17 +66,15 @@ export function CoinToss() {
   const handleOpponentChoice = (side: 'heads' | 'tails') => {
     setSelectedSide(side);
     
-    // Generate result and stop spinning after a brief delay
-    setTimeout(() => {
-      const coinResult = Math.random() < 0.5 ? 'heads' : 'tails';
-      setResult(coinResult);
-      setIsFlipping(false);
-      
-      // Determine toss winner based on opponent's choice vs actual result
-      const winner = side === coinResult ? 'opponent' : 'user';
-      setTossWinner(winner);
-      setPhase('determine-winner');
-    }, 1000); // Brief delay to show choice was made
+    // Generate result and stop spinning immediately
+    const coinResult = Math.random() < 0.5 ? 'heads' : 'tails';
+    setResult(coinResult);
+    setIsFlipping(false);
+    
+    // Determine toss winner based on opponent's choice vs actual result
+    const winner = side === coinResult ? 'opponent' : 'user';
+    setTossWinner(winner);
+    setPhase('determine-winner');
   };
 
   // Remove the old handleToss function as it's no longer needed
@@ -296,7 +294,7 @@ export function CoinToss() {
                   `}
                   style={{
                     transformStyle: 'preserve-3d',
-                    animation: isFlipping ? 'flipCoin 2s ease-in-out' : 'none'
+                    animation: isFlipping ? 'flipCoin 1s ease-in-out infinite' : 'none'
                   }}
                   data-testid="coin-display"
                 >
