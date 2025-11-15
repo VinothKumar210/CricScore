@@ -629,7 +629,24 @@ export default function Scoreboard() {
           return stat;
         });
         
-        handleInningsComplete(updatedScore, batsmanStats, updatedBowlerStats);
+        // Calculate the updated batsman stats that would include this final ball
+        const updatedBatsmanStats = batsmanStats.map(stat => {
+          if (stat.player.name === matchState.strikeBatsman.name) {
+            const newBatsmanRuns = stat.runs + runsToAdd;
+            const newBatsmanBalls = stat.balls + 1;
+            const newStrikeRate = newBatsmanBalls > 0 ? (newBatsmanRuns / newBatsmanBalls) * 100 : 0;
+            
+            return {
+              ...stat,
+              runs: newBatsmanRuns,
+              balls: newBatsmanBalls,
+              strikeRate: Math.round(newStrikeRate * 100) / 100
+            };
+          }
+          return stat;
+        });
+        
+        handleInningsComplete(updatedScore, updatedBatsmanStats, updatedBowlerStats);
       }
       
       // Check for second innings/match completion
@@ -1004,7 +1021,22 @@ export default function Scoreboard() {
             return stat;
           });
           
-          handleInningsComplete(updatedScore, batsmanStats, updatedBowlerStats);
+          // Calculate the updated batsman stats that would include this final ball (wicket ball)
+          const updatedBatsmanStats = batsmanStats.map(stat => {
+            if (stat.player.name === matchState.strikeBatsman.name) {
+              const newBatsmanBalls = stat.balls + 1;
+              const newStrikeRate = newBatsmanBalls > 0 ? (stat.runs / newBatsmanBalls) * 100 : 0;
+              
+              return {
+                ...stat,
+                balls: newBatsmanBalls,
+                strikeRate: Math.round(newStrikeRate * 100) / 100
+              };
+            }
+            return stat;
+          });
+          
+          handleInningsComplete(updatedScore, updatedBatsmanStats, updatedBowlerStats);
         }, 100);
       }
       
@@ -1175,7 +1207,24 @@ export default function Scoreboard() {
             return stat;
           });
           
-          handleInningsComplete(updatedScore, batsmanStats, updatedBowlerStats);
+          // Calculate the updated batsman stats that would include this final ball (run out ball)
+          const updatedBatsmanStats = batsmanStats.map(stat => {
+            if (stat.player.name === matchState.strikeBatsman.name) {
+              const newBatsmanRuns = stat.runs + runOutRuns;
+              const newBatsmanBalls = stat.balls + 1;
+              const newStrikeRate = newBatsmanBalls > 0 ? (newBatsmanRuns / newBatsmanBalls) * 100 : 0;
+              
+              return {
+                ...stat,
+                runs: newBatsmanRuns,
+                balls: newBatsmanBalls,
+                strikeRate: Math.round(newStrikeRate * 100) / 100
+              };
+            }
+            return stat;
+          });
+          
+          handleInningsComplete(updatedScore, updatedBatsmanStats, updatedBowlerStats);
         }, 100);
       }
       
