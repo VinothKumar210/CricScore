@@ -1069,14 +1069,18 @@ export class PrismaStorage implements IStorage {
 
   async calculateAndUpdateTeamStatistics(teamId: string): Promise<void> {
     try {
-      // Get all team matches for this team
-      const teamMatches = await this.getTeamMatches(teamId);
-      
-      if (teamMatches.length === 0) {
+      // Get all team members first
+      const teamMembers = await this.getTeamMembers(teamId);
+      if (teamMembers.length === 0) {
         return;
       }
 
-      // Calculate basic match statistics
+      const memberUserIds = teamMembers.map(m => m.userId);
+
+      // Get formal team matches for this team
+      const teamMatches = await this.getTeamMatches(teamId);
+      
+      // Calculate basic match statistics from formal team matches
       let matchesPlayed = 0;
       let matchesWon = 0;
       let matchesLost = 0;
@@ -1098,16 +1102,46 @@ export class PrismaStorage implements IStorage {
         }
       }
 
+      // Get additional match count from individual matches (team vs non-team matches)
+      const recentIndividualMatches = await prisma.match.findMany({
+        where: {
+          userId: { in: memberUserIds },
+          opponent: { contains: "vs " }, // Team matches have format "vs OpponentTeam"
+          matchDate: { 
+            gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // Last 90 days
+          }
+        },
+        distinct: ['opponent', 'matchDate'], // Count unique team matches
+        orderBy: { matchDate: 'desc' }
+      });
+
+      // Count additional team matches (estimate based on individual matches)
+      const additionalMatches = Math.floor(recentIndividualMatches.length / Math.max(1, memberUserIds.length / 3));
+      matchesPlayed += additionalMatches;
+
       const winRatio = matchesPlayed > 0 ? matchesWon / matchesPlayed : 0;
 
-      // Get all player performances for this team
+      // Get player performances from formal team matches
       const teamMatchIds = teamMatches.map(m => m.id);
-      const allPlayerStats = await prisma.teamMatchPlayer.findMany({
+      const formalTeamStats = teamMatchIds.length > 0 ? await prisma.teamMatchPlayer.findMany({
         where: {
           teamMatchId: { in: teamMatchIds },
           teamId: teamId
         },
         include: { user: true }
+      }) : [];
+
+      // ALSO get individual match performances for team members (for mixed matches)
+      const individualMatches = await prisma.match.findMany({
+        where: {
+          userId: { in: memberUserIds },
+          opponent: { contains: "vs " }, // Team matches
+          matchDate: { 
+            gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // Last 90 days
+          }
+        },
+        include: { user: true },
+        orderBy: { matchDate: 'desc' }
       });
 
       // Calculate top performers
@@ -1120,7 +1154,7 @@ export class PrismaStorage implements IStorage {
       let bestEconomyPlayerId: string | undefined;
       let bestEconomy = Infinity;
 
-      // Aggregate stats by player
+      // Aggregate stats by player from both sources
       const playerAggregates = new Map<string, {
         runs: number;
         ballsFaced: number;
@@ -1129,7 +1163,8 @@ export class PrismaStorage implements IStorage {
         runsConceded: number;
       }>();
 
-      for (const stat of allPlayerStats) {
+      // Add stats from formal team matches
+      for (const stat of formalTeamStats) {
         const existing = playerAggregates.get(stat.userId) || {
           runs: 0,
           ballsFaced: 0,
@@ -1145,6 +1180,25 @@ export class PrismaStorage implements IStorage {
         existing.runsConceded += stat.runsConceded;
         
         playerAggregates.set(stat.userId, existing);
+      }
+
+      // Add stats from individual matches (team vs non-team matches)
+      for (const match of individualMatches) {
+        const existing = playerAggregates.get(match.userId) || {
+          runs: 0,
+          ballsFaced: 0,
+          wickets: 0,
+          oversBowled: 0,
+          runsConceded: 0
+        };
+        
+        existing.runs += match.runsScored;
+        existing.ballsFaced += match.ballsFaced;
+        existing.wickets += match.wicketsTaken;
+        existing.oversBowled += match.oversBowled;
+        existing.runsConceded += match.runsConceded;
+        
+        playerAggregates.set(match.userId, existing);
       }
 
       // Find top performers
