@@ -1094,9 +1094,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate man of the match from player performances
       const manOfTheMatchResult = calculateManOfTheMatch(validatedData.playerPerformances, 'T20');
 
-      // 1. Create team match record ONLY if both teams are from database
+      // 1. Create team match record only if both teams are from database
       if (validatedData.homeTeamId && validatedData.awayTeamId) {
-        console.log('Creating team match: both teams from database');
+        console.log('Creating formal team match: both teams from database');
         const teamMatch = await storage.createTeamMatch({
           homeTeamId: validatedData.homeTeamId,
           awayTeamId: validatedData.awayTeamId,
@@ -1112,6 +1112,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           awayTeamOvers: validatedData.awayTeamOvers
         });
         teamMatchId = teamMatch?.id;
+      } else if (validatedData.homeTeamId || validatedData.awayTeamId) {
+        console.log('Mixed team scenario - skipping formal team match creation but processing individual stats and team statistics');
       }
 
       // 2. Process each player's performance
@@ -1123,13 +1125,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         try {
+          // Track original teamId for guest player scenarios
+          const originalTeamId = performance.teamId;
+          let isTeamMember = false;
+          
           // Validate team membership if player belongs to a database team
           if (performance.teamId) {
-            const isValidMember = await storage.isTeamMember(performance.teamId, performance.userId);
-            if (!isValidMember) {
-              console.log(`Player ${performance.playerName} is not a member of team ${performance.teamId} - treating as guest player`);
-              // Treat as guest player - update individual stats only, don't count for team stats
-              performance.teamId = undefined;
+            isTeamMember = await storage.isTeamMember(performance.teamId, performance.userId);
+            if (!isTeamMember) {
+              console.log(`Player ${performance.playerName} is not a formal member of team ${performance.teamId} - treating as guest player`);
+              console.log(`Guest player will still contribute to team statistics but not formal team match records`);
+              // Keep teamId for team statistics calculation, but mark as guest
+              // performance.teamId stays as is for team stats calculation
+            } else {
+              console.log(`Player ${performance.playerName} is a validated member of team ${performance.teamId}`);
             }
           }
 
@@ -1150,9 +1159,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             (manOfTheMatchResult.playerId === performance.userId || 
              (manOfTheMatchResult.playerName === performance.playerName && !manOfTheMatchResult.playerId));
 
-          // Create team match player record ONLY if this player's team is from database AND we created a team match
+          // Create team match player record ONLY if:
+          // 1. We created a formal team match AND
+          // 2. Player has a teamId (database team) AND  
+          // 3. Player is a formal team member (not guest)
           let teamMatchPlayerId = null;
-          if (teamMatchId && performance.teamId) {
+          if (teamMatchId && performance.teamId && isTeamMember) {
             const teamMatchPlayer = await storage.createTeamMatchPlayer({
               teamMatchId: teamMatchId,
               userId: performance.userId,
@@ -1166,6 +1178,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               catchesTaken: performance.catchesTaken
             });
             teamMatchPlayerId = teamMatchPlayer?.id;
+            console.log(`Created team match player record for member ${performance.playerName}`);
+          } else if (teamMatchId && performance.teamId && !isTeamMember) {
+            console.log(`Skipping team match player record for guest player ${performance.playerName}`);
           }
 
           // ALWAYS create individual match record for career stats with both innings data
@@ -1193,7 +1208,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             playerName: performance.playerName,
             teamMatchPlayerId,
             individualMatchId: individualMatch?.id,
-            isTeamMember: !!performance.teamId,
+            isTeamMember: isTeamMember,
+            isGuestPlayer: !!originalTeamId && !isTeamMember,
+            teamId: originalTeamId, // Keep original for debugging
             isManOfTheMatch: isManOfTheMatch || false,
             status: "success"
           });
@@ -1210,22 +1227,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // 3. Update team statistics ONLY for database teams
-      const statisticsUpdates = [];
+      const statisticsUpdates: Promise<void>[] = [];
+      const updatedTeamIds: string[] = [];
+      
       if (validatedData.homeTeamId) {
         console.log(`Updating statistics for home team: ${validatedData.homeTeamId}`);
-        statisticsUpdates.push(storage.calculateAndUpdateTeamStatistics(validatedData.homeTeamId));
+        statisticsUpdates.push(
+          storage.calculateAndUpdateTeamStatistics(validatedData.homeTeamId!)
+            .then(() => {
+              updatedTeamIds.push(validatedData.homeTeamId!);
+              console.log(`Successfully updated statistics for home team: ${validatedData.homeTeamId}`);
+            })
+            .catch(error => {
+              console.error(`Failed to update statistics for home team ${validatedData.homeTeamId}:`, error);
+              throw error;
+            })
+        );
       }
+      
       if (validatedData.awayTeamId) {
         console.log(`Updating statistics for away team: ${validatedData.awayTeamId}`);
-        statisticsUpdates.push(storage.calculateAndUpdateTeamStatistics(validatedData.awayTeamId));
+        statisticsUpdates.push(
+          storage.calculateAndUpdateTeamStatistics(validatedData.awayTeamId!)
+            .then(() => {
+              updatedTeamIds.push(validatedData.awayTeamId!);
+              console.log(`Successfully updated statistics for away team: ${validatedData.awayTeamId}`);
+            })
+            .catch(error => {
+              console.error(`Failed to update statistics for away team ${validatedData.awayTeamId}:`, error);
+              throw error;
+            })
+        );
       }
 
       // Execute team statistics updates
+      let teamStatsError = null;
       if (statisticsUpdates.length > 0) {
         try {
           await Promise.all(statisticsUpdates);
+          console.log(`Team statistics updated for ${updatedTeamIds.length} teams:`, updatedTeamIds);
         } catch (error) {
           console.error('Error updating team statistics:', error);
+          teamStatsError = error instanceof Error ? error.message : 'Unknown error';
         }
       }
 
@@ -1238,7 +1281,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         teamMatchId,
         results,
         playersProcessed: results.length,
-        teamsUpdated: statisticsUpdates.length,
+        updatedTeamIds,
+        teamsUpdated: updatedTeamIds.length,
+        teamStatsError,
         manOfTheMatch: manOfTheMatchResult
       });
 
