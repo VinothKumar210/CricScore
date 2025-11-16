@@ -192,6 +192,53 @@ export const profileSetupSchema = z.object({
   bowlingStyle: z.enum(["FAST", "MEDIUM_FAST", "SPIN"]).optional(),
 });
 
+// Flexible team match results schema - handles mixed team scenarios with both innings
+export const teamMatchResultsSchema = z.object({
+  // Team information - optional if team is not from database
+  homeTeamId: z.string().optional(), // null if local team
+  homeTeamName: z.string().min(1),   // always required for display
+  awayTeamId: z.string().optional(), // null if local team  
+  awayTeamName: z.string().min(1),   // always required for display
+  
+  matchDate: z.string().transform(str => new Date(str)),
+  venue: z.string().min(1),
+  result: z.enum(["HOME_WIN", "AWAY_WIN", "DRAW"]),
+  
+  // Match score details
+  homeTeamRuns: z.number().int().min(0),
+  homeTeamWickets: z.number().int().min(0).max(10),
+  homeTeamOvers: z.number().min(0),
+  awayTeamRuns: z.number().int().min(0),
+  awayTeamWickets: z.number().int().min(0).max(10),
+  awayTeamOvers: z.number().min(0),
+  
+  playerPerformances: z.array(z.object({
+    userId: z.string().optional(),     // null if player has no account
+    playerName: z.string().min(1),     // always required
+    teamId: z.string().optional(),     // null if not database team
+    teamName: z.string().min(1),       // always required (home/away team name)
+    
+    // Batting stats (combined across both innings)
+    runsScored: z.number().int().min(0).default(0),
+    ballsFaced: z.number().int().min(0).default(0),
+    wasDismissed: z.boolean().default(false),
+    fours: z.number().int().min(0).default(0),
+    sixes: z.number().int().min(0).default(0),
+    
+    // Bowling stats (combined across both innings)
+    oversBowled: z.number().min(0).default(0),
+    runsConceded: z.number().int().min(0).default(0),
+    wicketsTaken: z.number().int().min(0).default(0),
+    
+    // Fielding stats (combined across both innings)
+    catchesTaken: z.number().int().min(0).default(0),
+    runOuts: z.number().int().min(0).default(0),
+    
+    // Match awards
+    isManOfTheMatch: z.boolean().default(false)
+  }))
+});
+
 // Auth schemas
 export const loginSchema = z.object({
   email: z.string().email(),
@@ -224,6 +271,7 @@ export type LocalMatchForm = z.infer<typeof localMatchFormSchema>;
 export type InsertMatchSpectator = z.infer<typeof insertMatchSpectatorSchema>;
 export type InsertOverHistory = z.infer<typeof insertOverHistorySchema>;
 export type ProfileSetup = z.infer<typeof profileSetupSchema>;
+export type TeamMatchResults = z.infer<typeof teamMatchResultsSchema>;
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type RegisterRequest = z.infer<typeof registerSchema>;
 

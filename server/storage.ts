@@ -45,6 +45,7 @@ export interface IStorage {
   createCareerStats(stats: InsertCareerStats): Promise<CareerStats>;
   updateCareerStats(userId: string, stats: Partial<CareerStats>): Promise<CareerStats | undefined>;
   updateCareerStatsFromMatch(userId: string, match: InsertMatch): Promise<void>;
+  ensureCareerStats(userId: string): Promise<CareerStats | undefined>;
   
   // Team operations
   getTeam(id: string): Promise<Team | undefined>;
@@ -58,6 +59,7 @@ export interface IStorage {
   getTeamMembers(teamId: string): Promise<(TeamMember & { user: User })[]>;
   addTeamMember(member: InsertTeamMember): Promise<TeamMember>;
   removeTeamMember(teamId: string, userId: string): Promise<boolean>;
+  isTeamMember(teamId: string, userId: string): Promise<boolean>;
   
   // Team invitation operations
   getTeamInvitations(userId: string): Promise<(TeamInvitation & { team: Team, inviter: User })[]>;
@@ -227,6 +229,38 @@ export class PrismaStorage implements IStorage {
       });
       return stats;
     } catch {
+      return undefined;
+    }
+  }
+
+  async ensureCareerStats(userId: string): Promise<CareerStats | undefined> {
+    try {
+      let stats = await this.getCareerStats(userId);
+      if (!stats) {
+        stats = await prisma.careerStats.create({
+          data: {
+            userId,
+            matchesPlayed: 0,
+            totalRuns: 0,
+            ballsFaced: 0,
+            strikeRate: 0,
+            highestScore: 0,
+            timesOut: 0,
+            oversBowled: 0,
+            runsConceded: 0,
+            wicketsTaken: 0,
+            economy: 0,
+            bestBowlingWickets: 0,
+            bestBowlingRuns: 0,
+            catchesTaken: 0,
+            runOuts: 0,
+            manOfTheMatchAwards: 0
+          }
+        });
+      }
+      return stats;
+    } catch (error) {
+      console.error('Error ensuring career stats:', error);
       return undefined;
     }
   }
@@ -410,6 +444,22 @@ export class PrismaStorage implements IStorage {
         }
       });
       return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async isTeamMember(teamId: string, userId: string): Promise<boolean> {
+    try {
+      const member = await prisma.teamMember.findUnique({
+        where: {
+          teamId_userId: {
+            teamId,
+            userId
+          }
+        }
+      });
+      return !!member;
     } catch {
       return false;
     }

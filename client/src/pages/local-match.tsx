@@ -1309,6 +1309,8 @@ export default function LocalMatch() {
               localStorage.setItem('opponentTeamPlayers', JSON.stringify(filteredOpponentTeamPlayers));
               localStorage.setItem('myTeamName', myTeamName || 'My Team');
               localStorage.setItem('opponentTeamName', opponentTeamName || 'Opponent Team');
+              localStorage.setItem('myTeamId', selectedMyTeam || ''); // Store team ID for endpoint selection
+              localStorage.setItem('opponentTeamId', selectedOpponentTeam || ''); // Store team ID for endpoint selection
               localStorage.setItem('matchOvers', getCurrentOvers());
               setLocation('/coin-toss');
             }

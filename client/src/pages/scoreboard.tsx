@@ -447,14 +447,108 @@ export default function Scoreboard() {
 
       console.log('Auto-posting player performances to backend:', allPlayerPerformances);
       
-      // Send to backend
-      const response = await fetch('/api/local-match-results', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify({
+      // Get team IDs from localStorage to determine which endpoint to use
+      const myTeamId = localStorage.getItem('myTeamId') || '';
+      const opponentTeamId = localStorage.getItem('opponentTeamId') || '';
+      const myTeamName = localStorage.getItem('myTeamName') || 'My Team';
+      const opponentTeamName = localStorage.getItem('opponentTeamName') || 'Opponent Team';
+      
+      // Determine if any database teams are involved
+      const hasMyTeam = myTeamId.trim() !== '';
+      const hasOpponentTeam = opponentTeamId.trim() !== '';
+      const hasAnyDatabaseTeam = hasMyTeam || hasOpponentTeam;
+      
+      console.log('Team analysis:', {
+        myTeamId, opponentTeamId, hasMyTeam, hasOpponentTeam, hasAnyDatabaseTeam
+      });
+
+      let endpoint, requestBody, response;
+
+      if (hasAnyDatabaseTeam) {
+        // Use team match results endpoint for database teams
+        endpoint = '/api/team-match-results';
+        
+        // Determine match result based on final scores
+        const userTeamBatsFirst = matchState.userTeamRole.includes('batting');
+        const firstInningsScore = matchState.firstInningsScore || { runs: 0, wickets: 0, overs: 0 };
+        const secondInningsScore = { 
+          runs: battingTeamScore.runs, 
+          wickets: battingTeamScore.wickets, 
+          overs: battingTeamScore.overs + (battingTeamScore.balls / 6) 
+        };
+        
+        // Determine who batted first and second
+        let homeTeamRuns, homeTeamWickets, homeTeamOvers;
+        let awayTeamRuns, awayTeamWickets, awayTeamOvers;
+        let result;
+        
+        if (userTeamBatsFirst) {
+          // My team batted first, opponent batted second
+          homeTeamRuns = firstInningsScore.runs;
+          homeTeamWickets = firstInningsScore.wickets;
+          homeTeamOvers = firstInningsScore.overs;
+          awayTeamRuns = secondInningsScore.runs;
+          awayTeamWickets = secondInningsScore.wickets;
+          awayTeamOvers = secondInningsScore.overs;
+          
+          if (awayTeamRuns > homeTeamRuns) {
+            result = "AWAY_WIN";
+          } else if (homeTeamRuns > awayTeamRuns) {
+            result = "HOME_WIN";
+          } else {
+            result = "DRAW";
+          }
+        } else {
+          // Opponent batted first, my team batted second
+          homeTeamRuns = secondInningsScore.runs;
+          homeTeamWickets = secondInningsScore.wickets;
+          homeTeamOvers = secondInningsScore.overs;
+          awayTeamRuns = firstInningsScore.runs;
+          awayTeamWickets = firstInningsScore.wickets;
+          awayTeamOvers = firstInningsScore.overs;
+          
+          if (homeTeamRuns > awayTeamRuns) {
+            result = "HOME_WIN";
+          } else if (awayTeamRuns > homeTeamRuns) {
+            result = "AWAY_WIN";
+          } else {
+            result = "DRAW";
+          }
+        }
+
+        // Map player performances to team-based format
+        const teamPlayerPerformances = allPlayerPerformances.map(perf => {
+          const isMyTeamPlayer = matchState.myTeamPlayers.some(p => p.name === perf.playerName);
+          return {
+            ...perf,
+            teamId: isMyTeamPlayer ? myTeamId || undefined : opponentTeamId || undefined,
+            teamName: isMyTeamPlayer ? myTeamName : opponentTeamName,
+            fours: 0, // TODO: Track fours in match scoring
+            sixes: 0, // TODO: Track sixes in match scoring 
+            runOuts: 0 // TODO: Track run outs in match scoring
+          };
+        });
+
+        requestBody = {
+          homeTeamId: hasMyTeam ? myTeamId : undefined,
+          homeTeamName: myTeamName,
+          awayTeamId: hasOpponentTeam ? opponentTeamId : undefined,
+          awayTeamName: opponentTeamName,
+          matchDate: new Date().toISOString(),
+          venue: 'Local Ground',
+          result,
+          homeTeamRuns,
+          homeTeamWickets,
+          homeTeamOvers,
+          awayTeamRuns,
+          awayTeamWickets,
+          awayTeamOvers,
+          playerPerformances: teamPlayerPerformances
+        };
+      } else {
+        // Use local match results endpoint for purely local teams
+        endpoint = '/api/local-match-results';
+        requestBody = {
           matchName: 'Local Match',
           venue: 'Local Ground',
           matchDate: new Date().toISOString(),
@@ -466,7 +560,19 @@ export default function Scoreboard() {
             overs: battingTeamScore.overs + (battingTeamScore.balls / 6)
           },
           playerPerformances: allPlayerPerformances
-        })
+        };
+      }
+
+      console.log(`Using endpoint: ${endpoint}`, requestBody);
+      
+      // Send to backend
+      response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify(requestBody)
       });
 
       if (response.ok) {
