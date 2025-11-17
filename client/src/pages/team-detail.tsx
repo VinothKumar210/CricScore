@@ -135,7 +135,7 @@ function TeamStatistics({ teamId }: { teamId: string }) {
           {/* Best Strike Rate */}
           <div className="border rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Best Strike Rate (50+ runs)</span>
+              <span className="text-sm font-medium text-muted-foreground">Best Strike Rate (20+ runs)</span>
               <Zap className="h-4 w-4 text-yellow-500" />
             </div>
             {stats.bestStrikeRatePlayer ? (
@@ -144,14 +144,14 @@ function TeamStatistics({ teamId }: { teamId: string }) {
                 <div className="text-2xl font-bold text-yellow-600">{stats.bestStrikeRate.toFixed(1)}</div>
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground">Minimum 50 runs required</div>
+              <div className="text-sm text-muted-foreground">Minimum 20 runs required</div>
             )}
           </div>
 
           {/* Most Economical Bowler */}
           <div className="border rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Best Economy (5+ overs)</span>
+              <span className="text-sm font-medium text-muted-foreground">Best Economy (2+ overs)</span>
               <Timer className="h-4 w-4 text-purple-500" />
             </div>
             {stats.bestEconomyPlayer ? (
@@ -160,7 +160,7 @@ function TeamStatistics({ teamId }: { teamId: string }) {
                 <div className="text-2xl font-bold text-purple-600">{stats.bestEconomy.toFixed(2)}</div>
               </div>
             ) : (
-              <div className="text-sm text-muted-foreground">Minimum 5 overs required</div>
+              <div className="text-sm text-muted-foreground">Minimum 2 overs required</div>
             )}
           </div>
 

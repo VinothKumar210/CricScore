@@ -1264,8 +1264,8 @@ export class PrismaStorage implements IStorage {
           topWicketTakerId = userId;
         }
 
-        // Best strike rate (minimum 50 runs)
-        if (stats.runs >= 50 && stats.ballsFaced > 0) {
+        // Best strike rate (minimum 20 runs)
+        if (stats.runs >= 20 && stats.ballsFaced > 0) {
           const strikeRate = (stats.runs / stats.ballsFaced) * 100;
           if (strikeRate > bestStrikeRate) {
             bestStrikeRate = strikeRate;
@@ -1273,8 +1273,8 @@ export class PrismaStorage implements IStorage {
           }
         }
 
-        // Best economy (minimum 5 overs)
-        if (stats.oversBowled >= 5) {
+        // Best economy (minimum 2 overs)
+        if (stats.oversBowled >= 2) {
           const decimalOvers = this.convertOversToDecimal(stats.oversBowled);
           const economy = stats.runsConceded / decimalOvers;
           if (economy < bestEconomy) {
