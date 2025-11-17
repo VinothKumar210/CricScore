@@ -1139,57 +1139,8 @@ export class PrismaStorage implements IStorage {
         }
       }
 
-      // Step 4: Get individual matches for team members
-      const individualMatches = await prisma.match.findMany({
-        where: {
-          userId: { in: memberUserIds }
-        },
-        include: { user: true },
-        orderBy: { matchDate: 'desc' }
-      });
-
-      // Step 5: Group individual matches, excluding those already in formal matches
-      const individualMatchGroups = new Map<string, typeof individualMatches>();
-      
-      for (const match of individualMatches) {
-        const matchKey = this.createCanonicalMatchKey(match.opponent, match.matchDate);
-        
-        // Skip if this match is already covered by a formal team match
-        if (formalMatchKeys.has(matchKey)) {
-          continue;
-        }
-        
-        if (!individualMatchGroups.has(matchKey)) {
-          individualMatchGroups.set(matchKey, []);
-        }
-        individualMatchGroups.get(matchKey)!.push(match);
-      }
-
-      // Step 6: Accept individual match groups with sufficient participants (≥3)
-      let acceptedIndividualMatches = 0;
-      const acceptedIndividualStats: typeof individualMatches = [];
-
-      for (const [matchKey, matchGroup] of Array.from(individualMatchGroups.entries())) {
-        const participantIds = new Set(matchGroup.map(m => m.userId));
-        
-        // Only accept as team match if ≥3 team members participated
-        if (participantIds.size >= 3) {
-          acceptedIndividualMatches++;
-          
-          // For participants with multiple entries, prefer the latest one
-          const latestByUser = new Map<string, typeof individualMatches[0]>();
-          for (const match of matchGroup) {
-            const existing = latestByUser.get(match.userId);
-            if (!existing || match.createdAt > existing.createdAt) {
-              latestByUser.set(match.userId, match);
-            }
-          }
-          acceptedIndividualStats.push(...Array.from(latestByUser.values()));
-        }
-      }
-
-      // Step 7: Calculate totals
-      const totalMatchesPlayed = formalMatchesPlayed + acceptedIndividualMatches;
+      // Step 4: Calculate totals (only from formal team matches)
+      const totalMatchesPlayed = formalMatchesPlayed;
       const winRatio = formalMatchesPlayed > 0 ? formalMatchesWon / formalMatchesPlayed : 0;
 
       // Calculate top performers
@@ -1202,7 +1153,7 @@ export class PrismaStorage implements IStorage {
       let bestEconomyPlayerId: string | undefined;
       let bestEconomy = Infinity;
 
-      // Aggregate stats by player from both sources
+      // Aggregate stats by player from team-specific matches only
       const playerAggregates = new Map<string, {
         runs: number;
         ballsFaced: number;
@@ -1211,7 +1162,7 @@ export class PrismaStorage implements IStorage {
         runsConceded: number;
       }>();
 
-      // Add stats from formal team matches
+      // Add stats from formal team matches only (team-specific performance)
       for (const stat of formalTeamStats) {
         const existing = playerAggregates.get(stat.userId) || {
           runs: 0,
@@ -1228,25 +1179,6 @@ export class PrismaStorage implements IStorage {
         existing.runsConceded += stat.runsConceded;
         
         playerAggregates.set(stat.userId, existing);
-      }
-
-      // Add stats from accepted individual matches (non-duplicated team vs non-team matches)
-      for (const match of acceptedIndividualStats) {
-        const existing = playerAggregates.get(match.userId) || {
-          runs: 0,
-          ballsFaced: 0,
-          wickets: 0,
-          oversBowled: 0,
-          runsConceded: 0
-        };
-        
-        existing.runs += match.runsScored;
-        existing.ballsFaced += match.ballsFaced;
-        existing.wickets += match.wicketsTaken;
-        existing.oversBowled += match.oversBowled;
-        existing.runsConceded += match.runsConceded;
-        
-        playerAggregates.set(match.userId, existing);
       }
 
       // Find top performers
