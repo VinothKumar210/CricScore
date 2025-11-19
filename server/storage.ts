@@ -1139,8 +1139,8 @@ export class PrismaStorage implements IStorage {
         }
       }
 
-      // Step 4: Calculate totals (only from formal team matches)
-      const totalMatchesPlayed = formalMatchesPlayed;
+      // Step 4: Calculate totals (initially from formal team matches)
+      let totalMatchesPlayed = formalMatchesPlayed;
       const winRatio = formalMatchesPlayed > 0 ? formalMatchesWon / formalMatchesPlayed : 0;
 
       // Calculate top performers
@@ -1180,6 +1180,73 @@ export class PrismaStorage implements IStorage {
         
         playerAggregates.set(stat.userId, existing);
       }
+
+      // ALSO include individual matches from team members (for mixed scenarios)
+      // Get all individual matches from team members (no time limit for consistency)
+      const memberIndividualMatches = await prisma.match.findMany({
+        where: {
+          userId: { in: memberUserIds }
+        },
+        orderBy: { matchDate: 'desc' }
+      });
+
+      // Create a set of already processed formal matches to avoid duplication
+      const processedMatches = new Set<string>();
+      for (const match of teamMatches) {
+        const opponentName = match.homeTeamId === teamId ? match.awayTeam.name : match.homeTeam.name;
+        const matchKey = this.createCanonicalMatchKey(opponentName, match.matchDate);
+        processedMatches.add(matchKey);
+      }
+
+      // Deduplicate individual matches by creating unique match keys
+      const uniqueIndividualMatches = new Set<string>();
+      const individualMatchPlayerMap = new Map<string, any[]>(); // matchKey -> player records
+      
+      for (const match of memberIndividualMatches) {
+        const opponentKey = match.opponent.replace(/^vs\s+/i, '').trim();
+        const matchKey = this.createCanonicalMatchKey(opponentKey, match.matchDate);
+        
+        // Skip if this match was already processed as a formal team match
+        if (!processedMatches.has(matchKey)) {
+          uniqueIndividualMatches.add(matchKey);
+          
+          // Group player records by match for proper aggregation
+          if (!individualMatchPlayerMap.has(matchKey)) {
+            individualMatchPlayerMap.set(matchKey, []);
+          }
+          individualMatchPlayerMap.get(matchKey)!.push(match);
+        }
+      }
+
+      // Add stats from unique individual matches
+      for (const matchKey of Array.from(uniqueIndividualMatches)) {
+        const playerRecords = individualMatchPlayerMap.get(matchKey)!;
+        
+        // Add stats for each player in this match (avoid double counting per player per match)
+        for (const match of playerRecords) {
+          const existing = playerAggregates.get(match.userId) || {
+            runs: 0,
+            ballsFaced: 0,
+            wickets: 0,
+            oversBowled: 0,
+            runsConceded: 0
+          };
+          
+          existing.runs += match.runsScored;
+          existing.ballsFaced += match.ballsFaced;
+          existing.wickets += match.wicketsTaken;
+          existing.oversBowled += match.oversBowled;
+          existing.runsConceded += match.runsConceded;
+          
+          playerAggregates.set(match.userId, existing);
+        }
+      }
+
+      const uniqueIndividualMatchCount = uniqueIndividualMatches.size;
+      console.log(`Team stats calculation: ${formalMatchesPlayed} formal matches + ${uniqueIndividualMatchCount} unique individual matches`);
+      
+      // Update total matches played to include both formal and unique individual matches
+      totalMatchesPlayed = formalMatchesPlayed + uniqueIndividualMatchCount;
 
       // Find top performers
       for (const userId of Array.from(playerAggregates.keys())) {
