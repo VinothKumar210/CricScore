@@ -172,8 +172,8 @@ export default function SearchPlayers() {
           </div>
 
           {/* Search Section */}
-          <Card>
-            <CardContent className="p-6">
+          <Card className="overflow-visible relative">
+            <CardContent className="p-6 overflow-visible">
               <div className="flex space-x-4">
                 <div className="flex-1 relative" ref={suggestionsRef}>
                   <Input
