@@ -14,7 +14,6 @@ export default function SearchPlayers() {
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const [selectedProfile, setSelectedProfile] = useState<UserType | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
   const [inputPosition, setInputPosition] = useState<{top: number, left: number, width: number} | null>(null);
@@ -110,9 +109,7 @@ export default function SearchPlayers() {
   };
 
   const selectSuggestion = (user: UserType) => {
-    setSelectedProfile(user);
-    setSearchInput("");
-    setSearchTerm("");
+    setLocation(`/player/${user.id}`);
     setShowSuggestions(false);
     setActiveSuggestion(-1);
   };
@@ -313,94 +310,8 @@ export default function SearchPlayers() {
               </div>
             )}
 
-            {/* Selected Profile */}
-            {selectedProfile && !searchTerm && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">Selected Player</h2>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedProfile(null)}
-                    data-testid="button-clear-selection"
-                  >
-                    Clear Selection
-                  </Button>
-                </div>
-                
-                <Card className="max-w-md mx-auto">
-                  <CardHeader className="text-center">
-                    <div className="mx-auto w-20 h-20 bg-primary rounded-full flex items-center justify-center mb-4">
-                      <User className="w-10 h-10 text-primary-foreground" />
-                    </div>
-                    <CardTitle className="text-xl">{selectedProfile.profileName || "Player"}</CardTitle>
-                    <CardDescription className="text-base">@{selectedProfile.username}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {/* Playing Style */}
-                    <div className="space-y-3">
-                      <div className="flex justify-center">
-                        <Badge variant="secondary" className="text-sm" data-testid={`selected-player-role`}>
-                          {selectedProfile.role ? formatRole(selectedProfile.role) : "Role not specified"}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-center space-x-2">
-                        {selectedProfile.battingHand && (
-                          <Badge variant="outline" className="text-sm" data-testid={`selected-player-batting`}>
-                            {formatBattingHand(selectedProfile.battingHand)}
-                          </Badge>
-                        )}
-                        {selectedProfile.bowlingStyle && (
-                          <Badge variant="outline" className="text-sm" data-testid={`selected-player-bowling`}>
-                            {formatBowlingStyle(selectedProfile.bowlingStyle)}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    {selectedProfile.description && (
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground" data-testid={`selected-player-description`}>
-                          {selectedProfile.description}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Member Since */}
-                    <div className="text-center text-sm text-muted-foreground">
-                      Member since {selectedProfile.createdAt ? new Date(selectedProfile.createdAt).toLocaleDateString() : "N/A"}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex space-x-2 pt-4">
-                      <Button
-                        className="flex-1"
-                        onClick={() => setLocation(`/player/${selectedProfile.id}`)}
-                        data-testid="button-view-profile"
-                      >
-                        View Full Profile
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => {
-                          setSearchInput(selectedProfile.profileName || selectedProfile.username || "");
-                          setSearchTerm(selectedProfile.profileName || selectedProfile.username || "");
-                          setSelectedProfile(null);
-                        }}
-                        data-testid="button-search-this-player"
-                      >
-                        Search Similar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
             {/* Initial State */}
-            {!searchTerm && !selectedProfile && (
+            {!searchTerm && (
               <Card>
                 <CardContent className="p-12 text-center">
                   <Search className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
