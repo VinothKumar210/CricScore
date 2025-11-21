@@ -103,6 +103,7 @@ export default function Scoreboard() {
   const [showInningsTransition, setShowInningsTransition] = useState(false);
   const [showMatchResult, setShowMatchResult] = useState(false);
   const [manOfTheMatchData, setManOfTheMatchData] = useState<any>(null);
+  const [matchSummaryId, setMatchSummaryId] = useState<string | null>(null);
   const [showTossDialog, setShowTossDialog] = useState(false);
   const [tossWinner, setTossWinner] = useState<'myTeam' | 'opponent' | null>(null);
   const [tossDecision, setTossDecision] = useState<'bat' | 'bowl' | null>(null);
@@ -239,6 +240,171 @@ export default function Scoreboard() {
   };
 
   // Auto post stats function
+  // Function to save match summary for historical access
+  const saveMatchSummary = async (allPlayerPerformances: any[], hasAnyDatabaseTeam: boolean, manOfTheMatchResult?: any) => {
+    try {
+      // Check if match should be saved as summary
+      const hasAnyPlayerWithAccount = allPlayerPerformances.some(p => p.userId);
+      const shouldSaveMatchSummary = hasAnyPlayerWithAccount || hasAnyDatabaseTeam;
+      
+      if (!shouldSaveMatchSummary) {
+        console.log('No need to save match summary - no players with accounts and no database teams');
+        return;
+      }
+      
+      console.log('Saving match summary to database...');
+      
+      // Get team information
+      const myTeamId = localStorage.getItem('myTeamId') || '';
+      const opponentTeamId = localStorage.getItem('opponentTeamId') || '';
+      const myTeamName = localStorage.getItem('myTeamName') || 'My Team';
+      const opponentTeamName = localStorage.getItem('opponentTeamName') || 'Opponent Team';
+      
+      // Get match details
+      const userTeamBatsFirst = matchState?.userTeamRole.includes('batting');
+      const firstInningsScore = matchState?.firstInningsScore || { runs: 0, wickets: 0, overs: 0 };
+      // Normalize overs to proper format (e.g., 4.3 not 4.5)
+      const normalizeOvers = (overs: number, balls: number) => {
+        return parseFloat((overs + (balls / 6)).toFixed(2));
+      };
+      const secondInningsScore = { 
+        runs: battingTeamScore.runs, 
+        wickets: battingTeamScore.wickets, 
+        overs: normalizeOvers(battingTeamScore.overs, battingTeamScore.balls)
+      };
+      
+      // Determine winning team
+      let winningTeam = '';
+      if (matchState?.matchResult === 'first_team_wins') {
+        winningTeam = userTeamBatsFirst ? myTeamName : opponentTeamName;
+      } else if (matchState?.matchResult === 'second_team_wins') {
+        winningTeam = userTeamBatsFirst ? opponentTeamName : myTeamName;
+      } else if (matchState?.matchResult === 'draw') {
+        winningTeam = 'Draw';
+      }
+      
+      // Create comprehensive batting stats for both innings
+      const formatBattingStats = (stats: BatsmanStats[]) => {
+        return stats.map(stat => ({
+          playerName: stat.player.name,
+          runs: stat.runs,
+          balls: stat.balls,
+          fours: stat.fours || 0,
+          sixes: stat.sixes || 0,
+          strikeRate: stat.balls > 0 ? parseFloat(((stat.runs / stat.balls) * 100).toFixed(2)) : 0,
+          dismissalType: stat.dismissalType || 'Not Out',
+          bowlerName: stat.bowlerName || '',
+          fielderName: stat.fielderName || ''
+        }));
+      };
+      
+      // Create comprehensive bowling stats for both innings  
+      const formatBowlingStats = (stats: BowlerStats[]) => {
+        return stats.map(stat => {
+          // Convert cricket overs to decimal for economy calculation
+          const oversStr = stat.overs.toString();
+          const [overs, balls] = oversStr.split('.');
+          const decimalOvers = parseInt(overs || '0') + (parseInt(balls || '0') / 6);
+          
+          return {
+            playerName: stat.player.name,
+            overs: stat.overs,
+            maidens: 0, // TODO: Track maidens in bowling stats
+            runs: stat.runs,
+            wickets: stat.wickets,
+            economy: decimalOvers > 0 ? parseFloat((stat.runs / decimalOvers).toFixed(2)) : 0
+          };
+        });
+      };
+      
+      // Create match summary data
+      const matchSummaryData = {
+        localMatchId: '',  // Will be populated if needed
+        homeTeamId: myTeamId || undefined,
+        homeTeamName: myTeamName,
+        awayTeamId: opponentTeamId || undefined,
+        awayTeamName: opponentTeamName,
+        matchDate: new Date(),
+        venue: 'Local Ground',
+        overs: matchState?.matchOvers || 20,
+        homeTeamScore: userTeamBatsFirst ? firstInningsScore.runs : secondInningsScore.runs,
+        homeTeamWickets: userTeamBatsFirst ? firstInningsScore.wickets : secondInningsScore.wickets,
+        homeTeamOvers: userTeamBatsFirst ? firstInningsScore.overs : secondInningsScore.overs,
+        awayTeamScore: userTeamBatsFirst ? secondInningsScore.runs : firstInningsScore.runs,
+        awayTeamWickets: userTeamBatsFirst ? secondInningsScore.wickets : firstInningsScore.wickets,
+        awayTeamOvers: userTeamBatsFirst ? secondInningsScore.overs : firstInningsScore.overs,
+        winningTeam,
+        manOfTheMatchUserId: manOfTheMatchResult?.userId || null,
+        manOfTheMatchStats: manOfTheMatchResult || null,
+        firstInningsBatsmen: formatBattingStats(userTeamBatsFirst ? firstInningsBatsmanStats : batsmanStats),
+        firstInningsBowlers: formatBowlingStats(userTeamBatsFirst ? firstInningsBowlerStats : bowlerStats),
+        secondInningsBatsmen: formatBattingStats(userTeamBatsFirst ? batsmanStats : firstInningsBatsmanStats),
+        secondInningsBowlers: formatBowlingStats(userTeamBatsFirst ? bowlerStats : firstInningsBowlerStats)
+      };
+      
+      // Save match summary
+      const response = await fetch('/api/match-summary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(matchSummaryData)
+      });
+      
+      if (response.ok) {
+        const savedMatchSummary = await response.json();
+        setMatchSummaryId(savedMatchSummary.id);
+        console.log('Match summary saved successfully:', savedMatchSummary.id);
+        
+        // Also save individual player match history records
+        await savePlayerMatchHistories(savedMatchSummary.id, allPlayerPerformances);
+      } else {
+        console.error('Failed to save match summary:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error saving match summary:', error);
+    }
+  };
+
+  // Function to save individual player match history records
+  const savePlayerMatchHistories = async (matchSummaryId: string, allPlayerPerformances: any[]) => {
+    try {
+      const playerHistories = allPlayerPerformances
+        .filter(perf => perf.userId) // Only save for players with accounts
+        .map(perf => ({
+          matchSummaryId,
+          userId: perf.userId,
+          teamId: perf.teamId || null,
+          runsScored: perf.runsScored,
+          ballsFaced: perf.ballsFaced,
+          oversBowled: perf.oversBowled,
+          runsConceded: perf.runsConceded,
+          wicketsTaken: perf.wicketsTaken,
+          catchesTaken: perf.catchesTaken,
+          isManOfTheMatch: false // Will be updated based on manOfTheMatchUserId in summary
+        }));
+      
+      // Save all player histories
+      for (const history of playerHistories) {
+        const response = await fetch('/api/player-match-history', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(history)
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to save player match history for user:', history.userId);
+        }
+      }
+      
+      console.log(`Saved match history for ${playerHistories.length} players with accounts`);
+    } catch (error) {
+      console.error('Error saving player match histories:', error);
+    }
+  };
+
   const postStatsAutomatically = async () => {
     if (isPostingStats) return; // Prevent duplicate calls
     
@@ -671,6 +837,10 @@ export default function Scoreboard() {
         });
         
         console.log('Stats update results:', result);
+        
+        // Also save match summary if at least one player has an account or it's a formal team match
+        await saveMatchSummary(allPlayerPerformances, hasAnyDatabaseTeam, result.manOfTheMatch);
+        
       } else {
         const errorText = await response.text();
         console.error('=== STATS UPDATE FAILED ===');
@@ -2727,7 +2897,19 @@ export default function Scoreboard() {
                   </div>
                 )}
                 
-                <div className="flex justify-center pt-4">
+                <div className="flex justify-center gap-3 pt-4">
+                  {matchSummaryId && (
+                    <Button
+                      variant="default"
+                      onClick={() => {
+                        setShowMatchResult(false);
+                        setLocation(`/match-summary/${matchSummaryId}`);
+                      }}
+                      data-testid="button-view-match-summary"
+                    >
+                      📊 View Match Summary
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     onClick={() => {
