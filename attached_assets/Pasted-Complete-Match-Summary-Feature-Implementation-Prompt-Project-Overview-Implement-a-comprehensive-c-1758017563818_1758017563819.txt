@@ -1,0 +1,136 @@
+Complete Match Summary Feature Implementation Prompt
+Project Overview:
+Implement a comprehensive cricket match summary system that automatically stores match data and provides multiple access points for viewing match history across individual players and teams.
+
+Core Requirements:
+1. Match Summary Storage System:
+Create unique match ID for each match
+Automatically store match data to database when:
+At least one player has a user account OR
+Match is played as formal team vs team
+Store complete match data: scores, player stats, team info, man of the match
+Prevent duplicate storage using unique match identifiers
+2. End-of-Match Enhancement:
+Add "Match Summary" button alongside "Back to Dashboard" in the end-of-match popup
+Store match data in sessionStorage and navigate to /match-summary route
+Create comprehensive match summary page with layout:
+Header: "Team A 180/7 vs Team B 155/10" + "Team A won by 25 runs"
+First Innings Section: Team A batting stats + Team B bowling stats (tables)
+Second Innings Section: Team B batting stats + Team A bowling stats (tables)
+Man of the Match section
+PDF Download button (use browser-based PDF generation)
+3. Navigation Enhancement:
+Add "My Matches" navigation item below "My Statistics" in sidebar and mobile navigation
+
+4. My Matches Page:
+Show ALL matches user participated in (individual + team matches)
+Display complete match context but highlight user's performance in blue font color
+Pagination: 10 matches per page if >10 matches exist
+Each match card shows: Team scores, result, user's stats highlighted
+Click card → navigate to full match summary
+5. Individual Statistics Page Enhancement:
+Add new "Match Summary" section below existing statistics:
+
+Show match cards: "Team vs Team - Won/Lost by [Team Name]"
+User's performance highlighted in blue font
+Click card → full match summary
+Pagination: 10 matches per page if >10
+6. Team Detail Pages Enhancement:
+Add "Team Match History" section below team statistics:
+
+Show ONLY formal team vs team matches (when team was selected as unit)
+Same card layout with pagination
+Click card → full match summary
+7. Player Profile Enhancement:
+When user searches and clicks on another player → goes to player profile
+Add "Match Summary" section in other players' profiles
+Show all matches that player participated in
+Only visible when viewing someone else's profile (not your own)
+8. Team Search Feature:
+Add "Search Teams" navigation option
+Implement live search with suggestions (similar to player search)
+Type team name → show dropdown suggestions below input
+Example: Type "Vi" → shows "Victory Kings", "Vikings", "Vipers"
+Click team → navigate to that team's public profile page
+Team profile shows team info + match summary section
+Technical Implementation:
+Database Schema Updates:
+-- Add match summary table
+CREATE TABLE match_summaries (
+  id UNIQUE_ID PRIMARY KEY,
+  match_date TIMESTAMP,
+  home_team_name VARCHAR,
+  away_team_name VARCHAR,
+  home_team_id VARCHAR (nullable),
+  away_team_id VARCHAR (nullable),
+  home_team_score JSON, -- {runs, wickets, overs}
+  away_team_score JSON,
+  result VARCHAR, -- 'HOME_WIN', 'AWAY_WIN', 'DRAW'
+  winning_team VARCHAR,
+  player_stats JSON, -- All player performances
+  man_of_match JSON,
+  created_at TIMESTAMP
+);
+-- Link players to matches
+CREATE TABLE player_match_history (
+  player_id VARCHAR,
+  match_id VARCHAR,
+  team_context VARCHAR, -- which team they played for
+  FOREIGN KEY (match_id) REFERENCES match_summaries(id)
+);
+API Endpoints to Create:
+POST /api/match-summary - Store match data
+GET /api/users/:id/matches - Get user's match history
+GET /api/teams/:id/matches - Get team's match history
+GET /api/teams/search?query= - Search teams by name
+GET /api/match-summary/:id - Get specific match details
+Key Implementation Details:
+Auto-save trigger: In scoreboard.tsx, after match completion, automatically POST match data to database
+
+Unique ID generation: Create match ID based on teams + date + time to prevent duplicates
+
+User highlighting: When displaying match data, check if current user's ID matches any player in the match, then apply text-blue-600 CSS class
+
+PDF generation: Use html2canvas + jsPDF for browser-based PDF creation
+
+Responsive design: Ensure all tables and cards work on mobile devices
+
+Search functionality: Implement real-time search with debouncing for team search
+
+Pagination: Use React Query with proper pagination hooks
+
+File Structure:
+client/src/pages/
+├── match-summary.tsx (new)
+├── my-matches.tsx (new)
+├── team-search.tsx (new)
+└── player-profile.tsx (enhance existing)
+client/src/components/
+├── match-summary-card.tsx (new)
+├── match-history-section.tsx (new)
+└── pdf-generator.tsx (new)
+server/routes.ts (add new endpoints)
+shared/schema.ts (add new types)
+UI/UX Requirements:
+Clean, professional layout similar to cricket scorecards
+Blue highlighting for current user's stats
+Responsive design for mobile/desktop
+Loading states and error handling
+Smooth navigation between sections
+Print-friendly PDF output
+Testing Scenarios:
+Complete a match → verify auto-save → check "Match Summary" button works
+Navigate to My Matches → verify user stats are blue highlighted
+Go to team page → verify only team matches show in history
+Search for teams → verify suggestions work → click team → verify profile loads
+Search for player → click player → verify match history shows in profile
+Generate PDF → verify formatting is correct
+Priority Order:
+
+Database schema + auto-save system
+Match summary page + PDF generation
+My Matches navigation + page
+Team match history sections
+Player profile enhancements
+Team search functionality
+
