@@ -25,6 +25,7 @@ import Scoreboard from "@/pages/scoreboard";
 import LiveScoreboard from "@/pages/live-scoreboard";
 import MatchView from "@/pages/match-view";
 import MatchSummaryPage from "@/pages/match-summary";
+import MyMatchesPage from "@/pages/my-matches";
 import { useEffect, useState } from "react";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -225,6 +226,12 @@ function Router() {
       <Route path="/match-summary/:id">
         <ProtectedRoute>
           <MatchSummaryPage />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/my-matches">
+        <ProtectedRoute>
+          <MyMatchesPage />
         </ProtectedRoute>
       </Route>
 
