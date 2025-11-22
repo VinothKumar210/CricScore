@@ -938,6 +938,8 @@ export default function Profile() {
                     </Button>
                   </div>
                 )}
+                  </>
+                )}
               </CardContent>
             </Card>
           )}

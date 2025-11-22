@@ -1346,8 +1346,23 @@ export class PrismaStorage implements IStorage {
   // Match summary operations
   async createMatchSummary(matchSummary: InsertMatchSummary): Promise<any> {
     try {
+      // Handle nullable fields and ensure all required fields are present
+      const dataToCreate = {
+        ...matchSummary,
+        homeTeamId: matchSummary.homeTeamId || null,
+        awayTeamId: matchSummary.awayTeamId || null,
+        manOfTheMatchUserId: matchSummary.manOfTheMatchUserId || null,
+        target: matchSummary.target || null,
+        // Ensure required JSON fields have default values
+        firstInningsBatsmen: matchSummary.firstInningsBatsmen || [],
+        firstInningsBowlers: matchSummary.firstInningsBowlers || [],
+        secondInningsBatsmen: matchSummary.secondInningsBatsmen || [],
+        secondInningsBowlers: matchSummary.secondInningsBowlers || [],
+        manOfTheMatchStats: matchSummary.manOfTheMatchStats || null,
+      };
+      
       const result = await prisma.matchSummary.create({
-        data: matchSummary
+        data: dataToCreate
       });
       return result;
     } catch (error) {
