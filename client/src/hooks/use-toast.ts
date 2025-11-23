@@ -42,8 +42,6 @@ function useToast() {
 
 export { useToast }
 
-// previous code from commit 1 remains
-
 let count = 0
 function genId() {
   count = (count + 1) % Number.MAX_SAFE_INTEGER
@@ -57,3 +55,15 @@ function toast({ ...props }: Omit<ToasterToast, "id">) {
 }
 
 export { useToast, toast }
+
+const TOAST_LIMIT = 1
+
+export const reducer = (state: State, action: any): State => {
+  switch (action.type) {
+    case "ADD_TOAST":
+      return { ...state, toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT) }
+    default:
+      return state
+  }
+}
+
