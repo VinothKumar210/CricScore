@@ -1,15 +1,51 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, Target, Hand, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { BarChart3, Target, Hand, ArrowLeft, Trophy, Calendar, Users, Eye, ExternalLink } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-context";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import type { CareerStats } from "@shared/schema";
+
+interface PlayerMatchHistory {
+  id: string;
+  matchSummaryId?: string;
+  opponent: string;
+  matchDate: string;
+  runsScored: number;
+  ballsFaced: number;
+  wasDismissed: boolean;
+  oversBowled: number;
+  runsConceded: number;
+  wicketsTaken: number;
+  catchesTaken: number;
+  runOuts: number;
+  isManOfTheMatch: boolean;
+  strikeRate?: number;
+  economy?: number;
+  performanceScore?: number;
+}
+
+interface MatchHistoryResponse {
+  matches: PlayerMatchHistory[];
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+}
 
 export default function Statistics() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   
   const { data: stats, isLoading, refetch: refetchStats } = useQuery<CareerStats>({
     queryKey: ["/api/stats"],
+    enabled: !!user?.id,
+  });
+
+  // Fetch recent match history (last 10 matches)
+  const { data: matchHistory, isLoading: isMatchHistoryLoading, isError: isMatchHistoryError, refetch: refetchMatchHistory } = useQuery<MatchHistoryResponse>({
+    queryKey: [`/api/user-match-history/${user?.id}?page=1&limit=10`],
     enabled: !!user?.id,
   });
 
@@ -47,6 +83,29 @@ export default function Statistics() {
       console.warn('Error calculating best bowling figures:', error);
       return '0/0';
     }
+  };
+
+  const formatMatchDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } catch {
+      return 'Unknown Date';
+    }
+  };
+
+  const calculateStrikeRate = (runs: number, balls: number): string => {
+    if (!balls || balls === 0) return '0.00';
+    return ((runs / balls) * 100).toFixed(2);
+  };
+
+  const calculateEconomy = (runs: number, overs: number): string => {
+    if (!overs || overs === 0) return '0.00';
+    return (runs / overs).toFixed(2);
   };
 
   if (isLoading) {
@@ -279,6 +338,187 @@ export default function Statistics() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Match History Section */}
+      <div className="mt-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-2xl font-bold flex items-center gap-2">
+            <Calendar className="h-6 w-6 text-primary" />
+            Recent Match History
+          </h3>
+          <Link href="/my-matches">
+            <Button variant="outline" size="sm" className="flex items-center gap-2" data-testid="button-view-all-matches">
+              <Eye className="h-4 w-4" />
+              View All Matches
+            </Button>
+          </Link>
+        </div>
+
+        {isMatchHistoryLoading ? (
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center text-muted-foreground">Loading match history...</div>
+            </CardContent>
+          </Card>
+        ) : isMatchHistoryError ? (
+          <Card>
+            <CardContent className="p-8">
+              <div className="text-center">
+                <Calendar className="h-12 w-12 mx-auto mb-4 text-destructive" />
+                <h3 className="text-lg font-medium text-destructive mb-2">Failed to Load Match History</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  There was an error loading your match history. Please try again.
+                </p>
+                <Button onClick={() => refetchMatchHistory()} className="flex items-center gap-2" data-testid="button-retry-match-history">
+                  <ArrowLeft className="h-4 w-4" />
+                  Retry
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : matchHistory && matchHistory.matches && matchHistory.matches.length > 0 ? (
+          <div className="space-y-4">
+            {/* Performance Summary */}
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Trophy className="h-5 w-5 text-amber-500" />
+                  Recent Performance Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-primary" data-testid="stat-recent-matches">
+                      {matchHistory.matches.length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Recent Matches</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600" data-testid="stat-recent-runs">
+                      {matchHistory.matches.reduce((total, match) => total + (match.runsScored || 0), 0)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Total Runs</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600" data-testid="stat-recent-wickets">
+                      {matchHistory.matches.reduce((total, match) => total + (match.wicketsTaken || 0), 0)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Total Wickets</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-amber-600" data-testid="stat-recent-mom">
+                      {matchHistory.matches.filter(match => match.isManOfTheMatch).length}
+                    </div>
+                    <div className="text-sm text-muted-foreground">MOM Awards</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Match History Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  Match Performance Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Opponent</TableHead>
+                        <TableHead className="text-right">Runs</TableHead>
+                        <TableHead className="text-right">Balls</TableHead>
+                        <TableHead className="text-right">SR</TableHead>
+                        <TableHead className="text-right">Wickets</TableHead>
+                        <TableHead className="text-right">Overs</TableHead>
+                        <TableHead className="text-right">Economy</TableHead>
+                        <TableHead className="text-center">MOM</TableHead>
+                        <TableHead className="text-center">Details</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {matchHistory.matches.map((match, index) => (
+                        <TableRow key={match.id} data-testid={`match-row-${index}`}>
+                          <TableCell className="font-medium" data-testid="text-match-date">
+                            {formatMatchDate(match.matchDate)}
+                          </TableCell>
+                          <TableCell className="max-w-32 truncate" data-testid="text-opponent">
+                            {match.opponent}
+                          </TableCell>
+                          <TableCell className="text-right" data-testid="text-runs-scored">
+                            {match.runsScored || 0}
+                          </TableCell>
+                          <TableCell className="text-right" data-testid="text-balls-faced">
+                            {match.ballsFaced || 0}
+                          </TableCell>
+                          <TableCell className="text-right" data-testid="text-strike-rate">
+                            {calculateStrikeRate(match.runsScored || 0, match.ballsFaced || 0)}
+                          </TableCell>
+                          <TableCell className="text-right" data-testid="text-wickets-taken">
+                            {match.wicketsTaken || 0}
+                          </TableCell>
+                          <TableCell className="text-right" data-testid="text-overs-bowled">
+                            {match.oversBowled || 0}
+                          </TableCell>
+                          <TableCell className="text-right" data-testid="text-economy-rate">
+                            {calculateEconomy(match.runsConceded || 0, match.oversBowled || 0)}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {match.isManOfTheMatch && (
+                              <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200" data-testid="badge-mom">
+                                <Trophy className="h-3 w-3 mr-1" />
+                                MOM
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {match.matchSummaryId ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setLocation(`/match-summary/${match.matchSummaryId}`)}
+                                className="text-blue-600 hover:text-blue-800"
+                                data-testid={`button-view-summary-${index}`}
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">Local Match</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="p-8">
+              <div className="text-center">
+                <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-medium text-muted-foreground mb-2">No Match History</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  You haven't played any matches yet. Start by creating or joining a match!
+                </p>
+                <Link href="/local-match">
+                  <Button className="flex items-center gap-2" data-testid="button-create-match">
+                    <Users className="h-4 w-4" />
+                    Create Your First Match
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
     </div>
