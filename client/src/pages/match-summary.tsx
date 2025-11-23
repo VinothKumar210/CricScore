@@ -7,6 +7,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Download, Trophy } from "lucide-react";
 import { useLocation } from "wouter";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface BattingStats {
   playerName: string;
@@ -58,15 +62,154 @@ interface MatchSummary {
 export default function MatchSummaryPage() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const { toast } = useToast();
 
   const { data: matchSummary, isLoading, error } = useQuery<MatchSummary>({
     queryKey: ['/api/match-summary', id],
     enabled: !!id,
   });
 
-  const handlePDFDownload = () => {
-    // Trigger browser print dialog for PDF generation
-    window.print();
+  const handlePDFDownload = async () => {
+    if (!matchSummary) return;
+    
+    setIsGeneratingPDF(true);
+    try {
+      // Get the main content element to capture
+      const element = document.getElementById('match-summary-content');
+      if (!element) {
+        toast({
+          title: "Error",
+          description: "Could not find match summary content to export.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Apply PDF-friendly styling temporarily
+      const originalStyle = element.style.cssText;
+      element.style.cssText = `
+        ${originalStyle}
+        background-color: white !important;
+        color: black !important;
+        font-family: 'Arial', 'Helvetica', sans-serif !important;
+        line-height: 1.4 !important;
+      `;
+
+      // Configure html2canvas options for stability and quality
+      const canvas = await html2canvas(element, {
+        scale: 2, // Higher quality
+        useCORS: true,
+        allowTaint: false, // More stable
+        backgroundColor: '#ffffff',
+        logging: false,
+        // Remove explicit width/height overrides for better stability
+        removeContainer: true,
+        foreignObjectRendering: false
+      });
+
+      // Restore original styling
+      element.style.cssText = originalStyle;
+
+      // Initialize PDF with A4 dimensions
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'px',
+        format: 'a4'
+      });
+
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+
+      // Calculate scaling to fit width properly while maintaining readability
+      const widthRatio = pdfWidth / canvasWidth;
+      const scaledHeight = canvasHeight * widthRatio;
+
+      // Determine if we need multiple pages
+      const totalPages = Math.ceil(scaledHeight / pdfHeight);
+
+      // Toast notification for multi-page generation
+      if (totalPages > 1) {
+        toast({
+          title: "Generating PDF",
+          description: `Creating ${totalPages} pages for complete match summary...`,
+        });
+      }
+
+      // Generate pages by slicing the canvas
+      for (let pageNum = 0; pageNum < totalPages; pageNum++) {
+        // Calculate the portion of canvas for this page
+        const sourceY = (pageNum * pdfHeight) / widthRatio;
+        const sourceHeight = Math.min(pdfHeight / widthRatio, canvasHeight - sourceY);
+        
+        // Create a temporary canvas for this page slice
+        const pageCanvas = document.createElement('canvas');
+        const pageCtx = pageCanvas.getContext('2d');
+        
+        if (!pageCtx) continue;
+        
+        pageCanvas.width = canvasWidth;
+        pageCanvas.height = sourceHeight;
+        
+        // Draw the slice onto the page canvas
+        pageCtx.fillStyle = '#ffffff';
+        pageCtx.fillRect(0, 0, canvasWidth, sourceHeight);
+        pageCtx.drawImage(
+          canvas,
+          0, sourceY, canvasWidth, sourceHeight,
+          0, 0, canvasWidth, sourceHeight
+        );
+        
+        // Convert page canvas to image data
+        const pageImgData = pageCanvas.toDataURL('image/png', 0.95);
+        
+        // Add new page if not the first page
+        if (pageNum > 0) {
+          pdf.addPage();
+        }
+        
+        // Add the page image to PDF with proper scaling
+        const pageScaledHeight = sourceHeight * widthRatio;
+        pdf.addImage(
+          pageImgData,
+          'PNG',
+          0,
+          0,
+          pdfWidth,
+          pageScaledHeight
+        );
+      }
+
+      // Generate filename with team names and date
+      const homeTeam = matchSummary.homeTeamName.replace(/[^a-zA-Z0-9]/g, '_');
+      const awayTeam = matchSummary.awayTeamName.replace(/[^a-zA-Z0-9]/g, '_');
+      const matchDate = new Date(matchSummary.matchDate).toISOString().split('T')[0];
+      const filename = `Cricket_Match_${homeTeam}_vs_${awayTeam}_${matchDate}.pdf`;
+
+      // Download the PDF
+      pdf.save(filename);
+      
+      // Success notification
+      toast({
+        title: "PDF Generated",
+        description: `Match summary exported successfully as ${filename}`,
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      
+      // Show user-friendly error message
+      toast({
+        title: "PDF Generation Failed",
+        description: "Unable to generate PDF. You can use your browser's print function as an alternative.",
+        variant: "destructive",
+      });
+      
+      // Don't automatically trigger print - let user decide
+    } finally {
+      setIsGeneratingPDF(false);
+    }
   };
 
   const formatOvers = (overs: number): string => {
@@ -266,16 +409,19 @@ export default function MatchSummaryPage() {
         </Button>
         <Button
           onClick={handlePDFDownload}
+          disabled={isGeneratingPDF}
           className="flex items-center gap-2"
           data-testid="button-download-pdf"
         >
           <Download className="h-4 w-4" />
-          Download PDF
+          {isGeneratingPDF ? 'Generating PDF...' : 'Download PDF'}
         </Button>
       </div>
 
-      {/* Match Header */}
-      <Card className="mb-8">
+      {/* Match Summary Content - Wrappable for PDF generation */}
+      <div id="match-summary-content">
+        {/* Match Header */}
+        <Card className="mb-8">
         <CardContent className="pt-6">
           <div className="text-center space-y-4">
             <h1 className="text-3xl font-bold" data-testid="text-match-title">
@@ -379,9 +525,62 @@ export default function MatchSummaryPage() {
           </CardContent>
         </Card>
       )}
+      </div>
 
-      {/* Print Styles for PDF */}
+      {/* Enhanced Styles for both PDF capture and print */}
       <style>{`
+        /* PDF capture styling */
+        #match-summary-content {
+          background-color: white;
+          color: black;
+          font-family: 'Arial', 'Helvetica', sans-serif;
+        }
+        
+        #match-summary-content .card {
+          border: 2px solid #d1d5db !important;
+          border-radius: 8px;
+          box-shadow: none;
+          background-color: white;
+          margin-bottom: 1.5rem;
+        }
+        
+        #match-summary-content .card-header {
+          border-bottom: 2px solid #d1d5db !important;
+          background-color: #f9fafb;
+          padding: 1rem;
+        }
+        
+        #match-summary-content .card-content {
+          padding: 1rem;
+        }
+        
+        #match-summary-content table {
+          border-collapse: collapse;
+          width: 100%;
+          border: 2px solid #d1d5db;
+        }
+        
+        #match-summary-content th,
+        #match-summary-content td {
+          border: 1px solid #d1d5db !important;
+          padding: 8px 12px;
+          text-align: left;
+        }
+        
+        #match-summary-content th {
+          background-color: #f3f4f6 !important;
+          font-weight: bold;
+        }
+        
+        #match-summary-content .text-center {
+          text-align: center;
+        }
+        
+        #match-summary-content .text-right {
+          text-align: right;
+        }
+        
+        /* Print media styles for browser print fallback */
         @media print {
           body {
             print-color-adjust: exact;
@@ -415,14 +614,15 @@ export default function MatchSummaryPage() {
           .card {
             break-inside: avoid;
             margin-bottom: 1.5rem !important;
-            border: 1px solid #e5e5e5 !important;
+            border: 2px solid #d1d5db !important;
             border-radius: 8px !important;
             box-shadow: none !important;
           }
           
           .card-header {
             padding: 1rem !important;
-            border-bottom: 1px solid #e5e5e5 !important;
+            border-bottom: 2px solid #d1d5db !important;
+            background-color: #f9fafb !important;
           }
           
           .card-content {
@@ -433,16 +633,17 @@ export default function MatchSummaryPage() {
             page-break-inside: avoid;
             width: 100% !important;
             border-collapse: collapse !important;
+            border: 2px solid #d1d5db !important;
           }
           
           th, td {
-            border: 1px solid #e5e5e5 !important;
-            padding: 8px !important;
+            border: 1px solid #d1d5db !important;
+            padding: 8px 12px !important;
             text-align: left !important;
           }
           
           th {
-            background-color: #f8f9fa !important;
+            background-color: #f3f4f6 !important;
             font-weight: bold !important;
           }
           
