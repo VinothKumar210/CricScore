@@ -26,6 +26,7 @@ import LiveScoreboard from "@/pages/live-scoreboard";
 import MatchView from "@/pages/match-view";
 import MatchSummaryPage from "@/pages/match-summary";
 import MyMatchesPage from "@/pages/my-matches";
+import TeamSearch from "@/pages/team-search";
 import { useEffect, useState } from "react";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -183,6 +184,12 @@ function Router() {
       <Route path="/search">
         <ProtectedRoute>
           <SearchPlayers />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/team-search">
+        <ProtectedRoute>
+          <TeamSearch />
         </ProtectedRoute>
       </Route>
       
