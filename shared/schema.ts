@@ -281,7 +281,7 @@ export type RegisterRequest = z.infer<typeof registerSchema>;
 // Match summary schema - comprehensive match data storage
 export const insertMatchSummarySchema = z.object({
   id: z.string().optional(), // Will be generated
-  matchDate: z.date(),
+  matchDate: z.string().transform(str => new Date(str)),
   venue: z.string().min(1),
   
   // Team information

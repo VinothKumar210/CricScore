@@ -273,13 +273,18 @@ export default function Scoreboard() {
         overs: normalizeOvers(battingTeamScore.overs, battingTeamScore.balls)
       };
       
-      // Determine winning team
-      let winningTeam = '';
+      // Determine winning team - ensure it's never empty
+      let winningTeam = 'Draw'; // Default fallback
       if (matchState?.matchResult === 'first_team_wins') {
         winningTeam = userTeamBatsFirst ? myTeamName : opponentTeamName;
       } else if (matchState?.matchResult === 'second_team_wins') {
         winningTeam = userTeamBatsFirst ? opponentTeamName : myTeamName;
       } else if (matchState?.matchResult === 'draw') {
+        winningTeam = 'Draw';
+      }
+      
+      // Ensure winningTeam is never empty
+      if (!winningTeam || winningTeam.trim() === '') {
         winningTeam = 'Draw';
       }
       
@@ -335,7 +340,7 @@ export default function Scoreboard() {
         homeTeamName: myTeamName,
         awayTeamId: opponentTeamId || undefined,
         awayTeamName: opponentTeamName,
-        matchDate: new Date(),
+        matchDate: new Date().toISOString(),
         venue: 'Local Ground',
         result: matchResult,
         winningTeam,
