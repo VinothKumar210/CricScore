@@ -103,3 +103,30 @@ import { Switch } from "@/components/ui/switch";
     </FormItem>
   )}
 />
+<FormField control={form.control} name="oversBowled" render={({ field }) => (
+  <FormItem>
+    <FormLabel>Overs Bowled</FormLabel>
+    <FormControl>
+      <Input type="number" step="0.1" {...field} />
+    </FormControl>
+    <FormMessage />
+  </FormItem>
+)} />
+<FormField control={form.control} name="runsConceded" render={({ field }) => (
+  <FormItem>
+    <FormLabel>Runs Conceded</FormLabel>
+    <FormControl>
+      <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} />
+    </FormControl>
+    <FormMessage />
+  </FormItem>
+)} />
+<FormField control={form.control} name="wicketsTaken" render={({ field }) => (
+  <FormItem>
+    <FormLabel>Wickets Taken</FormLabel>
+    <FormControl>
+      <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} />
+    </FormControl>
+    <FormMessage />
+  </FormItem>
+)} />
