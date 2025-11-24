@@ -19,3 +19,26 @@ export default function AddMatch() {
     </div>
   );
 }
+
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+const queryClient = useQueryClient();
+const { toast } = useToast();
+
+const addMatchMutation = useMutation({
+  mutationFn: async (data: MatchFormData) => {
+    const response = await apiRequest('POST', '/api/matches', data);
+    return response.json();
+  },
+  onSuccess: () => {
+    toast({ title: "Success", description: "Match saved!" });
+    queryClient.invalidateQueries({ queryKey: ["/api/matches"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+  },
+  onError: (error: any) => {
+    toast({ title: "Error", description: error.message || "Failed to save match", variant: "destructive" });
+  },
+});
+
