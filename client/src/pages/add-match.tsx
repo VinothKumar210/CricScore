@@ -42,3 +42,35 @@ const addMatchMutation = useMutation({
   },
 });
 
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+
+<Form {...form}>
+  <FormField
+    control={form.control}
+    name="opponent"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Opponent Team</FormLabel>
+        <FormControl>
+          <Input {...field} placeholder="Enter opponent" />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+  <FormField
+    control={form.control}
+    name="matchDate"
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel>Match Date</FormLabel>
+        <FormControl>
+          <Input type="date" {...field} />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )}
+  />
+</Form>
+
