@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { apiRequest } from "@/lib/queryClient";
-import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search, Trash2, Edit, BarChart3, Trophy, Target, Zap, Timer } from "lucide-react";
+import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search, Trash2, Edit, BarChart3, Trophy, Target, Zap, Timer, Calendar, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Team, User } from "@shared/schema";
@@ -181,6 +181,300 @@ function TeamStatistics({ teamId }: { teamId: string }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+interface TeamMatchHistoryData {
+  matches: {
+    id: string;
+    homeTeamName: string;
+    awayTeamName: string;
+    matchDate: string;
+    venue: string;
+    firstInningsRuns: number;
+    firstInningsWickets: number;
+    firstInningsOvers: number;
+    secondInningsRuns: number;
+    secondInningsWickets: number;
+    secondInningsOvers: number;
+    firstInningsTeam: string;
+    secondInningsTeam: string;
+    winningTeam: string;
+    homeTeam?: { id: string; name: string; } | null;
+    awayTeam?: { id: string; name: string; } | null;
+    manOfTheMatchUser?: {
+      id: string;
+      profileName: string;
+      username: string;
+    } | null;
+  }[];
+  totalCount: number;
+}
+
+function TeamMatchHistory({ teamId, teamName }: { teamId: string; teamName: string }) {
+  const [, setLocation] = useLocation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  const { data: matchHistory, isLoading, error } = useQuery<TeamMatchHistoryData>({
+    queryKey: ['/api/team-match-history', teamId, currentPage, itemsPerPage],
+    queryFn: async () => {
+      const token = (await import("@/lib/auth")).authService.getToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
+      const url = `/api/team-match-history/${teamId}?page=${currentPage}&limit=${itemsPerPage}`;
+      const response = await fetch(url, {
+        headers,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`${response.status}: ${response.statusText}`);
+      }
+
+      return await response.json();
+    },
+    enabled: !!teamId,
+  });
+
+  const totalPages = matchHistory ? Math.ceil(matchHistory.totalCount / itemsPerPage) : 0;
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatOvers = (overs: number): string => {
+    if (overs === 0) return '0.0';
+    // Handle cricket overs format: 4.3 means 4 overs and 3 balls
+    const wholeOvers = Math.floor(overs);
+    // Extract balls from decimal part (e.g., 4.3 -> 3 balls)
+    const balls = Math.round((overs * 10) % 10);
+    
+    // Ensure balls are in valid range 0-5 (6 balls = 1 over)
+    const validBalls = Math.min(balls, 5);
+    
+    return validBalls === 0 ? `${wholeOvers}.0` : `${wholeOvers}.${validBalls}`;
+  };
+
+  const MatchCard = ({ match }: { match: TeamMatchHistoryData['matches'][0] }) => {
+    // Determine which team the current team is (home or away) using teamId for accuracy
+    const isHomeTeam = match.homeTeam?.id === teamId;
+    const isAwayTeam = match.awayTeam?.id === teamId;
+    
+    // If neither homeTeam nor awayTeam has the teamId, fall back to name comparison
+    const isCurrentTeamHome = isHomeTeam || (!isAwayTeam && match.homeTeamName === teamName);
+    
+    const teamScore = isCurrentTeamHome 
+      ? (match.firstInningsTeam === match.homeTeamName ? match.firstInningsRuns : match.secondInningsRuns)
+      : (match.firstInningsTeam === match.awayTeamName ? match.firstInningsRuns : match.secondInningsRuns);
+    const teamWickets = isCurrentTeamHome 
+      ? (match.firstInningsTeam === match.homeTeamName ? match.firstInningsWickets : match.secondInningsWickets)
+      : (match.firstInningsTeam === match.awayTeamName ? match.firstInningsWickets : match.secondInningsWickets);
+    const teamOvers = isCurrentTeamHome 
+      ? (match.firstInningsTeam === match.homeTeamName ? match.firstInningsOvers : match.secondInningsOvers)
+      : (match.firstInningsTeam === match.awayTeamName ? match.firstInningsOvers : match.secondInningsOvers);
+    
+    const opponentScore = isCurrentTeamHome 
+      ? (match.firstInningsTeam === match.awayTeamName ? match.firstInningsRuns : match.secondInningsRuns)
+      : (match.firstInningsTeam === match.homeTeamName ? match.firstInningsRuns : match.secondInningsRuns);
+    const opponentWickets = isCurrentTeamHome 
+      ? (match.firstInningsTeam === match.awayTeamName ? match.firstInningsWickets : match.secondInningsWickets)
+      : (match.firstInningsTeam === match.homeTeamName ? match.firstInningsWickets : match.secondInningsWickets);
+    const opponentOvers = isCurrentTeamHome 
+      ? (match.firstInningsTeam === match.awayTeamName ? match.firstInningsOvers : match.secondInningsOvers)
+      : (match.firstInningsTeam === match.homeTeamName ? match.firstInningsOvers : match.secondInningsOvers);
+    
+    const opponentName = isCurrentTeamHome ? match.awayTeamName : match.homeTeamName;
+    const isTeamWinner = match.winningTeam !== 'Draw' && match.winningTeam === teamName;
+    
+    return (
+      <Card 
+        className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary"
+        onClick={() => setLocation(`/match-summary/${match.id}`)}
+        data-testid={`team-match-card-${match.id}`}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold" data-testid="text-match-teams">
+              {match.homeTeamName} vs {match.awayTeamName}
+            </CardTitle>
+            {match.manOfTheMatchUser && (
+              <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200" data-testid="badge-mom">
+                <Trophy className="w-3 h-3 mr-1" />
+                MOM
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              <span data-testid="text-match-date">{formatDate(match.matchDate)}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <MapPin className="w-4 h-4" />
+              <span data-testid="text-match-venue">{match.venue}</span>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {/* Match Scores */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+              <div className="font-semibold text-sm" data-testid="text-team-name">{teamName}</div>
+              <div className="text-2xl font-bold text-blue-600" data-testid="text-team-score">
+                {teamScore}/{teamWickets}
+              </div>
+              <div className="text-xs text-muted-foreground" data-testid="text-team-overs">
+                ({formatOvers(teamOvers)} ov)
+              </div>
+            </div>
+            <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+              <div className="font-semibold text-sm" data-testid="text-opponent-team">{opponentName}</div>
+              <div className="text-2xl font-bold text-primary" data-testid="text-opponent-score">
+                {opponentScore}/{opponentWickets}
+              </div>
+              <div className="text-xs text-muted-foreground" data-testid="text-opponent-overs">
+                ({formatOvers(opponentOvers)} ov)
+              </div>
+            </div>
+          </div>
+
+          {/* Match Result */}
+          <div className="text-center">
+            <Badge 
+              variant={isTeamWinner ? "default" : "secondary"} 
+              className="text-sm px-3 py-1"
+              data-testid="text-match-result"
+            >
+              {match.winningTeam === 'Draw' ? 'Match Drawn' : `${match.winningTeam} Won`}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {[...Array(3)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="h-6 bg-muted rounded w-48"></div>
+                  <div className="h-6 bg-muted rounded w-16"></div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="h-20 bg-muted rounded"></div>
+                  <div className="h-20 bg-muted rounded"></div>
+                </div>
+                <div className="h-8 bg-muted rounded w-32 mx-auto"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (error || !matchHistory) {
+    return (
+      <div className="text-center py-8">
+        <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+        <div className="text-lg font-medium text-muted-foreground mb-2">
+          {error ? "Failed to load match history" : "No match history found"}
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {error ? "Please try again later" : "Play some team matches to see them here!"}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Match Cards */}
+      {matchHistory.matches.length === 0 ? (
+        <div className="text-center py-8">
+          <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+          <div className="text-lg font-medium text-muted-foreground mb-2">No team matches yet</div>
+          <div className="text-sm text-muted-foreground">
+            Create formal team vs team matches to build match history!
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {matchHistory.matches.map((match) => (
+            <MatchCard key={match.id} match={match} />
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center space-x-2 mt-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            data-testid="button-prev-page"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </Button>
+          
+          <div className="flex items-center space-x-1">
+            {[...Array(Math.min(totalPages, 7))].map((_, i) => {
+              let pageNum;
+              if (totalPages <= 7) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 6 + i;
+              } else {
+                pageNum = currentPage - 3 + i;
+              }
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                  className="w-8 h-8 p-0"
+                  data-testid={`button-page-${pageNum}`}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            data-testid="button-next-page"
+          >
+            Next
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -855,6 +1149,19 @@ export default function TeamDetail() {
         </CardHeader>
         <CardContent>
           <TeamStatistics teamId={id!} />
+        </CardContent>
+      </Card>
+
+      {/* Team Match History */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Trophy className="h-5 w-5" />
+            <span>Team Match History</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TeamMatchHistory teamId={id!} teamName={team.name} />
         </CardContent>
       </Card>
 
