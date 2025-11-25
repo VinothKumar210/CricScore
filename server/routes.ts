@@ -1586,7 +1586,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!matchSummary) {
         return res.status(404).json({ message: "Match summary not found" });
       }
-      res.json(matchSummary);
+      
+      // Map innings data to home/away team format for UI compatibility
+      const mappedData = {
+        ...matchSummary,
+        // Map first innings to home team (batting first)
+        homeTeamRuns: matchSummary.firstInningsRuns,
+        homeTeamWickets: matchSummary.firstInningsWickets,
+        homeTeamOvers: matchSummary.firstInningsOvers,
+        // Map second innings to away team (batting second)
+        awayTeamRuns: matchSummary.secondInningsRuns,
+        awayTeamWickets: matchSummary.secondInningsWickets,
+        awayTeamOvers: matchSummary.secondInningsOvers,
+        // Remove "Local Ground" if it's the default venue
+        venue: matchSummary.venue === 'Local Ground' ? '' : matchSummary.venue,
+      };
+      
+      res.json(mappedData);
     } catch (error) {
       return handleDatabaseError(error, res);
     }
