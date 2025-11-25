@@ -59,3 +59,26 @@ for (const performance of performances) {
   }
 }
 
+breakdown.bowlingPoints = performance.wicketsTaken * 25;
+if (performance.wicketsTaken >= 5) {
+  breakdown.bowlingPoints += 30;
+  breakdown.bonuses.push('5-Wicket Haul Bonus (+30)');
+} else if (performance.wicketsTaken >= 3) {
+  breakdown.bowlingPoints += 15;
+  breakdown.bonuses.push('3-Wicket Haul Bonus (+15)');
+}
+
+if ((matchFormat === 'T20' || matchFormat === 'ODI') && performance.oversBowled > 0) {
+  const wholeOvers = Math.floor(performance.oversBowled);
+  const balls = Math.round((performance.oversBowled - wholeOvers) * 10);
+  const decimalOvers = wholeOvers + balls / 6;
+  const economy = performance.runsConceded / decimalOvers;
+
+  if (economy <= 5) {
+    breakdown.bowlingPoints += 20;
+    breakdown.bonuses.push('Excellent Economy ≤5.0 (+20)');
+  } else if (economy <= 6) {
+    breakdown.bowlingPoints += 10;
+    breakdown.bonuses.push('Good Economy ≤6.0 (+10)');
+  }
+}
