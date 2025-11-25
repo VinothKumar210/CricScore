@@ -21,3 +21,13 @@ export interface ManOfTheMatchResult {
     bonuses: string[];
   };
 }
+export function calculateManOfTheMatch(
+  performances: PlayerPerformance[], 
+  matchFormat: 'T20' | 'ODI' | 'TEST' = 'T20'
+): ManOfTheMatchResult | null {
+  if (performances.length === 0) return null;
+
+  const playerScores: ManOfTheMatchResult[] = [];
+
+  return null;
+}
