@@ -382,6 +382,7 @@ export default function MatchSummaryPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     );
