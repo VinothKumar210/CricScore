@@ -102,6 +102,7 @@ export default function Scoreboard() {
   const [previousBowler, setPreviousBowler] = useState<LocalPlayer | null>(null);
   const [showInningsTransition, setShowInningsTransition] = useState(false);
   const [showMatchResult, setShowMatchResult] = useState(false);
+  const [isFinalizing, setIsFinalizing] = useState(false);
   const [manOfTheMatchData, setManOfTheMatchData] = useState<any>(null);
   const [matchSummaryId, setMatchSummaryId] = useState<string | null>(null);
   const [showTossDialog, setShowTossDialog] = useState(false);
@@ -365,11 +366,11 @@ export default function Scoreboard() {
         manOfTheMatchUserId: manOfTheMatchResult?.userId || undefined,
         manOfTheMatchStats: manOfTheMatchResult || undefined,
         
-        // Player data
-        firstInningsBatsmen: formatBattingStats(userTeamBatsFirst ? firstInningsBatsmanStats : batsmanStats),
-        firstInningsBowlers: formatBowlingStats(userTeamBatsFirst ? firstInningsBowlerStats : bowlerStats),
-        secondInningsBatsmen: formatBattingStats(userTeamBatsFirst ? batsmanStats : firstInningsBatsmanStats),
-        secondInningsBowlers: formatBowlingStats(userTeamBatsFirst ? bowlerStats : firstInningsBowlerStats)
+        // Player data - always map chronologically (first innings is first, second innings is second)
+        firstInningsBatsmen: formatBattingStats(firstInningsBatsmanStats),
+        firstInningsBowlers: formatBowlingStats(firstInningsBowlerStats), 
+        secondInningsBatsmen: formatBattingStats(batsmanStats),
+        secondInningsBowlers: formatBowlingStats(bowlerStats)
       };
       
       // Save match summary
@@ -1065,8 +1066,15 @@ export default function Scoreboard() {
       
       // Automatically post stats when match completes
       setTimeout(async () => {
-        await postStatsAutomatically();
-        setShowMatchResult(true);
+        setIsFinalizing(true);
+        try {
+          await postStatsAutomatically();
+          setShowMatchResult(true);
+        } catch (error) {
+          console.error('Error finalizing match:', error);
+        } finally {
+          setIsFinalizing(false);
+        }
       }, 500);
     }
   };
@@ -2956,6 +2964,17 @@ export default function Scoreboard() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Finalizing Match Loading Overlay */}
+      {isFinalizing && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-8 text-center shadow-xl">
+            <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <div className="text-lg font-semibold mb-2">Finalizing Match...</div>
+            <div className="text-sm text-muted-foreground">Calculating final results and saving match data</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
