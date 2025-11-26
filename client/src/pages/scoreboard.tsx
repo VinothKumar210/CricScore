@@ -405,13 +405,13 @@ export default function Scoreboard() {
         .map(perf => ({
           matchSummaryId,
           userId: perf.userId,
-          teamId: perf.teamId || null,
-          runsScored: perf.runsScored,
-          ballsFaced: perf.ballsFaced,
-          oversBowled: perf.oversBowled,
-          runsConceded: perf.runsConceded,
-          wicketsTaken: perf.wicketsTaken,
-          catchesTaken: perf.catchesTaken,
+          teamName: perf.teamName || 'Unknown Team',
+          teamId: perf.teamId || undefined,
+          playerName: perf.playerName || 'Unknown Player',
+          runsScored: perf.runsScored || 0,
+          ballsFaced: perf.ballsFaced || 0,
+          oversBowled: perf.oversBowled || 0,
+          wicketsTaken: perf.wicketsTaken || 0,
           isManOfTheMatch: false // Will be updated based on manOfTheMatchUserId in summary
         }));
       
