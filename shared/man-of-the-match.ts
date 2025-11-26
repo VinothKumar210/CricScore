@@ -101,3 +101,16 @@ playerScores.push({
 
 playerScores.sort((a, b) => b.performanceScore - a.performanceScore);
 return playerScores[0];
+
+export function getPerformanceBreakdown(result: ManOfTheMatchResult): string {
+  const { breakdown } = result;
+  const parts = [];
+
+  if (breakdown.battingPoints > 0) parts.push(`Batting: ${breakdown.battingPoints} pts`);
+  if (breakdown.bowlingPoints > 0) parts.push(`Bowling: ${breakdown.bowlingPoints} pts`);
+  if (breakdown.fieldingPoints > 0) parts.push(`Fielding: ${breakdown.fieldingPoints} pts`);
+  if (breakdown.bonuses.length > 0) parts.push(`Bonuses: ${breakdown.bonuses.join(', ')}`);
+
+  return parts.join(' | ');
+}
+
