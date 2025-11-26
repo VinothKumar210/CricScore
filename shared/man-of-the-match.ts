@@ -82,3 +82,9 @@ if ((matchFormat === 'T20' || matchFormat === 'ODI') && performance.oversBowled 
     breakdown.bonuses.push('Good Economy ≤6.0 (+10)');
   }
 }
+
+
+breakdown.fieldingPoints = performance.catchesTaken * 10;
+if (performance.runsOut) {
+  breakdown.fieldingPoints += performance.runsOut * 15;
+}
