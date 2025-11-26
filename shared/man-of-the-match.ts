@@ -88,3 +88,12 @@ breakdown.fieldingPoints = performance.catchesTaken * 10;
 if (performance.runsOut) {
   breakdown.fieldingPoints += performance.runsOut * 15;
 }
+
+const performanceScore = breakdown.battingPoints + breakdown.bowlingPoints + breakdown.fieldingPoints;
+
+playerScores.push({
+  playerId: performance.userId,
+  playerName: performance.playerName,
+  performanceScore,
+  breakdown
+});
