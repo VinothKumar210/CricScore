@@ -1587,6 +1587,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Match summary not found" });
       }
       
+      // Helper function to format overs in cricket format (O.B)
+      const formatOversForDisplay = (overs: number): number => {
+        const wholeOvers = Math.floor(overs);
+        const balls = Math.round((overs - wholeOvers) * 6);
+        const clampedBalls = Math.min(Math.max(balls, 0), 5);
+        return parseFloat(`${wholeOvers}.${clampedBalls}`);
+      };
+
       // Map innings data to home/away team format for UI compatibility
       // Check which team batted in which innings to correctly map the data
       const homeTeamBattedFirst = matchSummary.firstInningsTeam === matchSummary.homeTeamName;
@@ -1596,11 +1604,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Map home team data based on which innings they batted in
         homeTeamRuns: homeTeamBattedFirst ? matchSummary.firstInningsRuns : matchSummary.secondInningsRuns,
         homeTeamWickets: homeTeamBattedFirst ? matchSummary.firstInningsWickets : matchSummary.secondInningsWickets,
-        homeTeamOvers: homeTeamBattedFirst ? matchSummary.firstInningsOvers : matchSummary.secondInningsOvers,
+        homeTeamOvers: formatOversForDisplay(homeTeamBattedFirst ? matchSummary.firstInningsOvers : matchSummary.secondInningsOvers),
         // Map away team data based on which innings they batted in
         awayTeamRuns: homeTeamBattedFirst ? matchSummary.secondInningsRuns : matchSummary.firstInningsRuns,
         awayTeamWickets: homeTeamBattedFirst ? matchSummary.secondInningsWickets : matchSummary.firstInningsWickets,
-        awayTeamOvers: homeTeamBattedFirst ? matchSummary.secondInningsOvers : matchSummary.firstInningsOvers,
+        awayTeamOvers: formatOversForDisplay(homeTeamBattedFirst ? matchSummary.secondInningsOvers : matchSummary.firstInningsOvers),
         // Remove "Local Ground" if it's the default venue
         venue: matchSummary.venue === 'Local Ground' ? '' : matchSummary.venue,
         // Fix match result mapping
