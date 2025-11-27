@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trophy, ArrowLeft } from 'lucide-react';
 import { type LocalPlayer } from '@shared/schema';
+import { apiRequest } from '@/lib/queryClient';
 
 interface MatchState {
   userTeamRole: string;
@@ -374,13 +375,7 @@ export default function Scoreboard() {
       };
       
       // Save match summary
-      const response = await fetch('/api/match-summary', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(matchSummaryData)
-      });
+      const response = await apiRequest('POST', '/api/match-summary', matchSummaryData);
       
       if (response.ok) {
         const savedMatchSummary = await response.json();
@@ -417,13 +412,7 @@ export default function Scoreboard() {
       
       // Save all player histories
       for (const history of playerHistories) {
-        const response = await fetch('/api/player-match-history', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(history)
-        });
+        const response = await apiRequest('POST', '/api/player-match-history', history);
         
         if (!response.ok) {
           console.error('Failed to save player match history for user:', history.userId);
@@ -799,15 +788,25 @@ export default function Scoreboard() {
       });
       console.log(`Full request body:`, requestBody);
       
-      // Send to backend
-      response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify(requestBody)
-      });
+      // Check for auth token if using authenticated endpoints
+      const token = localStorage.getItem('auth_token');
+      if ((endpoint === '/api/team-match-results' || endpoint === '/api/local-match-results') && !token) {
+        console.error('No auth token found for authenticated endpoint:', endpoint);
+        toast({
+          title: "Authentication Required",
+          description: "Please log in again to save match statistics.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log(`=== AUTH DEBUG ===`);
+      console.log(`Auth token present: ${!!token}`);
+      console.log(`Auth token length: ${token ? token.length : 0}`);
+      console.log(`Using authenticated endpoint: ${endpoint === '/api/team-match-results' || endpoint === '/api/local-match-results'}`);
+      
+      // Send to backend using shared API client
+      response = await apiRequest('POST', endpoint, requestBody);
 
       console.log(`=== BACKEND RESPONSE ===`);
       console.log(`Response status: ${response.status} ${response.statusText}`);
@@ -1035,13 +1034,14 @@ export default function Scoreboard() {
       // Overs completed or all wickets lost - compare scores
       matchComplete = true;
       if (currentScore.runs < matchState.target - 1) {
-        // Second team didn't reach target
+        // Second team scored less than first team - first team wins
         result = 'first_team_wins';
         winningTeam = matchState.userTeamRole.includes('bowling') ? 'Your Team' : 'Opponent Team';
       } else if (currentScore.runs === matchState.target - 1) {
-        // Scores are equal
+        // Scores are equal (both teams scored same) - draw
         result = 'draw';
       }
+      // Note: currentScore.runs >= matchState.target case is already handled above in targetReached condition
     }
     
     if (matchComplete) {
