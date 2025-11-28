@@ -44,15 +44,24 @@ interface MatchState {
 
 export default function BowlerSelection() {
   const [, setLocation] = useLocation();
+
   const [matchState, setMatchState] = useState<MatchState | null>(null);
+  const [battingScore, setBattingScore] = useState<TeamScore | null>(null);
+  const [bowlerStats, setBowlerStats] = useState<BowlerStats[]>([]);
+  const [previousBowler, setPreviousBowler] = useState<LocalPlayer | null>(null);
 
   useEffect(() => {
-    const savedMatchState = localStorage.getItem('currentMatchState');
-    if (savedMatchState) {
-      setMatchState(JSON.parse(savedMatchState));
-    } else {
-      setLocation('/scoreboard');
-    }
+    const savedMatch = localStorage.getItem('currentMatchState');
+    const savedScore = localStorage.getItem('currentBattingTeamScore');
+    const savedBowlerStats = localStorage.getItem('currentBowlerStats');
+    const savedPrev = localStorage.getItem('currentPreviousBowler');
+
+    if (savedMatch) setMatchState(JSON.parse(savedMatch));
+    else setLocation('/scoreboard');
+
+    if (savedScore) setBattingScore(JSON.parse(savedScore));
+    if (savedBowlerStats) setBowlerStats(JSON.parse(savedBowlerStats));
+    if (savedPrev) setPreviousBowler(JSON.parse(savedPrev));
   }, [setLocation]);
 
   if (!matchState) {
