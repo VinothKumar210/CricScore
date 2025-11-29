@@ -47,3 +47,12 @@ const handleOpponentChoice = (side: 'heads' | 'tails') => {
   setTossWinner(side === coinResult ? 'opponent' : 'user');
   setPhase('determine-winner');
 };
+{phase === 'manual-entry' && matchData && (
+  <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 space-y-8">
+    {/* Team selection buttons */}
+    {/* Batting/Bowling choice buttons */}
+    <Button onClick={handleManualTossSubmit} disabled={!manualTossWinner || !manualBattingChoice}>
+      START SCORING
+    </Button>
+  </div>
+)}
