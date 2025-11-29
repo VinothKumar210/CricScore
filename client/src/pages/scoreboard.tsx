@@ -2409,39 +2409,56 @@ export default function Scoreboard() {
         </DialogContent>
       </Dialog>
 
-      {/* New Batsman Dialog */}
-      <Dialog open={showBatsmanDialog} onOpenChange={() => {}}>
-        <DialogContent aria-describedby="batsman-selection-description">
-          <DialogHeader>
-            <DialogTitle>
-              {matchState?.currentInnings === 2 && batsmanStats.length === 0 
-                ? "Select Opening Batsman (Striker)"
-                : matchState?.currentInnings === 2 && batsmanStats.length === 1
-                ? "Select Opening Batsman (Non-Striker)" 
-                : "Select New Batsman"}
-            </DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="h-60">
-            <div className="grid gap-2">
-              {availableBatsmen.map((player, index) => (
-                <Button
-                  key={`${player.name}-${index}`}
-                  onClick={() => selectNewBatsman(player)}
-                  variant="outline"
-                  className="justify-start"
-                  data-testid={`button-new-batsman-${index}`}
-                >
-                  {player.name}
-                </Button>
-              ))}
+      {/* New Batsman Page */}
+      {showBatsmanDialog && (
+        <div className="min-h-screen w-full bg-background flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl space-y-6">
+            <div className="text-center space-y-2">
+              <Button
+                onClick={() => setShowBatsmanDialog(false)}
+                variant="ghost"
+                className="absolute top-4 left-4"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <h1 className="text-3xl font-bold text-primary">
+                {matchState?.currentInnings === 2 && batsmanStats.length === 0 
+                  ? "Select Opening Batsman (Striker)"
+                  : matchState?.currentInnings === 2 && batsmanStats.length === 1
+                  ? "Select Opening Batsman (Non-Striker)" 
+                  : "Select New Batsman"}
+              </h1>
+              <p className="text-muted-foreground">
+                Choose a batsman from the batting team
+              </p>
             </div>
-          </ScrollArea>
-        </DialogContent>
-      </Dialog>
+            <Card>
+              <CardContent className="p-6">
+                <ScrollArea className="h-96">
+                  <div className="grid gap-3">
+                    {availableBatsmen.map((player, index) => (
+                      <Button
+                        key={`${player.name}-${index}`}
+                        onClick={() => selectNewBatsman(player)}
+                        variant="outline"
+                        className="justify-start h-12 text-lg"
+                        data-testid={`button-new-batsman-${index}`}
+                      >
+                        {player.name}
+                      </Button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
 
       {/* Extras Dialog */}
       <Dialog open={showExtrasDialog} onOpenChange={setShowExtrasDialog}>
-        <DialogContent>
+        <DialogContent aria-describedby="extras-selection-description">
           <DialogHeader>
             <DialogTitle>
               {extrasType === 'nb' ? 'No Ball Options' : 
@@ -2538,12 +2555,12 @@ export default function Scoreboard() {
 
       {/* Run Out Dialog */}
       <Dialog open={showRunOutDialog} onOpenChange={() => {}}>
-        <DialogContent>
+        <DialogContent aria-describedby="runout-runs-description">
           <DialogHeader>
             <DialogTitle>Run Out - Runs Completed</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
+            <p id="runout-runs-description" className="text-sm text-muted-foreground">
               How many runs were completed before the run out?
             </p>
             <div className="grid grid-cols-4 gap-3">
@@ -2564,12 +2581,12 @@ export default function Scoreboard() {
 
       {/* Who Is Out Dialog */}
       <Dialog open={showWhoIsOutDialog} onOpenChange={() => {}}>
-        <DialogContent>
+        <DialogContent aria-describedby="who-is-out-description">
           <DialogHeader>
             <DialogTitle>Who is Out?</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
+            <p id="who-is-out-description" className="text-sm text-muted-foreground">
               Select which batsman was run out:
             </p>
             <div className="grid grid-cols-2 gap-4">
@@ -2600,47 +2617,61 @@ export default function Scoreboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Bowler Selection Dialog */}
-      <Dialog open={showBowlerDialog} onOpenChange={() => {}}>
-        <DialogContent aria-describedby="bowler-selection-description">
-          <DialogHeader>
-            <DialogTitle>
-              {matchState?.currentInnings === 2 && !matchState.currentBowler.name 
-                ? "Select Opening Bowler (Second Innings)"
-                : "Select Next Bowler"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Over completed! Select the next bowler from the bowling team:
-            </p>
-            <ScrollArea className="h-60">
-              <div className="grid gap-2">
-                {availableBowlers.length > 0 ? (
-                  availableBowlers.map((player, index) => (
-                    <Button
-                      key={`${player.name}-${index}`}
-                      onClick={() => selectNewBowler(player)}
-                      variant="outline"
-                      className="justify-start"
-                      data-testid={`button-new-bowler-${index}`}
-                    >
-                      {player.name}
-                    </Button>
-                  ))
-                ) : (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground mb-2">No bowlers available</p>
-                    <p className="text-xs text-muted-foreground">
-                      This can happen due to bowling restrictions. Please check match rules.
-                    </p>
+      {/* Bowler Selection Page */}
+      {showBowlerDialog && (
+        <div className="min-h-screen w-full bg-background flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl space-y-6">
+            <div className="text-center space-y-2">
+              <Button
+                onClick={() => setShowBowlerDialog(false)}
+                variant="ghost"
+                className="absolute top-4 left-4"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <h1 className="text-3xl font-bold text-primary">
+                {matchState?.currentInnings === 2 && !matchState.currentBowler.name 
+                  ? "Select Opening Bowler (Second Innings)"
+                  : "Select Next Bowler"}
+              </h1>
+              <p className="text-muted-foreground">
+                {matchState?.currentInnings === 2 && !matchState.currentBowler.name 
+                  ? "Choose the opening bowler for the second innings"
+                  : "Over completed! Select the next bowler from the bowling team"}
+              </p>
+            </div>
+            <Card>
+              <CardContent className="p-6">
+                <ScrollArea className="h-96">
+                  <div className="grid gap-3">
+                    {availableBowlers.length > 0 ? (
+                      availableBowlers.map((player, index) => (
+                        <Button
+                          key={`${player.name}-${index}`}
+                          onClick={() => selectNewBowler(player)}
+                          variant="outline"
+                          className="justify-start h-12 text-lg"
+                          data-testid={`button-new-bowler-${index}`}
+                        >
+                          {player.name}
+                        </Button>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <p className="text-lg text-muted-foreground mb-2">No bowlers available</p>
+                        <p className="text-sm text-muted-foreground">
+                          This can happen due to bowling restrictions. Please check match rules.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </ScrollArea>
+                </ScrollArea>
+              </CardContent>
+            </Card>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {/* Innings Transition Dialog */}
       <Dialog open={showInningsTransition} onOpenChange={() => {}}>
