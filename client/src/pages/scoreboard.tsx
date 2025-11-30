@@ -161,6 +161,7 @@ export default function Scoreboard() {
       const savedCurrentBowlerStats = localStorage.getItem('currentBowlerStats');
       const savedCurrentBattingTeamScore = localStorage.getItem('currentBattingTeamScore');
       const savedCurrentBatsmanStats = localStorage.getItem('currentBatsmanStats');
+      const savedCurrentOverBalls = localStorage.getItem('currentOverBalls');
       
       if (bowlerSelected && savedCurrentMatchState && savedCurrentBowlerStats) {
         // Load updated state from bowler selection
@@ -177,6 +178,9 @@ export default function Scoreboard() {
         if (savedCurrentBatsmanStats) {
           setBatsmanStats(JSON.parse(savedCurrentBatsmanStats));
         }
+        if (savedCurrentOverBalls) {
+          setCurrentOverBalls(JSON.parse(savedCurrentOverBalls));
+        }
         
         // Clear the selection flag and temporary state
         localStorage.removeItem('bowlerSelected');
@@ -184,10 +188,8 @@ export default function Scoreboard() {
         localStorage.removeItem('currentBattingTeamScore');
         localStorage.removeItem('currentBowlerStats');
         localStorage.removeItem('currentBatsmanStats');
+        localStorage.removeItem('currentOverBalls');
         localStorage.removeItem('currentPreviousBowler');
-        
-        // Reset current over display
-        setCurrentOverBalls([]);
         
         return; // Skip the normal initialization
       }
@@ -1195,6 +1197,7 @@ export default function Scoreboard() {
           localStorage.setItem('currentBattingTeamScore', JSON.stringify(battingTeamScore));
           localStorage.setItem('currentBowlerStats', JSON.stringify(bowlerStats));
           localStorage.setItem('currentBatsmanStats', JSON.stringify(batsmanStats));
+          localStorage.setItem('currentOverBalls', JSON.stringify(currentOverBalls));
           localStorage.setItem('currentPreviousBowler', JSON.stringify(matchState.currentBowler));
           setLocation('/bowler-selection');
         }, 500);
@@ -1765,6 +1768,7 @@ export default function Scoreboard() {
       localStorage.setItem('currentBattingTeamScore', JSON.stringify(battingTeamScore));
       localStorage.setItem('currentBowlerStats', JSON.stringify(bowlerStats));
       localStorage.setItem('currentBatsmanStats', JSON.stringify(batsmanStats));
+      localStorage.setItem('currentOverBalls', JSON.stringify(currentOverBalls));
       localStorage.setItem('currentPreviousBowler', JSON.stringify(previousBowler));
       setLocation('/bowler-selection');
       return;
