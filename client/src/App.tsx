@@ -27,6 +27,7 @@ import MatchView from "@/pages/match-view";
 import MatchSummaryPage from "@/pages/match-summary";
 import MyMatchesPage from "@/pages/my-matches";
 import TeamSearch from "@/pages/team-search";
+import BowlerSelection from "@/pages/bowler-selection";
 import { useEffect, useState } from "react";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -239,6 +240,12 @@ function Router() {
       <Route path="/my-matches">
         <ProtectedRoute>
           <MyMatchesPage />
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/bowler-selection">
+        <ProtectedRoute>
+          <BowlerSelection />
         </ProtectedRoute>
       </Route>
 
