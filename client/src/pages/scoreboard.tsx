@@ -3,13 +3,13 @@ import { useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trophy, ArrowLeft } from 'lucide-react';
+import { Loader2, Trophy, ArrowLeft, Search, X } from 'lucide-react';
 import { type LocalPlayer } from '@shared/schema';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -109,6 +109,10 @@ export default function Scoreboard() {
   const [showTossDialog, setShowTossDialog] = useState(false);
   const [tossWinner, setTossWinner] = useState<'myTeam' | 'opponent' | null>(null);
   const [tossDecision, setTossDecision] = useState<'bat' | 'bowl' | null>(null);
+  
+  // New Batsman Dialog search and selection states
+  const [batsmanSearchQuery, setBatsmanSearchQuery] = useState('');
+  const [selectedBatsman, setSelectedBatsman] = useState<LocalPlayer | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -1867,6 +1871,25 @@ export default function Scoreboard() {
   const availableBatsmen = battingTeamPlayers
     .filter(player => player.name && player.name.trim() !== '')
     .filter(player => !batsmanStats.some(stat => stat.player.name === player.name));
+
+  const filteredBatsmen = availableBatsmen.filter(player => 
+    player.name.toLowerCase().includes(batsmanSearchQuery.toLowerCase())
+  );
+
+  const confirmBatsmanSelection = () => {
+    if (selectedBatsman) {
+      selectNewBatsman(selectedBatsman);
+      setSelectedBatsman(null);
+      setBatsmanSearchQuery('');
+      setShowBatsmanDialog(false);
+    }
+  };
+
+  const cancelBatsmanSelection = () => {
+    setSelectedBatsman(null);
+    setBatsmanSearchQuery('');
+    setShowBatsmanDialog(false);
+  };
   
   const bowlingTeamPlayers = (userTeamBatsFirst ? matchState.opponentTeamPlayers : matchState.myTeamPlayers)
     .filter(player => player.name && player.name.trim() !== '');
@@ -2494,32 +2517,139 @@ export default function Scoreboard() {
       </Dialog>
 
       {/* New Batsman Dialog */}
-      <Dialog open={showBatsmanDialog} onOpenChange={() => {}}>
-        <DialogContent className="h-screen max-h-none overflow-y-auto" aria-describedby="batsman-selection-description">
-          <DialogHeader>
-            <DialogTitle>
-              {matchState?.currentInnings === 2 && batsmanStats.length === 0 
-                ? "Select Opening Batsman (Striker)"
-                : matchState?.currentInnings === 2 && batsmanStats.length === 1
-                ? "Select Opening Batsman (Non-Striker)" 
-                : "Select New Batsman"}
-            </DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="h-60">
-            <div className="grid gap-2">
-              {availableBatsmen.map((player, index) => (
-                <Button
-                  key={`${player.name}-${index}`}
-                  onClick={() => selectNewBatsman(player)}
-                  variant="outline"
-                  className="justify-start"
-                  data-testid={`button-new-batsman-${index}`}
-                >
-                  {player.name}
-                </Button>
-              ))}
+      <Dialog open={showBatsmanDialog} onOpenChange={setShowBatsmanDialog}>
+        <DialogContent className="inset-0 h-screen w-screen max-w-none rounded-none p-0 md:max-w-2xl md:h-auto md:rounded-lg" aria-describedby="batsman-selection-description">
+          <div className="flex min-h-screen flex-col md:min-h-0">
+            {/* Sticky Header */}
+            <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background px-4 py-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={cancelBatsmanSelection}
+                data-testid="button-close-batsman-dialog"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex-1">
+                <div className="font-semibold text-lg">
+                  {matchState?.currentInnings === 2 && batsmanStats.length === 0 
+                    ? "Select Opening Batsman (Striker)"
+                    : matchState?.currentInnings === 2 && batsmanStats.length === 1
+                    ? "Select Opening Batsman (Non-Striker)" 
+                    : "Select New Batsman"}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {matchState?.currentInnings === 2 ? "Second Innings" : "First Innings"}
+                </div>
+              </div>
             </div>
-          </ScrollArea>
+            
+            <DialogDescription id="batsman-selection-description" className="sr-only">
+              Select a batsman from the available players below. Use the search to filter players, then tap to select and confirm your choice.
+            </DialogDescription>
+
+            {/* Search Bar */}
+            <div className="border-b bg-background px-4 py-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search players..."
+                  value={batsmanSearchQuery}
+                  onChange={(e) => setBatsmanSearchQuery(e.target.value)}
+                  className="pl-10"
+                  data-testid="input-search-batsman"
+                />
+                {batsmanSearchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setBatsmanSearchQuery('')}
+                    className="absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2"
+                    data-testid="button-clear-search"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto px-4 py-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {filteredBatsmen.map((player, index) => (
+                  <Button
+                    key={`${player.name}-${index}`}
+                    onClick={() => setSelectedBatsman(player)}
+                    variant={selectedBatsman?.name === player.name ? "default" : "outline"}
+                    className={`h-16 p-4 text-left justify-start ${
+                      selectedBatsman?.name === player.name 
+                        ? "ring-2 ring-primary bg-primary/10 border-primary" 
+                        : "hover:bg-accent/50"
+                    }`}
+                    data-testid={`button-select-batsman-${index}`}
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                        {player.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{player.name}</div>
+                        <div className="text-xs text-muted-foreground">Available</div>
+                      </div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+
+              {filteredBatsmen.length === 0 && (
+                <div className="text-center py-8">
+                  <div className="text-muted-foreground mb-2">
+                    {batsmanSearchQuery ? "No players found matching your search" : "No available batsmen"}
+                  </div>
+                  {batsmanSearchQuery && (
+                    <Button 
+                      variant="ghost" 
+                      onClick={() => setBatsmanSearchQuery('')}
+                      data-testid="button-clear-search-empty"
+                    >
+                      Clear search
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Sticky Footer */}
+            <div className="sticky bottom-0 z-10 border-t bg-background p-4 pb-[env(safe-area-inset-bottom)]">
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={cancelBatsmanSelection}
+                  className="flex-1"
+                  data-testid="button-cancel-batsman"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmBatsmanSelection}
+                  disabled={!selectedBatsman}
+                  className="flex-1"
+                  data-testid="button-confirm-batsman"
+                >
+                  {matchState?.currentInnings === 2 && batsmanStats.length === 0 
+                    ? "Confirm Striker"
+                    : matchState?.currentInnings === 2 && batsmanStats.length === 1
+                    ? "Confirm Non-Striker" 
+                    : "Confirm Selection"}
+                </Button>
+              </div>
+              {selectedBatsman && (
+                <div className="mt-2 text-center text-sm text-muted-foreground">
+                  Selected: <span className="font-medium text-foreground">{selectedBatsman.name}</span>
+                </div>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
