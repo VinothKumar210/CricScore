@@ -2495,7 +2495,7 @@ export default function Scoreboard() {
 
       {/* New Batsman Dialog */}
       <Dialog open={showBatsmanDialog} onOpenChange={() => {}}>
-        <DialogContent aria-describedby="batsman-selection-description">
+        <DialogContent className="h-screen max-h-none overflow-y-auto" aria-describedby="batsman-selection-description">
           <DialogHeader>
             <DialogTitle>
               {matchState?.currentInnings === 2 && batsmanStats.length === 0 
