@@ -2728,7 +2728,7 @@ export default function Scoreboard() {
 
       {/* Innings Transition Dialog */}
       <Dialog open={showInningsTransition} onOpenChange={() => {}}>
-        <DialogContent className="w-screen h-screen max-w-none max-h-none overflow-y-auto" aria-describedby="innings-transition-description">
+        <DialogContent className="w-screen h-screen max-w-none max-h-none overflow-y-auto [&>button]:hidden" aria-describedby="innings-transition-description">
           <DialogHeader>
             <DialogTitle className="text-center text-2xl">🏏 First Innings Complete!</DialogTitle>
           </DialogHeader>
