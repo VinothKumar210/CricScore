@@ -1,298 +1,250 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Eye, Clock, Users, Calendar, MapPin, Bell } from "lucide-react";
+import { Eye, Clock, Users, Calendar, MapPin, Lock, Play, ArrowUpRight } from "lucide-react";
 import { type LocalMatch, type User } from "@shared/schema";
 import { useAuth } from "@/components/auth/auth-context";
-import { NotificationPermission, useNotificationPermissionState } from "@/components/notifications/notification-permission";
-import { notificationService } from "@/lib/notifications";
+import { PasswordDialog } from "@/components/match/password-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function LiveScoreboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { shouldShow: showNotificationPermission, dismiss: dismissNotificationPermission } = useNotificationPermissionState();
+  
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<any>(null);
+  const [isJoining, setIsJoining] = useState(false);
 
-  // Fetch ongoing matches where user is a spectator
-  const { data: spectatorMatches, isLoading: spectatorMatchesLoading, error: spectatorError } = useQuery<
+  // Fetch ongoing matches
+  const { data: ongoingMatches, isLoading } = useQuery<
     (LocalMatch & { 
       creator: User;
-      myTeam?: { name: string; id: string };
-      opponentTeam?: { name: string; id: string };
-    })[]
-  >({
-    queryKey: ["/api/local-matches/spectator"],
-    enabled: !!user, // Only fetch when user is authenticated
-    refetchInterval: 5000, // Auto-refresh every 5 seconds
-  });
-
-  // Fetch all ongoing matches for discovery
-  const { data: ongoingMatches, isLoading: ongoingMatchesLoading, error: ongoingError } = useQuery<
-    (LocalMatch & { 
-      creator: User;
+      spectators?: any[];
       myTeam?: { name: string; id: string };
       opponentTeam?: { name: string; id: string };
     })[]
   >({
     queryKey: ["/api/local-matches/ongoing"],
-    enabled: !!user, // Only fetch when user is authenticated
-    refetchInterval: 10000, // Auto-refresh every 10 seconds
-  });
-
-  // Fetch pending notifications for this user
-  const { data: pendingNotifications } = useQuery<any[]>({
-    queryKey: ["/api/notifications/pending"],
     enabled: !!user,
-    refetchInterval: 15000, // Check for new notifications every 15 seconds
+    refetchInterval: 5000,
   });
 
-  // Handle pending notifications
-  useEffect(() => {
-    if (pendingNotifications && pendingNotifications.length > 0) {
-      pendingNotifications.forEach(async (notification: any) => {
-        const match = notification.localMatch;
-        await notificationService.notifyMatchStart(
-          match.matchName,
-          match.venue,
-          match.id
-        );
+  // Join room match mutation
+  const joinRoomMutation = useMutation({
+    mutationFn: async ({ matchId, password }: { matchId: string; password?: string }) => {
+      const response = await apiRequest('POST', `/api/local-matches/${matchId}/spectators`, { 
+        userId: user?.id,
+        password 
       });
-      
-      // Mark notifications as read
-      const matchIds = pendingNotifications.map((n: any) => n.localMatch.id);
-      fetch('/api/notifications/mark-read', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify({ matchIds }),
-      }).then(() => {
-        // Invalidate notifications query to refresh
-        queryClient.invalidateQueries({ queryKey: ["/api/notifications/pending"] });
-        
-        toast({
-          title: "Match Notifications",
-          description: `You have ${pendingNotifications.length} new match invitation${pendingNotifications.length !== 1 ? 's' : ''}!`,
-        });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "You've joined the match room!",
       });
-    }
-  }, [pendingNotifications, queryClient, toast]);
+      queryClient.invalidateQueries({ queryKey: ["/api/local-matches/ongoing"] });
+      setPasswordDialogOpen(false);
+      if (selectedMatch) {
+        setLocation(`/match-view/${selectedMatch.id}`);
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to join match room. Please check the password.",
+        variant: "destructive",
+      });
+      setIsJoining(false);
+    },
+  });
 
-  // Debug logging
-  console.log("LiveScoreboard - User:", user ? `${user.username} (${user.id})` : 'Not authenticated');
-  console.log("LiveScoreboard - Spectator matches:", { spectatorMatches, spectatorMatchesLoading, spectatorError });
-  console.log("LiveScoreboard - Ongoing matches:", { ongoingMatches, ongoingMatchesLoading, ongoingError });
-  console.log("LiveScoreboard - Pending notifications:", pendingNotifications);
-
-  const getMatchStatusBadge = (status: string) => {
-    switch (status) {
-      case "ONGOING":
-        return <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Live</Badge>;
-      case "CREATED":
-        return <Badge variant="secondary">Starting Soon</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  const handleJoinMatch = (match: any) => {
+    setSelectedMatch(match);
+    
+    if (match.isRoomMatch) {
+      setPasswordDialogOpen(true);
+    } else {
+      joinRoomMutation.mutate({ matchId: match.id });
     }
   };
 
-  const formatDate = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return dateObj.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handlePasswordSubmit = (password: string) => {
+    if (selectedMatch) {
+      setIsJoining(true);
+      joinRoomMutation.mutate({ matchId: selectedMatch.id, password });
+    }
   };
-
-  const MatchCard = ({ 
-    match, 
-    isSpectating = false 
-  }: { 
-    match: LocalMatch & { 
-      creator: User;
-      myTeam?: { name: string; id: string };
-      opponentTeam?: { name: string; id: string };
-    };
-    isSpectating?: boolean;
-  }) => (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setLocation(`/match-view/${match.id}`)} data-testid={`card-match-${match.id}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg" data-testid={`text-match-name-${match.id}`}>{match.matchName}</CardTitle>
-          <div data-testid={`badge-status-${match.id}`}>
-            {getMatchStatusBadge(match.status)}
-          </div>
-        </div>
-        <div className="flex items-center text-sm text-muted-foreground space-x-4">
-          <div className="flex items-center">
-            <Calendar className="h-4 w-4 mr-1" />
-            <span data-testid={`text-date-${match.id}`}>{formatDate(match.matchDate)}</span>
-          </div>
-          <div className="flex items-center">
-            <MapPin className="h-4 w-4 mr-1" />
-            <span data-testid={`text-venue-${match.id}`}>{match.venue}</span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* Teams and Score */}
-          <div className="space-y-3">
-            {/* My Team */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                <span className="font-medium" data-testid={`text-team1-name-${match.id}`}>
-                  {match.myTeam?.name || match.myTeamName || "My Team"}
-                </span>
-              </div>
-              {match.status === "ONGOING" && (
-                <div className="text-right" data-testid={`score-team1-${match.id}`}>
-                  <span className="text-xl font-bold">{match.myTeamScore}</span>
-                  <span className="text-sm text-muted-foreground">/{match.myTeamWickets}</span>
-                  <div className="text-xs text-muted-foreground">({match.myTeamOvers} overs)</div>
-                </div>
-              )}
-            </div>
-
-            {/* VS Divider */}
-            <div className="text-center text-xs text-muted-foreground">VS</div>
-
-            {/* Opponent Team */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                <span className="font-medium" data-testid={`text-team2-name-${match.id}`}>
-                  {match.opponentTeam?.name || match.opponentTeamName || "Opponent Team"}
-                </span>
-              </div>
-              {match.status === "ONGOING" && (
-                <div className="text-right" data-testid={`score-team2-${match.id}`}>
-                  <span className="text-xl font-bold">{match.opponentTeamScore}</span>
-                  <span className="text-sm text-muted-foreground">/{match.opponentTeamWickets}</span>
-                  <div className="text-xs text-muted-foreground">({match.opponentTeamOvers} overs)</div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Match Details */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground border-t pt-3">
-            <div className="flex items-center">
-              <Users className="h-4 w-4 mr-1" />
-              <span data-testid={`text-creator-${match.id}`}>Created by {match.creator.profileName || match.creator.username}</span>
-            </div>
-            <div className="flex items-center">
-              <Clock className="h-4 w-4 mr-1" />
-              <span data-testid={`text-overs-${match.id}`}>{match.overs} overs</span>
-            </div>
-          </div>
-
-          {/* Action Button */}
-          <Button 
-            className="w-full" 
-            variant={isSpectating ? "default" : "outline"}
-            data-testid={`button-watch-match-${match.id}`}
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            {isSpectating ? "Continue Watching" : "Watch Live"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   return (
-    <div className="p-6">
+    <div className="container-responsive content-spacing pb-24 sm:pb-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-foreground" data-testid="title-live-scoreboard">
-          Live Scoreboard
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2" data-testid="title-live-scoreboard">
+          Live Match Rooms
         </h2>
-        <p className="text-muted-foreground mt-2">
-          Watch ongoing cricket matches in real-time
+        <p className="text-sm sm:text-base text-muted-foreground">
+          Join and watch ongoing cricket matches in real-time
         </p>
       </div>
 
-      {/* Notification Permission Card */}
-      {showNotificationPermission && (
-        <div className="mb-6">
-          <NotificationPermission onDismiss={dismissNotificationPermission} />
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Finding live matches...</p>
         </div>
+      ) : ongoingMatches && ongoingMatches.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4" data-testid="ongoing-matches-grid">
+          {ongoingMatches.map((match) => (
+            <Card 
+              key={match.id} 
+              className="border-0 shadow-lg hover:shadow-xl transition-all duration-300"
+              data-testid={`card-match-${match.id}`}
+            >
+              <CardContent className="p-4 sm:p-6">
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                        <Badge variant="default" className="bg-red-50 text-red-700 border-red-200 text-xs">
+                          LIVE
+                        </Badge>
+                        {match.isRoomMatch && (
+                          <Badge variant="outline" className="text-xs">
+                            <Lock className="w-3 h-3 mr-1" />
+                            Private
+                          </Badge>
+                        )}
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-foreground truncate" data-testid={`text-match-name-${match.id}`}>
+                        {match.matchName || `${match.myTeamName} vs ${match.opponentTeamName}`}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Teams and Score */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-xl">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
+                        <span className="font-semibold text-sm truncate" data-testid={`text-team1-name-${match.id}`}>
+                          {match.myTeam?.name || match.myTeamName || "Team 1"}
+                        </span>
+                      </div>
+                      {match.status === "ONGOING" && (
+                        <div className="text-right flex-shrink-0">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-xl sm:text-2xl font-black">{match.myTeamScore}</span>
+                            <span className="text-sm text-muted-foreground">/{match.myTeamWickets}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">{match.myTeamOvers} overs</div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-center text-xs font-semibold text-muted-foreground">VS</div>
+
+                    <div className="flex items-center justify-between gap-4 p-3 bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 rounded-xl">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></div>
+                        <span className="font-semibold text-sm truncate" data-testid={`text-team2-name-${match.id}`}>
+                          {match.opponentTeam?.name || match.opponentTeamName || "Team 2"}
+                        </span>
+                      </div>
+                      {match.status === "ONGOING" && (
+                        <div className="text-right flex-shrink-0">
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-xl sm:text-2xl font-black">{match.opponentTeamScore}</span>
+                            <span className="text-sm text-muted-foreground">/{match.opponentTeamWickets}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">{match.opponentTeamOvers} overs</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Match Info */}
+                  <div className="flex items-center justify-between gap-4 text-xs sm:text-sm text-muted-foreground border-t pt-3">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span>{match.venue}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                        <span>{match.overs} overs</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span>{match.spectators?.length || 0} watching</span>
+                    </div>
+                  </div>
+
+                  {/* Join Button */}
+                  <Button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleJoinMatch(match);
+                    }}
+                    className="w-full h-12 sm:h-14 rounded-xl bg-gradient-to-r from-primary to-blue-500 hover:from-primary-hover hover:to-blue-600 shadow-lg hover:shadow-xl transition-all duration-300"
+                    data-testid={`button-join-match-${match.id}`}
+                  >
+                    <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                    {match.isRoomMatch ? "Join Room" : "Watch Live"}
+                    <ArrowUpRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-8 sm:p-12 text-center">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-muted to-muted/50 rounded-2xl flex items-center justify-center">
+                <Eye className="w-8 h-8 sm:w-10 sm:h-10 text-muted-foreground" />
+              </div>
+              <div>
+                <h3 className="text-lg sm:text-xl font-bold mb-2">No Live Matches</h3>
+                <p className="text-sm sm:text-base text-muted-foreground mb-4">
+                  No matches are currently being played. Create one to get started!
+                </p>
+              </div>
+              <Button 
+                onClick={() => setLocation('/local-match')} 
+                className="h-12 px-6"
+                data-testid="button-create-match"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Create Match
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      <Tabs defaultValue="my-matches" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="my-matches" data-testid="tab-my-matches">
-            My Spectating ({spectatorMatches?.length || 0})
-          </TabsTrigger>
-          <TabsTrigger value="all-matches" data-testid="tab-all-matches">
-            All Live Matches ({ongoingMatches?.length || 0})
-          </TabsTrigger>
-        </TabsList>
-
-        {/* My Spectating Matches */}
-        <TabsContent value="my-matches" className="space-y-4">
-          {spectatorMatchesLoading ? (
-            <div className="text-center py-8" data-testid="loading-spectator-matches">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground mt-2">Loading your matches...</p>
-            </div>
-          ) : spectatorMatches && spectatorMatches.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="spectator-matches-grid">
-              {spectatorMatches.map((match) => (
-                <MatchCard key={match.id} match={match} isSpectating={true} />
-              ))}
-            </div>
-          ) : (
-            <Card className="p-8 text-center" data-testid="no-spectator-matches">
-              <div className="flex flex-col items-center space-y-3">
-                <Eye className="h-12 w-12 text-muted-foreground" />
-                <h3 className="text-lg font-medium">No matches to watch</h3>
-                <p className="text-muted-foreground">
-                  You're not spectating any matches at the moment. Check out live matches in the "All Live Matches" tab.
-                </p>
-              </div>
-            </Card>
-          )}
-        </TabsContent>
-
-        {/* All Live Matches */}
-        <TabsContent value="all-matches" className="space-y-4">
-          {ongoingMatchesLoading ? (
-            <div className="text-center py-8" data-testid="loading-ongoing-matches">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="text-muted-foreground mt-2">Loading live matches...</p>
-            </div>
-          ) : ongoingMatches && ongoingMatches.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="ongoing-matches-grid">
-              {ongoingMatches.map((match) => (
-                <MatchCard key={match.id} match={match} isSpectating={false} />
-              ))}
-            </div>
-          ) : (
-            <Card className="p-8 text-center" data-testid="no-ongoing-matches">
-              <div className="flex flex-col items-center space-y-3">
-                <Clock className="h-12 w-12 text-muted-foreground" />
-                <h3 className="text-lg font-medium">No live matches</h3>
-                <p className="text-muted-foreground">
-                  There are no ongoing matches at the moment. Check back later or create your own match!
-                </p>
-                <Button onClick={() => setLocation('/local-match')} className="mt-4" data-testid="button-create-match">
-                  Create New Match
-                </Button>
-              </div>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+      {/* Password Dialog */}
+      <PasswordDialog
+        isOpen={passwordDialogOpen}
+        onClose={() => {
+          setPasswordDialogOpen(false);
+          setSelectedMatch(null);
+          setIsJoining(false);
+        }}
+        onSubmit={handlePasswordSubmit}
+        matchName={selectedMatch?.matchName || ''}
+        isLoading={isJoining}
+      />
     </div>
   );
 }

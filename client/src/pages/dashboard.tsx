@@ -2,12 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Link } from "wouter";
 import { useAuth } from "@/components/auth/auth-context";
-import { Gamepad, TrendingUp, Zap, Target, Users, Crown, Activity, ArrowUpRight, Sparkles } from "lucide-react";
+import { Gamepad, TrendingUp, Zap, Target, Users, Crown, Activity, ArrowUpRight, Sparkles, Eye, Lock, Play, BarChart3, Plus, Search } from "lucide-react";
 import { useEffect } from 'react';
-import { refreshUserStatistics } from "@/lib/queryClient";
 import type { CareerStats, Match, Team } from "@shared/schema";
 
 export default function Dashboard() {
@@ -33,10 +31,16 @@ export default function Dashboard() {
     enabled: !!user?.id,
   });
 
+  // Fetch ongoing live room matches
+  const { data: liveMatches } = useQuery<any[]>({
+    queryKey: ["/api/local-matches/ongoing"],
+    enabled: !!user?.id,
+    refetchInterval: 5000, // Refresh every 5 seconds
+  });
+
   // Refresh all data when user changes or dashboard mounts
   useEffect(() => {
     if (user) {
-      // Ensure fresh data from database on dashboard load
       refetchStats();
       refetchMatches();
       refetchTeams();
@@ -44,352 +48,274 @@ export default function Dashboard() {
     }
   }, [user, refetchStats, refetchMatches, refetchTeams, refetchInvitations]);
 
-  // Helper functions for visual indicators
-  const getStrikeRatePercentage = (strikeRate: number) => {
-    // Good strike rate is around 120-150, excellent is 150+
-    return Math.min((strikeRate / 150) * 100, 100);
-  };
-
-  const getEconomyProgress = (economy: number) => {
-    // Lower economy is better (6-8 is good, under 6 is excellent)
-    // Invert the scale so lower economy shows higher progress
-    if (economy === 0) return 0;
-    return Math.max(100 - ((economy / 10) * 100), 0);
-  };
-
-  const getMatchesProgress = (matches: number) => {
-    // Progressive scale for matches played
-    return Math.min((matches / 20) * 100, 100);
-  };
-
-  const getWicketsProgress = (wickets: number) => {
-    // Progressive scale for wickets
-    return Math.min((wickets / 50) * 100, 100);
-  };
-
-  const getRunsProgress = (runs: number) => {
-    // Progressive scale for total runs
-    return Math.min((runs / 1000) * 100, 100);
-  };
-
   return (
     <div className="container-responsive content-spacing pb-24 sm:pb-8 min-h-screen min-h-dvh">
-      {/* Welcome Section - Enhanced */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary via-blue-500 to-primary rounded-3xl p-8 sm:p-12 text-primary-foreground shadow-2xl stagger-mobile hover:shadow-[0_32px_64px_-12px_rgba(100,116,255,0.4)] transition-all duration-500 border border-white/20">
+      {/* Welcome Section - Mobile First */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-primary via-blue-500 to-primary rounded-3xl p-6 sm:p-8 text-primary-foreground shadow-2xl mb-6">
         <div className="relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex-1">
-              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 mb-4">
-                <div className="w-2 h-2 bg-yellow-300 rounded-full animate-pulse"></div>
-                <span className="text-sm font-semibold">Welcome Back</span>
-              </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-4 tracking-tight drop-shadow-lg" data-testid="text-welcome">
-                Hey, {user?.profileName || user?.username || 'Champion'}!
-              </h2>
-              <p className="text-lg sm:text-xl opacity-95 font-medium leading-relaxed max-w-2xl">Time to smash some records and track your cricket journey!</p>
+          <div className="mb-4">
+            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 mb-3">
+              <div className="w-2 h-2 bg-yellow-300 rounded-full animate-pulse"></div>
+              <span className="text-xs sm:text-sm font-semibold">Welcome Back</span>
             </div>
-            <div className="hidden md:flex items-center space-x-2">
-              <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                <Sparkles className="w-10 h-10 text-yellow-300 float-animation drop-shadow-lg" />
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 mt-8">
-            <div className="flex items-center gap-2 bg-white/25 backdrop-blur-sm rounded-xl px-5 py-3 shadow-lg border border-white/30">
-              <TrendingUp className="w-5 h-5" />
-              <span className="text-sm font-semibold">Level Up Your Game</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white/25 backdrop-blur-sm rounded-xl px-5 py-3 shadow-lg border border-white/30">
-              <Activity className="w-5 h-5" />
-              <span className="text-sm font-semibold">Track Every Match</span>
-            </div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2 tracking-tight drop-shadow-lg" data-testid="text-welcome">
+              Hey, {user?.profileName || user?.username || 'Champion'}!
+            </h2>
+            <p className="text-base sm:text-lg opacity-95 font-medium">Ready to play cricket?</p>
           </div>
         </div>
-        {/* Enhanced Background decorations */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl opacity-50 animate-pulse"></div>
-        <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
-        <div className="absolute top-1/2 right-1/4 w-32 h-32 bg-yellow-300/10 rounded-full blur-2xl animate-pulse" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl opacity-50"></div>
       </div>
 
-      {/* Quick Stats Overview */}
-      <div className="grid-responsive">
-        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300 bg-gradient-to-br from-white to-blue-50/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1">
-                <p className="text-xs font-bold text-primary/70 mb-3 tracking-wider uppercase">
-                  Matches Played
-                </p>
-                <p className="text-3xl sm:text-4xl font-black text-foreground mb-3 tracking-tight" data-testid="text-matches-played">
-                  {stats?.matchesPlayed || 0}
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-lg">
-                    <ArrowUpRight className="w-3 h-3" />
-                    <span className="text-xs font-bold">Active</span>
-                  </div>
-                </div>
-              </div>
-              <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-primary to-blue-500 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                <Gamepad className="text-white h-8 w-8 drop-shadow-md" />
-              </div>
+      {/* Quick Actions - Large Touch Targets */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
+        <Button
+          asChild
+          className="h-24 sm:h-28 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transition-all duration-300 border-0"
+          data-testid="button-create-match"
+        >
+          <Link href="/local-match" className="flex flex-col items-center justify-center gap-2 text-white">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-xl flex items-center justify-center">
+              <Plus className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary via-blue-500 to-primary rounded-b-lg"></div>
-          </CardContent>
-        </Card>
+            <span className="text-sm sm:text-base font-bold">Create Match</span>
+          </Link>
+        </Button>
 
-        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300 bg-gradient-to-br from-white to-green-50/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1">
-                <p className="text-xs font-bold text-green-600/70 mb-3 tracking-wider uppercase">
-                  Total Runs
-                </p>
-                <p className="text-3xl sm:text-4xl font-black text-foreground mb-3 tracking-tight" data-testid="text-total-runs">
-                  {stats?.totalRuns || 0}
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-lg">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs font-bold">Scoring</span>
-                  </div>
-                </div>
-              </div>
-              <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                <TrendingUp className="text-white h-8 w-8 drop-shadow-md" />
-              </div>
+        <Button
+          asChild
+          className="h-24 sm:h-28 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 border-0"
+          data-testid="button-live-rooms"
+        >
+          <Link href="/live-scoreboard" className="flex flex-col items-center justify-center gap-2 text-white">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-xl flex items-center justify-center">
+              <Eye className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 rounded-b-lg"></div>
-          </CardContent>
-        </Card>
+            <span className="text-sm sm:text-base font-bold">Live Rooms</span>
+          </Link>
+        </Button>
 
-        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300 bg-gradient-to-br from-white to-orange-50/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1">
-                <p className="text-xs font-bold text-orange-600/70 mb-3 tracking-wider uppercase">
-                  Strike Rate
-                </p>
-                <p className="text-3xl sm:text-4xl font-black text-foreground mb-3 tracking-tight" data-testid="text-strike-rate">
-                  {stats?.strikeRate || "0.00"}
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-lg">
-                    <Zap className="w-3 h-3" />
-                    <span className="text-xs font-bold">
-                      {Number(stats?.strikeRate) >= 130 ? "Explosive" : Number(stats?.strikeRate) >= 100 ? "Aggressive" : "Building"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                <Zap className="text-white h-8 w-8 drop-shadow-md" />
-              </div>
+        <Button
+          asChild
+          className="h-24 sm:h-28 rounded-2xl bg-gradient-to-br from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-lg hover:shadow-xl transition-all duration-300 border-0"
+          data-testid="button-my-stats"
+        >
+          <Link href="/statistics" className="flex flex-col items-center justify-center gap-2 text-white">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-xl flex items-center justify-center">
+              <BarChart3 className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-600 rounded-b-lg"></div>
-          </CardContent>
-        </Card>
+            <span className="text-sm sm:text-base font-bold">My Stats</span>
+          </Link>
+        </Button>
 
-        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300 bg-gradient-to-br from-white to-red-50/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1">
-                <p className="text-xs font-bold text-red-600/70 mb-3 tracking-wider uppercase">
-                  Wickets Taken
-                </p>
-                <p className="text-3xl sm:text-4xl font-black text-foreground mb-3 tracking-tight" data-testid="text-wickets">
-                  {stats?.wicketsTaken || 0}
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded-lg">
-                    <Target className="w-3 h-3" />
-                    <span className="text-xs font-bold">
-                      {(stats?.wicketsTaken || 0) >= 20 ? "Lethal" : (stats?.wicketsTaken || 0) >= 10 ? "Sharp" : "Building"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                <Target className="text-white h-8 w-8 drop-shadow-md" />
-              </div>
+        <Button
+          asChild
+          className="h-24 sm:h-28 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 shadow-lg hover:shadow-xl transition-all duration-300 border-0"
+          data-testid="button-find-players"
+        >
+          <Link href="/search" className="flex flex-col items-center justify-center gap-2 text-white">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-xl flex items-center justify-center">
+              <Search className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
-            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-500 via-rose-500 to-red-600 rounded-b-lg"></div>
-          </CardContent>
-        </Card>
-
-        <Card className="card-elevated border-0 group relative overflow-hidden stagger-mobile hover:scale-[1.03] transition-all duration-300 bg-gradient-to-br from-white to-cyan-50/30">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex-1">
-                <p className="text-xs font-bold text-cyan-600/70 mb-3 tracking-wider uppercase">
-                  Economy Rate
-                </p>
-                <p className="text-3xl sm:text-4xl font-black text-foreground mb-3 tracking-tight" data-testid="text-economy">
-                  {stats?.economy || "0.00"}
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 bg-cyan-100 text-cyan-700 px-2 py-1 rounded-lg">
-                    <Activity className="w-3 h-3" />
-                    <span className="text-xs font-bold">
-                      {Number(stats?.economy) <= 6 ? "Excellent" : Number(stats?.economy) <= 8 ? "Good" : "Improving"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <div className="w-16 h-16 sm:w-18 sm:h-18 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                <Activity className="text-white h-8 w-8 drop-shadow-md" />
-              </div>
-            </div>
-            <div className="absolute bottom-0 left-0 w-full h-1.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-600 rounded-b-lg"></div>
-          </CardContent>
-        </Card>
+            <span className="text-sm sm:text-base font-bold">Find Players</span>
+          </Link>
+        </Button>
       </div>
 
-      {/* Recent Activity & Teams */}
-      <div className="grid-mobile-2 gap-mobile-lg">
-        {/* Recent Matches */}
-        <Card className="card-mobile border-0 group">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold text-foreground flex items-center space-x-2">
-              <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-              <span>Recent Matches</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Live Room Matches Feed */}
+      <Card className="mb-6 border-0 shadow-lg">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+            <span>Live Match Rooms</span>
+          </CardTitle>
+          <CardDescription className="text-sm">Join and watch ongoing matches</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {liveMatches && liveMatches.length > 0 ? (
             <div className="space-y-3">
-              {recentMatches && recentMatches.length > 0 ? (
-                recentMatches.slice(0, 3).map((match: Match) => (
-                  <div
-                    key={match.id}
-                    className="flex items-center justify-between p-4 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm rounded-xl border border-white/10 hover:border-primary/30 transition-all duration-300 group"
-                    data-testid={`match-${match.id}`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary to-sky-500 rounded-lg flex items-center justify-center">
-                        <Gamepad className="w-5 h-5 text-white" />
+              {liveMatches.slice(0, 3).map((match: any) => (
+                <Link key={match.id} href={`/live-scoreboard?matchId=${match.id}`}>
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-background/50 to-background/30 rounded-xl border border-border hover:border-primary/50 transition-all duration-300 cursor-pointer min-h-[60px]">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground group-hover:text-primary transition-colors">vs {match.opponent}</p>
-                        <p className="text-sm text-muted-foreground font-medium">
-                          {new Date(match.matchDate).toLocaleDateString()}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-foreground truncate text-sm sm:text-base">
+                          {match.matchName || `${match.myTeamName} vs ${match.opponentTeamName}`}
                         </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-foreground mb-1">
-                        {match.runsScored} ({match.ballsFaced})
-                      </p>
-                      <div className="flex items-center space-x-1">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <p className="text-xs text-green-600 font-medium">Completed</p>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gradient-to-br from-muted to-muted/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Gamepad className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground font-medium mb-2">No matches recorded yet</p>
-                  <p className="text-sm text-muted-foreground/70">Your match history will appear here</p>
-                </div>
-              )}
-            </div>
-            <Button variant="ghost" asChild className="w-full mt-6 btn-modern btn-interactive ripple-effect group bg-gradient-to-r from-primary/5 to-sky-500/5 hover:from-primary/10 hover:to-sky-500/10 border border-primary/20 rounded-xl" data-testid="link-add-match">
-              <Link href="/add-match" className="flex items-center justify-center space-x-2 font-medium">
-                <span>Add New Match</span>
-                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* My Teams */}
-        <Card className="card-mobile border-0 group">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-bold text-foreground flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span>My Teams</span>
-              </div>
-              {invitations && invitations.length > 0 && (
-                <Badge variant="destructive" className="bg-gradient-to-r from-red-500 to-rose-600 border-0 shadow-lg" data-testid="badge-invitations">
-                  {invitations.length} pending
-                </Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {teams && teams.length > 0 ? (
-                teams.slice(0, 3).map((team: Team) => (
-                  <Link 
-                    key={team.id} 
-                    href={`/teams/${team.id}`}
-                    onClick={() => sessionStorage.setItem("teamDetailReferrer", "/dashboard")}
-                  >
-                    <div
-                      className="flex items-center justify-between p-4 bg-gradient-to-r from-background/50 to-background/30 backdrop-blur-sm rounded-xl border border-white/10 hover:border-emerald-500/30 transition-all duration-300 cursor-pointer group"
-                      data-testid={`team-${team.id}`}
-                    >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                        <Users className="text-white h-6 w-6" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground group-hover:text-emerald-600 transition-colors">{team.name}</p>
-                        <p className="text-sm text-muted-foreground font-medium flex items-center space-x-1">
-                          {team.captainId === user?.id ? (
-                            <><Crown className="w-3 h-3 text-yellow-500" /><span>Captain</span></>
-                          ) : (
-                            <><Users className="w-3 h-3" /><span>Member</span></>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    {team.captainId === user?.id && (
-                      <div className="flex items-center space-x-2">
-                        <div className="px-2 py-1 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-lg">
-                          <Crown className="text-white h-4 w-4" />
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1 animate-pulse"></div>
+                            LIVE
+                          </Badge>
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            {match.isRoomMatch && <Lock className="w-3 h-3" />}
+                            <Eye className="w-3 h-3" />
+                            <span>{match.spectators?.length || 0}</span>
+                          </div>
                         </div>
                       </div>
-                    )}
                     </div>
-                  </Link>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gradient-to-br from-muted to-muted/50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Users className="w-8 h-8 text-muted-foreground" />
+                    <ArrowUpRight className="w-5 h-5 text-muted-foreground flex-shrink-0 ml-2" />
                   </div>
-                  <p className="text-muted-foreground font-medium mb-2">No teams joined yet</p>
-                  <p className="text-sm text-muted-foreground/70">Join a team to start playing</p>
-                </div>
+                </Link>
+              ))}
+              {liveMatches.length > 3 && (
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="w-full rounded-xl border border-border hover:border-primary/50 h-12"
+                  data-testid="button-view-all-rooms"
+                >
+                  <Link href="/live-scoreboard" className="flex items-center justify-center gap-2">
+                    <span className="font-semibold">View All Rooms</span>
+                    <ArrowUpRight className="w-4 h-4" />
+                  </Link>
+                </Button>
               )}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-muted to-muted/50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Eye className="w-7 h-7 sm:w-8 sm:h-8 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">No live matches</p>
+              <p className="text-xs text-muted-foreground/70">Create a match to get started!</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Key Stats - Mobile Optimized */}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary to-blue-500 rounded-xl flex items-center justify-center">
+                  <Gamepad className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl sm:text-3xl font-black text-foreground" data-testid="text-matches-played">
+                    {stats?.matchesPlayed || 0}
+                  </p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Matches</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl sm:text-3xl font-black text-foreground" data-testid="text-total-runs">
+                    {stats?.totalRuns || 0}
+                  </p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Runs</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-xl flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl sm:text-3xl font-black text-foreground" data-testid="text-strike-rate">
+                    {stats?.strikeRate ? Number(stats.strikeRate).toFixed(1) : "0.0"}
+                  </p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Strike Rate</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl flex items-center justify-center">
+                  <Target className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl sm:text-3xl font-black text-foreground" data-testid="text-wickets">
+                    {stats?.wicketsTaken || 0}
+                  </p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Wickets</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-      
-      {/* Floating Local Match Button */}
-      <Button
-        asChild
-        className="fixed bottom-6 right-6 w-auto h-auto p-5 rounded-3xl shadow-[0_20px_40px_rgba(100,116,255,0.4)] hover:shadow-[0_24px_48px_rgba(100,116,255,0.5)] transition-all duration-300 z-[9999] bg-gradient-to-r from-primary via-blue-500 to-primary hover:from-primary-hover hover:via-blue-600 hover:to-primary-hover border-2 border-white/20 group backdrop-blur-sm hover:scale-105"
-        style={{ position: 'fixed' }}
-        data-testid="floating-local-match"
-      >
-        <Link href="/local-match" className="flex items-center space-x-3 text-white px-1">
-          <div className="w-14 h-14 bg-white/25 rounded-2xl flex items-center justify-center group-hover:bg-white/35 transition-all duration-300 shadow-lg group-hover:rotate-6">
-            <Gamepad className="h-8 w-8 drop-shadow-md" />
+
+      {/* Teams Section */}
+      <Card className="mb-6 border-0 shadow-lg">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg sm:text-xl font-bold flex items-center gap-2">
+              <Users className="w-5 h-5 text-emerald-500" />
+              <span>My Teams</span>
+            </CardTitle>
+            {invitations && invitations.length > 0 && (
+              <Badge variant="destructive" className="bg-gradient-to-r from-red-500 to-rose-600" data-testid="badge-invitations">
+                {invitations.length}
+              </Badge>
+            )}
           </div>
-          <div className="text-left pr-1">
-            <div className="font-black text-base tracking-tight drop-shadow-md">Create Match</div>
-            <div className="text-sm opacity-95 font-semibold drop-shadow-sm">Start playing now</div>
-          </div>
-          <ArrowUpRight className="h-7 w-7 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300 drop-shadow-md" />
-        </Link>
-      </Button>
+        </CardHeader>
+        <CardContent>
+          {teams && teams.length > 0 ? (
+            <div className="space-y-3">
+              {teams.slice(0, 3).map((team: Team) => (
+                <Link 
+                  key={team.id} 
+                  href={`/teams/${team.id}`}
+                  onClick={() => sessionStorage.setItem("teamDetailReferrer", "/dashboard")}
+                >
+                  <div className="flex items-center justify-between p-4 bg-gradient-to-r from-background/50 to-background/30 rounded-xl border border-border hover:border-emerald-500/50 transition-all duration-300 cursor-pointer min-h-[60px]" data-testid={`team-${team.id}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                        <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-foreground text-sm sm:text-base">{team.name}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          {team.captainId === user?.id && <Crown className="w-3 h-3 text-yellow-500" />}
+                          <span>{team.captainId === user?.id ? 'Captain' : 'Member'}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <ArrowUpRight className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-muted to-muted/50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Users className="w-7 h-7 sm:w-8 sm:h-8 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">No teams yet</p>
+              <p className="text-xs text-muted-foreground/70">Join or create a team to play together</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
