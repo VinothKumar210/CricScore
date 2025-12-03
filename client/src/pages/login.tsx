@@ -72,14 +72,14 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen min-h-dvh bg-gradient-to-br from-sky-50 to-blue-100 flex items-center justify-center container-mobile safe-area-top safe-area-bottom">
-      <Card className="w-full max-w-sm sm:max-w-md card-mobile">
-        <CardHeader className="text-center space-y-3 sm:space-y-4">
-          <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-primary rounded-full flex items-center justify-center mb-4 shadow-lg">
-            <span className="text-primary-foreground text-xl sm:text-2xl font-bold">🏏</span>
+    <div className="min-h-screen min-h-dvh bg-gradient-to-br from-blue-50 via-white to-blue-100 flex items-center justify-center container-mobile safe-area-top safe-area-bottom p-4">
+      <Card className="w-full max-w-sm sm:max-w-md card-mobile shadow-2xl border-primary/20">
+        <CardHeader className="text-center space-y-4 sm:space-y-5 pb-8">
+          <div className="mx-auto w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-primary to-blue-500 rounded-3xl flex items-center justify-center mb-4 shadow-2xl transform hover:scale-110 transition-transform duration-300 rotate-3 hover:rotate-0">
+            <span className="text-primary-foreground text-3xl sm:text-4xl font-bold drop-shadow-lg">🏏</span>
           </div>
-          <CardTitle className="text-mobile-h2">CricScore</CardTitle>
-          <CardDescription className="text-mobile-caption">Track your cricket career statistics</CardDescription>
+          <CardTitle className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">CricScore</CardTitle>
+          <CardDescription className="text-base font-medium text-muted-foreground">Track your cricket career statistics and performance</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
