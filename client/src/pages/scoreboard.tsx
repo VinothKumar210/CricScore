@@ -2089,6 +2089,39 @@ export default function Scoreboard() {
                 </div>
               </div>
             </div>
+            
+            {/* Bottom Orange Panel for Player Selection */}
+            <div className="fixed bottom-0 left-0 right-0 bg-orange-500 dark:bg-orange-600 p-4 shadow-lg border-t-4 border-orange-600 dark:border-orange-700 z-40">
+              <div className="max-w-6xl mx-auto">
+                <div className="flex items-center justify-between mb-3">
+                  <button
+                    className="text-white hover:text-orange-100"
+                    data-testid="button-close-selection-panel"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                  <h3 className="text-white font-bold text-lg">Select Players</h3>
+                  <div className="w-5"></div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <Button
+                    onClick={() => setShowBatsmanDialog(true)}
+                    className="h-16 bg-white hover:bg-orange-50 text-orange-600 font-semibold text-base border-2 border-orange-200"
+                    data-testid="button-select-batsman-panel"
+                  >
+                    Select Batsman
+                  </Button>
+                  <Button
+                    onClick={() => setShowBowlerDialog(true)}
+                    className="h-16 bg-white hover:bg-orange-50 text-orange-600 font-semibold text-base border-2 border-orange-200"
+                    data-testid="button-select-bowler-panel"
+                  >
+                    Select Bowler
+                  </Button>
+                </div>
+              </div>
+            </div>
           </TabsContent>
           
           {/* Scorecard Tab - Original Full Scorecard */}
@@ -2176,6 +2209,7 @@ export default function Scoreboard() {
         </CardContent>
       </Card>
 
+      {/* Original Content Continues in Scorecard Tab */}
       {/* Current Over Display */}
       <div className="bg-sky-50 dark:bg-slate-800 rounded-lg border p-4 mb-6">
         <div className="flex items-center justify-between mb-3">
@@ -2612,7 +2646,65 @@ export default function Scoreboard() {
           </div>
         </CardContent>
       </Card>
+            </div>
+          </TabsContent>
+          
+          {/* Other Tabs - Placeholders */}
+          <TabsContent value="stats" className="flex-1 mt-0">
+            <div className="p-4 max-w-6xl mx-auto">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Match Statistics</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Detailed statistics will appear here during the match.</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="super-stars" className="flex-1 mt-0">
+            <div className="p-4 max-w-6xl mx-auto">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Super Stars</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Top performers will be highlighted here.</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="balls" className="flex-1 mt-0">
+            <div className="p-4 max-w-6xl mx-auto">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Ball by Ball</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Ball-by-ball commentary will be shown here.</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="info" className="flex-1 mt-0">
+            <div className="p-4 max-w-6xl mx-auto">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Match Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Match details and information will be displayed here.</p>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
 
+      {/* All Dialogs Below */}
       {/* Wicket Dialog */}
       <Dialog open={showWicketDialog} onOpenChange={() => {}}>
         <DialogContent>
