@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLocation } from 'wouter';
 import { type LocalPlayer } from '@shared/schema';
+import { X } from 'lucide-react';
 
 type Phase = 'toss-method' | 'toss-spinning' | 'determine-winner' | 'choose-batting' | 'manual-entry' | 'final';
 
@@ -193,60 +194,89 @@ export function CoinToss() {
 
           {/* Manual Entry Phase */}
           {phase === 'manual-entry' && matchData && (
-            <div className="text-center space-y-6 w-full max-w-md">
-              <h3 className="text-xl font-semibold">Enter Toss Results</h3>
+            <div className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-8 space-y-8">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Who won the toss?</h2>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleStartOver}
+                  data-testid="button-close-toss"
+                  className="rounded-full"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
               
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Who won the toss?</label>
-                  <Select
-                    value={manualTossWinner || ""}
-                    onValueChange={(value) => setManualTossWinner(value as 'my-team' | 'opponent-team')}
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setManualTossWinner('my-team')}
+                    data-testid="button-select-my-team"
+                    className={`
+                      p-8 rounded-2xl border-2 transition-all
+                      ${manualTossWinner === 'my-team' 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'}
+                    `}
                   >
-                    <SelectTrigger data-testid="select-toss-winner">
-                      <SelectValue placeholder="Select toss winner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="my-team">My Team</SelectItem>
-                      <SelectItem value="opponent-team">Opponent Team</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <div className="flex flex-col items-center space-y-3">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                        {matchData.myTeamName.substring(0, 2).toUpperCase()}
+                      </div>
+                      <span className="font-semibold text-lg">{matchData.myTeamName}</span>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => setManualTossWinner('opponent-team')}
+                    data-testid="button-select-opponent-team"
+                    className={`
+                      p-8 rounded-2xl border-2 transition-all
+                      ${manualTossWinner === 'opponent-team' 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'}
+                    `}
+                  >
+                    <div className="flex flex-col items-center space-y-3">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                        {matchData.opponentTeamName.substring(0, 2).toUpperCase()}
+                      </div>
+                      <span className="font-semibold text-lg">{matchData.opponentTeamName}</span>
+                    </div>
+                  </button>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">What did the winning team choose?</label>
-                  <Select
-                    value={manualBattingChoice || ""}
-                    onValueChange={(value) => setManualBattingChoice(value as 'batting' | 'bowling')}
-                  >
-                    <SelectTrigger data-testid="select-batting-choice">
-                      <SelectValue placeholder="Select choice" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="batting">Batting First</SelectItem>
-                      <SelectItem value="bowling">Bowling First</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-3">
+                  <h3 className="text-xl font-bold">Decided to?</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button
+                      onClick={() => setManualBattingChoice('batting')}
+                      variant={manualBattingChoice === 'batting' ? 'default' : 'outline'}
+                      className="h-14 text-lg font-semibold"
+                      data-testid="button-choose-bat"
+                    >
+                      Bat
+                    </Button>
+                    <Button
+                      onClick={() => setManualBattingChoice('bowling')}
+                      variant={manualBattingChoice === 'bowling' ? 'default' : 'outline'}
+                      className="h-14 text-lg font-semibold"
+                      data-testid="button-choose-bowl"
+                    >
+                      Bowl
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
-                  <Button 
-                    onClick={handleStartOver}
-                    variant="outline"
-                    className="flex-1"
-                    data-testid="button-back"
-                  >
-                    ← Back
-                  </Button>
-                  <Button 
-                    onClick={handleManualTossSubmit}
-                    disabled={!manualTossWinner || !manualBattingChoice}
-                    className="flex-1"
-                    data-testid="button-proceed-scoring"
-                  >
-                    Proceed to Scoring
-                  </Button>
-                </div>
+                <Button 
+                  onClick={handleManualTossSubmit}
+                  disabled={!manualTossWinner || !manualBattingChoice}
+                  className="w-full h-14 text-lg font-bold bg-green-600 hover:bg-green-700 text-white"
+                  data-testid="button-start-scoring"
+                >
+                  START SCORING
+                </Button>
               </div>
             </div>
           )}
