@@ -20,8 +20,6 @@ model User {
   bowlingStyle    BowlingStyle?
   profileComplete Boolean  @default(false)
   createdAt       DateTime @default(now())
-
-  // Relations
   careerStats     CareerStats?
   captainOfTeams  Team[]       @relation("TeamCaptain")
   viceCaptainOfTeams Team[]    @relation("TeamViceCaptain")
