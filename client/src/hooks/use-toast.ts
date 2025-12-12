@@ -67,3 +67,34 @@ export const reducer = (state: State, action: any): State => {
   }
 }
 
+const TOAST_REMOVE_DELAY = 1000000
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+
+const addToRemoveQueue = (toastId: string) => {
+  if (toastTimeouts.has(toastId)) return
+  const timeout = setTimeout(() => {
+    toastTimeouts.delete(toastId)
+    dispatch({ type: "REMOVE_TOAST", toastId })
+  }, TOAST_REMOVE_DELAY)
+  toastTimeouts.set(toastId, timeout)
+}
+
+export const reducer = (state: State, action: any): State => {
+  switch (action.type) {
+    case "ADD_TOAST":
+      return { ...state, toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT) }
+    case "DISMISS_TOAST":
+      const { toastId } = action
+      if (toastId) addToRemoveQueue(toastId)
+      else state.toasts.forEach((t) => addToRemoveQueue(t.id))
+      return {
+        ...state,
+        toasts: state.toasts.map((t) =>
+          t.id === toastId || toastId === undefined ? { ...t, open: false } : t
+        ),
+      }
+    default:
+      return state
+  }
+}
+
