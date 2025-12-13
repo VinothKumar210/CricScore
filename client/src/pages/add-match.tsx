@@ -74,3 +74,32 @@ import { Input } from "@/components/ui/input";
   />
 </Form>
 
+import { Switch } from "@/components/ui/switch";
+
+<FormField
+  control={form.control}
+  name="runsScored"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Runs Scored</FormLabel>
+      <FormControl>
+        <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
+
+<FormField
+  control={form.control}
+  name="wasDismissed"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Were you dismissed?</FormLabel>
+      <FormControl>
+        <Switch checked={field.value} onCheckedChange={field.onChange} />
+      </FormControl>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
