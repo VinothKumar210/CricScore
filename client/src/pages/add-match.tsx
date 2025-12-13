@@ -130,3 +130,12 @@ import { Switch } from "@/components/ui/switch";
     <FormMessage />
   </FormItem>
 )} />
+
+import { Button } from "@/components/ui/button";
+
+<div className="flex space-x-4">
+  <Button type="button" onClick={() => form.reset()}>Reset Form</Button>
+  <Button type="submit" disabled={addMatchMutation.isPending}>
+    {addMatchMutation.isPending ? "Saving..." : "Save Match Statistics"}
+  </Button>
+</div>
