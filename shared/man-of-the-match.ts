@@ -97,3 +97,7 @@ playerScores.push({
   performanceScore,
   breakdown
 });
+
+
+playerScores.sort((a, b) => b.performanceScore - a.performanceScore);
+return playerScores[0];
