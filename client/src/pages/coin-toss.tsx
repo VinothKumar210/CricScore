@@ -19,3 +19,12 @@ useEffect(() => {
     setLocation('/local-match');
   }
 }, [setLocation]);
+{phase === 'toss-method' && (
+  <div className="text-center space-y-6">
+    <h3 className="text-xl font-semibold">Choose Toss Method</h3>
+    <div className="flex flex-col gap-4 justify-center max-w-md">
+      <Button onClick={() => handleTossMethodChoice('animated')}>🪙 Animated Coin Toss</Button>
+      <Button onClick={() => handleTossMethodChoice('manual')} variant="outline">✏️ Enter Toss Result Manually</Button>
+    </div>
+  </div>
+)}
