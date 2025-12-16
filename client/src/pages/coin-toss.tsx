@@ -28,3 +28,22 @@ useEffect(() => {
     </div>
   </div>
 )}
+const handleTossMethodChoice = (method: 'animated' | 'manual') => {
+  setTossMethod(method);
+  if (method === 'animated') {
+    setIsFlipping(true);
+    setResult(null);
+    setPhase('toss-spinning');
+  } else {
+    setPhase('manual-entry');
+  }
+};
+
+const handleOpponentChoice = (side: 'heads' | 'tails') => {
+  const coinResult = Math.random() < 0.5 ? 'heads' : 'tails';
+  setSelectedSide(side);
+  setResult(coinResult);
+  setIsFlipping(false);
+  setTossWinner(side === coinResult ? 'opponent' : 'user');
+  setPhase('determine-winner');
+};
