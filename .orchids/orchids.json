@@ -1,0 +1,7 @@
+{
+  "projectId": "a032d75b-d5d3-4908-84ec-a1690fa1bf13",
+  "createdAt": 1768110037472,
+  "startupCommands": [
+    "bun install; npx prisma generate; $env:DATABASE_URL=\"mongodb://localhost:27017/test\"; bun run dev"
+  ]
+}

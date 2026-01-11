@@ -53,37 +53,9 @@ app.use((req, res, next) => {
 
 // Function to verify database connection
 async function verifyDatabaseConnection() {
-  try {
-    log("Verifying MongoDB connection...");
-    
-    // Test connection by connecting to Prisma
-    await prisma.$connect();
-    
-    // For MongoDB, we can test by trying to count documents or find first
-    // This is a lightweight operation that tests the connection
-    const result = await prisma.user.count();
-    log(`✓ MongoDB connection successful - found ${result} users`);
-    return true;
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    log(`✗ MongoDB connection failed: ${errorMessage}`);
-    
-    // Check for specific MongoDB errors
-    if (errorMessage.includes('authentication failed') || errorMessage.includes('bad auth')) {
-      log("Error: MongoDB authentication failed. Please verify your DATABASE_URL credentials.");
-    } else if (errorMessage.includes('empty database name not allowed')) {
-      log("Error: DATABASE_URL is missing database name. Please add '/database_name' to your connection string.");
-      log("Example: mongodb+srv://user:pass@cluster.mongodb.net/your_database_name?options");
-    } else if (errorMessage.includes('ConnectorError')) {
-      log("Error: MongoDB connection error. Please check your DATABASE_URL configuration.");
-    }
-    
-    log("Warning: Starting server without database connection. Some features may not work.");
-    return false;
-  } finally {
-    // Always disconnect after testing to avoid hanging connections
-    await prisma.$disconnect().catch(() => {});
-  }
+  log("Skipping MongoDB connection verification for development...");
+  log("Warning: Starting server without database connection. Some features may not work.");
+  return false;
 }
 
 (async () => {
@@ -157,11 +129,10 @@ async function verifyDatabaseConnection() {
     serveStatic(app);
   }
   const port = parseInt(process.env.PORT || '5000', 10);
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+    server.listen({
+      port,
+      host: "0.0.0.0",
+    }, () => {
+      log(`serving on port ${port}`);
+    });
 })();
