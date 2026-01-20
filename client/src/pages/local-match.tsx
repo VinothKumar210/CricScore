@@ -181,125 +181,112 @@ export default function LocalMatch() {
     });
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
   return (
-    <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-background shrink-0">
+    <div className="h-[100dvh] flex flex-col bg-white overflow-hidden">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white shrink-0">
         <button
           onClick={() => setLocation("/dashboard")}
-          className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors"
+          className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5 text-gray-700" />
         </button>
-        <h1 className="text-lg font-semibold">Open Match</h1>
+        <h1 className="text-lg font-semibold text-gray-900">Open Match</h1>
       </div>
 
-      <div className="flex-1 flex flex-col justify-between px-4 py-4 overflow-hidden">
-        <div className="flex justify-around items-start">
+      <div className="flex-1 flex flex-col px-6 py-6 overflow-hidden">
+        <div className="flex justify-center gap-12 mb-6">
           <div className="flex flex-col items-center gap-2">
-            <span className="text-sm text-muted-foreground">Select Team</span>
+            <span className="text-sm text-gray-500">Select Team</span>
             <button
               onClick={() => handleOpenTeamSelect("A")}
-              className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-muted-foreground/30 hover:border-primary transition-colors"
+              className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors"
             >
               {teamA?.logo ? (
                 <img src={teamA.logo} alt={teamA.name} className="w-full h-full object-cover" />
               ) : teamA ? (
-                <Users className="h-8 w-8 text-muted-foreground" />
+                <Users className="h-8 w-8 text-gray-400" />
               ) : (
-                <Plus className="h-8 w-8 text-muted-foreground" />
+                <Plus className="h-8 w-8 text-gray-400" />
               )}
             </button>
-            <span className="text-sm font-semibold text-foreground max-w-[80px] text-center truncate">
+            <span className="text-sm font-semibold text-gray-900 max-w-[80px] text-center truncate">
               {teamA?.name || "TEAM A"}
             </span>
           </div>
 
           <div className="flex flex-col items-center gap-2">
-            <span className="text-sm text-muted-foreground">Select Team</span>
+            <span className="text-sm text-gray-500">Select Team</span>
             <button
               onClick={() => handleOpenTeamSelect("B")}
-              className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-dashed border-muted-foreground/30 hover:border-primary transition-colors"
+              className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors"
             >
               {teamB?.logo ? (
                 <img src={teamB.logo} alt={teamB.name} className="w-full h-full object-cover" />
               ) : teamB ? (
-                <Users className="h-8 w-8 text-muted-foreground" />
+                <Users className="h-8 w-8 text-gray-400" />
               ) : (
-                <Plus className="h-8 w-8 text-muted-foreground" />
+                <Plus className="h-8 w-8 text-gray-400" />
               )}
             </button>
-            <span className="text-sm font-semibold text-foreground max-w-[80px] text-center truncate">
+            <span className="text-sm font-semibold text-gray-900 max-w-[80px] text-center truncate">
               {teamB?.name || "TEAM B"}
             </span>
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4 flex-1 flex flex-col justify-center">
           <Input
             placeholder="Venue"
             value={venue}
             onChange={(e) => setVenue(e.target.value)}
-            className="text-center border-0 border-b rounded-none focus-visible:ring-0 focus-visible:border-primary"
+            className="text-center border-0 border-b border-gray-200 rounded-none bg-white text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-blue-500"
           />
 
           <div className="flex gap-4">
             <div className="flex-1 relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               <input
                 type="date"
                 value={matchDate}
                 onChange={(e) => setMatchDate(e.target.value)}
-                className="w-full pl-10 pr-3 py-2.5 text-sm bg-transparent border-0 border-b focus:outline-none focus:border-primary"
+                className="w-full pl-10 pr-3 py-2.5 text-sm bg-white text-gray-900 border-0 border-b border-gray-200 focus:outline-none focus:border-blue-500"
               />
             </div>
             <div className="flex-1 relative">
-              <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
               <input
                 type="time"
                 value={matchTime}
                 onChange={(e) => setMatchTime(e.target.value)}
-                className="w-full pl-10 pr-3 py-2.5 text-sm bg-transparent border-0 border-b focus:outline-none focus:border-primary"
+                className="w-full pl-10 pr-3 py-2.5 text-sm bg-white text-gray-900 border-0 border-b border-gray-200 focus:outline-none focus:border-blue-500"
               />
             </div>
           </div>
-        </div>
 
-        <div className="py-2">
-          <OversSelector
-            overs={overs}
-            onOversChange={setOvers}
-          />
-        </div>
+          <div className="py-4">
+            <OversSelector
+              overs={overs}
+              onOversChange={setOvers}
+            />
+          </div>
 
-        <div>
           <Input
             placeholder="Select Scorer (Optional)"
-            className="text-center border-0 border-b rounded-none focus-visible:ring-0 focus-visible:border-primary text-muted-foreground"
+            className="text-center border-0 border-b border-gray-200 rounded-none bg-white text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-blue-500"
             readOnly
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-3 pt-4 mt-auto">
           <Button
             onClick={handleSaveFixture}
-            variant="default"
-            className="flex-1 bg-[#008B8B] hover:bg-[#007777] text-white h-12"
+            className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white h-12 rounded-xl font-semibold shadow-md"
           >
             SAVE FIXTURE
           </Button>
           <Button
             onClick={handleStartMatch}
-            variant="default"
-            className="flex-1 bg-[#008B8B] hover:bg-[#007777] text-white h-12"
+            className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white h-12 rounded-xl font-semibold shadow-md"
           >
             START MATCH
           </Button>
@@ -325,9 +312,9 @@ export default function LocalMatch() {
       )}
 
       <Dialog open={addGuestPlayerOpen} onOpenChange={setAddGuestPlayerOpen}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm bg-white">
           <DialogHeader>
-            <DialogTitle>Add Guest Player</DialogTitle>
+            <DialogTitle className="text-gray-900">Add Guest Player</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <Input
@@ -335,18 +322,19 @@ export default function LocalMatch() {
               value={guestPlayerName}
               onChange={(e) => setGuestPlayerName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddGuestPlayer()}
+              className="bg-white text-gray-900 border-gray-200"
             />
             <div className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={() => setAddGuestPlayerOpen(false)}
-                className="flex-1"
+                className="flex-1 border-gray-200 text-gray-700"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleAddGuestPlayer}
-                className="flex-1 bg-[#008B8B] hover:bg-[#007777] text-white"
+                className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white"
               >
                 Add Player
               </Button>

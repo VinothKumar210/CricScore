@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils";
-
 interface OversSelectorProps {
   overs: number;
   onOversChange: (overs: number) => void;
@@ -25,12 +23,12 @@ export function OversSelector({ overs, onOversChange }: OversSelectorProps) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full px-4">
+    <div className="flex flex-col items-center gap-3 w-full">
       <div className="flex items-center justify-center gap-2">
-        <span className="text-2xl font-bold text-foreground">{overs}</span>
-        <span className="text-muted-foreground text-sm">Overs</span>
-        <span className="text-muted-foreground">-</span>
-        <span className="text-sm font-medium text-primary">{getMatchFormat(overs)}</span>
+        <span className="text-2xl font-bold text-gray-900">{overs}</span>
+        <span className="text-gray-500 text-sm">Overs</span>
+        <span className="text-gray-400">-</span>
+        <span className="text-sm font-medium text-blue-500">{getMatchFormat(overs)}</span>
       </div>
       
       <div className="w-full max-w-xs">
@@ -40,12 +38,12 @@ export function OversSelector({ overs, onOversChange }: OversSelectorProps) {
           max={OVERS_OPTIONS.length - 1}
           value={sliderValue}
           onChange={handleSliderChange}
-          className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-[#008B8B]"
+          className="w-full h-2 rounded-lg appearance-none cursor-pointer"
           style={{
-            background: `linear-gradient(to right, #008B8B 0%, #008B8B ${(sliderValue / (OVERS_OPTIONS.length - 1)) * 100}%, #e2e8f0 ${(sliderValue / (OVERS_OPTIONS.length - 1)) * 100}%, #e2e8f0 100%)`
+            background: `linear-gradient(to right, #3b82f6 0%, #06b6d4 ${(sliderValue / (OVERS_OPTIONS.length - 1)) * 100}%, #e5e7eb ${(sliderValue / (OVERS_OPTIONS.length - 1)) * 100}%, #e5e7eb 100%)`
           }}
         />
-        <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+        <div className="flex justify-between mt-1 text-xs text-gray-400">
           <span>1</span>
           <span>50</span>
         </div>
