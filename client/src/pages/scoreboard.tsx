@@ -1077,9 +1077,9 @@ export default function Scoreboard() {
           </div>
           
           {/* Tabs Navigation */}
-          <Tabs defaultValue="scoring" className="w-full flex flex-col flex-1">
-            <div className="px-4 shrink-0">
-              <TabsList className="bg-transparent border-b-0 h-auto p-0 w-full justify-start overflow-x-auto">
+            <Tabs defaultValue="scoring" className="w-full flex flex-col flex-1">
+              <div className="px-4 shrink-0">
+                <TabsList className="bg-transparent border-b-0 h-auto p-0 w-full justify-start overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
                 <TabsTrigger 
                   value="scoring" 
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-4 py-2 text-sm text-gray-500 data-[state=active]:text-blue-600"
