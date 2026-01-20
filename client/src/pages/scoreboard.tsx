@@ -1120,33 +1120,33 @@ export default function Scoreboard() {
         </Tabs>
       </div>
       
-      {/* Main Content Area - Flex grow to fill remaining space */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main Content Area - White background for score display */}
+      <div className="flex-1 flex flex-col overflow-hidden bg-white">
         {/* Score Display Section */}
         <div className="flex-1 overflow-y-auto p-3">
           <div className="max-w-6xl mx-auto space-y-3">
             {/* Team and Score Display */}
             <div className="text-center space-y-1">
-              <h2 className="text-lg font-bold">
+              <h2 className="text-lg font-bold text-gray-900">
                 {localStorage.getItem('myTeamName') || 'Your Team'}
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-gray-500">
                 {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
               </p>
               
-              <div className="text-4xl font-bold text-blue-600 dark:text-blue-500">
+              <div className="text-4xl font-bold text-blue-600">
                 {battingTeamScore.runs}-{battingTeamScore.wickets}
               </div>
               
               {/* Match Info Row */}
-              <div className="flex justify-center gap-4 text-xs text-muted-foreground">
+              <div className="flex justify-center gap-4 text-xs text-gray-500">
                 <span>Extras - {battingTeamScore.extras.wides + battingTeamScore.extras.noBalls + battingTeamScore.extras.byes + battingTeamScore.extras.legByes}</span>
                 <span>Overs - {formatOvers(battingTeamScore.balls)} / {matchState.matchOvers}</span>
                 <span>CRR - {battingTeamScore.balls > 0 ? (battingTeamScore.runs / (battingTeamScore.balls / 6)).toFixed(2) : '0.00'}</span>
               </div>
               
               {/* Partnership */}
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-gray-500">
                 Partnership - {getCurrentBatsmanStats(true).runs + getCurrentBatsmanStats(false).runs}({getCurrentBatsmanStats(true).balls + getCurrentBatsmanStats(false).balls})
               </div>
             </div>
@@ -1154,14 +1154,14 @@ export default function Scoreboard() {
               {/* Current Batsmen Table */}
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium">Batsman</span>
-                  <span className="text-right ml-auto text-xs text-muted-foreground">R</span>
-                  <span className="text-center w-6 text-xs text-muted-foreground">B</span>
-                  <span className="text-center w-6 text-xs text-muted-foreground">4s</span>
-                  <span className="text-center w-6 text-xs text-muted-foreground">6s</span>
-                  <span className="text-center w-8 text-xs text-muted-foreground">SR</span>
+                  <span className="text-xs font-medium text-gray-700">Batsman</span>
+                  <span className="text-right ml-auto text-xs text-gray-500">R</span>
+                  <span className="text-center w-6 text-xs text-gray-500">B</span>
+                  <span className="text-center w-6 text-xs text-gray-500">4s</span>
+                  <span className="text-center w-6 text-xs text-gray-500">6s</span>
+                  <span className="text-center w-8 text-xs text-gray-500">SR</span>
                 </div>
-                <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded-lg border">
+                <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
                   <table className="w-full">
                     <tbody>
                       {(matchState.strikeBatsman.name || selectedOpeningBatsmen.length > 0) ? (
@@ -1226,20 +1226,20 @@ export default function Scoreboard() {
                       ) : (
                         <>
                           <tr className="border-b">
-                            <td className="p-2 text-sm text-muted-foreground" data-testid="batsman-1-name">-</td>
-                            <td className="text-center p-2 text-sm">-</td>
-                            <td className="text-center p-2 text-sm">-</td>
-                            <td className="text-center p-2 text-sm">-</td>
-                            <td className="text-center p-2 text-sm">-</td>
-                            <td className="text-center p-2 text-sm">-</td>
+                            <td className="p-2 text-sm text-gray-400" data-testid="batsman-1-name">-</td>
+                            <td className="text-center p-2 text-sm text-gray-600">-</td>
+                            <td className="text-center p-2 text-sm text-gray-600">-</td>
+                            <td className="text-center p-2 text-sm text-gray-600">-</td>
+                            <td className="text-center p-2 text-sm text-gray-600">-</td>
+                            <td className="text-center p-2 text-sm text-gray-600">-</td>
                           </tr>
                           <tr>
-                            <td className="p-2 text-sm text-muted-foreground" data-testid="batsman-2-name">-</td>
-                            <td className="text-center p-2 text-sm">-</td>
-                            <td className="text-center p-2 text-sm">-</td>
-                            <td className="text-center p-2 text-sm">-</td>
-                            <td className="text-center p-2 text-sm">-</td>
-                            <td className="text-center p-2 text-sm">-</td>
+                            <td className="p-2 text-sm text-gray-400" data-testid="batsman-2-name">-</td>
+                            <td className="text-center p-2 text-sm text-gray-600">-</td>
+                            <td className="text-center p-2 text-sm text-gray-600">-</td>
+                            <td className="text-center p-2 text-sm text-gray-600">-</td>
+                            <td className="text-center p-2 text-sm text-gray-600">-</td>
+                            <td className="text-center p-2 text-sm text-gray-600">-</td>
                           </tr>
                         </>
                       )}
@@ -1247,7 +1247,7 @@ export default function Scoreboard() {
                   </table>
                 </div>
                 {!isMatchStarted && selectedOpeningBatsmen.length === 2 && (
-                  <p className="text-xs text-muted-foreground mt-1 text-center">
+                  <p className="text-xs text-gray-500 mt-1 text-center">
                     Click on a batsman to set as striker (*)
                   </p>
                 )}
@@ -1256,14 +1256,14 @@ export default function Scoreboard() {
             {/* Current Bowler Table */}
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-medium">✏️ Bowler</span>
-                <span className="text-right ml-auto text-xs text-muted-foreground">O</span>
-                <span className="text-center w-6 text-xs text-muted-foreground">M</span>
-                <span className="text-center w-6 text-xs text-muted-foreground">R</span>
-                <span className="text-center w-6 text-xs text-muted-foreground">W</span>
-                <span className="text-center w-8 text-xs text-muted-foreground">Eco</span>
+                <span className="text-xs font-medium text-gray-700">Bowler</span>
+                <span className="text-right ml-auto text-xs text-gray-500">O</span>
+                <span className="text-center w-6 text-xs text-gray-500">M</span>
+                <span className="text-center w-6 text-xs text-gray-500">R</span>
+                <span className="text-center w-6 text-xs text-gray-500">W</span>
+                <span className="text-center w-8 text-xs text-gray-500">Eco</span>
               </div>
-              <div className="overflow-x-auto bg-white dark:bg-slate-800 rounded-lg border">
+              <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
                 <table className="w-full">
                   <tbody>
                     <tr>
