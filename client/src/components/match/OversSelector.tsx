@@ -23,27 +23,27 @@ export function OversSelector({ overs, onOversChange }: OversSelectorProps) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full">
-      <div className="flex items-center justify-center gap-2">
-        <span className="text-2xl font-bold text-gray-900">{overs}</span>
-        <span className="text-gray-500 text-sm">Overs</span>
-        <span className="text-gray-400">-</span>
-        <span className="text-sm font-medium text-blue-500">{getMatchFormat(overs)}</span>
+    <div className="flex flex-col items-center gap-2 w-full max-w-full overflow-hidden">
+      <div className="flex items-center justify-center gap-1.5">
+        <span className="text-xl font-bold text-gray-900">{overs}</span>
+        <span className="text-gray-500 text-xs">Overs</span>
+        <span className="text-gray-400 text-xs">-</span>
+        <span className="text-xs font-medium text-blue-500">{getMatchFormat(overs)}</span>
       </div>
       
-      <div className="w-full max-w-xs">
+      <div className="w-full max-w-[200px] px-2">
         <input
           type="range"
           min={0}
           max={OVERS_OPTIONS.length - 1}
           value={sliderValue}
           onChange={handleSliderChange}
-          className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+          className="w-full h-1.5 rounded-lg appearance-none cursor-pointer"
           style={{
             background: `linear-gradient(to right, #3b82f6 0%, #06b6d4 ${(sliderValue / (OVERS_OPTIONS.length - 1)) * 100}%, #e5e7eb ${(sliderValue / (OVERS_OPTIONS.length - 1)) * 100}%, #e5e7eb 100%)`
           }}
         />
-        <div className="flex justify-between mt-1 text-xs text-gray-400">
+        <div className="flex justify-between mt-0.5 text-[10px] text-gray-400">
           <span>1</span>
           <span>50</span>
         </div>

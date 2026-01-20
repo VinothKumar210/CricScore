@@ -182,88 +182,88 @@ export default function LocalMatch() {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-white overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white shrink-0">
+    <div className="h-[100dvh] w-full max-w-full flex flex-col bg-white overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 bg-white shrink-0">
         <button
           onClick={() => setLocation("/dashboard")}
-          className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors"
+          className="p-1.5 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
         >
-          <ArrowLeft className="h-5 w-5 text-gray-700" />
+          <ArrowLeft className="h-4 w-4 text-gray-700" />
         </button>
-        <h1 className="text-lg font-semibold text-gray-900">Open Match</h1>
+        <h1 className="text-base font-semibold text-gray-900">Open Match</h1>
       </div>
 
-      <div className="flex-1 flex flex-col px-6 py-6 overflow-hidden">
-        <div className="flex justify-center gap-12 mb-6">
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-sm text-gray-500">Select Team</span>
+      <div className="flex-1 flex flex-col px-4 py-4 overflow-hidden">
+        <div className="flex justify-center gap-8 mb-4">
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="text-xs text-gray-500">Select Team</span>
             <button
               onClick={() => handleOpenTeamSelect("A")}
-              className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors"
+              className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors"
             >
               {teamA?.logo ? (
                 <img src={teamA.logo} alt={teamA.name} className="w-full h-full object-cover" />
               ) : teamA ? (
-                <Users className="h-8 w-8 text-gray-400" />
+                <Users className="h-6 w-6 text-gray-400" />
               ) : (
-                <Plus className="h-8 w-8 text-gray-400" />
+                <Plus className="h-6 w-6 text-gray-400" />
               )}
             </button>
-            <span className="text-sm font-semibold text-gray-900 max-w-[80px] text-center truncate">
+            <span className="text-xs font-semibold text-gray-900 max-w-[70px] text-center truncate">
               {teamA?.name || "TEAM A"}
             </span>
           </div>
 
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-sm text-gray-500">Select Team</span>
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="text-xs text-gray-500">Select Team</span>
             <button
               onClick={() => handleOpenTeamSelect("B")}
-              className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors"
+              className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-gray-300 hover:border-blue-500 transition-colors"
             >
               {teamB?.logo ? (
                 <img src={teamB.logo} alt={teamB.name} className="w-full h-full object-cover" />
               ) : teamB ? (
-                <Users className="h-8 w-8 text-gray-400" />
+                <Users className="h-6 w-6 text-gray-400" />
               ) : (
-                <Plus className="h-8 w-8 text-gray-400" />
+                <Plus className="h-6 w-6 text-gray-400" />
               )}
             </button>
-            <span className="text-sm font-semibold text-gray-900 max-w-[80px] text-center truncate">
+            <span className="text-xs font-semibold text-gray-900 max-w-[70px] text-center truncate">
               {teamB?.name || "TEAM B"}
             </span>
           </div>
         </div>
 
-        <div className="space-y-4 flex-1 flex flex-col justify-center">
+        <div className="space-y-3 flex-1 flex flex-col justify-center">
           <Input
             placeholder="Venue"
             value={venue}
             onChange={(e) => setVenue(e.target.value)}
-            className="text-center border-0 border-b border-gray-200 rounded-none bg-white text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-blue-500"
+            className="text-center text-sm h-10 border-0 border-b border-gray-200 rounded-none bg-white text-gray-900 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-blue-500"
           />
 
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <div className="flex-1 relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
               <input
                 type="date"
                 value={matchDate}
                 onChange={(e) => setMatchDate(e.target.value)}
-                className="w-full pl-10 pr-3 py-2.5 text-sm bg-white text-gray-900 border-0 border-b border-gray-200 focus:outline-none focus:border-blue-500"
+                className="w-full pl-8 pr-2 py-2 text-xs bg-white text-gray-900 border-0 border-b border-gray-200 focus:outline-none focus:border-blue-500"
               />
             </div>
             <div className="flex-1 relative">
-              <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
               <input
                 type="time"
                 value={matchTime}
                 onChange={(e) => setMatchTime(e.target.value)}
-                className="w-full pl-10 pr-3 py-2.5 text-sm bg-white text-gray-900 border-0 border-b border-gray-200 focus:outline-none focus:border-blue-500"
+                className="w-full pl-8 pr-2 py-2 text-xs bg-white text-gray-900 border-0 border-b border-gray-200 focus:outline-none focus:border-blue-500"
               />
             </div>
           </div>
 
-          <div className="py-4">
+          <div className="py-3">
             <OversSelector
               overs={overs}
               onOversChange={setOvers}
@@ -272,21 +272,21 @@ export default function LocalMatch() {
 
           <Input
             placeholder="Select Scorer (Optional)"
-            className="text-center border-0 border-b border-gray-200 rounded-none bg-white text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-blue-500"
+            className="text-center text-sm h-10 border-0 border-b border-gray-200 rounded-none bg-white text-gray-400 placeholder:text-gray-400 focus-visible:ring-0 focus-visible:border-blue-500"
             readOnly
           />
         </div>
 
-        <div className="flex gap-3 pt-4 mt-auto">
+        <div className="flex gap-2 pt-3 mt-auto">
           <Button
             onClick={handleSaveFixture}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white h-12 rounded-xl font-semibold shadow-md"
+            className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white h-10 rounded-xl text-sm font-semibold shadow-md"
           >
             SAVE FIXTURE
           </Button>
           <Button
             onClick={handleStartMatch}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white h-12 rounded-xl font-semibold shadow-md"
+            className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white h-10 rounded-xl text-sm font-semibold shadow-md"
           >
             START MATCH
           </Button>
