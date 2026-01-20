@@ -5,6 +5,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development tsx server/index.ts",
+    "dev:frontend": "vite",
+    "dev:backend": "NODE_ENV=development SEPARATE_MODE=true tsx server/index.ts",
+    "dev:separate": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "NODE_ENV=production node dist/index.js",
     "check": "tsc",
@@ -49,6 +52,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "concurrently": "^9.2.1",
     "connect-pg-simple": "^10.0.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
