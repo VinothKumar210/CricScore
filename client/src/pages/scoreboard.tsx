@@ -3014,13 +3014,12 @@ export default function Scoreboard() {
                         localStorage.setItem('matchData', JSON.stringify(matchData));
                       }
                       
-                      setSelectedOpeningBatsmen(prev => [...prev, newPlayer]);
                       setShowAddGuestBatsman(false);
                       setGuestPlayerName('');
                       
                       toast({
                         title: "Guest player added",
-                        description: `${newPlayer.name} has been added to the batting team.`
+                        description: `${newPlayer.name} has been added. Please select them from the list.`
                       });
                     }
                   }}
@@ -3170,13 +3169,12 @@ export default function Scoreboard() {
                         localStorage.setItem('matchData', JSON.stringify(matchData));
                       }
                       
-                      setSelectedOpeningBowler(newPlayer);
                       setShowAddGuestBowler(false);
                       setGuestPlayerName('');
                       
                       toast({
                         title: "Guest player added",
-                        description: `${newPlayer.name} has been added to the bowling team.`
+                        description: `${newPlayer.name} has been added. Please select them from the list.`
                       });
                     }
                   }}
