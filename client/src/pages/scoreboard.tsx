@@ -1939,13 +1939,7 @@ export default function Scoreboard() {
               >
                 Scoring
               </TabsTrigger>
-              <TabsTrigger 
-                value="scorecard"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
-                data-testid="tab-scorecard"
-              >
-                Scorecard
-              </TabsTrigger>
+
               <TabsTrigger 
                 value="stats"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-3"
