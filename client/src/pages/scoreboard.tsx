@@ -119,6 +119,10 @@ export default function Scoreboard() {
   const [selectedOpeningBowler, setSelectedOpeningBowler] = useState<LocalPlayer | null>(null);
   const [isMatchStarted, setIsMatchStarted] = useState(false);
   
+  const [showAddGuestBatsman, setShowAddGuestBatsman] = useState(false);
+  const [showAddGuestBowler, setShowAddGuestBowler] = useState(false);
+  const [guestPlayerName, setGuestPlayerName] = useState('');
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -2867,9 +2871,9 @@ export default function Scoreboard() {
 
         {/* Initial Batsman Selection Dialog */}
         <Dialog open={showInitialBatsmanSelect} onOpenChange={setShowInitialBatsmanSelect}>
-          <DialogContent className="max-w-md max-h-[80vh] overflow-hidden" aria-describedby="initial-batsman-description">
-            <DialogHeader>
-              <DialogTitle>
+          <DialogContent className="max-w-md max-h-[80vh] overflow-hidden bg-white border-blue-200" aria-describedby="initial-batsman-description">
+            <DialogHeader className="bg-blue-600 -m-6 mb-4 p-4 rounded-t-lg">
+              <DialogTitle className="text-white text-center">
                 {selectedOpeningBatsmen.length === 0 
                   ? 'Select Opening Batsmen' 
                   : selectedOpeningBatsmen.length === 1 
@@ -2879,11 +2883,11 @@ export default function Scoreboard() {
             </DialogHeader>
             <div className="space-y-4">
               {selectedOpeningBatsmen.length > 0 && (
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="text-sm font-medium text-green-700 mb-2">Selected:</p>
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm font-medium text-blue-700 mb-2">Selected:</p>
                   {selectedOpeningBatsmen.map((player, idx) => (
                     <div key={idx} className="flex items-center justify-between py-1">
-                      <span className="text-sm">{player.name} {idx === 0 ? '(Striker)' : '(Non-Striker)'}</span>
+                      <span className="text-sm text-blue-800">{player.name} {idx === 0 ? '(Striker)' : '(Non-Striker)'}</span>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -2900,36 +2904,49 @@ export default function Scoreboard() {
               )}
               
               {selectedOpeningBatsmen.length < 2 && (
-                <ScrollArea className="h-60">
-                  <div className="grid gap-2">
-                    {battingTeamPlayers
-                      .filter(p => !selectedOpeningBatsmen.some(s => s.name === p.name))
-                      .map((player, index) => (
-                        <Button
-                          key={`${player.name}-${index}`}
-                          onClick={() => {
-                            setSelectedOpeningBatsmen(prev => [...prev, player]);
-                          }}
-                          variant="outline"
-                          className="justify-start h-12"
-                          data-testid={`button-initial-batsman-${index}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">
-                              {player.name.substring(0, 2).toUpperCase()}
+                <>
+                  <ScrollArea className="h-48">
+                    <div className="grid gap-2">
+                      {battingTeamPlayers
+                        .filter(p => !selectedOpeningBatsmen.some(s => s.name === p.name))
+                        .map((player, index) => (
+                          <Button
+                            key={`${player.name}-${index}`}
+                            onClick={() => {
+                              setSelectedOpeningBatsmen(prev => [...prev, player]);
+                            }}
+                            variant="outline"
+                            className="justify-start h-12 bg-white hover:bg-blue-50 border-blue-200"
+                            data-testid={`button-initial-batsman-${index}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold text-xs">
+                                {player.name.substring(0, 2).toUpperCase()}
+                              </div>
+                              <span className="text-gray-800">{player.name}</span>
                             </div>
-                            <span>{player.name}</span>
-                          </div>
-                        </Button>
-                      ))}
+                          </Button>
+                        ))}
+                    </div>
+                  </ScrollArea>
+                  
+                  <div className="border-t border-blue-200 pt-4">
+                    <Button
+                      onClick={() => setShowAddGuestBatsman(true)}
+                      variant="outline"
+                      className="w-full h-12 bg-blue-50 hover:bg-blue-100 border-blue-300 text-blue-700"
+                      data-testid="button-add-guest-batsman"
+                    >
+                      <span className="mr-2">+</span> Add Guest Player
+                    </Button>
                   </div>
-                </ScrollArea>
+                </>
               )}
               
               {selectedOpeningBatsmen.length === 2 && (
                 <Button
                   onClick={() => setShowInitialBatsmanSelect(false)}
-                  className="w-full bg-green-600 hover:bg-green-700"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   Confirm Selection
                 </Button>
@@ -2938,18 +2955,98 @@ export default function Scoreboard() {
           </DialogContent>
         </Dialog>
 
+        {/* Add Guest Batsman Dialog */}
+        <Dialog open={showAddGuestBatsman} onOpenChange={setShowAddGuestBatsman}>
+          <DialogContent className="max-w-sm bg-white border-blue-200" aria-describedby="add-guest-batsman-description">
+            <DialogHeader className="bg-blue-600 -m-6 mb-4 p-4 rounded-t-lg">
+              <DialogTitle className="text-white text-center">Add Guest Player</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="guest-batsman-name" className="text-gray-700">Player Name</Label>
+                <Input
+                  id="guest-batsman-name"
+                  value={guestPlayerName}
+                  onChange={(e) => setGuestPlayerName(e.target.value)}
+                  placeholder="Enter player name"
+                  className="mt-1 border-blue-200 focus:border-blue-400"
+                  data-testid="input-guest-batsman-name"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddGuestBatsman(false);
+                    setGuestPlayerName('');
+                  }}
+                  className="flex-1 border-gray-300"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (guestPlayerName.trim()) {
+                      const newPlayer: LocalPlayer = {
+                        name: guestPlayerName.trim(),
+                        hasAccount: false,
+                        username: ''
+                      };
+                      
+                      setMatchState(prev => prev ? {
+                        ...prev,
+                        myTeamPlayers: userTeamBatsFirst 
+                          ? [...prev.myTeamPlayers, newPlayer]
+                          : prev.myTeamPlayers,
+                        opponentTeamPlayers: !userTeamBatsFirst
+                          ? [...prev.opponentTeamPlayers, newPlayer]
+                          : prev.opponentTeamPlayers
+                      } : null);
+                      
+                      const savedMatchData = localStorage.getItem('matchData');
+                      if (savedMatchData) {
+                        const matchData = JSON.parse(savedMatchData);
+                        if (userTeamBatsFirst) {
+                          matchData.myTeamPlayers = [...matchData.myTeamPlayers, newPlayer];
+                        } else {
+                          matchData.opponentTeamPlayers = [...matchData.opponentTeamPlayers, newPlayer];
+                        }
+                        localStorage.setItem('matchData', JSON.stringify(matchData));
+                      }
+                      
+                      setSelectedOpeningBatsmen(prev => [...prev, newPlayer]);
+                      setShowAddGuestBatsman(false);
+                      setGuestPlayerName('');
+                      
+                      toast({
+                        title: "Guest player added",
+                        description: `${newPlayer.name} has been added to the batting team.`
+                      });
+                    }
+                  }}
+                  disabled={!guestPlayerName.trim()}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  data-testid="button-confirm-guest-batsman"
+                >
+                  Add Player
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         {/* Initial Bowler Selection Dialog */}
         <Dialog open={showInitialBowlerSelect} onOpenChange={setShowInitialBowlerSelect}>
-          <DialogContent className="max-w-md max-h-[80vh] overflow-hidden" aria-describedby="initial-bowler-description">
-            <DialogHeader>
-              <DialogTitle>Select Opening Bowler</DialogTitle>
+          <DialogContent className="max-w-md max-h-[80vh] overflow-hidden bg-white border-blue-200" aria-describedby="initial-bowler-description">
+            <DialogHeader className="bg-blue-600 -m-6 mb-4 p-4 rounded-t-lg">
+              <DialogTitle className="text-white text-center">Select Opening Bowler</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {selectedOpeningBowler && (
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="text-sm font-medium text-green-700 mb-2">Selected:</p>
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-sm font-medium text-blue-700 mb-2">Selected:</p>
                   <div className="flex items-center justify-between py-1">
-                    <span className="text-sm">{selectedOpeningBowler.name}</span>
+                    <span className="text-sm text-blue-800">{selectedOpeningBowler.name}</span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -2963,40 +3060,133 @@ export default function Scoreboard() {
               )}
               
               {!selectedOpeningBowler && (
-                <ScrollArea className="h-60">
-                  <div className="grid gap-2">
-                    {(userTeamBatsFirst ? matchState.opponentTeamPlayers : matchState.myTeamPlayers)
-                      .filter(p => p.name && p.name.trim() !== '')
-                      .map((player, index) => (
-                        <Button
-                          key={`${player.name}-${index}`}
-                          onClick={() => {
-                            setSelectedOpeningBowler(player);
-                          }}
-                          variant="outline"
-                          className="justify-start h-12"
-                          data-testid={`button-initial-bowler-${index}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">
-                              {player.name.substring(0, 2).toUpperCase()}
+                <>
+                  <ScrollArea className="h-48">
+                    <div className="grid gap-2">
+                      {(userTeamBatsFirst ? matchState.opponentTeamPlayers : matchState.myTeamPlayers)
+                        .filter(p => p.name && p.name.trim() !== '')
+                        .map((player, index) => (
+                          <Button
+                            key={`${player.name}-${index}`}
+                            onClick={() => {
+                              setSelectedOpeningBowler(player);
+                            }}
+                            variant="outline"
+                            className="justify-start h-12 bg-white hover:bg-blue-50 border-blue-200"
+                            data-testid={`button-initial-bowler-${index}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold text-xs">
+                                {player.name.substring(0, 2).toUpperCase()}
+                              </div>
+                              <span className="text-gray-800">{player.name}</span>
                             </div>
-                            <span>{player.name}</span>
-                          </div>
-                        </Button>
-                      ))}
+                          </Button>
+                        ))}
+                    </div>
+                  </ScrollArea>
+                  
+                  <div className="border-t border-blue-200 pt-4">
+                    <Button
+                      onClick={() => setShowAddGuestBowler(true)}
+                      variant="outline"
+                      className="w-full h-12 bg-blue-50 hover:bg-blue-100 border-blue-300 text-blue-700"
+                      data-testid="button-add-guest-bowler"
+                    >
+                      <span className="mr-2">+</span> Add Guest Player
+                    </Button>
                   </div>
-                </ScrollArea>
+                </>
               )}
               
               {selectedOpeningBowler && (
                 <Button
                   onClick={() => setShowInitialBowlerSelect(false)}
-                  className="w-full bg-green-600 hover:bg-green-700"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   Confirm Selection
                 </Button>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Guest Bowler Dialog */}
+        <Dialog open={showAddGuestBowler} onOpenChange={setShowAddGuestBowler}>
+          <DialogContent className="max-w-sm bg-white border-blue-200" aria-describedby="add-guest-bowler-description">
+            <DialogHeader className="bg-blue-600 -m-6 mb-4 p-4 rounded-t-lg">
+              <DialogTitle className="text-white text-center">Add Guest Player</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="guest-bowler-name" className="text-gray-700">Player Name</Label>
+                <Input
+                  id="guest-bowler-name"
+                  value={guestPlayerName}
+                  onChange={(e) => setGuestPlayerName(e.target.value)}
+                  placeholder="Enter player name"
+                  className="mt-1 border-blue-200 focus:border-blue-400"
+                  data-testid="input-guest-bowler-name"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddGuestBowler(false);
+                    setGuestPlayerName('');
+                  }}
+                  className="flex-1 border-gray-300"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (guestPlayerName.trim()) {
+                      const newPlayer: LocalPlayer = {
+                        name: guestPlayerName.trim(),
+                        hasAccount: false,
+                        username: ''
+                      };
+                      
+                      setMatchState(prev => prev ? {
+                        ...prev,
+                        myTeamPlayers: !userTeamBatsFirst 
+                          ? [...prev.myTeamPlayers, newPlayer]
+                          : prev.myTeamPlayers,
+                        opponentTeamPlayers: userTeamBatsFirst
+                          ? [...prev.opponentTeamPlayers, newPlayer]
+                          : prev.opponentTeamPlayers
+                      } : null);
+                      
+                      const savedMatchData = localStorage.getItem('matchData');
+                      if (savedMatchData) {
+                        const matchData = JSON.parse(savedMatchData);
+                        if (userTeamBatsFirst) {
+                          matchData.opponentTeamPlayers = [...matchData.opponentTeamPlayers, newPlayer];
+                        } else {
+                          matchData.myTeamPlayers = [...matchData.myTeamPlayers, newPlayer];
+                        }
+                        localStorage.setItem('matchData', JSON.stringify(matchData));
+                      }
+                      
+                      setSelectedOpeningBowler(newPlayer);
+                      setShowAddGuestBowler(false);
+                      setGuestPlayerName('');
+                      
+                      toast({
+                        title: "Guest player added",
+                        description: `${newPlayer.name} has been added to the bowling team.`
+                      });
+                    }
+                  }}
+                  disabled={!guestPlayerName.trim()}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  data-testid="button-confirm-guest-bowler"
+                >
+                  Add Player
+                </Button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
