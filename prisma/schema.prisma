@@ -79,6 +79,7 @@ model Team {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   teamCode     String   @unique
   name         String
+  description  String?
   logoUrl      String?
   createdById  String   @db.ObjectId
   captainId    String?  @db.ObjectId
