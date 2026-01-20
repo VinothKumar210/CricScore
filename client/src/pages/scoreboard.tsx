@@ -1166,21 +1166,22 @@ export default function Scoreboard() {
                     <tbody>
                       {(matchState.strikeBatsman.name || selectedOpeningBatsmen.length > 0) ? (
                         <>
-                          <tr 
-                            className={`border-b cursor-pointer transition-colors hover:bg-blue-50 ${
-                              matchState.strikeBatsman.id === (selectedOpeningBatsmen[0]?.id || matchState.strikeBatsman.id) ? 'bg-blue-100' : ''
-                            }`}
-                            onClick={() => {
-                              if (!isMatchStarted && selectedOpeningBatsmen.length === 2) {
-                                // Set first selected as striker
-                                setMatchState(prev => ({
-                                  ...prev,
-                                  strikeBatsman: { id: selectedOpeningBatsmen[0].id, name: selectedOpeningBatsmen[0].name },
-                                  nonStrikeBatsman: { id: selectedOpeningBatsmen[1].id, name: selectedOpeningBatsmen[1].name }
-                                }));
-                              }
-                            }}
-                          >
+                            <tr 
+                              className={`border-b cursor-pointer transition-colors hover:bg-blue-50 ${
+                                matchState.strikeBatsman.id === (selectedOpeningBatsmen[0]?.id || matchState.strikeBatsman.id) ? 'bg-blue-100' : ''
+                              }`}
+                              onClick={() => {
+                                if (!isMatchStarted && selectedOpeningBatsmen.length === 2 && selectedOpeningBowler) {
+                                  setMatchState(prev => ({
+                                    ...prev,
+                                    strikeBatsman: { id: selectedOpeningBatsmen[0].id, name: selectedOpeningBatsmen[0].name },
+                                    nonStrikeBatsman: { id: selectedOpeningBatsmen[1].id, name: selectedOpeningBatsmen[1].name },
+                                    currentBowler: { id: selectedOpeningBowler.id, name: selectedOpeningBowler.name }
+                                  }));
+                                  setIsMatchStarted(true);
+                                }
+                              }}
+                            >
                             <td className="p-2 text-sm font-medium" data-testid="batsman-1-name">
                               <span className={matchState.strikeBatsman.id === (selectedOpeningBatsmen[0]?.id || matchState.strikeBatsman.id) ? 'bg-blue-200 px-2 py-0.5 rounded text-sm' : ''}>
                                 {selectedOpeningBatsmen[0]?.name || matchState.strikeBatsman.name || '-'}
@@ -1193,21 +1194,22 @@ export default function Scoreboard() {
                             <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(true).sixes || 0}</td>
                             <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(true).strikeRate?.toFixed(1) || '0.0'}</td>
                           </tr>
-                          <tr 
-                            className={`cursor-pointer transition-colors hover:bg-blue-50 ${
-                              matchState.strikeBatsman.id === (selectedOpeningBatsmen[1]?.id) ? 'bg-blue-100' : ''
-                            }`}
-                            onClick={() => {
-                              if (!isMatchStarted && selectedOpeningBatsmen.length === 2) {
-                                // Set second selected as striker (swap)
-                                setMatchState(prev => ({
-                                  ...prev,
-                                  strikeBatsman: { id: selectedOpeningBatsmen[1].id, name: selectedOpeningBatsmen[1].name },
-                                  nonStrikeBatsman: { id: selectedOpeningBatsmen[0].id, name: selectedOpeningBatsmen[0].name }
-                                }));
-                              }
-                            }}
-                          >
+                            <tr 
+                              className={`cursor-pointer transition-colors hover:bg-blue-50 ${
+                                matchState.strikeBatsman.id === (selectedOpeningBatsmen[1]?.id) ? 'bg-blue-100' : ''
+                              }`}
+                              onClick={() => {
+                                if (!isMatchStarted && selectedOpeningBatsmen.length === 2 && selectedOpeningBowler) {
+                                  setMatchState(prev => ({
+                                    ...prev,
+                                    strikeBatsman: { id: selectedOpeningBatsmen[1].id, name: selectedOpeningBatsmen[1].name },
+                                    nonStrikeBatsman: { id: selectedOpeningBatsmen[0].id, name: selectedOpeningBatsmen[0].name },
+                                    currentBowler: { id: selectedOpeningBowler.id, name: selectedOpeningBowler.name }
+                                  }));
+                                  setIsMatchStarted(true);
+                                }
+                              }}
+                            >
                             <td className="p-2 text-sm font-medium" data-testid="batsman-2-name">
                               <span className={matchState.strikeBatsman.id === (selectedOpeningBatsmen[1]?.id) ? 'bg-blue-200 px-2 py-0.5 rounded text-sm' : ''}>
                                 {selectedOpeningBatsmen[1]?.name || matchState.nonStrikeBatsman.name || '-'}
