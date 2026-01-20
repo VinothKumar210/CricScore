@@ -2141,32 +2141,32 @@ export default function Scoreboard() {
                         <div className="w-5"></div>
                       </div>
                       
-                      {selectedOpeningBatsmen.length < 2 || !selectedOpeningBowler ? (
-                        <div className="grid grid-cols-2 gap-4">
-                          <Button
-                            onClick={() => setShowInitialBatsmanSelect(true)}
-                            className={`h-14 font-semibold text-base border-2 ${
-                              selectedOpeningBatsmen.length === 2 
-                                ? 'bg-green-100 text-green-700 border-green-300' 
-                                : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600'
-                            }`}
-                            data-testid="button-select-batsman-panel"
-                          >
-                            {selectedOpeningBatsmen.length === 2 ? '✓ Batsmen Selected' : 'Select Batsman'}
-                          </Button>
-                          <Button
-                            onClick={() => setShowInitialBowlerSelect(true)}
-                            className={`h-14 font-semibold text-base border-2 ${
-                              selectedOpeningBowler 
-                                ? 'bg-green-100 text-green-700 border-green-300' 
-                                : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600'
-                            }`}
-                            data-testid="button-select-bowler-panel"
-                          >
-                            {selectedOpeningBowler ? '✓ Bowler Selected' : 'Select Bowler'}
-                          </Button>
-                        </div>
-                      ) : (
+                        {selectedOpeningBatsmen.length < 2 || !selectedOpeningBowler ? (
+                          <div className="grid grid-cols-2 gap-4">
+                            <Button
+                              onClick={() => setShowInitialBatsmanSelect(true)}
+                              className={`h-14 text-sm font-semibold border-2 overflow-hidden px-2 ${
+                                selectedOpeningBatsmen.length === 2 
+                                  ? 'bg-green-100 text-green-700 border-green-300' 
+                                  : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600'
+                              }`}
+                              data-testid="button-select-batsman-panel"
+                            >
+                              {selectedOpeningBatsmen.length === 2 ? '✓ Batsmen' : 'Select Batsman'}
+                            </Button>
+                            <Button
+                              onClick={() => setShowInitialBowlerSelect(true)}
+                              className={`h-14 text-sm font-semibold border-2 overflow-hidden px-2 ${
+                                selectedOpeningBowler 
+                                  ? 'bg-green-100 text-green-700 border-green-300' 
+                                  : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600'
+                              }`}
+                              data-testid="button-select-bowler-panel"
+                            >
+                              {selectedOpeningBowler ? '✓ Bowler' : 'Select Bowler'}
+                            </Button>
+                          </div>
+                        ) : (
                         <div className="text-center text-blue-600 text-sm mb-3">
                           <p>Click on a batsman name above to set as striker</p>
                         </div>
