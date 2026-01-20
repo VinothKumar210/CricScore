@@ -82,6 +82,7 @@ export default function LocalMatch() {
       name: team.name,
       logo: team.logo,
       players: team.players?.map((p: any) => ({
+        id: p.id || p.userId || p.guestPlayerId || `p-${Math.random().toString(36).substr(2, 9)}`,
         name: p.name || p.user?.username || p.username || "Unknown",
         hasAccount: p.hasAccount ?? (!!p.user || !!p.userId),
         username: p.username || p.user?.username || "",
@@ -202,6 +203,7 @@ export default function LocalMatch() {
     }
 
     const newPlayer: LocalPlayer = {
+      id: `g-${Math.random().toString(36).substr(2, 9)}`,
       name: guestPlayerName.trim(),
       hasAccount: false,
       username: "",

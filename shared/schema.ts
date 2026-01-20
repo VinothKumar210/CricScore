@@ -161,6 +161,7 @@ export const matchFormSchema = insertMatchSchema.omit({ userId: true }).extend({
 
 // Local match player schema
 export const localPlayerSchema = z.object({
+  id: z.string().optional(), // Unique ID for keying in lists
   name: z.string().min(1, "Player name is required"),
   hasAccount: z.boolean().default(false),
   username: z.string().optional(), // Username if player has account

@@ -1326,20 +1326,20 @@ export default function Scoreboard() {
             <DialogTitle>Select Opening Batsmen</DialogTitle>
             <DialogDescription>Select 2 batsmen to open the innings</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-            {battingTeamPlayers.map(player => (
-              <Button
-                key={player.id}
-                variant={selectedOpeningBatsmen.find(p => p.id === player.id) ? "default" : "outline"}
-                className="w-full justify-start"
-                onClick={() => handleSelectOpeningBatsman(player)}
-                data-testid={`select-batsman-${player.id}`}
-              >
-                {selectedOpeningBatsmen.find(p => p.id === player.id) && "✓ "}
-                {player.name}
-              </Button>
-            ))}
-          </div>
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {battingTeamPlayers.map((player, idx) => (
+                <Button
+                  key={player.id || `p1-${idx}`}
+                  variant={selectedOpeningBatsmen.find(p => p.id === player.id) ? "default" : "outline"}
+                  className="w-full justify-start"
+                  onClick={() => handleSelectOpeningBatsman(player)}
+                  data-testid={`select-batsman-${player.id}`}
+                >
+                  {selectedOpeningBatsmen.find(p => p.id === player.id) && "✓ "}
+                  {player.name}
+                </Button>
+              ))}
+            </div>
         </DialogContent>
       </Dialog>
       
@@ -1350,20 +1350,20 @@ export default function Scoreboard() {
             <DialogTitle>Select Opening Bowler</DialogTitle>
             <DialogDescription>Select the bowler to start the innings</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-            {bowlingTeamPlayers.map(player => (
-              <Button
-                key={player.id}
-                variant={selectedOpeningBowler?.id === player.id ? "default" : "outline"}
-                className="w-full justify-start"
-                onClick={() => handleSelectOpeningBowler(player)}
-                data-testid={`select-bowler-${player.id}`}
-              >
-                {selectedOpeningBowler?.id === player.id && "✓ "}
-                {player.name}
-              </Button>
-            ))}
-          </div>
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {bowlingTeamPlayers.map((player, idx) => (
+                <Button
+                  key={player.id || `p2-${idx}`}
+                  variant={selectedOpeningBowler?.id === player.id ? "default" : "outline"}
+                  className="w-full justify-start"
+                  onClick={() => handleSelectOpeningBowler(player)}
+                  data-testid={`select-bowler-${player.id}`}
+                >
+                  {selectedOpeningBowler?.id === player.id && "✓ "}
+                  {player.name}
+                </Button>
+              ))}
+            </div>
         </DialogContent>
       </Dialog>
       
@@ -1374,19 +1374,19 @@ export default function Scoreboard() {
             <DialogTitle>Select New Batsman</DialogTitle>
             <DialogDescription>Select the next batsman to come in</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-            {getAvailableBatsmen().map(player => (
-              <Button
-                key={player.id}
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => handleSelectBatsman(player)}
-                data-testid={`select-new-batsman-${player.id}`}
-              >
-                {player.name}
-              </Button>
-            ))}
-          </div>
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {getAvailableBatsmen().map((player, idx) => (
+                <Button
+                  key={player.id || `p3-${idx}`}
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => handleSelectBatsman(player)}
+                  data-testid={`select-new-batsman-${player.id}`}
+                >
+                  {player.name}
+                </Button>
+              ))}
+            </div>
         </DialogContent>
       </Dialog>
       
@@ -1397,22 +1397,22 @@ export default function Scoreboard() {
             <DialogTitle>Select Bowler</DialogTitle>
             <DialogDescription>Select the bowler for the next over</DialogDescription>
           </DialogHeader>
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-            {bowlingTeamPlayers.map(player => (
-              <Button
-                key={player.id}
-                variant={matchState.currentBowler.id === player.id ? "default" : "outline"}
-                className="w-full justify-start"
-                onClick={() => handleSelectBowler(player)}
-                data-testid={`select-next-bowler-${player.id}`}
-              >
-                {player.name}
-                {currentBowlingStats.find(b => b.id === player.id) && 
-                  ` (${currentBowlingStats.find(b => b.id === player.id)?.overs || '0.0'} overs)`
-                }
-              </Button>
-            ))}
-          </div>
+            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {bowlingTeamPlayers.map((player, idx) => (
+                <Button
+                  key={player.id || `p4-${idx}`}
+                  variant={matchState.currentBowler.id === player.id ? "default" : "outline"}
+                  className="w-full justify-start"
+                  onClick={() => handleSelectBowler(player)}
+                  data-testid={`select-next-bowler-${player.id}`}
+                >
+                  {player.name}
+                  {currentBowlingStats.find(b => b.id === player.id) && 
+                    ` (${currentBowlingStats.find(b => b.id === player.id)?.overs || '0.0'} overs)`
+                  }
+                </Button>
+              ))}
+            </div>
         </DialogContent>
       </Dialog>
       
@@ -1462,11 +1462,11 @@ export default function Scoreboard() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select fielder" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {bowlingTeamPlayers.map(player => (
-                      <SelectItem key={player.id} value={player.name}>{player.name}</SelectItem>
-                    ))}
-                  </SelectContent>
+                    <SelectContent>
+                      {bowlingTeamPlayers.map((player, idx) => (
+                        <SelectItem key={player.id || `f-${idx}`} value={player.name}>{player.name}</SelectItem>
+                      ))}
+                    </SelectContent>
                 </Select>
               </div>
             )}
