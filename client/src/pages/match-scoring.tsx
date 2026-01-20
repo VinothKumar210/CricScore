@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Search, Plus, User, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 import { type LocalPlayer } from '@shared/schema';
 
 type SelectionStep = 'strike-batsman' | 'non-strike-batsman' | 'bowler' | 'complete';
@@ -15,27 +19,29 @@ interface MatchData {
 
 export default function MatchScoring() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [selectionStep, setSelectionStep] = useState<SelectionStep>('strike-batsman');
   const [selectedStrikeBatsman, setSelectedStrikeBatsman] = useState<LocalPlayer | null>(null);
   const [selectedNonStrikeBatsman, setSelectedNonStrikeBatsman] = useState<LocalPlayer | null>(null);
   const [selectedBowler, setSelectedBowler] = useState<LocalPlayer | null>(null);
   const [matchData, setMatchData] = useState<MatchData | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [addGuestPlayerOpen, setAddGuestPlayerOpen] = useState(false);
+  const [guestPlayerName, setGuestPlayerName] = useState('');
 
   useEffect(() => {
-    // Get match data from localStorage (passed from coin toss)
     const savedMatchData = localStorage.getItem('matchData');
     if (savedMatchData) {
       setMatchData(JSON.parse(savedMatchData));
     } else {
-      // If no data, redirect back to setup
       setLocation('/local-match');
     }
   }, [setLocation]);
 
   if (!matchData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="h-[100dvh] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -49,76 +55,60 @@ export default function MatchScoring() {
     ? matchData.opponentTeamPlayers.filter(p => p.name.trim() !== '')
     : matchData.myTeamPlayers.filter(p => p.name.trim() !== '');
 
+  const getPlayersToShow = () => {
+    if (selectionStep === 'bowler') {
+      return bowlingTeamPlayers;
+    }
+    return battingTeamPlayers;
+  };
+
+  const filteredPlayers = getPlayersToShow().filter(
+    (player) =>
+      player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (player.username && player.username.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   const handlePlayerSelect = (player: LocalPlayer) => {
     switch (selectionStep) {
       case 'strike-batsman':
         setSelectedStrikeBatsman(player);
         setSelectionStep('non-strike-batsman');
+        setSearchQuery('');
         break;
       case 'non-strike-batsman':
         if (player.name !== selectedStrikeBatsman?.name) {
           setSelectedNonStrikeBatsman(player);
           setSelectionStep('bowler');
+          setSearchQuery('');
         }
         break;
       case 'bowler':
         setSelectedBowler(player);
         setSelectionStep('complete');
+        setSearchQuery('');
         break;
     }
   };
 
   const handleBack = () => {
     switch (selectionStep) {
+      case 'strike-batsman':
+        setLocation('/local-match');
+        break;
       case 'non-strike-batsman':
         setSelectionStep('strike-batsman');
-        setSelectedNonStrikeBatsman(null);
+        setSelectedStrikeBatsman(null);
         break;
       case 'bowler':
         setSelectionStep('non-strike-batsman');
-        setSelectedBowler(null);
+        setSelectedNonStrikeBatsman(null);
         break;
       case 'complete':
         setSelectionStep('bowler');
+        setSelectedBowler(null);
         break;
     }
-  };
-
-  const canGoBack = () => {
-    return selectionStep !== 'strike-batsman';
-  };
-
-  const getStepTitle = () => {
-    switch (selectionStep) {
-      case 'strike-batsman':
-        return 'Select Opening Strike Batsman';
-      case 'non-strike-batsman':
-        return 'Select Opening Non-Strike Batsman';
-      case 'bowler':
-        return 'Select Opening Bowler';
-      default:
-        return 'Match Setup Complete';
-    }
-  };
-
-  const getStepDescription = () => {
-    switch (selectionStep) {
-      case 'strike-batsman':
-        return 'Choose the batsman who will face the first ball';
-      case 'non-strike-batsman':
-        return 'Choose the batsman at the non-striker\'s end (must be different from strike batsman)';
-      case 'bowler':
-        return 'Choose the bowler who will bowl the first over';
-      default:
-        return '';
-    }
-  };
-
-  const getPlayersToShow = () => {
-    if (selectionStep === 'bowler') {
-      return bowlingTeamPlayers;
-    }
-    return battingTeamPlayers;
+    setSearchQuery('');
   };
 
   const isPlayerDisabled = (player: LocalPlayer) => {
@@ -141,185 +131,247 @@ export default function MatchScoring() {
     }
   };
 
+  const getStepTitle = () => {
+    switch (selectionStep) {
+      case 'strike-batsman':
+        return 'Select Batsman';
+      case 'non-strike-batsman':
+        return 'Select Batsman';
+      case 'bowler':
+        return 'Select Bowler';
+      default:
+        return 'Ready to Start';
+    }
+  };
+
+  const getStepSubtitle = () => {
+    switch (selectionStep) {
+      case 'strike-batsman':
+        return 'Opening batsman (striker)';
+      case 'non-strike-batsman':
+        return 'Opening batsman (non-striker)';
+      case 'bowler':
+        return 'Opening bowler';
+      default:
+        return '';
+    }
+  };
+
+  const handleAddGuestPlayer = () => {
+    if (!guestPlayerName.trim()) {
+      toast({
+        title: "Enter Name",
+        description: "Please enter the guest player's name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newPlayer: LocalPlayer = {
+      name: guestPlayerName.trim(),
+      hasAccount: false,
+      username: '',
+      teamSide: selectionStep === 'bowler' 
+        ? (userTeamBatsFirst ? 'opponent' : 'my')
+        : (userTeamBatsFirst ? 'my' : 'opponent'),
+    };
+
+    if (selectionStep === 'bowler') {
+      if (userTeamBatsFirst) {
+        matchData.opponentTeamPlayers.push(newPlayer);
+      } else {
+        matchData.myTeamPlayers.push(newPlayer);
+      }
+    } else {
+      if (userTeamBatsFirst) {
+        matchData.myTeamPlayers.push(newPlayer);
+      } else {
+        matchData.opponentTeamPlayers.push(newPlayer);
+      }
+    }
+
+    localStorage.setItem('matchData', JSON.stringify(matchData));
+    setMatchData({ ...matchData });
+    setGuestPlayerName('');
+    setAddGuestPlayerOpen(false);
+    toast({
+      title: "Player Added",
+      description: `${newPlayer.name} has been added as a guest player.`,
+    });
+  };
+
+  const handleBeginScoring = () => {
+    const selectedPlayers = {
+      strikeBatsman: selectedStrikeBatsman,
+      nonStrikeBatsman: selectedNonStrikeBatsman,
+      bowler: selectedBowler
+    };
+    localStorage.setItem('selectedPlayers', JSON.stringify(selectedPlayers));
+    setLocation('/scoreboard');
+  };
+
   if (selectionStep === 'complete') {
     return (
-      <div className="p-6">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-foreground" data-testid="title-match-setup-complete">
-            Match Setup Complete!
-          </h2>
-          <p className="text-muted-foreground mt-2">
-            All players have been selected. Ready to start scoring.
-          </p>
+      <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
+        <div className="bg-orange-500 text-white px-4 py-4 flex items-center gap-3 shrink-0">
+          <button onClick={handleBack} className="p-1 hover:bg-white/20 rounded-full transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <h1 className="text-lg font-semibold">Match Ready</h1>
         </div>
 
-        <Card>
-          <CardContent className="space-y-4 pt-6">
-            <div className="grid md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Batting Team</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <p><span className="font-medium">Strike Batsman:</span> {selectedStrikeBatsman?.name}</p>
-                    <p><span className="font-medium">Non-Strike Batsman:</span> {selectedNonStrikeBatsman?.name}</p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Bowling Team</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <p><span className="font-medium">Opening Bowler:</span> {selectedBowler?.name}</p>
-                  </div>
-                </CardContent>
-              </Card>
+        <div className="flex-1 flex flex-col justify-center items-center p-6 gap-6">
+          <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center">
+            <Check className="h-8 w-8 text-white" />
+          </div>
+          
+          <h2 className="text-xl font-bold text-center">All Players Selected!</h2>
+          
+          <div className="w-full max-w-sm space-y-4">
+            <div className="bg-muted/50 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Batting</h3>
+              <p className="text-sm">Striker: <span className="font-medium">{selectedStrikeBatsman?.name}</span></p>
+              <p className="text-sm">Non-striker: <span className="font-medium">{selectedNonStrikeBatsman?.name}</span></p>
             </div>
             
-            <div className="flex justify-center space-x-4 pt-4">
-              <Button
-                onClick={() => {
-                  setSelectionStep('strike-batsman');
-                  setSelectedStrikeBatsman(null);
-                  setSelectedNonStrikeBatsman(null);
-                  setSelectedBowler(null);
-                }}
-                variant="outline"
-                data-testid="button-change-players"
-              >
-                Change Players
-              </Button>
-              
-              <Button
-                onClick={() => {
-                  // Store selected players for scoreboard
-                  const selectedPlayers = {
-                    strikeBatsman: selectedStrikeBatsman,
-                    nonStrikeBatsman: selectedNonStrikeBatsman,
-                    bowler: selectedBowler
-                  };
-                  localStorage.setItem('selectedPlayers', JSON.stringify(selectedPlayers));
-                  setLocation('/scoreboard');
-                }}
-                data-testid="button-begin-scoring"
-              >
-                Begin Scoring
-              </Button>
+            <div className="bg-muted/50 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Bowling</h3>
+              <p className="text-sm">Bowler: <span className="font-medium">{selectedBowler?.name}</span></p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <Button
+            onClick={handleBeginScoring}
+            className="w-full max-w-sm h-12 bg-orange-500 hover:bg-orange-600 text-white"
+          >
+            BEGIN SCORING
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 flex flex-col">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-foreground" data-testid="title-player-selection">
-          {getStepTitle()}
-        </h2>
-        <p className="text-muted-foreground mt-2">
-          {getStepDescription()}
-        </p>
+    <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
+      <div className="bg-orange-500 text-white px-4 py-4 flex items-center gap-3 shrink-0">
+        <button onClick={handleBack} className="p-1 hover:bg-white/20 rounded-full transition-colors">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+        <div>
+          <h1 className="text-lg font-semibold">{getStepTitle()}</h1>
+          <p className="text-sm text-white/80">{getStepSubtitle()}</p>
+        </div>
       </div>
 
-      {/* Progress Indicator */}
-      <div className="flex justify-center space-x-2 mb-6">
-        <div className={`w-3 h-3 rounded-full ${selectionStep === 'strike-batsman' ? 'bg-primary' : 'bg-muted'}`}></div>
-        <div className={`w-3 h-3 rounded-full ${selectionStep === 'non-strike-batsman' ? 'bg-primary' : 'bg-muted'}`}></div>
-        <div className={`w-3 h-3 rounded-full ${selectionStep === 'bowler' ? 'bg-primary' : 'bg-muted'}`}></div>
+      <div className="flex-1 flex flex-col p-4 overflow-hidden">
+        <div className="relative mb-4 shrink-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Name or Profile ID"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-muted/50"
+          />
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-2">
+          {filteredPlayers.map((player, index) => {
+            const disabled = isPlayerDisabled(player);
+            const selected = isPlayerSelected(player);
+            
+            return (
+              <button
+                key={player.name + index}
+                onClick={() => !disabled && handlePlayerSelect(player)}
+                disabled={disabled}
+                className={cn(
+                  "w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left",
+                  selected ? "bg-orange-100 border-2 border-orange-500" : "hover:bg-muted/50",
+                  disabled && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                <span className="text-sm font-medium text-muted-foreground w-6">
+                  {index + 1}
+                </span>
+
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                  {player.profileImage ? (
+                    <img
+                      src={player.profileImage}
+                      alt={player.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">{player.name}</p>
+                  {player.username && (
+                    <p className="text-xs text-muted-foreground">
+                      #{player.username}
+                    </p>
+                  )}
+                </div>
+
+                {selected && (
+                  <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
+                    <Check className="h-4 w-4 text-white" />
+                  </div>
+                )}
+              </button>
+            );
+          })}
+
+          {filteredPlayers.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <User className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>No players found</p>
+            </div>
+          )}
+        </div>
+
+        <Button
+          onClick={() => setAddGuestPlayerOpen(true)}
+          variant="outline"
+          className="w-full mt-4 border-dashed border-orange-500 text-orange-500 hover:bg-orange-50 hover:text-orange-600 shrink-0"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          ADD / CREATE PLAYER
+        </Button>
       </div>
 
-      {/* Selected Players Summary */}
-      {(selectedStrikeBatsman || selectedNonStrikeBatsman || selectedBowler) && (
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <h4 className="font-semibold mb-2">Selected Players:</h4>
-            <div className="space-y-1 text-sm">
-              {selectedStrikeBatsman && (
-                <p data-testid="selected-strike-batsman">
-                  <span className="font-medium">Strike Batsman:</span> {selectedStrikeBatsman.name}
-                </p>
-              )}
-              {selectedNonStrikeBatsman && (
-                <p data-testid="selected-non-strike-batsman">
-                  <span className="font-medium">Non-Strike Batsman:</span> {selectedNonStrikeBatsman.name}
-                </p>
-              )}
-              {selectedBowler && (
-                <p data-testid="selected-bowler">
-                  <span className="font-medium">Opening Bowler:</span> {selectedBowler.name}
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Main Content Card */}
-      <Card className="flex-1">
-        <CardHeader>
-          <CardTitle className="text-lg">
-            {selectionStep === 'bowler' ? 'Bowling Team Players' : 'Batting Team Players'}
-          </CardTitle>
-        </CardHeader>
-        
-        {/* Scrollable Player List */}
-        <CardContent className="flex flex-col p-6 h-full">
-          <div className="flex-1 border rounded-md overflow-y-auto" style={{minHeight: '400px'}}>
-            <div className="p-4">
-              <div className="grid gap-3">
-                {getPlayersToShow().map((player, index) => (
-                  <Button
-                    key={`${player.name}-${index}`}
-                    onClick={() => handlePlayerSelect(player)}
-                    disabled={isPlayerDisabled(player)}
-                    variant={isPlayerSelected(player) ? "default" : "outline"}
-                    className={`justify-start h-auto p-4 ${
-                      isPlayerDisabled(player) ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                    data-testid={`button-select-player-${index}`}
-                  >
-                    <div className="text-left">
-                      <div className="font-medium text-base">{player.name}</div>
-                      {player.hasAccount && player.username && (
-                        <div className="text-sm text-muted-foreground">@{player.username}</div>
-                      )}
-                    </div>
-                  </Button>
-                ))}
-              </div>
+      <Dialog open={addGuestPlayerOpen} onOpenChange={setAddGuestPlayerOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Add Guest Player</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Player Name"
+              value={guestPlayerName}
+              onChange={(e) => setGuestPlayerName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddGuestPlayer()}
+            />
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setAddGuestPlayerOpen(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddGuestPlayer}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                Add Player
+              </Button>
             </div>
           </div>
-          
-          {/* Action Buttons Below Scroll Area */}
-          <div className="pt-6">
-            {canGoBack() ? (
-              <Button
-                onClick={handleBack}
-                variant="ghost"
-                data-testid="button-back-step"
-                className="w-full"
-              >
-                ← Back
-              </Button>
-            ) : (
-              <Button
-                onClick={() => setLocation('/coin-toss')}
-                variant="ghost"
-                data-testid="button-back-to-toss"
-                className="w-full"
-              >
-                ← Back to Toss
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
