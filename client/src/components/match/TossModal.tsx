@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,37 +35,43 @@ export function TossModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm mx-4 rounded-3xl p-0 gap-0">
+      <DialogContent className="max-w-sm mx-4 rounded-3xl p-0 gap-0 overflow-hidden bg-white border-none shadow-2xl [&>button]:hidden">
         <button
           onClick={() => onOpenChange(false)}
-          className="absolute left-4 top-4 p-1 rounded-full bg-muted hover:bg-muted/80 transition-colors z-10"
+          className="absolute left-4 top-4 p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors z-10"
         >
-          <X className="h-5 w-5" />
+          <X className="h-5 w-5 text-slate-600" />
         </button>
 
-        <div className="p-6 pt-12 space-y-6">
-          <h2 className="text-xl font-bold text-foreground text-center">
+        <div className="p-8 pt-12 space-y-8">
+          <DialogTitle className="text-2xl font-bold text-[#1e3a8a] text-center">
             Who won the toss?
-          </h2>
+          </DialogTitle>
 
           <div className="flex justify-center gap-4">
             <button
               onClick={() => setTossWinner("teamA")}
               className={cn(
-                "flex flex-col items-center p-4 rounded-2xl border-2 transition-all min-w-[120px]",
+                "flex flex-col items-center p-5 rounded-3xl border-2 transition-all min-w-[130px] group",
                 tossWinner === "teamA"
-                  ? "border-primary bg-primary/5"
-                  : "border-muted hover:border-muted-foreground/30"
+                  ? "border-blue-500 bg-blue-50/50"
+                  : "border-slate-100 bg-slate-50/30 hover:border-slate-200"
               )}
             >
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden mb-2">
+              <div className={cn(
+                "w-20 h-20 rounded-full flex items-center justify-center overflow-hidden mb-3 transition-transform group-hover:scale-105",
+                tossWinner === "teamA" ? "bg-blue-100 shadow-inner" : "bg-slate-100"
+              )}>
                 {teamA.logo ? (
                   <img src={teamA.logo} alt={teamA.name} className="w-full h-full object-cover" />
                 ) : (
-                  <Users className="h-8 w-8 text-muted-foreground" />
+                  <Users className={cn("h-10 w-10", tossWinner === "teamA" ? "text-blue-600" : "text-slate-400")} />
                 )}
               </div>
-              <span className="font-semibold text-sm text-foreground text-center line-clamp-2">
+              <span className={cn(
+                "font-bold text-sm text-center line-clamp-2 transition-colors",
+                tossWinner === "teamA" ? "text-blue-900" : "text-slate-600"
+              )}>
                 {teamA.name}
               </span>
             </button>
@@ -73,38 +79,44 @@ export function TossModal({
             <button
               onClick={() => setTossWinner("teamB")}
               className={cn(
-                "flex flex-col items-center p-4 rounded-2xl border-2 transition-all min-w-[120px]",
+                "flex flex-col items-center p-5 rounded-3xl border-2 transition-all min-w-[130px] group",
                 tossWinner === "teamB"
-                  ? "border-primary bg-primary/5"
-                  : "border-muted hover:border-muted-foreground/30"
+                  ? "border-blue-500 bg-blue-50/50"
+                  : "border-slate-100 bg-slate-50/30 hover:border-slate-200"
               )}
             >
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden mb-2">
+              <div className={cn(
+                "w-20 h-20 rounded-full flex items-center justify-center overflow-hidden mb-3 transition-transform group-hover:scale-105",
+                tossWinner === "teamB" ? "bg-blue-100 shadow-inner" : "bg-slate-100"
+              )}>
                 {teamB.logo ? (
                   <img src={teamB.logo} alt={teamB.name} className="w-full h-full object-cover" />
                 ) : (
-                  <Users className="h-8 w-8 text-muted-foreground" />
+                  <Users className={cn("h-10 w-10", tossWinner === "teamB" ? "text-blue-600" : "text-slate-400")} />
                 )}
               </div>
-              <span className="font-semibold text-sm text-foreground text-center line-clamp-2">
+              <span className={cn(
+                "font-bold text-sm text-center line-clamp-2 transition-colors",
+                tossWinner === "teamB" ? "text-blue-900" : "text-slate-600"
+              )}>
                 {teamB.name}
               </span>
             </button>
           </div>
 
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-foreground text-center">
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-[#1e3a8a] text-center">
               Decided to?
             </h3>
 
-            <div className="flex justify-center gap-3">
+            <div className="flex justify-center gap-4">
               <button
                 onClick={() => setDecision("bat")}
                 className={cn(
-                  "px-8 py-2.5 rounded-lg border-2 font-medium transition-all",
+                  "flex-1 py-4 rounded-2xl border-2 font-bold text-lg transition-all",
                   decision === "bat"
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-muted text-foreground hover:border-muted-foreground/30"
+                    ? "border-blue-500 bg-blue-50/50 text-blue-900 shadow-sm"
+                    : "border-slate-100 bg-slate-50/30 text-slate-500 hover:border-slate-200"
                 )}
               >
                 Bat
@@ -112,10 +124,10 @@ export function TossModal({
               <button
                 onClick={() => setDecision("bowl")}
                 className={cn(
-                  "px-8 py-2.5 rounded-lg border-2 font-medium transition-all",
+                  "flex-1 py-4 rounded-2xl border-2 font-bold text-lg transition-all",
                   decision === "bowl"
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-muted text-foreground hover:border-muted-foreground/30"
+                    ? "border-blue-500 bg-blue-50/50 text-blue-900 shadow-sm"
+                    : "border-slate-100 bg-slate-50/30 text-slate-500 hover:border-slate-200"
                 )}
               >
                 Bowl
@@ -126,7 +138,12 @@ export function TossModal({
           <Button
             onClick={handleStartScoring}
             disabled={!canStartScoring}
-            className="w-full bg-[#008B8B] hover:bg-[#007777] text-white h-12"
+            className={cn(
+              "w-full h-14 rounded-2xl font-extrabold text-lg shadow-xl transition-all duration-300 transform active:scale-[0.98]",
+              canStartScoring 
+                ? "bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 text-white shadow-blue-200 hover:shadow-blue-300 hover:brightness-110" 
+                : "bg-slate-200 text-slate-400"
+            )}
           >
             START SCORING
           </Button>
