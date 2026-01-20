@@ -21,11 +21,14 @@ model User {
   profileComplete Boolean  @default(false)
   createdAt       DateTime @default(now())
   careerStats     CareerStats?
+  createdTeams    Team[]       @relation("TeamCreator")
   captainOfTeams  Team[]       @relation("TeamCaptain")
   viceCaptainOfTeams Team[]    @relation("TeamViceCaptain")
   teamMemberships TeamMember[]
   sentInvitations TeamInvitation[] @relation("InvitationSender")
   receivedInvitations TeamInvitation[] @relation("InvitationReceiver")
+  guestPlayersAdded GuestPlayer[] @relation("GuestAddedBy")
+  guestPlayersLinked GuestPlayer[] @relation("GuestLinkedTo")
   matches         Match[]
   teamMatchStats  TeamMatchPlayer[]
   topRunScorerFor TeamStatistics[] @relation("TopRunScorer")
@@ -73,27 +76,31 @@ model CareerStats {
 }
 
 model Team {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  name           String
-  description    String?
-  captainId      String   @db.ObjectId
-  viceCaptainId  String?  @db.ObjectId
-  createdAt      DateTime @default(now())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  teamCode     String   @unique
+  name         String
+  logoUrl      String?
+  createdById  String   @db.ObjectId
+  captainId    String?  @db.ObjectId
+  viceCaptainId String? @db.ObjectId
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  // Relations
-  captain        User     @relation("TeamCaptain", fields: [captainId], references: [id])
-  viceCaptain    User?    @relation("TeamViceCaptain", fields: [viceCaptainId], references: [id])
-  members        TeamMember[]
-  invitations    TeamInvitation[]
-  homeMatches    TeamMatch[] @relation("HomeTeam")
-  awayMatches    TeamMatch[] @relation("AwayTeam")
-  statistics     TeamStatistics?
-  teamMatchPlayers TeamMatchPlayer[]
+  createdBy    User     @relation("TeamCreator", fields: [createdById], references: [id])
+  captain      User?    @relation("TeamCaptain", fields: [captainId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  viceCaptain  User?    @relation("TeamViceCaptain", fields: [viceCaptainId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  members      TeamMember[]
+  guestPlayers GuestPlayer[]
+  invitations  TeamInvitation[]
+  homeMatches  TeamMatch[]  @relation("HomeTeam")
+  awayMatches  TeamMatch[]  @relation("AwayTeam")
+  teamStats    TeamStatistics?
+  teamMatchStats TeamMatchPlayer[]
   localMatchesAsMyTeam LocalMatch[] @relation("LocalMatchMyTeam")
-  localMatchesAsOpponentTeam LocalMatch[] @relation("LocalMatchOpponentTeam")
-  matchSummariesAsHomeTeam MatchSummary[] @relation("MatchSummaryHomeTeam")
-  matchSummariesAsAwayTeam MatchSummary[] @relation("MatchSummaryAwayTeam")
-  playerMatchHistoryRecords PlayerMatchHistory[] @relation("PlayerMatchHistoryTeam")
+  localMatchesAsOpponent LocalMatch[] @relation("LocalMatchOpponentTeam")
+  matchSummariesAsHome MatchSummary[] @relation("MatchSummaryHomeTeam")
+  matchSummariesAsAway MatchSummary[] @relation("MatchSummaryAwayTeam")
+  playerMatchHistory PlayerMatchHistory[] @relation("PlayerMatchHistoryTeam")
 
   @@map("teams")
 }
@@ -104,12 +111,37 @@ model TeamMember {
   userId   String   @db.ObjectId
   joinedAt DateTime @default(now())
 
-  // Relations
   team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
   @@map("team_members")
+}
+
+model GuestPlayer {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  teamId         String   @db.ObjectId
+  name           String
+  addedByUserId  String   @db.ObjectId
+  linkedUserId   String?  @db.ObjectId
+  createdAt      DateTime @default(now())
+
+  matchesPlayed  Int      @default(0)
+  totalRuns      Int      @default(0)
+  ballsFaced     Int      @default(0)
+  fours          Int      @default(0)
+  sixes          Int      @default(0)
+  wicketsTaken   Int      @default(0)
+  runsConceded   Int      @default(0)
+  oversBowled    Float    @default(0)
+  catchesTaken   Int      @default(0)
+  runOuts        Int      @default(0)
+
+  team           Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  addedBy        User     @relation("GuestAddedBy", fields: [addedByUserId], references: [id])
+  linkedUser     User?    @relation("GuestLinkedTo", fields: [linkedUserId], references: [id])
+
+  @@map("guest_players")
 }
 
 model TeamInvitation {

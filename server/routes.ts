@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import jwt from "jsonwebtoken";
-import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, insertLocalMatchSchema, insertMatchSpectatorSchema, teamMatchResultsSchema, insertMatchSummarySchema, insertPlayerMatchHistorySchema } from "@shared/schema";
+import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, insertLocalMatchSchema, insertMatchSpectatorSchema, teamMatchResultsSchema, insertMatchSummarySchema, insertPlayerMatchHistorySchema, insertGuestPlayerSchema, linkGuestPlayerSchema, transferCaptainSchema } from "@shared/schema";
 import { calculateManOfTheMatch } from "../shared/man-of-the-match";
 import { z } from "zod";
 import { verifyFirebaseToken } from "./firebase-admin";
@@ -909,17 +909,157 @@ app.post("/api/auth/login", async (req, res) => {
         viceCaptainId: req.userId 
       });
       
-      if (!updatedTeam) {
-        return res.status(404).json({ message: "Failed to transfer captaincy" });
+if (!updatedTeam) {
+          return res.status(404).json({ message: "Failed to transfer captaincy" });
+        }
+
+        res.json({ message: "Captaincy transferred successfully" });
+      } catch (error) {
+        res.status(500).json({ message: "Internal server error" });
       }
+    });
 
-      res.json({ message: "Captaincy transferred successfully" });
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+    // Guest player routes
+    app.get("/api/teams/:id/guest-players", authenticateToken, async (req, res) => {
+      try {
+        const guestPlayers = await storage.getGuestPlayers(req.params.id);
+        res.json(guestPlayers);
+      } catch (error) {
+        return handleDatabaseError(error, res);
+      }
+    });
 
-  // User search route
+    app.post("/api/teams/:id/guest-players", authenticateToken, async (req: any, res) => {
+      try {
+        const teamId = req.params.id;
+        
+        const team = await storage.getTeam(teamId);
+        if (!team) {
+          return res.status(404).json({ message: "Team not found" });
+        }
+
+        const isMember = await storage.isTeamMember(teamId, req.userId);
+        const isCaptain = team.captainId === req.userId;
+        const isViceCaptain = team.viceCaptainId === req.userId;
+        
+        if (!isMember && !isCaptain && !isViceCaptain) {
+          return res.status(403).json({ message: "Only team members can add guest players" });
+        }
+
+        const validatedData = insertGuestPlayerSchema.parse({
+          ...req.body,
+          teamId,
+          addedByUserId: req.userId,
+        });
+
+        const guestPlayer = await storage.createGuestPlayer(validatedData);
+        res.status(201).json(guestPlayer);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({ message: "Validation error", errors: error.errors });
+        }
+        return handleDatabaseError(error, res);
+      }
+    });
+
+    app.put("/api/teams/:teamId/guest-players/:guestId", authenticateToken, async (req: any, res) => {
+      try {
+        const { teamId, guestId } = req.params;
+        
+        const team = await storage.getTeam(teamId);
+        if (!team) {
+          return res.status(404).json({ message: "Team not found" });
+        }
+
+        const guestPlayer = await storage.getGuestPlayer(guestId);
+        if (!guestPlayer || guestPlayer.teamId !== teamId) {
+          return res.status(404).json({ message: "Guest player not found" });
+        }
+
+        const isCaptain = team.captainId === req.userId;
+        const isCreator = guestPlayer.addedByUserId === req.userId;
+        
+        if (!isCaptain && !isCreator) {
+          return res.status(403).json({ message: "Only captain or creator can update guest player" });
+        }
+
+        const updated = await storage.updateGuestPlayer(guestId, req.body);
+        if (!updated) {
+          return res.status(500).json({ message: "Failed to update guest player" });
+        }
+
+        res.json(updated);
+      } catch (error) {
+        return handleDatabaseError(error, res);
+      }
+    });
+
+    app.delete("/api/teams/:teamId/guest-players/:guestId", authenticateToken, async (req: any, res) => {
+      try {
+        const { teamId, guestId } = req.params;
+        
+        const team = await storage.getTeam(teamId);
+        if (!team) {
+          return res.status(404).json({ message: "Team not found" });
+        }
+
+        const guestPlayer = await storage.getGuestPlayer(guestId);
+        if (!guestPlayer || guestPlayer.teamId !== teamId) {
+          return res.status(404).json({ message: "Guest player not found" });
+        }
+
+        const isCaptain = team.captainId === req.userId;
+        const isCreator = guestPlayer.addedByUserId === req.userId;
+        
+        if (!isCaptain && !isCreator) {
+          return res.status(403).json({ message: "Only captain or creator can delete guest player" });
+        }
+
+        const deleted = await storage.deleteGuestPlayer(guestId);
+        if (!deleted) {
+          return res.status(500).json({ message: "Failed to delete guest player" });
+        }
+
+        res.json({ message: "Guest player deleted successfully" });
+      } catch (error) {
+        return handleDatabaseError(error, res);
+      }
+    });
+
+    app.post("/api/teams/:teamId/guest-players/:guestId/link", authenticateToken, async (req: any, res) => {
+      try {
+        const { teamId, guestId } = req.params;
+        const { userId } = req.body;
+        
+        const team = await storage.getTeam(teamId);
+        if (!team) {
+          return res.status(404).json({ message: "Team not found" });
+        }
+
+        const guestPlayer = await storage.getGuestPlayer(guestId);
+        if (!guestPlayer || guestPlayer.teamId !== teamId) {
+          return res.status(404).json({ message: "Guest player not found" });
+        }
+
+        const isCaptain = team.captainId === req.userId;
+        const isCreator = guestPlayer.addedByUserId === req.userId;
+        
+        if (!isCaptain && !isCreator) {
+          return res.status(403).json({ message: "Only captain or creator can link guest player" });
+        }
+
+        const result = await storage.linkGuestPlayerToUser(guestId, userId);
+        if (!result.success) {
+          return res.status(400).json({ message: result.message });
+        }
+
+        res.json({ message: result.message });
+      } catch (error) {
+        return handleDatabaseError(error, res);
+      }
+    });
+
+    // User search route
   app.get("/api/users/search", authenticateToken, async (req, res) => {
     try {
       const { q, limit } = req.query;

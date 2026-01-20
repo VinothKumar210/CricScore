@@ -11,10 +11,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { apiRequest } from "@/lib/queryClient";
-import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search, Trash2, Edit, BarChart3, Trophy, Target, Zap, Timer, Calendar, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search, Trash2, Edit, BarChart3, Trophy, Target, Zap, Timer, Calendar, MapPin, ChevronLeft, ChevronRight, UserX, Link } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { Team, User } from "@shared/schema";
+import type { Team, User, GuestPlayer } from "@shared/schema";
 
 interface TeamMember extends User {
   isViceCaptain?: boolean;
@@ -494,6 +494,14 @@ export default function TeamDetail() {
   const [referrerPage, setReferrerPage] = useState<string>("/dashboard");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "" });
+  const [isAddGuestDialogOpen, setIsAddGuestDialogOpen] = useState(false);
+  const [guestForm, setGuestForm] = useState({ name: "" });
+  const [isLinkGuestDialogOpen, setIsLinkGuestDialogOpen] = useState(false);
+  const [selectedGuestPlayer, setSelectedGuestPlayer] = useState<GuestPlayer | null>(null);
+  const [linkSearchTerm, setLinkSearchTerm] = useState("");
+  const [linkSearchResults, setLinkSearchResults] = useState<User[]>([]);
+  const [selectedLinkUser, setSelectedLinkUser] = useState<User | null>(null);
+  const [showLinkDropdown, setShowLinkDropdown] = useState(false);
 
   // Detect where the user came from
   useEffect(() => {
@@ -511,6 +519,81 @@ export default function TeamDetail() {
 
   const { data: members, isLoading } = useQuery<TeamMember[]>({
     queryKey: ["/api/teams", id, "members"],
+  });
+
+  const { data: guestPlayers } = useQuery<(GuestPlayer & { addedBy: User })[]>({
+    queryKey: ["/api/teams", id, "guest-players"],
+  });
+
+  const addGuestPlayerMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await apiRequest('POST', `/api/teams/${id}/guest-players`, { name });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Guest player added",
+        description: "The guest player has been added to the team.",
+      });
+      setIsAddGuestDialogOpen(false);
+      setGuestForm({ name: "" });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", id, "guest-players"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add guest player",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteGuestPlayerMutation = useMutation({
+    mutationFn: async (guestId: string) => {
+      const response = await apiRequest('DELETE', `/api/teams/${id}/guest-players/${guestId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Guest player removed",
+        description: "The guest player has been removed from the team.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", id, "guest-players"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove guest player",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const linkGuestPlayerMutation = useMutation({
+    mutationFn: async ({ guestId, userId }: { guestId: string; userId: string }) => {
+      const response = await apiRequest('POST', `/api/teams/${id}/guest-players/${guestId}/link`, { userId });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Guest player linked",
+        description: "The guest player has been linked to the user and stats transferred.",
+      });
+      setIsLinkGuestDialogOpen(false);
+      setSelectedGuestPlayer(null);
+      setLinkSearchTerm("");
+      setLinkSearchResults([]);
+      setSelectedLinkUser(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", id, "guest-players"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", id, "members"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to link guest player",
+        variant: "destructive",
+      });
+    },
   });
 
   const removeMemberMutation = useMutation({
@@ -1112,14 +1195,21 @@ export default function TeamDetail() {
       <div className="space-y-4">
         {/* Team info and actions */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pr-16 sm:pr-20">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-foreground break-words" data-testid="title-team-name">
-              {team.name}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {team.description || "No description provided"}
-            </p>
-          </div>
+<div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-2xl font-bold text-foreground break-words" data-testid="title-team-name">
+                  {team.name}
+                </h1>
+                {(team as any).teamCode && (
+                  <Badge variant="secondary" className="font-mono text-xs">
+                    {(team as any).teamCode}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-muted-foreground mt-1">
+                {team.description || "No description provided"}
+              </p>
+            </div>
           
           <div className="flex flex-wrap items-center gap-2">
             {isCaptain && (
@@ -1237,6 +1327,293 @@ export default function TeamDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Guest Players Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <UserX className="h-5 w-5" />
+              <span>Guest Players</span>
+              <Badge variant="outline">{guestPlayers?.length || 0}</Badge>
+            </div>
+            {canManageMembers && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddGuestDialogOpen(true)}
+              >
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add Guest
+              </Button>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {guestPlayers && guestPlayers.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {guestPlayers.map((guest) => {
+                const isCaptain = team?.captainId === user?.id;
+                const isCreator = guest.addedByUserId === user?.id;
+                const canManageGuest = isCaptain || isCreator;
+                
+                return (
+                  <div
+                    key={guest.id}
+                    className="group relative p-4 bg-background border border-dashed border-orange-300 rounded-xl hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-start space-x-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center shrink-0 shadow-sm">
+                        <span className="text-white font-semibold text-lg">
+                          {guest.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold text-foreground text-base truncate pr-2">
+                            {guest.name}
+                          </h4>
+                          <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                            Guest
+                          </Badge>
+                        </div>
+                        
+                        <p className="text-xs text-muted-foreground">
+                          Added by {guest.addedBy?.profileName || guest.addedBy?.username}
+                        </p>
+                        
+                        {/* Stats Summary */}
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {guest.matchesPlayed} matches
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            {guest.totalRuns} runs
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            {guest.wicketsTaken} wkts
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    {canManageGuest && (
+                      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedGuestPlayer(guest);
+                                setIsLinkGuestDialogOpen(true);
+                              }}
+                            >
+                              <Link className="mr-2 h-4 w-4" />
+                              Link to User
+                            </DropdownMenuItem>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem
+                                  onSelect={(e) => e.preventDefault()}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Remove Guest
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Remove Guest Player</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to remove {guest.name}? All their stats will be lost.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteGuestPlayerMutation.mutate(guest.id)}
+                                    disabled={deleteGuestPlayerMutation.isPending}
+                                  >
+                                    {deleteGuestPlayerMutation.isPending ? "Removing..." : "Remove"}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <UserX className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium">No guest players</p>
+              <p className="text-sm">Add guest players for members without accounts</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add Guest Player Dialog */}
+      <Dialog open={isAddGuestDialogOpen} onOpenChange={setIsAddGuestDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Guest Player</DialogTitle>
+            <DialogDescription>
+              Add a guest player to the team. You can link them to a real account later.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="guest-name">Guest Name</Label>
+              <Input
+                id="guest-name"
+                placeholder="Enter guest player name"
+                value={guestForm.name}
+                onChange={(e) => setGuestForm({ name: e.target.value })}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddGuestDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => addGuestPlayerMutation.mutate(guestForm.name)}
+              disabled={addGuestPlayerMutation.isPending || !guestForm.name.trim()}
+            >
+              {addGuestPlayerMutation.isPending ? "Adding..." : "Add Guest"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Guest Player Dialog */}
+      <Dialog open={isLinkGuestDialogOpen} onOpenChange={(open) => {
+        setIsLinkGuestDialogOpen(open);
+        if (!open) {
+          setSelectedGuestPlayer(null);
+          setLinkSearchTerm("");
+          setLinkSearchResults([]);
+          setSelectedLinkUser(null);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Link Guest Player to Account</DialogTitle>
+            <DialogDescription>
+              Link "{selectedGuestPlayer?.name}" to a registered user. Their stats will be transferred.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="relative">
+              <Input
+                placeholder="Search by username..."
+                value={linkSearchTerm}
+                onChange={async (e) => {
+                  const value = e.target.value;
+                  setLinkSearchTerm(value);
+                  setSelectedLinkUser(null);
+                  
+                  if (value.trim().length >= 2) {
+                    try {
+                      const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(value.trim())}`);
+                      const users = await response.json();
+                      const filteredUsers = users.filter((u: User) => 
+                        !members?.some(m => m.id === u.id)
+                      );
+                      setLinkSearchResults(filteredUsers.slice(0, 10));
+                      setShowLinkDropdown(filteredUsers.length > 0);
+                    } catch {
+                      setLinkSearchResults([]);
+                      setShowLinkDropdown(false);
+                    }
+                  } else {
+                    setLinkSearchResults([]);
+                    setShowLinkDropdown(false);
+                  }
+                }}
+              />
+              
+              {showLinkDropdown && linkSearchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {linkSearchResults.map((player) => (
+                    <div
+                      key={player.id}
+                      className="flex items-center space-x-3 p-3 hover:bg-muted cursor-pointer border-b last:border-b-0"
+                      onClick={() => {
+                        setSelectedLinkUser(player);
+                        setLinkSearchTerm(player.profileName || player.username || "");
+                        setShowLinkDropdown(false);
+                      }}
+                    >
+                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                        <span className="text-primary-foreground text-sm font-medium">
+                          {(player.profileName || player.username)?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{player.profileName || player.username}</p>
+                        <p className="text-xs text-muted-foreground">@{player.username}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {selectedLinkUser && (
+              <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {(selectedLinkUser.profileName || selectedLinkUser.username)?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm text-green-800 dark:text-green-200">
+                      {selectedLinkUser.profileName || selectedLinkUser.username}
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      @{selectedLinkUser.username}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsLinkGuestDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedGuestPlayer && selectedLinkUser) {
+                  linkGuestPlayerMutation.mutate({
+                    guestId: selectedGuestPlayer.id,
+                    userId: selectedLinkUser.id
+                  });
+                }
+              }}
+              disabled={linkGuestPlayerMutation.isPending || !selectedLinkUser}
+            >
+              {linkGuestPlayerMutation.isPending ? "Linking..." : "Link & Transfer Stats"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Floating Invite Button */}
       {canManageMembers && (

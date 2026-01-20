@@ -15,6 +15,7 @@ import type {
   OverHistory,
   MatchSummary,
   PlayerMatchHistory,
+  GuestPlayer,
 } from "@prisma/client";
 import type {
   InsertUser,
@@ -31,6 +32,7 @@ import type {
   InsertOverHistory,
   InsertMatchSummary,
   InsertPlayerMatchHistory,
+  InsertGuestPlayer,
   ProfileSetup,
 } from "@shared/schema";
 
@@ -64,6 +66,17 @@ export interface IStorage {
   addTeamMember(member: InsertTeamMember): Promise<TeamMember>;
   removeTeamMember(teamId: string, userId: string): Promise<boolean>;
   isTeamMember(teamId: string, userId: string): Promise<boolean>;
+  
+  // Guest player operations
+  getGuestPlayers(teamId: string): Promise<(GuestPlayer & { addedBy: User })[]>;
+  getGuestPlayer(id: string): Promise<GuestPlayer | undefined>;
+  createGuestPlayer(guestPlayer: InsertGuestPlayer): Promise<GuestPlayer>;
+  updateGuestPlayer(id: string, updates: Partial<GuestPlayer>): Promise<GuestPlayer | undefined>;
+  deleteGuestPlayer(id: string): Promise<boolean>;
+  linkGuestPlayerToUser(guestPlayerId: string, userId: string): Promise<{ success: boolean; message: string }>;
+  
+  // Captain operations
+  transferCaptain(teamId: string, newCaptainId: string, currentCaptainId: string): Promise<Team | undefined>;
   
   // Team invitation operations
   getTeamInvitations(userId: string): Promise<(TeamInvitation & { team: Team, inviter: User })[]>;
@@ -389,8 +402,15 @@ export class PrismaStorage implements IStorage {
   }
 
   async createTeam(team: InsertTeam): Promise<Team> {
+    const count = await prisma.team.count();
+    const teamCode = `ctid${count + 1}`;
+    
     return await prisma.team.create({
-      data: team
+      data: {
+        ...team,
+        teamCode,
+        createdById: team.captainId,
+      }
     });
   }
 
@@ -476,6 +496,147 @@ export class PrismaStorage implements IStorage {
       return !!member;
     } catch {
       return false;
+    }
+  }
+
+  // Guest player operations
+  async getGuestPlayers(teamId: string): Promise<(GuestPlayer & { addedBy: User })[]> {
+    try {
+      const guestPlayers = await prisma.guestPlayer.findMany({
+        where: { teamId },
+        include: { addedBy: true }
+      });
+      return guestPlayers;
+    } catch {
+      return [];
+    }
+  }
+
+  async getGuestPlayer(id: string): Promise<GuestPlayer | undefined> {
+    try {
+      const guestPlayer = await prisma.guestPlayer.findUnique({
+        where: { id }
+      });
+      return guestPlayer || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async createGuestPlayer(guestPlayer: InsertGuestPlayer): Promise<GuestPlayer> {
+    return await prisma.guestPlayer.create({
+      data: guestPlayer
+    });
+  }
+
+  async updateGuestPlayer(id: string, updates: Partial<GuestPlayer>): Promise<GuestPlayer | undefined> {
+    try {
+      const guestPlayer = await prisma.guestPlayer.update({
+        where: { id },
+        data: updates
+      });
+      return guestPlayer;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async deleteGuestPlayer(id: string): Promise<boolean> {
+    try {
+      await prisma.guestPlayer.delete({
+        where: { id }
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async linkGuestPlayerToUser(guestPlayerId: string, userId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const guestPlayer = await prisma.guestPlayer.findUnique({
+        where: { id: guestPlayerId }
+      });
+      
+      if (!guestPlayer) {
+        return { success: false, message: "Guest player not found" };
+      }
+
+      if (guestPlayer.linkedUserId) {
+        return { success: false, message: "Guest player is already linked to a user" };
+      }
+
+      const existingMember = await prisma.teamMember.findUnique({
+        where: {
+          teamId_userId: {
+            teamId: guestPlayer.teamId,
+            userId
+          }
+        }
+      });
+
+      if (existingMember) {
+        return { success: false, message: "User is already a member of this team" };
+      }
+
+      const userCareerStats = await this.ensureCareerStats(userId);
+      if (userCareerStats) {
+        await this.updateCareerStats(userId, {
+          matchesPlayed: userCareerStats.matchesPlayed + guestPlayer.matchesPlayed,
+          totalRuns: userCareerStats.totalRuns + guestPlayer.totalRuns,
+          ballsFaced: userCareerStats.ballsFaced + guestPlayer.ballsFaced,
+          wicketsTaken: userCareerStats.wicketsTaken + guestPlayer.wicketsTaken,
+          runsConceded: userCareerStats.runsConceded + guestPlayer.runsConceded,
+          oversBowled: userCareerStats.oversBowled + guestPlayer.oversBowled,
+          catchesTaken: userCareerStats.catchesTaken + guestPlayer.catchesTaken,
+          runOuts: userCareerStats.runOuts + guestPlayer.runOuts,
+        });
+      }
+
+      await this.addTeamMember({
+        teamId: guestPlayer.teamId,
+        userId
+      });
+
+      await prisma.guestPlayer.delete({
+        where: { id: guestPlayerId }
+      });
+
+      return { success: true, message: "Guest player linked successfully and stats transferred" };
+    } catch (error) {
+      console.error('Error linking guest player:', error);
+      return { success: false, message: "Failed to link guest player" };
+    }
+  }
+
+  // Captain operations
+  async transferCaptain(teamId: string, newCaptainId: string, currentCaptainId: string): Promise<Team | undefined> {
+    try {
+      const team = await prisma.team.findUnique({
+        where: { id: teamId }
+      });
+
+      if (!team) {
+        return undefined;
+      }
+
+      if (team.captainId !== currentCaptainId) {
+        return undefined;
+      }
+
+      const isMember = await this.isTeamMember(teamId, newCaptainId);
+      if (!isMember && team.createdById !== newCaptainId) {
+        return undefined;
+      }
+
+      const updatedTeam = await prisma.team.update({
+        where: { id: teamId },
+        data: { captainId: newCaptainId }
+      });
+
+      return updatedTeam;
+    } catch {
+      return undefined;
     }
   }
 
