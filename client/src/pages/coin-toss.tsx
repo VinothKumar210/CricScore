@@ -512,6 +512,3 @@ export function CoinToss() {
     </div>
   );
 }
-
-
-can you do the same for this also
