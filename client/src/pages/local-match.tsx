@@ -277,16 +277,16 @@ export default function LocalMatch() {
           />
         </div>
 
-        <div className="flex gap-2 pt-3 mt-auto">
+        <div className="flex gap-2 pt-3 mt-auto w-full min-w-0">
           <Button
             onClick={handleSaveFixture}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white h-10 rounded-xl text-sm font-semibold shadow-md"
+            className="flex-1 min-w-0 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white h-10 rounded-xl text-xs font-semibold shadow-md px-2"
           >
             SAVE FIXTURE
           </Button>
           <Button
             onClick={handleStartMatch}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white h-10 rounded-xl text-sm font-semibold shadow-md"
+            className="flex-1 min-w-0 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white h-10 rounded-xl text-xs font-semibold shadow-md px-2"
           >
             START MATCH
           </Button>
