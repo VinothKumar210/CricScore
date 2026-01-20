@@ -1060,16 +1060,16 @@ export default function Scoreboard() {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-blue-600">
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
       {/* Header with Back Button */}
-      <div className="bg-blue-700 shrink-0">
+      <div className="bg-blue-600 shrink-0">
         <div className="flex items-center p-3 max-w-6xl mx-auto">
           <Button 
             onClick={() => setLocation('/local-match')}
             variant="ghost"
             size="icon"
             data-testid="button-back-to-create-match"
-            className="mr-3 text-white hover:bg-blue-600"
+            className="mr-3 text-white hover:bg-blue-500"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
