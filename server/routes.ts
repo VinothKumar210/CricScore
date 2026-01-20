@@ -149,7 +149,12 @@ app.post("/api/auth/login", async (req, res) => {
 
         const existingUser = await storage.getUserByEmail(email);
         if (existingUser) {
-          return res.status(400).json({ message: "User already exists" });
+          // User already exists - log them in instead
+          const token = jwt.sign({ userId: existingUser.id }, JWT_SECRET, { expiresIn: '7d' });
+          return res.json({ 
+            user: { ...existingUser, password: undefined }, 
+            token 
+          });
         }
 
         const user = await storage.createUser({
