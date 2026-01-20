@@ -213,7 +213,7 @@ export default function MatchScoring() {
   if (selectionStep === 'complete') {
     return (
       <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
-        <div className="bg-orange-500 text-white px-4 py-4 flex items-center gap-3 shrink-0">
+        <div className="bg-blue-600 text-white px-4 py-4 flex items-center gap-3 shrink-0">
           <button onClick={handleBack} className="p-1 hover:bg-white/20 rounded-full transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -242,7 +242,7 @@ export default function MatchScoring() {
 
           <Button
             onClick={handleBeginScoring}
-            className="w-full max-w-sm h-12 bg-orange-500 hover:bg-orange-600 text-white"
+            className="w-full max-w-sm h-12 bg-blue-600 hover:bg-blue-700 text-white"
           >
             BEGIN SCORING
           </Button>
@@ -253,7 +253,7 @@ export default function MatchScoring() {
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
-      <div className="bg-orange-500 text-white px-4 py-4 flex items-center gap-3 shrink-0">
+      <div className="bg-blue-600 text-white px-4 py-4 flex items-center gap-3 shrink-0">
         <button onClick={handleBack} className="p-1 hover:bg-white/20 rounded-full transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </button>
@@ -286,7 +286,7 @@ export default function MatchScoring() {
                 disabled={disabled}
                 className={cn(
                   "w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left",
-                  selected ? "bg-orange-100 border-2 border-orange-500" : "hover:bg-muted/50",
+                  selected ? "bg-blue-100 border-2 border-blue-600" : "hover:bg-muted/50",
                   disabled && "opacity-50 cursor-not-allowed"
                 )}
               >
@@ -316,7 +316,7 @@ export default function MatchScoring() {
                 </div>
 
                 {selected && (
-                  <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
                     <Check className="h-4 w-4 text-white" />
                   </div>
                 )}
@@ -335,7 +335,7 @@ export default function MatchScoring() {
         <Button
           onClick={() => setAddGuestPlayerOpen(true)}
           variant="outline"
-          className="w-full mt-4 border-dashed border-orange-500 text-orange-500 hover:bg-orange-50 hover:text-orange-600 shrink-0"
+          className="w-full mt-4 border-dashed border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700 shrink-0"
         >
           <Plus className="h-4 w-4 mr-2" />
           ADD / CREATE PLAYER
@@ -364,7 +364,7 @@ export default function MatchScoring() {
               </Button>
               <Button
                 onClick={handleAddGuestPlayer}
-                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                className="flex-1 bg-blue-600 hover:bg-orange-600 text-white"
               >
                 Add Player
               </Button>

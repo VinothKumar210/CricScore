@@ -221,7 +221,7 @@ export function CoinToss() {
                     `}
                   >
                     <div className="flex flex-col items-center space-y-3">
-                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
                         {matchData.myTeamName.substring(0, 2).toUpperCase()}
                       </div>
                       <span className="font-semibold text-lg">{matchData.myTeamName}</span>
@@ -239,7 +239,7 @@ export function CoinToss() {
                     `}
                   >
                     <div className="flex flex-col items-center space-y-3">
-                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
                         {matchData.opponentTeamName.substring(0, 2).toUpperCase()}
                       </div>
                       <span className="font-semibold text-lg">{matchData.opponentTeamName}</span>

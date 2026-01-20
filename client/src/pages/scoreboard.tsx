@@ -1010,7 +1010,7 @@ export default function Scoreboard() {
                 {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
               </p>
               
-              <div className="text-4xl font-bold text-green-600 dark:text-green-500">
+              <div className="text-4xl font-bold text-blue-600 dark:text-blue-500">
                 {battingTeamScore.runs}-{battingTeamScore.wickets}
               </div>
               
@@ -1045,9 +1045,9 @@ export default function Scoreboard() {
                         <tr 
                           className={`border-b cursor-pointer transition-colors ${
                             !isMatchStarted && selectedOpeningBatsmen.length === 2 
-                              ? 'hover:bg-orange-50' 
+                              ? 'hover:bg-blue-50' 
                               : ''
-                          } ${matchState.strikeBatsman.name === (selectedOpeningBatsmen[0]?.name || matchState.strikeBatsman.name) ? 'bg-orange-100' : ''}`}
+                          } ${matchState.strikeBatsman.name === (selectedOpeningBatsmen[0]?.name || matchState.strikeBatsman.name) ? 'bg-blue-100' : ''}`}
                           onClick={() => {
                             if (!isMatchStarted && selectedOpeningBatsmen.length === 2) {
                               const newStriker = selectedOpeningBatsmen[0];
@@ -1057,7 +1057,7 @@ export default function Scoreboard() {
                           }}
                         >
                           <td className="p-2 text-sm font-medium" data-testid="batsman-1-name">
-                            <span className={matchState.strikeBatsman.name === (selectedOpeningBatsmen[0]?.name || matchState.strikeBatsman.name) ? 'bg-orange-200 px-2 py-0.5 rounded text-sm' : ''}>
+                            <span className={matchState.strikeBatsman.name === (selectedOpeningBatsmen[0]?.name || matchState.strikeBatsman.name) ? 'bg-blue-200 px-2 py-0.5 rounded text-sm' : ''}>
                               {selectedOpeningBatsmen[0]?.name || matchState.strikeBatsman.name || '-'}
                               {(matchState.strikeBatsman.name === (selectedOpeningBatsmen[0]?.name || matchState.strikeBatsman.name)) && ' *'}
                             </span>
@@ -1071,9 +1071,9 @@ export default function Scoreboard() {
                         <tr 
                           className={`cursor-pointer transition-colors ${
                             !isMatchStarted && selectedOpeningBatsmen.length === 2 
-                              ? 'hover:bg-orange-50' 
+                              ? 'hover:bg-blue-50' 
                               : ''
-                          } ${matchState.strikeBatsman.name === (selectedOpeningBatsmen[1]?.name || matchState.nonStrikeBatsman.name) ? 'bg-orange-100' : ''}`}
+                          } ${matchState.strikeBatsman.name === (selectedOpeningBatsmen[1]?.name || matchState.nonStrikeBatsman.name) ? 'bg-blue-100' : ''}`}
                           onClick={() => {
                             if (!isMatchStarted && selectedOpeningBatsmen.length === 2) {
                               const newStriker = selectedOpeningBatsmen[1];
@@ -1147,14 +1147,14 @@ export default function Scoreboard() {
           </div>
         </div>
         
-        {/* Bottom Panel - Fixed at bottom with orange background like the image */}
+        {/* Bottom Panel - Fixed at bottom with blue background */}
         {!isMatchStarted ? (
-          <div className="bg-orange-400 p-3 shrink-0">
+          <div className="bg-blue-600 p-3 shrink-0">
             <div className="max-w-6xl mx-auto">
               <div className="flex items-center justify-between mb-3">
                 <button
                   onClick={() => setLocation('/local-match')}
-                  className="text-white hover:text-orange-100"
+                  className="text-white hover:text-blue-100"
                   data-testid="button-close-selection-panel"
                 >
                   <X className="h-5 w-5" />
@@ -1170,7 +1170,7 @@ export default function Scoreboard() {
                     className={`h-12 text-sm font-semibold border-2 overflow-hidden px-2 ${
                       selectedOpeningBatsmen.length === 2 
                         ? 'bg-green-100 text-green-700 border-green-300' 
-                        : 'bg-white hover:bg-orange-50 text-orange-600 border-white'
+                        : 'bg-white hover:bg-blue-50 text-blue-600 border-white'
                     }`}
                     data-testid="button-select-batsman-panel"
                   >
@@ -1181,7 +1181,7 @@ export default function Scoreboard() {
                     className={`h-12 text-sm font-semibold border-2 overflow-hidden px-2 ${
                       selectedOpeningBowler 
                         ? 'bg-green-100 text-green-700 border-green-300' 
-                        : 'bg-white hover:bg-orange-50 text-orange-600 border-white'
+                        : 'bg-white hover:bg-blue-50 text-blue-600 border-white'
                     }`}
                     data-testid="button-select-bowler-panel"
                   >
@@ -1196,7 +1196,7 @@ export default function Scoreboard() {
             </div>
           </div>
         ) : (
-          <div className="bg-orange-400 p-3 shrink-0">
+          <div className="bg-blue-600 p-3 shrink-0">
             <div className="max-w-6xl mx-auto space-y-2">
               {/* Run Buttons Row 1 */}
               <div className="grid grid-cols-5 gap-1">
@@ -1204,7 +1204,7 @@ export default function Scoreboard() {
                   <Button
                     key={runs}
                     onClick={() => handleRunScored(runs)}
-                    className="h-12 text-lg font-bold bg-white text-orange-600 hover:bg-orange-50 border-0"
+                    className="h-12 text-lg font-bold bg-white text-blue-600 hover:bg-blue-50 border-0"
                     data-testid={`button-runs-${runs}`}
                   >
                     {runs}
@@ -1220,7 +1220,7 @@ export default function Scoreboard() {
                     setExtrasType('lb');
                     setShowExtrasDialog(true);
                   }}
-                  className="h-10 text-xs font-semibold bg-white text-orange-600 hover:bg-orange-50 border-0"
+                  className="h-10 text-xs font-semibold bg-white text-blue-600 hover:bg-blue-50 border-0"
                   data-testid="button-leg-bye"
                 >
                   LB
@@ -1231,7 +1231,7 @@ export default function Scoreboard() {
                     setExtrasType('b');
                     setShowExtrasDialog(true);
                   }}
-                  className="h-10 text-xs font-semibold bg-white text-orange-600 hover:bg-orange-50 border-0"
+                  className="h-10 text-xs font-semibold bg-white text-blue-600 hover:bg-blue-50 border-0"
                   data-testid="button-bye"
                 >
                   Bye
@@ -1242,7 +1242,7 @@ export default function Scoreboard() {
                     setExtrasType('wd');
                     setShowExtrasDialog(true);
                   }}
-                  className="h-10 text-xs font-semibold bg-white text-orange-600 hover:bg-orange-50 border-0"
+                  className="h-10 text-xs font-semibold bg-white text-blue-600 hover:bg-blue-50 border-0"
                   data-testid="button-wide"
                 >
                   Wide
@@ -1253,14 +1253,14 @@ export default function Scoreboard() {
                     setExtrasType('nb');
                     setShowExtrasDialog(true);
                   }}
-                  className="h-10 text-xs font-semibold bg-white text-orange-600 hover:bg-orange-50 border-0"
+                  className="h-10 text-xs font-semibold bg-white text-blue-600 hover:bg-blue-50 border-0"
                   data-testid="button-no-ball"
                 >
                   NB
                 </Button>
                 <Button
                   onClick={() => handleRunScored(0)}
-                  className="h-10 text-xl font-bold bg-white text-orange-600 hover:bg-orange-50 border-0"
+                  className="h-10 text-xl font-bold bg-white text-blue-600 hover:bg-blue-50 border-0"
                   data-testid="button-dot"
                 >
                   •
@@ -1271,19 +1271,19 @@ export default function Scoreboard() {
               <div className="grid grid-cols-5 gap-1">
                 <Button
                   variant="outline"
-                  className="h-10 text-xs font-semibold bg-white text-orange-600 hover:bg-orange-50 border-0"
+                  className="h-10 text-xs font-semibold bg-white text-blue-600 hover:bg-blue-50 border-0"
                 >
                   More
                 </Button>
                 <Button
                   onClick={() => handleRunScored(0)}
-                  className="h-10 font-bold bg-white text-orange-600 hover:bg-orange-50 border-0"
+                  className="h-10 font-bold bg-white text-blue-600 hover:bg-blue-50 border-0"
                 >
                   <img src="/cricket-ball.svg" alt="ball" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
                   <span className="hidden">0</span>
                 </Button>
                 <Button
-                  className="h-10 text-xs font-semibold bg-white text-orange-600 hover:bg-orange-50 border-0"
+                  className="h-10 text-xs font-semibold bg-white text-blue-600 hover:bg-blue-50 border-0"
                 >
                   4 5 6 7
                 </Button>
