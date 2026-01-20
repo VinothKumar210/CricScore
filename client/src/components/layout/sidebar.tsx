@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/auth/auth-context";
 import { useQuery } from "@tanstack/react-query";
-import { Users, BarChart3, Mail, LogOut, Gauge, Search, UserPlus, Eye, ArrowRight, Trophy, User } from "lucide-react";
+import { Users, BarChart3, Mail, LogOut, Gauge, Search, UserPlus, Eye, ArrowRight, Trophy, User, Calendar } from "lucide-react";
 
 interface SidebarProps {
   className?: string;
@@ -39,13 +39,13 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         { name: "Profile", href: "/profile", icon: User },
       ]
     },
-    {
-      title: "Matches",
-      items: [
-        { name: "Create Match", href: "/local-match", icon: UserPlus },
-        { name: "Live Rooms", href: "/live-scoreboard", icon: Eye },
-      ]
-    },
+      {
+        title: "Matches",
+        items: [
+          { name: "Fixtures", href: "/fixtures", icon: Calendar },
+          { name: "Live Rooms", href: "/live-scoreboard", icon: Eye },
+        ]
+      },
     {
       title: "Teams",
       items: [

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,6 +22,7 @@ interface SelectedTeam {
 
 export default function LocalMatch() {
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -33,6 +34,31 @@ export default function LocalMatch() {
     new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
   );
   const [overs, setOvers] = useState(10);
+  const [fixtureId, setFixtureId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchString);
+    if (params.get("fromFixture") === "true") {
+      const savedTeamA = localStorage.getItem("fixtureTeamA");
+      const savedTeamB = localStorage.getItem("fixtureTeamB");
+      const savedOvers = localStorage.getItem("fixtureOvers");
+      const savedFixtureId = localStorage.getItem("selectedFixtureId");
+      
+      if (savedTeamA && savedTeamB) {
+        const tA = JSON.parse(savedTeamA);
+        const tB = JSON.parse(savedTeamB);
+        setTeamA({ ...tA, players: tA.players || [] });
+        setTeamB({ ...tB, players: tB.players || [] });
+      }
+      if (savedOvers) setOvers(parseInt(savedOvers));
+      if (savedFixtureId) setFixtureId(savedFixtureId);
+      
+      localStorage.removeItem("fixtureTeamA");
+      localStorage.removeItem("fixtureTeamB");
+      localStorage.removeItem("fixtureOvers");
+      localStorage.removeItem("selectedFixtureId");
+    }
+  }, [searchString]);
 
   const [teamSelectOpen, setTeamSelectOpen] = useState(false);
   const [selectingTeam, setSelectingTeam] = useState<"A" | "B">("A");
@@ -114,10 +140,31 @@ export default function LocalMatch() {
       return;
     }
 
+    const fixture = {
+      id: fixtureId || Date.now().toString(),
+      teamA: { id: teamA.id, name: teamA.name, logo: teamA.logo, players: teamA.players },
+      teamB: { id: teamB.id, name: teamB.name, logo: teamB.logo, players: teamB.players },
+      overs,
+      createdAt: new Date().toISOString(),
+    };
+
+    const savedFixtures = localStorage.getItem("savedFixtures");
+    let fixtures = savedFixtures ? JSON.parse(savedFixtures) : [];
+    
+    if (fixtureId) {
+      fixtures = fixtures.map((f: any) => f.id === fixtureId ? fixture : f);
+    } else {
+      fixtures.push(fixture);
+    }
+    
+    localStorage.setItem("savedFixtures", JSON.stringify(fixtures));
+
     toast({
       title: "Fixture Saved",
       description: "Match fixture has been saved successfully.",
     });
+    
+    setLocation("/fixtures");
   };
 
   const handleTossComplete = (tossWinner: "teamA" | "teamB", decision: "bat" | "bowl") => {
@@ -185,7 +232,7 @@ export default function LocalMatch() {
     <div className="h-[100dvh] w-full max-w-full flex flex-col bg-white overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 bg-white shrink-0">
         <button
-          onClick={() => setLocation("/dashboard")}
+          onClick={() => setLocation("/fixtures")}
           className="p-1.5 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
         >
           <ArrowLeft className="h-4 w-4 text-gray-700" />
