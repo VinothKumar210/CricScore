@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, insertLocalMatchSchema, insertMatchSpectatorSchema, teamMatchResultsSchema, insertMatchSummarySchema, insertPlayerMatchHistorySchema } from "@shared/schema";
 import { calculateManOfTheMatch } from "../shared/man-of-the-match";
 import { z } from "zod";
+import { verifyFirebaseToken } from "./firebase-admin";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -72,33 +73,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const validatedData = loginSchema.parse(req.body);
-      
-      const result = await storage.validatePassword(validatedData.email, validatedData.password);
-      if (!result.user) {
-        if (result.errorType === 'EMAIL_NOT_FOUND') {
-          return res.status(401).json({ message: "No account found with this email address", field: "email" });
-        } else if (result.errorType === 'WRONG_PASSWORD') {
-          return res.status(401).json({ message: "Incorrect password", field: "password" });
+app.post("/api/auth/login", async (req, res) => {
+      try {
+        const validatedData = loginSchema.parse(req.body);
+        
+        const result = await storage.validatePassword(validatedData.email, validatedData.password);
+        if (!result.user) {
+          if (result.errorType === 'EMAIL_NOT_FOUND') {
+            return res.status(401).json({ message: "No account found with this email address", field: "email" });
+          } else if (result.errorType === 'WRONG_PASSWORD') {
+            return res.status(401).json({ message: "Incorrect password", field: "password" });
+          }
+          return res.status(401).json({ message: "Invalid credentials" });
         }
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
 
-      const token = jwt.sign({ userId: result.user.id }, JWT_SECRET, { expiresIn: '7d' });
-      
-      res.json({ 
-        user: { ...result.user, password: undefined }, 
-        token 
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
+        const token = jwt.sign({ userId: result.user.id }, JWT_SECRET, { expiresIn: '7d' });
+        
+        res.json({ 
+          user: { ...result.user, password: undefined }, 
+          token 
+        });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({ message: "Validation error", errors: error.errors });
+        }
+        return handleDatabaseError(error, res);
       }
-      return handleDatabaseError(error, res);
-    }
-  });
+    });
+
+    // Firebase authentication routes
+    app.post("/api/auth/firebase-login", async (req, res) => {
+      try {
+        const { idToken } = req.body;
+        if (!idToken) {
+          return res.status(400).json({ message: "ID token required" });
+        }
+
+        const decodedToken = await verifyFirebaseToken(idToken);
+        const email = decodedToken.email;
+        
+        if (!email) {
+          return res.status(400).json({ message: "Email not found in token" });
+        }
+
+        let user = await storage.getUserByEmail(email);
+        if (!user) {
+          return res.status(401).json({ message: "No account found with this email. Please register first." });
+        }
+
+        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+        
+        res.json({ 
+          user: { ...user, password: undefined }, 
+          token 
+        });
+      } catch (error) {
+        console.error('Firebase login error:', error);
+        return res.status(401).json({ message: "Invalid or expired token" });
+      }
+    });
+
+    app.post("/api/auth/firebase-register", async (req, res) => {
+      try {
+        const { idToken } = req.body;
+        if (!idToken) {
+          return res.status(400).json({ message: "ID token required" });
+        }
+
+        const decodedToken = await verifyFirebaseToken(idToken);
+        const email = decodedToken.email;
+        
+        if (!email) {
+          return res.status(400).json({ message: "Email not found in token" });
+        }
+
+        const existingUser = await storage.getUserByEmail(email);
+        if (existingUser) {
+          return res.status(400).json({ message: "User already exists" });
+        }
+
+        const user = await storage.createUser({
+          email,
+          password: `firebase_${decodedToken.uid}`,
+        });
+        
+        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+        
+        res.status(201).json({ 
+          user: { ...user, password: undefined }, 
+          token 
+        });
+      } catch (error) {
+        console.error('Firebase register error:', error);
+        return handleDatabaseError(error, res);
+      }
+    });
+
+    app.post("/api/auth/firebase-google", async (req, res) => {
+      try {
+        const { idToken } = req.body;
+        if (!idToken) {
+          return res.status(400).json({ message: "ID token required" });
+        }
+
+        const decodedToken = await verifyFirebaseToken(idToken);
+        const email = decodedToken.email;
+        
+        if (!email) {
+          return res.status(400).json({ message: "Email not found in token" });
+        }
+
+        let user = await storage.getUserByEmail(email);
+        
+        if (!user) {
+          user = await storage.createUser({
+            email,
+            password: `google_${decodedToken.uid}`,
+          });
+        }
+
+        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+        
+        res.json({ 
+          user: { ...user, password: undefined }, 
+          token 
+        });
+      } catch (error) {
+        console.error('Firebase Google auth error:', error);
+        return handleDatabaseError(error, res);
+      }
+    });
 
   app.get("/api/auth/me", authenticateToken, async (req: any, res) => {
     try {

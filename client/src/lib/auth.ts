@@ -1,4 +1,13 @@
 import { apiRequest } from "./queryClient";
+import { auth, googleProvider } from "./firebase";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
+} from "firebase/auth";
 
 export interface User {
   id: string;
@@ -35,7 +44,10 @@ class AuthService {
   }
 
   async login(email: string, password: string): Promise<User> {
-    const response = await apiRequest('POST', '/api/auth/login', { email, password });
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const idToken = await userCredential.user.getIdToken();
+    
+    const response = await apiRequest('POST', '/api/auth/firebase-login', { idToken });
     const data: AuthResponse = await response.json();
     
     this.setAuthData(data.token, data.user);
@@ -43,7 +55,21 @@ class AuthService {
   }
 
   async register(email: string, password: string): Promise<User> {
-    const response = await apiRequest('POST', '/api/auth/register', { email, password });
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const idToken = await userCredential.user.getIdToken();
+    
+    const response = await apiRequest('POST', '/api/auth/firebase-register', { idToken });
+    const data: AuthResponse = await response.json();
+    
+    this.setAuthData(data.token, data.user);
+    return data.user;
+  }
+
+  async loginWithGoogle(): Promise<User> {
+    const result = await signInWithPopup(auth, googleProvider);
+    const idToken = await result.user.getIdToken();
+    
+    const response = await apiRequest('POST', '/api/auth/firebase-google', { idToken });
     const data: AuthResponse = await response.json();
     
     this.setAuthData(data.token, data.user);
@@ -80,6 +106,7 @@ class AuthService {
     this.user = null;
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
+    signOut(auth).catch(console.error);
   }
 
   getToken(): string | null {
