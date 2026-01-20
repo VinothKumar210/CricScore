@@ -619,8 +619,20 @@ app.post("/api/auth/login", async (req, res) => {
         return res.status(400).json({ message: "Search query must be at least 1 character" });
       }
       
-      const teams = await storage.searchTeams(q.trim());
+      const teams = await storage.searchTeamsByCode(q.trim());
       res.json(teams);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  app.get("/api/teams/by-code/:code", authenticateToken, async (req, res) => {
+    try {
+      const team = await storage.getTeamByCode(req.params.code);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+      res.json(team);
     } catch (error) {
       return handleDatabaseError(error, res);
     }

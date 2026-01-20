@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,13 @@ interface TeamSelectSheetProps {
   onCreateTeam?: () => void;
 }
 
+interface TeamSuggestion {
+  id: string;
+  name: string;
+  teamCode: string;
+  logoUrl?: string;
+}
+
 export function TeamSelectSheet({ 
   open, 
   onOpenChange, 
@@ -27,11 +34,55 @@ export function TeamSelectSheet({
   const [teamIdSearch, setTeamIdSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<TeamSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: userTeams, isLoading: teamsLoading } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
     enabled: !!user && isMyTeam,
   });
+
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (teamIdSearch.trim().length >= 1) {
+      searchTimeoutRef.current = setTimeout(async () => {
+        try {
+          const token = localStorage.getItem('auth_token');
+          const headers: Record<string, string> = {};
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+
+          const response = await fetch(`/api/teams/search?q=${encodeURIComponent(teamIdSearch.trim())}`, { headers });
+          if (response.ok) {
+            const teams = await response.json();
+            setSuggestions(teams.map((t: any) => ({
+              id: t.id,
+              name: t.name,
+              teamCode: t.teamCode,
+              logoUrl: t.logoUrl
+            })));
+            setShowSuggestions(true);
+          }
+        } catch (error) {
+          console.error('Error fetching suggestions:', error);
+        }
+      }, 300);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [teamIdSearch]);
 
   const fetchTeamWithMembers = async (teamId: string) => {
     const token = localStorage.getItem('auth_token');
@@ -73,9 +124,25 @@ export function TeamSelectSheet({
     return {
       id: team.id,
       name: team.name,
-      logo: team.logo,
+      logo: team.logoUrl,
       players,
     };
+  };
+
+  const fetchTeamByCode = async (teamCode: string) => {
+    const token = localStorage.getItem('auth_token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const teamResponse = await fetch(`/api/teams/by-code/${encodeURIComponent(teamCode)}`, { headers });
+    if (!teamResponse.ok) {
+      throw new Error("Team not found");
+    }
+
+    const team = await teamResponse.json();
+    return fetchTeamWithMembers(team.id);
   };
 
   const handleSearchByTeamId = async () => {
@@ -83,14 +150,32 @@ export function TeamSelectSheet({
     
     setIsSearching(true);
     setSearchError(null);
+    setShowSuggestions(false);
     
     try {
-      const teamWithMembers = await fetchTeamWithMembers(teamIdSearch.trim());
+      const teamWithMembers = await fetchTeamByCode(teamIdSearch.trim());
       onTeamSelect(teamWithMembers);
       onOpenChange(false);
       setTeamIdSearch("");
     } catch (error) {
       setSearchError("Team not found. Please check the Team ID.");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectSuggestion = async (suggestion: TeamSuggestion) => {
+    setIsSearching(true);
+    setSearchError(null);
+    setShowSuggestions(false);
+    
+    try {
+      const teamWithMembers = await fetchTeamWithMembers(suggestion.id);
+      onTeamSelect(teamWithMembers);
+      onOpenChange(false);
+      setTeamIdSearch("");
+    } catch (error) {
+      setSearchError("Failed to load team members.");
     } finally {
       setIsSearching(false);
     }
@@ -127,10 +212,11 @@ export function TeamSelectSheet({
             <h3 className="font-semibold text-blue-600 mb-3">Option 1</h3>
             <div className="relative">
               <Input
-                placeholder="Search by Team ID"
+                placeholder="Search by Team ID (e.g. ctid1)"
                 value={teamIdSearch}
                 onChange={(e) => setTeamIdSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearchByTeamId()}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                 className="pr-10 text-center border border-gray-300 rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-500"
               />
               <button
@@ -144,6 +230,34 @@ export function TeamSelectSheet({
                   <Search className="h-5 w-5" />
                 )}
               </button>
+              
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {suggestions.map((suggestion) => (
+                    <button
+                      key={suggestion.id}
+                      onClick={() => handleSelectSuggestion(suggestion)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-blue-50 transition-colors text-left border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden shrink-0">
+                        {suggestion.logoUrl ? (
+                          <img 
+                            src={suggestion.logoUrl} 
+                            alt={suggestion.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Users className="h-4 w-4 text-blue-500" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">{suggestion.name}</p>
+                        <p className="text-xs text-blue-600">{suggestion.teamCode}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             {searchError && (
               <p className="text-red-500 text-sm mt-2">{searchError}</p>
@@ -180,9 +294,9 @@ export function TeamSelectSheet({
                         className="w-full flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors text-left disabled:opacity-50 border border-gray-200"
                       >
                         <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                          {(team as any).logo ? (
+                          {(team as any).logoUrl ? (
                             <img 
-                              src={(team as any).logo} 
+                              src={(team as any).logoUrl} 
                               alt={team.name} 
                               className="w-full h-full object-cover"
                             />
@@ -190,7 +304,10 @@ export function TeamSelectSheet({
                             <Users className="h-5 w-5 text-blue-500" />
                           )}
                         </div>
-                        <span className="font-medium text-gray-900">{team.name}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-gray-900">{team.name}</span>
+                          <p className="text-xs text-blue-600">{(team as any).teamCode}</p>
+                        </div>
                       </button>
                     ))}
                   </div>

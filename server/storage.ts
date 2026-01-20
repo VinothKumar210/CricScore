@@ -303,6 +303,74 @@ export class PrismaStorage implements IStorage {
     }
   }
 
+  async getTeamByCode(teamCode: string): Promise<Team | undefined> {
+    try {
+      const team = await prisma.team.findUnique({
+        where: { teamCode }
+      });
+      return team || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async searchTeamsByCode(query: string): Promise<(Team & { captain: User, viceCaptain?: User })[]> {
+    try {
+      const teams = await prisma.team.findMany({
+        where: {
+          OR: [
+            {
+              teamCode: {
+                contains: query,
+                mode: 'insensitive'
+              }
+            },
+            {
+              name: {
+                contains: query,
+                mode: 'insensitive'
+              }
+            }
+          ]
+        },
+        include: {
+          captain: {
+            select: {
+              id: true,
+              username: true,
+              profileName: true,
+              email: true,
+              description: true,
+              role: true,
+              battingHand: true,
+              bowlingStyle: true,
+              profileComplete: true,
+              createdAt: true
+            }
+          },
+          viceCaptain: {
+            select: {
+              id: true,
+              username: true,
+              profileName: true,
+              email: true,
+              description: true,
+              role: true,
+              battingHand: true,
+              bowlingStyle: true,
+              profileComplete: true,
+              createdAt: true
+            }
+          }
+        },
+        take: 10
+      });
+      return teams as (Team & { captain: User, viceCaptain?: User })[];
+    } catch {
+      return [];
+    }
+  }
+
   async getTeamsByUser(userId: string): Promise<(Team & { captain: User, viceCaptain?: User })[]> {
     try {
       const teams = await prisma.team.findMany({
