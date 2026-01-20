@@ -2125,168 +2125,168 @@ export default function Scoreboard() {
                 </div>
               </div>
               
-              {/* Bottom Panel - Orange for Player Selection, Blue for Scoring */}
-              {!isMatchStarted ? (
-                <div className="fixed bottom-0 left-0 right-0 bg-orange-500 dark:bg-orange-600 p-4 shadow-lg border-t-4 border-orange-600 dark:border-orange-700 z-40">
-                  <div className="max-w-6xl mx-auto">
-                    <div className="flex items-center justify-between mb-3">
-                      <button
-                        onClick={() => setLocation('/local-match')}
-                        className="text-white hover:text-orange-100"
-                        data-testid="button-close-selection-panel"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
-                      <h3 className="text-white font-bold text-lg">Select Players</h3>
-                      <div className="w-5"></div>
+              {/* Bottom Panel - White and Blue for Player Selection and Scoring */}
+                {!isMatchStarted ? (
+                  <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg border-t-4 border-blue-500 z-40">
+                    <div className="max-w-6xl mx-auto">
+                      <div className="flex items-center justify-between mb-3">
+                        <button
+                          onClick={() => setLocation('/local-match')}
+                          className="text-blue-600 hover:text-blue-800"
+                          data-testid="button-close-selection-panel"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                        <h3 className="text-blue-600 font-bold text-lg">Select Players</h3>
+                        <div className="w-5"></div>
+                      </div>
+                      
+                      {selectedOpeningBatsmen.length < 2 || !selectedOpeningBowler ? (
+                        <div className="grid grid-cols-2 gap-4">
+                          <Button
+                            onClick={() => setShowInitialBatsmanSelect(true)}
+                            className={`h-14 font-semibold text-base border-2 ${
+                              selectedOpeningBatsmen.length === 2 
+                                ? 'bg-green-100 text-green-700 border-green-300' 
+                                : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600'
+                            }`}
+                            data-testid="button-select-batsman-panel"
+                          >
+                            {selectedOpeningBatsmen.length === 2 ? '✓ Batsmen Selected' : 'Select Batsman'}
+                          </Button>
+                          <Button
+                            onClick={() => setShowInitialBowlerSelect(true)}
+                            className={`h-14 font-semibold text-base border-2 ${
+                              selectedOpeningBowler 
+                                ? 'bg-green-100 text-green-700 border-green-300' 
+                                : 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600'
+                            }`}
+                            data-testid="button-select-bowler-panel"
+                          >
+                            {selectedOpeningBowler ? '✓ Bowler Selected' : 'Select Bowler'}
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="text-center text-blue-600 text-sm mb-3">
+                          <p>Click on a batsman name above to set as striker</p>
+                        </div>
+                      )}
                     </div>
-                    
-                    {selectedOpeningBatsmen.length < 2 || !selectedOpeningBowler ? (
-                      <div className="grid grid-cols-2 gap-4">
-                        <Button
-                          onClick={() => setShowInitialBatsmanSelect(true)}
-                          className={`h-14 font-semibold text-base border-2 ${
-                            selectedOpeningBatsmen.length === 2 
-                              ? 'bg-green-100 text-green-700 border-green-300' 
-                              : 'bg-white hover:bg-orange-50 text-orange-600 border-orange-200'
-                          }`}
-                          data-testid="button-select-batsman-panel"
-                        >
-                          {selectedOpeningBatsmen.length === 2 ? '✓ Batsmen Selected' : 'Select Batsman'}
-                        </Button>
-                        <Button
-                          onClick={() => setShowInitialBowlerSelect(true)}
-                          className={`h-14 font-semibold text-base border-2 ${
-                            selectedOpeningBowler 
-                              ? 'bg-green-100 text-green-700 border-green-300' 
-                              : 'bg-white hover:bg-orange-50 text-orange-600 border-orange-200'
-                          }`}
-                          data-testid="button-select-bowler-panel"
-                        >
-                          {selectedOpeningBowler ? '✓ Bowler Selected' : 'Select Bowler'}
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="text-center text-white text-sm mb-3">
-                        <p>Click on a batsman name above to set as striker</p>
-                      </div>
-                    )}
                   </div>
-                </div>
-              ) : (
-                <div className="fixed bottom-0 left-0 right-0 bg-orange-500 dark:bg-orange-600 p-4 shadow-lg z-40">
+                ) : (
+                  <div className="fixed bottom-0 left-0 right-0 bg-white p-4 shadow-lg border-t-4 border-blue-500 z-40">
                   <div className="max-w-6xl mx-auto space-y-3">
                     {/* Run Buttons Row 1 */}
                     <div className="grid grid-cols-5 gap-2">
                       {[1, 2, 3, 4, 6].map(runs => (
+                          <Button
+                            key={runs}
+                            onClick={() => handleRunScored(runs)}
+                            className="h-12 text-lg font-bold bg-blue-500 text-white hover:bg-blue-600 border-0"
+                            data-testid={`button-runs-${runs}`}
+                          >
+                            {runs}
+                          </Button>
+                        ))}
+                      </div>
+                      
+                      {/* Extras Row */}
+                      <div className="grid grid-cols-5 gap-2">
                         <Button
-                          key={runs}
-                          onClick={() => handleRunScored(runs)}
-                          className="h-12 text-lg font-bold bg-white text-gray-800 hover:bg-gray-100"
-                          data-testid={`button-runs-${runs}`}
+                          onClick={() => {
+                            saveStateForUndo();
+                            setExtrasType('lb');
+                            setShowExtrasDialog(true);
+                          }}
+                          className="h-10 text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 border-0"
+                          data-testid="button-leg-bye"
                         >
-                          {runs}
+                          LB
                         </Button>
-                      ))}
-                    </div>
-                    
-                    {/* Extras Row */}
-                    <div className="grid grid-cols-5 gap-2">
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('lb');
-                          setShowExtrasDialog(true);
-                        }}
-                        className="h-10 text-sm font-semibold bg-white text-gray-800 hover:bg-gray-100"
-                        data-testid="button-leg-bye"
-                      >
-                        LB
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('nb');
-                          setShowExtrasDialog(true);
-                        }}
-                        className="h-10 text-sm font-semibold bg-white text-gray-800 hover:bg-gray-100"
-                        data-testid="button-bye"
-                      >
-                        Bye
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('wd');
-                          setShowExtrasDialog(true);
-                        }}
-                        className="h-10 text-sm font-semibold bg-white text-gray-800 hover:bg-gray-100"
-                        data-testid="button-wide"
-                      >
-                        Wide
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('nb');
-                          setShowExtrasDialog(true);
-                        }}
-                        className="h-10 text-sm font-semibold bg-white text-gray-800 hover:bg-gray-100"
-                        data-testid="button-no-ball"
-                      >
-                        NB
-                      </Button>
-                      <Button
-                        onClick={() => handleRunScored(0)}
-                        className="h-10 text-xl font-bold bg-white text-gray-800 hover:bg-gray-100"
-                        data-testid="button-dot"
-                      >
-                        •
-                      </Button>
-                    </div>
-                    
-                    {/* Bottom Controls */}
-                    <div className="grid grid-cols-5 gap-2">
-                      <Button
-                        variant="outline"
-                        className="h-10 text-xs font-semibold bg-white text-gray-800 hover:bg-gray-100"
-                      >
-                        More
-                      </Button>
-                      <Button
-                        onClick={() => handleRunScored(0)}
-                        className="h-10 font-bold bg-white text-gray-800 hover:bg-gray-100"
-                      >
-                        <img src="/cricket-ball.svg" alt="ball" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                        <span className="hidden">0</span>
-                      </Button>
-                      <Button
-                        className="h-10 text-xs font-semibold bg-white text-gray-800 hover:bg-gray-100"
-                      >
-                        4 5 6 7
-                      </Button>
-                      <Button
-                        onClick={handleUndo}
-                        disabled={undoStack.length === 0}
-                        className="h-10 text-xs font-semibold bg-white text-red-600 hover:bg-red-50"
-                        data-testid="button-undo"
-                      >
+                        <Button
+                          onClick={() => {
+                            saveStateForUndo();
+                            setExtrasType('nb');
+                            setShowExtrasDialog(true);
+                          }}
+                          className="h-10 text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 border-0"
+                          data-testid="button-bye"
+                        >
+                          Bye
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            saveStateForUndo();
+                            setExtrasType('wd');
+                            setShowExtrasDialog(true);
+                          }}
+                          className="h-10 text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 border-0"
+                          data-testid="button-wide"
+                        >
+                          Wide
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            saveStateForUndo();
+                            setExtrasType('nb');
+                            setShowExtrasDialog(true);
+                          }}
+                          className="h-10 text-sm font-semibold bg-blue-500 text-white hover:bg-blue-600 border-0"
+                          data-testid="button-no-ball"
+                        >
+                          NB
+                        </Button>
+                        <Button
+                          onClick={() => handleRunScored(0)}
+                          className="h-10 text-xl font-bold bg-blue-500 text-white hover:bg-blue-600 border-0"
+                          data-testid="button-dot"
+                        >
+                          •
+                        </Button>
+                      </div>
+                      
+                      {/* Bottom Controls */}
+                      <div className="grid grid-cols-5 gap-2">
+                        <Button
+                          variant="outline"
+                          className="h-10 text-xs font-semibold bg-white text-blue-600 hover:bg-blue-50 border-blue-300"
+                        >
+                          More
+                        </Button>
+                        <Button
+                          onClick={() => handleRunScored(0)}
+                          className="h-10 font-bold bg-blue-500 text-white hover:bg-blue-600 border-0"
+                        >
+                          <img src="/cricket-ball.svg" alt="ball" className="w-5 h-5" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                          <span className="hidden">0</span>
+                        </Button>
+                        <Button
+                          className="h-10 text-xs font-semibold bg-blue-500 text-white hover:bg-blue-600 border-0"
+                        >
+                          4 5 6 7
+                        </Button>
+                        <Button
+                          onClick={handleUndo}
+                          disabled={undoStack.length === 0}
+                          className="h-10 text-xs font-semibold bg-white text-red-600 hover:bg-red-50 border-red-300"
+                          data-testid="button-undo"
+                        >
                         Undo
                       </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setShowWicketDialog(true);
-                        }}
-                        className="h-10 text-xs font-semibold bg-white text-red-600 hover:bg-red-50"
-                        data-testid="button-wicket"
-                      >
-                        Out
-                      </Button>
+                        <Button
+                          onClick={() => {
+                            saveStateForUndo();
+                            setShowWicketDialog(true);
+                          }}
+                          className="h-10 text-xs font-semibold bg-white text-red-600 hover:bg-red-50 border-red-300"
+                          data-testid="button-wicket"
+                        >
+                          Out
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </TabsContent>
           
           {/* Scorecard Tab - Original Full Scorecard */}
