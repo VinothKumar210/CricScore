@@ -176,25 +176,18 @@ export default function Scoreboard() {
   
   // Load players on mount
   useEffect(() => {
-    const savedTeam1 = localStorage.getItem(STORAGE_KEYS.TEAM1_PLAYERS);
-    const savedTeam2 = localStorage.getItem(STORAGE_KEYS.TEAM2_PLAYERS);
+    const savedMatchData = localStorage.getItem('matchData');
     const savedConfig = localStorage.getItem(STORAGE_KEYS.MATCH_CONFIG);
     
-    if (savedTeam1) {
+    if (savedMatchData) {
       try {
-        const players = JSON.parse(savedTeam1);
-        setTeam1Players(players);
+        const matchData = JSON.parse(savedMatchData);
+        const myPlayers = (matchData.myTeamPlayers || []).filter((p: Player) => p.name && p.name.trim() !== '');
+        const opponentPlayers = (matchData.opponentTeamPlayers || []).filter((p: Player) => p.name && p.name.trim() !== '');
+        setTeam1Players(myPlayers);
+        setTeam2Players(opponentPlayers);
       } catch (e) {
-        console.error('Error parsing team 1 players:', e);
-      }
-    }
-    
-    if (savedTeam2) {
-      try {
-        const players = JSON.parse(savedTeam2);
-        setTeam2Players(players);
-      } catch (e) {
-        console.error('Error parsing team 2 players:', e);
+        console.error('Error parsing match data:', e);
       }
     }
     
