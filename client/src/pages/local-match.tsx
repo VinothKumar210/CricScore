@@ -188,7 +188,7 @@ export default function LocalMatch() {
 
     localStorage.setItem("matchData", JSON.stringify(matchData));
 
-    setLocation("/match-scoring");
+    setLocation("/scoreboard");
   };
 
   const handleAddGuestPlayer = () => {
