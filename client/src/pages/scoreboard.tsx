@@ -147,96 +147,8 @@ export default function Scoreboard() {
         return;
       }
       
-      const savedPlayers = localStorage.getItem('selectedPlayers');
-      
-      if (savedPlayers) {
-        const players = JSON.parse(savedPlayers);
-        const initialMatchState: MatchState = {
-          ...matchData,
-          strikeBatsman: players.strikeBatsman,
-          nonStrikeBatsman: players.nonStrikeBatsman,
-          currentBowler: players.bowler,
-          currentInnings: 1,
-          firstInningsComplete: false,
-          matchOvers: matchOvers
-        };
+        localStorage.removeItem('selectedPlayers');
         
-        setMatchState(initialMatchState);
-        
-        const bowlerSelected = localStorage.getItem('bowlerSelected');
-        const savedCurrentMatchState = localStorage.getItem('currentMatchState');
-        const savedCurrentBowlerStats = localStorage.getItem('currentBowlerStats');
-        const savedCurrentBattingTeamScore = localStorage.getItem('currentBattingTeamScore');
-        const savedCurrentBatsmanStats = localStorage.getItem('currentBatsmanStats');
-        const savedCurrentOverBalls = localStorage.getItem('currentOverBalls');
-        
-        if (bowlerSelected && savedCurrentMatchState && savedCurrentBowlerStats) {
-          const updatedMatchState = JSON.parse(savedCurrentMatchState);
-          const updatedBowlerStats = JSON.parse(savedCurrentBowlerStats);
-          
-          setMatchState(updatedMatchState);
-          setBowlerStats(updatedBowlerStats);
-          
-          if (savedCurrentBattingTeamScore) {
-            setBattingTeamScore(JSON.parse(savedCurrentBattingTeamScore));
-          }
-          if (savedCurrentBatsmanStats) {
-            setBatsmanStats(JSON.parse(savedCurrentBatsmanStats));
-          }
-          if (savedCurrentOverBalls) {
-            setCurrentOverBalls(JSON.parse(savedCurrentOverBalls));
-          }
-          
-          if (savedCurrentBattingTeamScore) {
-            const restoredScore = JSON.parse(savedCurrentBattingTeamScore);
-            prevBallsRef.current = restoredScore.balls;
-          }
-          
-          localStorage.removeItem('bowlerSelected');
-          localStorage.removeItem('currentMatchState');
-          localStorage.removeItem('currentBattingTeamScore');
-          localStorage.removeItem('currentBowlerStats');
-          localStorage.removeItem('currentBatsmanStats');
-          localStorage.removeItem('currentOverBalls');
-          localStorage.removeItem('currentPreviousBowler');
-          
-          return;
-        }
-        
-        setBatsmanStats([
-          {
-            player: players.strikeBatsman,
-            runs: 0,
-            balls: 0,
-            fours: 0,
-            sixes: 0,
-            strikeRate: 0,
-            isOut: false
-          },
-          {
-            player: players.nonStrikeBatsman,
-            runs: 0,
-            balls: 0,
-            fours: 0,
-            sixes: 0,
-            strikeRate: 0,
-            isOut: false
-          }
-        ]);
-        
-        setBowlerStats([
-          {
-            player: players.bowler,
-            overs: 0,
-            balls: 0,
-            runs: 0,
-            wickets: 0,
-            economy: 0
-          }
-        ]);
-        
-        setIsMatchStarted(true);
-      } else {
         const initialMatchState: MatchState = {
           ...matchData,
           strikeBatsman: { name: '', hasAccount: false, username: '' },
@@ -248,7 +160,7 @@ export default function Scoreboard() {
         };
         
         setMatchState(initialMatchState);
-      }
+        setIsMatchStarted(false);
     } else {
       setLocation('/local-match');
     }
