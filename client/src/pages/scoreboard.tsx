@@ -166,6 +166,10 @@ export default function Scoreboard() {
   const [showInitialBowlerSelect, setShowInitialBowlerSelect] = useState(false);
   const [isMatchStarted, setIsMatchStarted] = useState(false);
   
+  // Guest player state
+  const [guestBatsmanName, setGuestBatsmanName] = useState('');
+  const [guestBowlerName, setGuestBowlerName] = useState('');
+  
   // Check if match has already started (has any balls bowled)
   useEffect(() => {
     const totalBalls = matchState.team1Score.balls + matchState.team2Score.balls;
@@ -810,6 +814,130 @@ export default function Scoreboard() {
     setShowBowlerSelectDialog(false);
   }, [currentBowlingStats]);
   
+  // Add guest batsman to team
+  const handleAddGuestBatsman = useCallback(() => {
+    if (!guestBatsmanName.trim()) {
+      toast({
+        title: "Enter Name",
+        description: "Please enter a name for the guest player",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newPlayer: Player = {
+      id: `guest-bat-${Date.now()}`,
+      name: guestBatsmanName.trim()
+    };
+    
+    // Add to batting team players
+    if (matchState.currentInnings === 1) {
+      if (matchState.team1BattingFirst) {
+        setTeam1Players(prev => [...prev, newPlayer]);
+      } else {
+        setTeam2Players(prev => [...prev, newPlayer]);
+      }
+    } else {
+      if (matchState.team1BattingFirst) {
+        setTeam2Players(prev => [...prev, newPlayer]);
+      } else {
+        setTeam1Players(prev => [...prev, newPlayer]);
+      }
+    }
+    
+    // Update localStorage
+    const savedMatchData = localStorage.getItem('matchData');
+    if (savedMatchData) {
+      try {
+        const matchData = JSON.parse(savedMatchData);
+        if (matchState.currentInnings === 1) {
+          if (matchState.team1BattingFirst) {
+            matchData.myTeamPlayers = [...(matchData.myTeamPlayers || []), newPlayer];
+          } else {
+            matchData.opponentTeamPlayers = [...(matchData.opponentTeamPlayers || []), newPlayer];
+          }
+        } else {
+          if (matchState.team1BattingFirst) {
+            matchData.opponentTeamPlayers = [...(matchData.opponentTeamPlayers || []), newPlayer];
+          } else {
+            matchData.myTeamPlayers = [...(matchData.myTeamPlayers || []), newPlayer];
+          }
+        }
+        localStorage.setItem('matchData', JSON.stringify(matchData));
+      } catch (e) {
+        console.error('Error updating match data:', e);
+      }
+    }
+    
+    setGuestBatsmanName('');
+    toast({
+      title: "Player Added",
+      description: `${newPlayer.name} has been added to the team`
+    });
+  }, [guestBatsmanName, matchState.currentInnings, matchState.team1BattingFirst, toast]);
+  
+  // Add guest bowler to team
+  const handleAddGuestBowler = useCallback(() => {
+    if (!guestBowlerName.trim()) {
+      toast({
+        title: "Enter Name",
+        description: "Please enter a name for the guest player",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const newPlayer: Player = {
+      id: `guest-bowl-${Date.now()}`,
+      name: guestBowlerName.trim()
+    };
+    
+    // Add to bowling team players
+    if (matchState.currentInnings === 1) {
+      if (matchState.team1BattingFirst) {
+        setTeam2Players(prev => [...prev, newPlayer]);
+      } else {
+        setTeam1Players(prev => [...prev, newPlayer]);
+      }
+    } else {
+      if (matchState.team1BattingFirst) {
+        setTeam1Players(prev => [...prev, newPlayer]);
+      } else {
+        setTeam2Players(prev => [...prev, newPlayer]);
+      }
+    }
+    
+    // Update localStorage
+    const savedMatchData = localStorage.getItem('matchData');
+    if (savedMatchData) {
+      try {
+        const matchData = JSON.parse(savedMatchData);
+        if (matchState.currentInnings === 1) {
+          if (matchState.team1BattingFirst) {
+            matchData.opponentTeamPlayers = [...(matchData.opponentTeamPlayers || []), newPlayer];
+          } else {
+            matchData.myTeamPlayers = [...(matchData.myTeamPlayers || []), newPlayer];
+          }
+        } else {
+          if (matchState.team1BattingFirst) {
+            matchData.myTeamPlayers = [...(matchData.myTeamPlayers || []), newPlayer];
+          } else {
+            matchData.opponentTeamPlayers = [...(matchData.opponentTeamPlayers || []), newPlayer];
+          }
+        }
+        localStorage.setItem('matchData', JSON.stringify(matchData));
+      } catch (e) {
+        console.error('Error updating match data:', e);
+      }
+    }
+    
+    setGuestBowlerName('');
+    toast({
+      title: "Player Added",
+      description: `${newPlayer.name} has been added to the team`
+    });
+  }, [guestBowlerName, matchState.currentInnings, matchState.team1BattingFirst, toast]);
+
   // Handle opening batsmen selection
   const handleSelectOpeningBatsman = useCallback((player: Player) => {
     const isAlreadySelected = selectedOpeningBatsmen.find(p => p.id === player.id);
@@ -1320,42 +1448,72 @@ export default function Scoreboard() {
       {/* Dialogs */}
       
       {/* Initial Batsman Selection Dialog */}
-      <Dialog open={showInitialBatsmanSelect} onOpenChange={setShowInitialBatsmanSelect}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Select Opening Batsmen</DialogTitle>
-            <DialogDescription>Select 2 batsmen to open the innings</DialogDescription>
-          </DialogHeader>
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-              {battingTeamPlayers.map((player, idx) => (
-                <Button
-                  key={player.id || `p1-${idx}`}
-                  variant={selectedOpeningBatsmen.find(p => p.id === player.id) ? "default" : "outline"}
-                  className="w-full justify-start"
-                  onClick={() => handleSelectOpeningBatsman(player)}
-                  data-testid={`select-batsman-${player.id}`}
-                >
-                  {selectedOpeningBatsmen.find(p => p.id === player.id) && "✓ "}
-                  {player.name}
-                </Button>
-              ))}
+        <Dialog open={showInitialBatsmanSelect} onOpenChange={setShowInitialBatsmanSelect}>
+          <DialogContent className="max-w-md p-0 overflow-hidden">
+            <div className="bg-blue-600 text-white p-4">
+              <DialogTitle className="text-white text-lg font-bold">Select Opening Batsmen</DialogTitle>
+              <DialogDescription className="text-blue-100">Select 2 batsmen to open the innings</DialogDescription>
             </div>
-        </DialogContent>
-      </Dialog>
+            <div className="p-4 space-y-4">
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                {battingTeamPlayers.map((player, idx) => (
+                  <Button
+                    key={player.id || `p1-${idx}`}
+                    variant={selectedOpeningBatsmen.find(p => p.id === player.id) ? "default" : "outline"}
+                    className={`w-full justify-start ${
+                      selectedOpeningBatsmen.find(p => p.id === player.id) 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'border-blue-200 hover:bg-blue-50 hover:border-blue-400'
+                    }`}
+                    onClick={() => handleSelectOpeningBatsman(player)}
+                    data-testid={`select-batsman-${player.id}`}
+                  >
+                    {selectedOpeningBatsmen.find(p => p.id === player.id) && "✓ "}
+                    {player.name}
+                  </Button>
+                ))}
+              </div>
+              
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Add Guest Player</p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter guest player name"
+                    value={guestBatsmanName}
+                    onChange={(e) => setGuestBatsmanName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBatsman()}
+                    className="flex-1 border-blue-200 focus:border-blue-400"
+                  />
+                  <Button 
+                    onClick={handleAddGuestBatsman}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       
       {/* Initial Bowler Selection Dialog */}
       <Dialog open={showInitialBowlerSelect} onOpenChange={setShowInitialBowlerSelect}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Select Opening Bowler</DialogTitle>
-            <DialogDescription>Select the bowler to start the innings</DialogDescription>
-          </DialogHeader>
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+        <DialogContent className="max-w-md p-0 overflow-hidden">
+          <div className="bg-blue-600 text-white p-4">
+            <DialogTitle className="text-white text-lg font-bold">Select Opening Bowler</DialogTitle>
+            <DialogDescription className="text-blue-100">Select the bowler to start the innings</DialogDescription>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {bowlingTeamPlayers.map((player, idx) => (
                 <Button
                   key={player.id || `p2-${idx}`}
                   variant={selectedOpeningBowler?.id === player.id ? "default" : "outline"}
-                  className="w-full justify-start"
+                  className={`w-full justify-start ${
+                    selectedOpeningBowler?.id === player.id 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'border-blue-200 hover:bg-blue-50 hover:border-blue-400'
+                  }`}
                   onClick={() => handleSelectOpeningBowler(player)}
                   data-testid={`select-bowler-${player.id}`}
                 >
@@ -1364,22 +1522,43 @@ export default function Scoreboard() {
                 </Button>
               ))}
             </div>
+            
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Add Guest Player</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter guest player name"
+                  value={guestBowlerName}
+                  onChange={(e) => setGuestBowlerName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBowler()}
+                  className="flex-1 border-blue-200 focus:border-blue-400"
+                />
+                <Button 
+                  onClick={handleAddGuestBowler}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
       
       {/* Batsman Selection Dialog */}
       <Dialog open={showBatsmanSelectDialog} onOpenChange={setShowBatsmanSelectDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Select New Batsman</DialogTitle>
-            <DialogDescription>Select the next batsman to come in</DialogDescription>
-          </DialogHeader>
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+        <DialogContent className="max-w-md p-0 overflow-hidden">
+          <div className="bg-blue-600 text-white p-4">
+            <DialogTitle className="text-white text-lg font-bold">Select New Batsman</DialogTitle>
+            <DialogDescription className="text-blue-100">Select the next batsman to come in</DialogDescription>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
               {getAvailableBatsmen().map((player, idx) => (
                 <Button
                   key={player.id || `p3-${idx}`}
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full justify-start border-blue-200 hover:bg-blue-50 hover:border-blue-400"
                   onClick={() => handleSelectBatsman(player)}
                   data-testid={`select-new-batsman-${player.id}`}
                 >
@@ -1387,34 +1566,79 @@ export default function Scoreboard() {
                 </Button>
               ))}
             </div>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Bowler Selection Dialog */}
-      <Dialog open={showBowlerSelectDialog} onOpenChange={setShowBowlerSelectDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Select Bowler</DialogTitle>
-            <DialogDescription>Select the bowler for the next over</DialogDescription>
-          </DialogHeader>
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-              {bowlingTeamPlayers.map((player, idx) => (
-                <Button
-                  key={player.id || `p4-${idx}`}
-                  variant={matchState.currentBowler.id === player.id ? "default" : "outline"}
-                  className="w-full justify-start"
-                  onClick={() => handleSelectBowler(player)}
-                  data-testid={`select-next-bowler-${player.id}`}
+            
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Add Guest Player</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter guest player name"
+                  value={guestBatsmanName}
+                  onChange={(e) => setGuestBatsmanName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBatsman()}
+                  className="flex-1 border-blue-200 focus:border-blue-400"
+                />
+                <Button 
+                  onClick={handleAddGuestBatsman}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  {player.name}
-                  {currentBowlingStats.find(b => b.id === player.id) && 
-                    ` (${currentBowlingStats.find(b => b.id === player.id)?.overs || '0.0'} overs)`
-                  }
+                  <Plus className="h-4 w-4" />
                 </Button>
-              ))}
+              </div>
             </div>
+          </div>
         </DialogContent>
       </Dialog>
+        
+        {/* Bowler Selection Dialog */}
+        <Dialog open={showBowlerSelectDialog} onOpenChange={setShowBowlerSelectDialog}>
+          <DialogContent className="max-w-md p-0 overflow-hidden">
+            <div className="bg-blue-600 text-white p-4">
+              <DialogTitle className="text-white text-lg font-bold">Select Bowler</DialogTitle>
+              <DialogDescription className="text-blue-100">Select the bowler for the next over</DialogDescription>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                {bowlingTeamPlayers.map((player, idx) => (
+                  <Button
+                    key={player.id || `p4-${idx}`}
+                    variant={matchState.currentBowler.id === player.id ? "default" : "outline"}
+                    className={`w-full justify-start ${
+                      matchState.currentBowler.id === player.id 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'border-blue-200 hover:bg-blue-50 hover:border-blue-400'
+                    }`}
+                    onClick={() => handleSelectBowler(player)}
+                    data-testid={`select-next-bowler-${player.id}`}
+                  >
+                    {player.name}
+                    {currentBowlingStats.find(b => b.id === player.id) && 
+                      ` (${currentBowlingStats.find(b => b.id === player.id)?.overs || '0.0'} overs)`
+                    }
+                  </Button>
+                ))}
+              </div>
+              
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Add Guest Player</p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter guest player name"
+                    value={guestBowlerName}
+                    onChange={(e) => setGuestBowlerName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBowler()}
+                    className="flex-1 border-blue-200 focus:border-blue-400"
+                  />
+                  <Button 
+                    onClick={handleAddGuestBowler}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       
       {/* Wicket Dialog */}
       <Dialog open={showWicketDialog} onOpenChange={setShowWicketDialog}>
