@@ -626,29 +626,29 @@ app.post("/api/auth/login", async (req, res) => {
     }
   });
 
-  app.post("/api/teams", authenticateToken, async (req: any, res) => {
-    try {
-      const validatedData = insertTeamSchema.parse({
-        ...req.body,
-        captainId: req.userId,
-      });
+app.post("/api/teams", authenticateToken, async (req: any, res) => {
+      try {
+        const validatedData = insertTeamSchema.parse({
+          ...req.body,
+          captainId: req.userId,
+        });
 
-      const team = await storage.createTeam(validatedData);
-      
-      // Automatically add the team creator as a team member
-      await storage.addTeamMember({
-        teamId: team.id,
-        userId: req.userId
-      });
-      
-      res.status(201).json(team);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
+        const team = await storage.createTeam(validatedData);
+        
+        await storage.addTeamMember({
+          teamId: team.id,
+          userId: req.userId
+        });
+        
+        res.status(201).json(team);
+      } catch (error) {
+        console.error('Team creation error:', error);
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({ message: "Validation error", errors: error.errors });
+        }
+        return handleDatabaseError(error, res);
       }
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+    });
 
   // Get specific team by ID
   app.get("/api/teams/:id", authenticateToken, async (req, res) => {
