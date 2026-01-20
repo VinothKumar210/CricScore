@@ -33,7 +33,6 @@ export default function LocalMatch() {
     new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
   );
   const [overs, setOvers] = useState(10);
-  const [ballType, setBallType] = useState("Tennis Ball");
 
   const [teamSelectOpen, setTeamSelectOpen] = useState(false);
   const [selectingTeam, setSelectingTeam] = useState<"A" | "B">("A");
@@ -278,8 +277,6 @@ export default function LocalMatch() {
           <OversSelector
             overs={overs}
             onOversChange={setOvers}
-            ballType={ballType}
-            onBallTypeChange={setBallType}
           />
         </div>
 
