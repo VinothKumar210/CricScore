@@ -164,10 +164,10 @@ export default function LocalMatch() {
       description: "Match fixture has been saved successfully.",
     });
     
-    setLocation("/fixtures");
-  };
+      setLocation("/create-match");
+    };
 
-  const handleTossComplete = (tossWinner: "teamA" | "teamB", decision: "bat" | "bowl") => {
+    const handleTossComplete = (tossWinner: "teamA" | "teamB", decision: "bat" | "bowl") => {
     const winnerTeam = tossWinner === "teamA" ? teamA : teamB;
     const loserTeam = tossWinner === "teamA" ? teamB : teamA;
 
@@ -232,7 +232,7 @@ export default function LocalMatch() {
     <div className="h-[100dvh] w-full max-w-full flex flex-col bg-white overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2 border-b border-gray-200 bg-white shrink-0">
         <button
-          onClick={() => setLocation("/fixtures")}
+          onClick={() => setLocation("/create-match")}
           className="p-1.5 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
         >
           <ArrowLeft className="h-4 w-4 text-gray-700" />

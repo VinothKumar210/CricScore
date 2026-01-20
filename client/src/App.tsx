@@ -19,7 +19,7 @@ import TeamDetail from "@/pages/team-detail";
 import Invitations from "@/pages/invitations";
 import SearchPlayers from "@/pages/search";
 import LocalMatch from "@/pages/local-match";
-import Fixtures from "@/pages/fixtures";
+import CreateMatch from "@/pages/create-match";
 import { CoinToss } from "@/pages/coin-toss";
 import MatchScoring from "@/pages/match-scoring";
 import Scoreboard from "@/pages/scoreboard";
@@ -195,9 +195,9 @@ function Router() {
         </ProtectedRoute>
       </Route>
       
-        <Route path="/fixtures">
+        <Route path="/create-match">
           <ProtectedRoute>
-            <Fixtures />
+            <CreateMatch />
           </ProtectedRoute>
         </Route>
         
