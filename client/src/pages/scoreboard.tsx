@@ -1060,57 +1060,57 @@ export default function Scoreboard() {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden bg-blue-600">
       {/* Header with Back Button */}
-      <div className="border-b bg-background shrink-0">
+      <div className="bg-blue-700 shrink-0">
         <div className="flex items-center p-3 max-w-6xl mx-auto">
           <Button 
             onClick={() => setLocation('/local-match')}
             variant="ghost"
             size="icon"
             data-testid="button-back-to-create-match"
-            className="mr-3"
+            className="mr-3 text-white hover:bg-blue-600"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-lg font-bold">Match Centre</h1>
+          <h1 className="text-lg font-bold text-white">Match Centre</h1>
         </div>
         
         {/* Tabs Navigation */}
         <Tabs defaultValue="scoring" className="w-full flex flex-col flex-1">
-          <div className="border-b px-4 shrink-0">
+          <div className="px-4 shrink-0">
             <TabsList className="bg-transparent border-b-0 h-auto p-0 w-full justify-start overflow-x-auto">
               <TabsTrigger 
                 value="scoring" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2 text-sm text-white/70 data-[state=active]:text-white"
                 data-testid="tab-scoring"
               >
                 Scoring
               </TabsTrigger>
               <TabsTrigger 
                 value="scorecard"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2 text-sm text-white/70 data-[state=active]:text-white"
                 data-testid="tab-scorecard"
               >
                 Scorecard
               </TabsTrigger>
               <TabsTrigger 
                 value="stats"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2 text-sm text-white/70 data-[state=active]:text-white"
                 data-testid="tab-stats"
               >
                 Stats
               </TabsTrigger>
               <TabsTrigger 
                 value="super-stars"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2 text-sm text-white/70 data-[state=active]:text-white"
                 data-testid="tab-super-stars"
               >
                 Super Stars
               </TabsTrigger>
               <TabsTrigger 
                 value="balls"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 text-sm"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2 text-sm text-white/70 data-[state=active]:text-white"
                 data-testid="tab-balls"
               >
                 Balls
