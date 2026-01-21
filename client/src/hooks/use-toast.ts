@@ -12,7 +12,7 @@ interface State {
 }
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 3000
 
 const listeners: Array<(state: State) => void> = []
 let memoryState: State = { toasts: [] }
@@ -72,10 +72,13 @@ function genId() {
 }
 
 function toast({ ...props }: Omit<ToasterToast, "id">) {
-  const id = genId()
-  dispatch({ type: "ADD_TOAST", toast: { ...props, id, open: true } })
-  return { id }
-}
+    const id = genId()
+    dispatch({ type: "ADD_TOAST", toast: { ...props, id, open: true } })
+    setTimeout(() => {
+      dispatch({ type: "DISMISS_TOAST", toastId: id })
+    }, 3000)
+    return { id }
+  }
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
