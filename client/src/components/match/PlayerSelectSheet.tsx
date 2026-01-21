@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Plus, User } from "lucide-react";
@@ -50,9 +50,12 @@ export function PlayerSelectSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl p-0">
         <div className="bg-orange-500 text-white px-4 py-4 rounded-t-3xl">
-          <SheetTitle className="text-white text-lg font-semibold text-center">
-            {title}
-          </SheetTitle>
+<SheetTitle className="text-white text-lg font-semibold text-center">
+              {title}
+            </SheetTitle>
+            <SheetDescription className="sr-only">
+              Select players from the list or add new players
+            </SheetDescription>
         </div>
 
         <div className="p-4 space-y-4 flex flex-col h-[calc(80vh-60px)]">

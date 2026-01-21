@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
@@ -205,6 +205,9 @@ export function TeamSelectSheet({
             <X className="h-5 w-5 text-gray-600" />
           </button>
           <SheetTitle className="text-gray-900 text-lg font-semibold">Select Team</SheetTitle>
+            <SheetDescription className="sr-only">
+              Search for a team by ID or select from your existing teams
+            </SheetDescription>
         </div>
         
         <div className="p-4 space-y-6 overflow-y-auto h-[calc(85vh-60px)] bg-white">
