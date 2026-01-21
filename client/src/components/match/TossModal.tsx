@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,8 +35,11 @@ export function TossModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-32px)] max-w-sm rounded-3xl p-0 gap-0 overflow-hidden bg-white border-none shadow-2xl [&>button]:hidden">
-        <button
+        <DialogContent className="w-[calc(100vw-32px)] max-w-sm rounded-3xl p-0 gap-0 overflow-hidden bg-white border-none shadow-2xl [&>button]:hidden" aria-describedby="toss-modal-desc">
+          <DialogDescription id="toss-modal-desc" className="sr-only">
+            Select the team that won the toss and their decision to bat or bowl
+          </DialogDescription>
+          <button
           onClick={() => onOpenChange(false)}
           className="absolute left-4 top-4 p-2 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors z-10"
         >

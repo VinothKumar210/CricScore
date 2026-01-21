@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { ArrowLeft, Plus, Users, Calendar, Clock } from "lucide-react";
@@ -383,11 +383,14 @@ export default function LocalMatch() {
         />
       )}
 
-      <Dialog open={addGuestPlayerOpen} onOpenChange={setAddGuestPlayerOpen}>
-        <DialogContent className="max-w-sm bg-white">
-          <DialogHeader>
-            <DialogTitle className="text-gray-900">Add Guest Player</DialogTitle>
-          </DialogHeader>
+        <Dialog open={addGuestPlayerOpen} onOpenChange={setAddGuestPlayerOpen}>
+          <DialogContent className="max-w-sm bg-white" aria-describedby="add-guest-player-desc">
+            <DialogHeader>
+              <DialogTitle className="text-gray-900">Add Guest Player</DialogTitle>
+              <DialogDescription id="add-guest-player-desc" className="sr-only">
+                Enter the name of a guest player to add to the team
+              </DialogDescription>
+            </DialogHeader>
           <div className="space-y-4">
             <Input
               placeholder="Player Name"
