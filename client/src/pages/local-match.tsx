@@ -27,6 +27,7 @@ export default function LocalMatch() {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const queryClient = useQueryClient();
   const [teamA, setTeamA] = useState<SelectedTeam | null>(null);
   const [teamB, setTeamB] = useState<SelectedTeam | null>(null);
   const [venue, setVenue] = useState("");
@@ -172,11 +173,13 @@ try {
         body: JSON.stringify(fixtureData),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to save fixture');
-      }
+if (!response.ok) {
+          throw new Error('Failed to save fixture');
+        }
 
-      toast({
+        await queryClient.invalidateQueries({ queryKey: ["/api/fixtures"] });
+        
+        toast({
         title: "Fixture Saved",
         description: "Match fixture has been saved successfully.",
       });
