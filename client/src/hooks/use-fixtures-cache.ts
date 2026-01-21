@@ -97,13 +97,23 @@ export function useFixturesCache() {
       return data;
     },
     enabled: !!user,
-    initialData: () => {
-      if (user?.id) {
-        return getCachedFixtures(user.id) ?? undefined;
-      }
-      return undefined;
-    },
-    staleTime: 5 * 60 * 1000,
+initialData: () => {
+        if (user?.id) {
+          return getCachedFixtures(user.id) ?? undefined;
+        }
+        return undefined;
+      },
+      initialDataUpdatedAt: () => {
+        try {
+          const cached = localStorage.getItem(CACHE_KEY);
+          if (cached) {
+            const parsed: CachedFixtures = JSON.parse(cached);
+            return parsed.timestamp;
+          }
+        } catch {}
+        return 0;
+      },
+      staleTime: 30 * 1000,
   });
 
   useEffect(() => {

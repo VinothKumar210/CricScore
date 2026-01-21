@@ -12,6 +12,7 @@ import { TossModal } from "@/components/match/TossModal";
 import { PlayerSelectSheet } from "@/components/match/PlayerSelectSheet";
 import { cn } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { clearFixturesCache } from "@/hooks/use-fixtures-cache";
 import type { LocalPlayer } from "@shared/schema";
 
 interface SelectedTeam {
@@ -177,8 +178,9 @@ if (!response.ok) {
           throw new Error('Failed to save fixture');
         }
 
+        clearFixturesCache();
         await queryClient.invalidateQueries({ queryKey: ["/api/fixtures"] });
-        
+          
         toast({
         title: "Fixture Saved",
         description: "Match fixture has been saved successfully.",
