@@ -7,6 +7,7 @@ import { ArrowLeft, Search, Plus, User, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { type LocalPlayer } from '@shared/schema';
+import { useGuestPlayerSync } from '@/hooks/useGuestPlayerSync';
 
 type SelectionStep = 'strike-batsman' | 'non-strike-batsman' | 'bowler' | 'complete';
 
@@ -20,6 +21,7 @@ interface MatchData {
 export default function MatchScoring() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { syncGuestPlayerToTeam } = useGuestPlayerSync();
   const [selectionStep, setSelectionStep] = useState<SelectionStep>('strike-batsman');
   const [selectedStrikeBatsman, setSelectedStrikeBatsman] = useState<LocalPlayer | null>(null);
   const [selectedNonStrikeBatsman, setSelectedNonStrikeBatsman] = useState<LocalPlayer | null>(null);
@@ -157,7 +159,7 @@ export default function MatchScoring() {
     }
   };
 
-  const handleAddGuestPlayer = () => {
+  const handleAddGuestPlayer = async () => {
     if (!guestPlayerName.trim()) {
       toast({
         title: "Enter Name",
@@ -176,22 +178,35 @@ export default function MatchScoring() {
         : (userTeamBatsFirst ? 'my' : 'opponent'),
     };
 
+    // Determine team ID and sync to database
+    let teamId: string | null = null;
     if (selectionStep === 'bowler') {
       if (userTeamBatsFirst) {
         matchData.opponentTeamPlayers.push(newPlayer);
+        teamId = localStorage.getItem('opponentTeamId');
       } else {
         matchData.myTeamPlayers.push(newPlayer);
+        teamId = localStorage.getItem('myTeamId');
       }
     } else {
       if (userTeamBatsFirst) {
         matchData.myTeamPlayers.push(newPlayer);
+        teamId = localStorage.getItem('myTeamId');
       } else {
         matchData.opponentTeamPlayers.push(newPlayer);
+        teamId = localStorage.getItem('opponentTeamId');
       }
     }
 
     localStorage.setItem('matchData', JSON.stringify(matchData));
     setMatchData({ ...matchData });
+
+    // Sync guest player to team database
+    if (teamId) {
+      const role = selectionStep === 'bowler' ? 'bowler' : 'batsman';
+      await syncGuestPlayerToTeam(teamId, newPlayer.name, role);
+    }
+
     setGuestPlayerName('');
     setAddGuestPlayerOpen(false);
     toast({

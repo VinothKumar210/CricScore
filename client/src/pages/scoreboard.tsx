@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useGuestPlayerSync } from '@/hooks/useGuestPlayerSync';
 
 // Types
 interface Player {
@@ -146,6 +147,7 @@ const createInitialMatchState = (overs: number = 20): MatchState => ({
 export default function Scoreboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { syncGuestPlayerToTeam } = useGuestPlayerSync();
   
   // Load players from localStorage
   const [team1Players, setTeam1Players] = useState<Player[]>([]);
@@ -1008,7 +1010,7 @@ export default function Scoreboard() {
   }, [currentBowlingStats]);
   
   // Add guest batsman to team
-  const handleAddGuestBatsman = useCallback(() => {
+  const handleAddGuestBatsman = useCallback(async () => {
     if (!guestBatsmanName.trim()) {
       toast({
         title: "Enter Name",
@@ -1023,18 +1025,23 @@ export default function Scoreboard() {
       name: guestBatsmanName.trim()
     };
     
-    // Add to batting team players
+    // Determine which team the batsman belongs to and get team ID
+    let teamId: string | null = null;
     if (matchState.currentInnings === 1) {
       if (matchState.team1BattingFirst) {
         setTeam1Players(prev => [...prev, newPlayer]);
+        teamId = localStorage.getItem('myTeamId');
       } else {
         setTeam2Players(prev => [...prev, newPlayer]);
+        teamId = localStorage.getItem('opponentTeamId');
       }
     } else {
       if (matchState.team1BattingFirst) {
         setTeam2Players(prev => [...prev, newPlayer]);
+        teamId = localStorage.getItem('opponentTeamId');
       } else {
         setTeam1Players(prev => [...prev, newPlayer]);
+        teamId = localStorage.getItem('myTeamId');
       }
     }
     
@@ -1062,15 +1069,20 @@ export default function Scoreboard() {
       }
     }
     
+    // Sync guest player to team database
+    if (teamId) {
+      await syncGuestPlayerToTeam(teamId, newPlayer.name, 'batsman');
+    }
+    
     setGuestBatsmanName('');
     toast({
       title: "Player Added",
       description: `${newPlayer.name} has been added to the team`
     });
-  }, [guestBatsmanName, matchState.currentInnings, matchState.team1BattingFirst, toast]);
+  }, [guestBatsmanName, matchState.currentInnings, matchState.team1BattingFirst, toast, syncGuestPlayerToTeam]);
   
   // Add guest bowler to team
-  const handleAddGuestBowler = useCallback(() => {
+  const handleAddGuestBowler = useCallback(async () => {
     if (!guestBowlerName.trim()) {
       toast({
         title: "Enter Name",
@@ -1085,18 +1097,23 @@ export default function Scoreboard() {
       name: guestBowlerName.trim()
     };
     
-    // Add to bowling team players
+    // Determine which team the bowler belongs to and get team ID
+    let teamId: string | null = null;
     if (matchState.currentInnings === 1) {
       if (matchState.team1BattingFirst) {
         setTeam2Players(prev => [...prev, newPlayer]);
+        teamId = localStorage.getItem('opponentTeamId');
       } else {
         setTeam1Players(prev => [...prev, newPlayer]);
+        teamId = localStorage.getItem('myTeamId');
       }
     } else {
       if (matchState.team1BattingFirst) {
         setTeam1Players(prev => [...prev, newPlayer]);
+        teamId = localStorage.getItem('myTeamId');
       } else {
         setTeam2Players(prev => [...prev, newPlayer]);
+        teamId = localStorage.getItem('opponentTeamId');
       }
     }
     
@@ -1124,12 +1141,17 @@ export default function Scoreboard() {
       }
     }
     
+    // Sync guest player to team database
+    if (teamId) {
+      await syncGuestPlayerToTeam(teamId, newPlayer.name, 'bowler');
+    }
+    
     setGuestBowlerName('');
     toast({
       title: "Player Added",
       description: `${newPlayer.name} has been added to the team`
     });
-  }, [guestBowlerName, matchState.currentInnings, matchState.team1BattingFirst, toast]);
+  }, [guestBowlerName, matchState.currentInnings, matchState.team1BattingFirst, toast, syncGuestPlayerToTeam]);
 
   // Handle opening batsmen selection
   const handleSelectOpeningBatsman = useCallback((player: Player) => {
