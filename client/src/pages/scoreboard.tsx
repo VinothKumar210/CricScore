@@ -635,29 +635,15 @@ export default function Scoreboard() {
     // Step 7: Set free hit flag for next ball if no-ball
     const nextIsFreeHit = extraType === 'noball';
     
-      // Update batsman stats (only for bat runs on legal balls and no-balls)
-      // On wides, batsman doesn't face the ball
-      // IMPORTANT: Use strikerBefore (who actually faced the ball), not current state
+      // Calculate batsman stats update parameters
       const batsmanFacedBall = extraType !== 'wide';
       const batsmanRuns = (extraType === 'bye' || extraType === 'legbye') ? 0 : completedRuns;
+      const shouldUpdateBatsman = batsmanFacedBall && (batsmanRuns > 0 || (batsmanRuns === 0 && isLegal && extraType === 'none'));
       
-      if (batsmanFacedBall && batsmanRuns > 0) {
-        updateBatsmanStats(strikerBefore.id, batsmanRuns, isBoundary);
-      } else if (batsmanFacedBall && batsmanRuns === 0 && isLegal && extraType === 'none') {
-        // Dot ball - increment balls faced
-        updateBatsmanStats(strikerBefore.id, 0, false);
-      }
-    
-    // Update bowler stats
-    const bowlerConcededRuns = extraType === 'bye' || extraType === 'legbye' ? 0 : totalRuns;
-    const isWicketForBowler = wicket !== null && wicket.type !== 'run_out';
-    updateBowlerStats(
-      matchState.currentBowler.id, 
-      bowlerConcededRuns, 
-      isWicketForBowler, 
-      !isLegal, 
-      extraType === 'wide' ? 'wide' : extraType === 'noball' ? 'noball' : undefined
-    );
+      // Calculate bowler stats update parameters
+      const bowlerConcededRuns = extraType === 'bye' || extraType === 'legbye' ? 0 : totalRuns;
+      const isWicketForBowler = wicket !== null && wicket.type !== 'run_out';
+      const ballIncrement = isLegal ? 1 : 0;
     
     // Generate display text for current over
     let displayText = '';
@@ -694,20 +680,24 @@ export default function Scoreboard() {
       displayText
     };
     
-    // Update match state
+    // Update match state - consolidated to avoid race conditions
     setMatchState(prev => {
       const scoreKey = prev.currentInnings === 1
         ? (prev.team1BattingFirst ? 'team1Score' : 'team2Score')
         : (prev.team1BattingFirst ? 'team2Score' : 'team1Score');
       
+      const battingKey = prev.currentInnings === 1
+        ? (prev.team1BattingFirst ? 'team1Batting' : 'team2Batting')
+        : (prev.team1BattingFirst ? 'team2Batting' : 'team1Batting');
+      
+      const bowlingKey = prev.currentInnings === 1
+        ? (prev.team1BattingFirst ? 'team2Bowling' : 'team1Bowling')
+        : (prev.team1BattingFirst ? 'team1Bowling' : 'team2Bowling');
+      
       const extrasKey = extraType === 'wide' ? 'wides' : 
                         extraType === 'noball' ? 'noBalls' : 
                         extraType === 'bye' ? 'byes' : 
                         extraType === 'legbye' ? 'legByes' : null;
-      
-      const extraRunsToAdd = extraType !== 'none' ? totalRuns : 0;
-      const batRunsToAdd = extraType === 'none' ? completedRuns : 
-                          (extraType === 'noball' ? completedRuns : 0);
       
       const newExtras = extrasKey ? {
         ...prev[scoreKey].extras,
@@ -716,6 +706,73 @@ export default function Scoreboard() {
       
       const newCurrentOver = isOverComplete ? [] : 
         (isLegal ? [...prev.currentOver, displayText] : [...prev.currentOver, displayText]);
+      
+      // Update batsman stats inline - use strikerBefore.id (who actually faced the ball)
+      let updatedBatting = prev[battingKey] as BatsmanStats[];
+      if (shouldUpdateBatsman) {
+        const existingBatsmanIndex = updatedBatting.findIndex(b => b.id === strikerBefore.id);
+        const batsman = battingTeamPlayers.find(p => p.id === strikerBefore.id);
+        
+        if (existingBatsmanIndex >= 0) {
+          updatedBatting = [...updatedBatting];
+          updatedBatting[existingBatsmanIndex] = {
+            ...updatedBatting[existingBatsmanIndex],
+            runs: updatedBatting[existingBatsmanIndex].runs + batsmanRuns,
+            balls: updatedBatting[existingBatsmanIndex].balls + 1,
+            fours: updatedBatting[existingBatsmanIndex].fours + (batsmanRuns === 4 && isBoundary ? 1 : 0),
+            sixes: updatedBatting[existingBatsmanIndex].sixes + (batsmanRuns === 6 && isBoundary ? 1 : 0),
+            strikeRate: ((updatedBatting[existingBatsmanIndex].runs + batsmanRuns) / (updatedBatting[existingBatsmanIndex].balls + 1)) * 100
+          };
+        } else if (batsman) {
+          updatedBatting = [...updatedBatting, {
+            id: strikerBefore.id,
+            name: batsman.name,
+            runs: batsmanRuns,
+            balls: 1,
+            fours: batsmanRuns === 4 && isBoundary ? 1 : 0,
+            sixes: batsmanRuns === 6 && isBoundary ? 1 : 0,
+            strikeRate: batsmanRuns * 100,
+            isOut: false
+          }];
+        }
+      }
+      
+      // Update bowler stats inline
+      let updatedBowling = prev[bowlingKey] as BowlerStats[];
+      const existingBowlerIndex = updatedBowling.findIndex(b => b.id === matchState.currentBowler.id);
+      const bowler = bowlingTeamPlayers.find(p => p.id === matchState.currentBowler.id);
+      
+      const formatOvers = (balls: number) => `${Math.floor(balls / 6)}.${balls % 6}`;
+      
+      if (existingBowlerIndex >= 0) {
+        updatedBowling = [...updatedBowling];
+        const currentBowler = updatedBowling[existingBowlerIndex];
+        const newBowlerBalls = currentBowler.balls + ballIncrement;
+        const newBowlerRuns = currentBowler.runs + bowlerConcededRuns;
+        updatedBowling[existingBowlerIndex] = {
+          ...currentBowler,
+          balls: newBowlerBalls,
+          overs: formatOvers(newBowlerBalls),
+          runs: newBowlerRuns,
+          wickets: currentBowler.wickets + (isWicketForBowler ? 1 : 0),
+          economy: newBowlerBalls > 0 ? (newBowlerRuns / (newBowlerBalls / 6)) : 0,
+          wides: currentBowler.wides + (extraType === 'wide' ? 1 : 0),
+          noBalls: currentBowler.noBalls + (extraType === 'noball' ? 1 : 0)
+        };
+      } else if (bowler) {
+        updatedBowling = [...updatedBowling, {
+          id: matchState.currentBowler.id,
+          name: bowler.name,
+          balls: ballIncrement,
+          overs: formatOvers(ballIncrement),
+          maidens: 0,
+          runs: bowlerConcededRuns,
+          wickets: isWicketForBowler ? 1 : 0,
+          economy: ballIncrement > 0 ? (bowlerConcededRuns / (ballIncrement / 6)) : 0,
+          wides: extraType === 'wide' ? 1 : 0,
+          noBalls: extraType === 'noball' ? 1 : 0
+        }];
+      }
       
       return {
         ...prev,
@@ -726,6 +783,8 @@ export default function Scoreboard() {
           wickets: prev[scoreKey].wickets + (wicket ? 1 : 0),
           extras: extrasKey ? newExtras : prev[scoreKey].extras
         },
+        [battingKey]: updatedBatting,
+        [bowlingKey]: updatedBowling,
         currentOver: newCurrentOver,
         strikeBatsman: newStriker,
         nonStrikeBatsman: newNonStriker,
@@ -748,7 +807,7 @@ export default function Scoreboard() {
       }
     }
     
-  }, [matchState, saveStateForUndo, updateBatsmanStats, updateBowlerStats, battingTeamScore, isMatchStarted, toast, checkInningsComplete, getMaxWickets]);
+  }, [matchState, saveStateForUndo, battingTeamScore, battingTeamPlayers, bowlingTeamPlayers, isMatchStarted, toast, checkInningsComplete, getMaxWickets]);
 
   // Handle run scored (wrapper for processBall)
   const handleRunScored = useCallback((runs: number) => {
