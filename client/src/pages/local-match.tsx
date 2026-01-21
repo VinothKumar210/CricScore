@@ -158,10 +158,10 @@ export default function LocalMatch() {
       venue: venue.trim() || null,
     };
 
-    try {
-      const token = localStorage.getItem("token");
-      const url = fixtureId ? `/api/fixtures/${fixtureId}` : '/api/fixtures';
-      const method = fixtureId ? 'PUT' : 'POST';
+try {
+        const token = localStorage.getItem("auth_token");
+        const url = fixtureId ? `/api/fixtures/${fixtureId}` : '/api/fixtures';
+        const method = fixtureId ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
         method,
