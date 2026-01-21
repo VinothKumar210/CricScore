@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService, type User } from '@/lib/auth';
 import { refreshUserStatistics } from '@/lib/queryClient';
+import { clearFixturesCache } from '@/lib/fixtures-cache';
 
 interface AuthContextType {
   user: User | null;
@@ -62,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     authService.logout();
+    clearFixturesCache();
     setUser(null);
     await refreshUserStatistics();
   };

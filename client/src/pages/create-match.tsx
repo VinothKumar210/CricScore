@@ -1,22 +1,19 @@
-import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Users, Trash2, Play, Save, MapPin, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/components/auth/auth-context";
-import type { LocalPlayer } from "@shared/schema";
+import { useFixturesCache } from "@/hooks/use-fixtures-cache";
 
 interface Fixture {
   id: string;
   teamAId?: string | null;
   teamAName: string;
   teamALogo?: string | null;
-  teamAPlayers: LocalPlayer[];
+  teamAPlayers: { name: string; isCaptain?: boolean; isWicketKeeper?: boolean }[];
   teamBId?: string | null;
   teamBName: string;
   teamBLogo?: string | null;
-  teamBPlayers: LocalPlayer[];
+  teamBPlayers: { name: string; isCaptain?: boolean; isWicketKeeper?: boolean }[];
   overs: number;
   venue?: string | null;
   createdAt: string;
@@ -25,58 +22,25 @@ interface Fixture {
 export default function CreateMatch() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
-
-  const { data: fixtures = [], isLoading, error } = useQuery<Fixture[]>({
-    queryKey: ['/api/fixtures'],
-    queryFn: async () => {
-      const token = localStorage.getItem("token");
-      const response = await fetch('/api/fixtures', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch fixtures');
-      }
-      return response.json();
-    },
-    enabled: !!user,
-  });
-
-  const deleteFixtureMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/fixtures/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Failed to delete fixture');
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/fixtures'] });
-      toast({
-        title: "Fixture Deleted",
-        description: "The fixture has been removed.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to delete fixture.",
-        variant: "destructive",
-      });
-    },
-  });
+  
+  const { fixtures, isLoading, error, deleteFixture, isDeleting } = useFixturesCache();
 
   const handleDeleteFixture = (id: string) => {
-    deleteFixtureMutation.mutate(id);
+    deleteFixture(id, {
+      onSuccess: () => {
+        toast({
+          title: "Fixture Deleted",
+          description: "The fixture has been removed.",
+        });
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to delete fixture.",
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   const handleStartFixture = (fixture: Fixture) => {
@@ -143,7 +107,7 @@ export default function CreateMatch() {
               <h2 className="text-sm font-semibold text-gray-700">Saved Fixtures</h2>
             </div>
             <div className="space-y-3">
-              {fixtures.map((fixture) => (
+              {fixtures.map((fixture: Fixture) => (
                 <div
                   key={fixture.id}
                   className="bg-gray-50 rounded-xl p-3 border border-gray-100"
@@ -186,7 +150,7 @@ export default function CreateMatch() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleDeleteFixture(fixture.id)}
-                        disabled={deleteFixtureMutation.isPending}
+                        disabled={isDeleting}
                         className="p-1.5 hover:bg-red-100 rounded-full transition-colors disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
