@@ -638,7 +638,7 @@ export default function Scoreboard() {
       // Calculate batsman stats update parameters
       const batsmanFacedBall = extraType !== 'wide';
       const batsmanRuns = (extraType === 'bye' || extraType === 'legbye') ? 0 : completedRuns;
-      const shouldUpdateBatsman = batsmanFacedBall && (batsmanRuns > 0 || (batsmanRuns === 0 && isLegal && extraType === 'none'));
+      const shouldUpdateBatsman = batsmanFacedBall;
       
       // Calculate bowler stats update parameters
       const bowlerConcededRuns = extraType === 'bye' || extraType === 'legbye' ? 0 : totalRuns;
