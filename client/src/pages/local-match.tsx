@@ -207,6 +207,8 @@ if (!response.ok) {
     localStorage.setItem("tossCompleted", "true");
     localStorage.setItem("tossWinner", winnerTeam?.name || "");
     localStorage.setItem("tossDecision", decision);
+    
+    localStorage.removeItem("cricscorer_match_state");
 
     const matchData = {
       userTeamRole: battingFirst?.id === teamA?.id ? "batting" : "bowling",
