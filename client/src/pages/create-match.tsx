@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Users, Trash2, Play, Save, MapPin, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/components/auth/auth-context";
 import type { LocalPlayer } from "@shared/schema";
 
 interface Fixture {
@@ -25,6 +26,7 @@ export default function CreateMatch() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: fixtures = [], isLoading, error } = useQuery<Fixture[]>({
     queryKey: ['/api/fixtures'],
@@ -40,6 +42,7 @@ export default function CreateMatch() {
       }
       return response.json();
     },
+    enabled: !!user,
   });
 
   const deleteFixtureMutation = useMutation({
