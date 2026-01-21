@@ -11,6 +11,7 @@ import { TeamSelectSheet } from "@/components/match/TeamSelectSheet";
 import { TossModal } from "@/components/match/TossModal";
 import { PlayerSelectSheet } from "@/components/match/PlayerSelectSheet";
 import { cn } from "@/lib/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { LocalPlayer } from "@shared/schema";
 
 interface SelectedTeam {
@@ -43,6 +44,7 @@ export default function LocalMatch() {
       const savedTeamB = localStorage.getItem("fixtureTeamB");
       const savedOvers = localStorage.getItem("fixtureOvers");
       const savedFixtureId = localStorage.getItem("selectedFixtureId");
+      const savedVenue = localStorage.getItem("fixtureVenue");
       
       if (savedTeamA && savedTeamB) {
         const tA = JSON.parse(savedTeamA);
@@ -52,11 +54,13 @@ export default function LocalMatch() {
       }
       if (savedOvers) setOvers(parseInt(savedOvers));
       if (savedFixtureId) setFixtureId(savedFixtureId);
+      if (savedVenue) setVenue(savedVenue);
       
       localStorage.removeItem("fixtureTeamA");
       localStorage.removeItem("fixtureTeamB");
       localStorage.removeItem("fixtureOvers");
       localStorage.removeItem("selectedFixtureId");
+      localStorage.removeItem("fixtureVenue");
     }
   }, [searchString]);
 
@@ -131,7 +135,7 @@ export default function LocalMatch() {
     setTossModalOpen(true);
   };
 
-  const handleSaveFixture = () => {
+  const handleSaveFixture = async () => {
     if (!teamA || !teamB) {
       toast({
         title: "Select Teams",
@@ -141,32 +145,51 @@ export default function LocalMatch() {
       return;
     }
 
-    const fixture = {
-      id: fixtureId || Date.now().toString(),
-      teamA: { id: teamA.id, name: teamA.name, logo: teamA.logo, players: teamA.players },
-      teamB: { id: teamB.id, name: teamB.name, logo: teamB.logo, players: teamB.players },
+    const fixtureData = {
+      teamAId: teamA.id.startsWith('local-') ? null : teamA.id,
+      teamAName: teamA.name,
+      teamALogo: teamA.logo || null,
+      teamAPlayers: teamA.players,
+      teamBId: teamB.id.startsWith('local-') ? null : teamB.id,
+      teamBName: teamB.name,
+      teamBLogo: teamB.logo || null,
+      teamBPlayers: teamB.players,
       overs,
-      createdAt: new Date().toISOString(),
+      venue: venue.trim() || null,
     };
 
-    const savedFixtures = localStorage.getItem("savedFixtures");
-    let fixtures = savedFixtures ? JSON.parse(savedFixtures) : [];
-    
-    if (fixtureId) {
-      fixtures = fixtures.map((f: any) => f.id === fixtureId ? fixture : f);
-    } else {
-      fixtures.push(fixture);
-    }
-    
-    localStorage.setItem("savedFixtures", JSON.stringify(fixtures));
+    try {
+      const token = localStorage.getItem("token");
+      const url = fixtureId ? `/api/fixtures/${fixtureId}` : '/api/fixtures';
+      const method = fixtureId ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(fixtureData),
+      });
 
-    toast({
-      title: "Fixture Saved",
-      description: "Match fixture has been saved successfully.",
-    });
-    
+      if (!response.ok) {
+        throw new Error('Failed to save fixture');
+      }
+
+      toast({
+        title: "Fixture Saved",
+        description: "Match fixture has been saved successfully.",
+      });
+      
       setLocation("/create-match");
-    };
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save fixture. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
     const handleTossComplete = (tossWinner: "teamA" | "teamB", decision: "bat" | "bowl") => {
     const winnerTeam = tossWinner === "teamA" ? teamA : teamB;

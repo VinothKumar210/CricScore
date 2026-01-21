@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import jwt from "jsonwebtoken";
-import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, insertLocalMatchSchema, insertMatchSpectatorSchema, teamMatchResultsSchema, insertMatchSummarySchema, insertPlayerMatchHistorySchema, insertGuestPlayerSchema, linkGuestPlayerSchema, transferCaptainSchema } from "@shared/schema";
+import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, insertLocalMatchSchema, insertMatchSpectatorSchema, teamMatchResultsSchema, insertMatchSummarySchema, insertPlayerMatchHistorySchema, insertGuestPlayerSchema, linkGuestPlayerSchema, transferCaptainSchema, insertFixtureSchema } from "@shared/schema";
 import { calculateManOfTheMatch } from "../shared/man-of-the-match";
 import { z } from "zod";
 import { verifyFirebaseToken } from "./firebase-admin";
@@ -1946,16 +1946,103 @@ if (!updatedTeam) {
     }
   });
 
-  // Get player histories for a match
-  app.get("/api/player-match-histories/:matchSummaryId", authenticateToken, async (req, res) => {
-    try {
-      const histories = await storage.getPlayerMatchHistories(req.params.matchSummaryId);
-      res.json(histories);
-    } catch (error) {
-      return handleDatabaseError(error, res);
-    }
-  });
+// Get player histories for a match
+    app.get("/api/player-match-histories/:matchSummaryId", authenticateToken, async (req, res) => {
+      try {
+        const histories = await storage.getPlayerMatchHistories(req.params.matchSummaryId);
+        res.json(histories);
+      } catch (error) {
+        return handleDatabaseError(error, res);
+      }
+    });
 
-  const httpServer = createServer(app);
+    // ============== FIXTURE ROUTES ==============
+
+    // Get all fixtures for the authenticated user
+    app.get("/api/fixtures", authenticateToken, async (req: any, res) => {
+      try {
+        const fixtures = await storage.getFixturesByUser(req.userId);
+        res.json(fixtures);
+      } catch (error) {
+        return handleDatabaseError(error, res);
+      }
+    });
+
+    // Get a specific fixture
+    app.get("/api/fixtures/:id", authenticateToken, async (req: any, res) => {
+      try {
+        const fixture = await storage.getFixture(req.params.id);
+        if (!fixture) {
+          return res.status(404).json({ message: "Fixture not found" });
+        }
+        if (fixture.userId !== req.userId) {
+          return res.status(403).json({ message: "Not authorized to access this fixture" });
+        }
+        res.json(fixture);
+      } catch (error) {
+        return handleDatabaseError(error, res);
+      }
+    });
+
+    // Create a new fixture
+    app.post("/api/fixtures", authenticateToken, async (req: any, res) => {
+      try {
+        const validatedData = insertFixtureSchema.parse({
+          ...req.body,
+          userId: req.userId,
+        });
+        const fixture = await storage.createFixture(validatedData);
+        res.status(201).json(fixture);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({ message: "Validation error", errors: error.errors });
+        }
+        return handleDatabaseError(error, res);
+      }
+    });
+
+    // Update a fixture
+    app.put("/api/fixtures/:id", authenticateToken, async (req: any, res) => {
+      try {
+        const fixture = await storage.getFixture(req.params.id);
+        if (!fixture) {
+          return res.status(404).json({ message: "Fixture not found" });
+        }
+        if (fixture.userId !== req.userId) {
+          return res.status(403).json({ message: "Not authorized to update this fixture" });
+        }
+        
+        const updatedFixture = await storage.updateFixture(req.params.id, req.body);
+        if (!updatedFixture) {
+          return res.status(500).json({ message: "Failed to update fixture" });
+        }
+        res.json(updatedFixture);
+      } catch (error) {
+        return handleDatabaseError(error, res);
+      }
+    });
+
+    // Delete a fixture
+    app.delete("/api/fixtures/:id", authenticateToken, async (req: any, res) => {
+      try {
+        const fixture = await storage.getFixture(req.params.id);
+        if (!fixture) {
+          return res.status(404).json({ message: "Fixture not found" });
+        }
+        if (fixture.userId !== req.userId) {
+          return res.status(403).json({ message: "Not authorized to delete this fixture" });
+        }
+        
+        const deleted = await storage.deleteFixture(req.params.id);
+        if (!deleted) {
+          return res.status(500).json({ message: "Failed to delete fixture" });
+        }
+        res.json({ message: "Fixture deleted successfully" });
+      } catch (error) {
+        return handleDatabaseError(error, res);
+      }
+    });
+
+    const httpServer = createServer(app);
   return httpServer;
 }

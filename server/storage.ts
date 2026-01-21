@@ -16,6 +16,7 @@ import type {
   MatchSummary,
   PlayerMatchHistory,
   GuestPlayer,
+  Fixture,
 } from "@prisma/client";
 import type {
   InsertUser,
@@ -33,6 +34,7 @@ import type {
   InsertMatchSummary,
   InsertPlayerMatchHistory,
   InsertGuestPlayer,
+  InsertFixture,
   ProfileSetup,
 } from "@shared/schema";
 
@@ -133,6 +135,13 @@ export interface IStorage {
   // Player match history operations
   createPlayerMatchHistory(playerHistory: InsertPlayerMatchHistory): Promise<PlayerMatchHistory>;
   getPlayerMatchHistories(matchSummaryId: string): Promise<(PlayerMatchHistory & { user: User, team: Team | null })[]>;
+
+  // Fixture operations
+  createFixture(fixture: InsertFixture): Promise<Fixture>;
+  getFixturesByUser(userId: string): Promise<Fixture[]>;
+  getFixture(id: string): Promise<Fixture | undefined>;
+  updateFixture(id: string, updates: Partial<InsertFixture>): Promise<Fixture | undefined>;
+  deleteFixture(id: string): Promise<boolean>;
 }
 
 export class PrismaStorage implements IStorage {
@@ -1739,6 +1748,83 @@ export class PrismaStorage implements IStorage {
     } catch (error) {
       console.error('Error getting player match histories:', error);
       return [];
+    }
+  }
+
+  // ============== FIXTURE OPERATIONS ==============
+
+  async createFixture(fixture: InsertFixture): Promise<Fixture> {
+    return await prisma.fixture.create({
+      data: {
+        userId: fixture.userId,
+        teamAId: fixture.teamAId || null,
+        teamAName: fixture.teamAName,
+        teamALogo: fixture.teamALogo || null,
+        teamAPlayers: fixture.teamAPlayers as any,
+        teamBId: fixture.teamBId || null,
+        teamBName: fixture.teamBName,
+        teamBLogo: fixture.teamBLogo || null,
+        teamBPlayers: fixture.teamBPlayers as any,
+        overs: fixture.overs,
+        venue: fixture.venue || null,
+      }
+    });
+  }
+
+  async getFixturesByUser(userId: string): Promise<Fixture[]> {
+    try {
+      const fixtures = await prisma.fixture.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' }
+      });
+      return fixtures;
+    } catch {
+      return [];
+    }
+  }
+
+  async getFixture(id: string): Promise<Fixture | undefined> {
+    try {
+      const fixture = await prisma.fixture.findUnique({
+        where: { id }
+      });
+      return fixture || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async updateFixture(id: string, updates: Partial<InsertFixture>): Promise<Fixture | undefined> {
+    try {
+      const fixture = await prisma.fixture.update({
+        where: { id },
+        data: {
+          ...(updates.teamAId !== undefined && { teamAId: updates.teamAId || null }),
+          ...(updates.teamAName !== undefined && { teamAName: updates.teamAName }),
+          ...(updates.teamALogo !== undefined && { teamALogo: updates.teamALogo || null }),
+          ...(updates.teamAPlayers !== undefined && { teamAPlayers: updates.teamAPlayers as any }),
+          ...(updates.teamBId !== undefined && { teamBId: updates.teamBId || null }),
+          ...(updates.teamBName !== undefined && { teamBName: updates.teamBName }),
+          ...(updates.teamBLogo !== undefined && { teamBLogo: updates.teamBLogo || null }),
+          ...(updates.teamBPlayers !== undefined && { teamBPlayers: updates.teamBPlayers as any }),
+          ...(updates.overs !== undefined && { overs: updates.overs }),
+          ...(updates.venue !== undefined && { venue: updates.venue || null }),
+        }
+      });
+      return fixture;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async deleteFixture(id: string): Promise<boolean> {
+    try {
+      await prisma.fixture.delete({
+        where: { id }
+      });
+      return true;
+    } catch {
+      return false;
     }
   }
 }

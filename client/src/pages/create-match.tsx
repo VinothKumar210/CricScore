@@ -1,52 +1,97 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Users, Trash2, Play, Save } from "lucide-react";
+import { ArrowLeft, Plus, Users, Trash2, Play, Save, MapPin, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { LocalPlayer } from "@shared/schema";
 
 interface Fixture {
   id: string;
-  teamA: {
-    id: string;
-    name: string;
-    logo?: string;
-  };
-  teamB: {
-    id: string;
-    name: string;
-    logo?: string;
-  };
+  teamAId?: string | null;
+  teamAName: string;
+  teamALogo?: string | null;
+  teamAPlayers: LocalPlayer[];
+  teamBId?: string | null;
+  teamBName: string;
+  teamBLogo?: string | null;
+  teamBPlayers: LocalPlayer[];
   overs: number;
+  venue?: string | null;
   createdAt: string;
 }
 
 export default function CreateMatch() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [fixtures, setFixtures] = useState<Fixture[]>([]);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const savedFixtures = localStorage.getItem("savedFixtures");
-    if (savedFixtures) {
-      setFixtures(JSON.parse(savedFixtures));
-    }
-  }, []);
+  const { data: fixtures = [], isLoading, error } = useQuery<Fixture[]>({
+    queryKey: ['/api/fixtures'],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const response = await fetch('/api/fixtures', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch fixtures');
+      }
+      return response.json();
+    },
+  });
+
+  const deleteFixtureMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/fixtures/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete fixture');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/fixtures'] });
+      toast({
+        title: "Fixture Deleted",
+        description: "The fixture has been removed.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete fixture.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleDeleteFixture = (id: string) => {
-    const updated = fixtures.filter((f) => f.id !== id);
-    setFixtures(updated);
-    localStorage.setItem("savedFixtures", JSON.stringify(updated));
-    toast({
-      title: "Fixture Deleted",
-      description: "The fixture has been removed.",
-    });
+    deleteFixtureMutation.mutate(id);
   };
 
   const handleStartFixture = (fixture: Fixture) => {
     localStorage.setItem("selectedFixtureId", fixture.id);
-    localStorage.setItem("fixtureTeamA", JSON.stringify(fixture.teamA));
-    localStorage.setItem("fixtureTeamB", JSON.stringify(fixture.teamB));
+    localStorage.setItem("fixtureTeamA", JSON.stringify({
+      id: fixture.teamAId || `local-${fixture.id}-a`,
+      name: fixture.teamAName,
+      logo: fixture.teamALogo,
+      players: fixture.teamAPlayers,
+    }));
+    localStorage.setItem("fixtureTeamB", JSON.stringify({
+      id: fixture.teamBId || `local-${fixture.id}-b`,
+      name: fixture.teamBName,
+      logo: fixture.teamBLogo,
+      players: fixture.teamBPlayers,
+    }));
     localStorage.setItem("fixtureOvers", fixture.overs.toString());
+    localStorage.setItem("fixtureVenue", fixture.venue || "");
     setLocation("/local-match?fromFixture=true");
   };
 
@@ -71,7 +116,24 @@ export default function CreateMatch() {
           NEW MATCH
         </Button>
 
-        {fixtures.length > 0 && (
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center text-center pt-8">
+            <Loader2 className="h-8 w-8 text-blue-500 animate-spin mb-4" />
+            <p className="text-xs text-gray-400">Loading fixtures...</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="flex flex-col items-center justify-center text-center pt-8">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+              <Save className="h-8 w-8 text-red-400" />
+            </div>
+            <h2 className="text-sm font-semibold text-gray-600 mb-1">Failed to Load Fixtures</h2>
+            <p className="text-xs text-gray-400">Please try again later</p>
+          </div>
+        )}
+
+        {!isLoading && !error && fixtures.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Save className="h-4 w-4 text-gray-500" />
@@ -87,20 +149,20 @@ export default function CreateMatch() {
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-                          {fixture.teamA.logo ? (
-                            <img src={fixture.teamA.logo} alt={fixture.teamA.name} className="w-full h-full object-cover" />
+                          {fixture.teamALogo ? (
+                            <img src={fixture.teamALogo} alt={fixture.teamAName} className="w-full h-full object-cover" />
                           ) : (
                             <Users className="h-4 w-4 text-gray-400" />
                           )}
                         </div>
-                        <span className="text-xs font-medium text-gray-900 truncate">{fixture.teamA.name}</span>
+                        <span className="text-xs font-medium text-gray-900 truncate">{fixture.teamAName}</span>
                       </div>
                       <span className="text-xs text-gray-400 shrink-0">vs</span>
                       <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
-                        <span className="text-xs font-medium text-gray-900 truncate">{fixture.teamB.name}</span>
+                        <span className="text-xs font-medium text-gray-900 truncate">{fixture.teamBName}</span>
                         <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden shrink-0">
-                          {fixture.teamB.logo ? (
-                            <img src={fixture.teamB.logo} alt={fixture.teamB.name} className="w-full h-full object-cover" />
+                          {fixture.teamBLogo ? (
+                            <img src={fixture.teamBLogo} alt={fixture.teamBName} className="w-full h-full object-cover" />
                           ) : (
                             <Users className="h-4 w-4 text-gray-400" />
                           )}
@@ -109,11 +171,20 @@ export default function CreateMatch() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">{fixture.overs} Overs</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">{fixture.overs} Overs</span>
+                      {fixture.venue && (
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <MapPin className="h-3 w-3" />
+                          <span className="truncate max-w-[100px]">{fixture.venue}</span>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleDeleteFixture(fixture.id)}
-                        className="p-1.5 hover:bg-red-100 rounded-full transition-colors"
+                        disabled={deleteFixtureMutation.isPending}
+                        className="p-1.5 hover:bg-red-100 rounded-full transition-colors disabled:opacity-50"
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
                       </button>
@@ -131,7 +202,7 @@ export default function CreateMatch() {
           </div>
         )}
 
-        {fixtures.length === 0 && (
+        {!isLoading && !error && fixtures.length === 0 && (
           <div className="flex flex-col items-center justify-center text-center pt-8">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Save className="h-8 w-8 text-gray-400" />

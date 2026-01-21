@@ -41,6 +41,7 @@ model User {
   addedSpectators MatchSpectator[] @relation("SpectatorAddedBy")
   matchSummariesAsManOfTheMatch MatchSummary[] @relation("MatchSummaryManOfTheMatch")
   playerMatchHistory PlayerMatchHistory[]
+  fixtures        Fixture[]
 
   @@map("users")
 }
@@ -464,4 +465,33 @@ model PlayerMatchHistory {
   
   @@unique([userId, matchSummaryId])
   @@map("player_match_history")
+}
+
+model Fixture {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  
+  // Team A
+  teamAId        String?  @db.ObjectId
+  teamAName      String
+  teamALogo      String?
+  teamAPlayers   Json     // Array of LocalPlayer objects
+  
+  // Team B
+  teamBId        String?  @db.ObjectId
+  teamBName      String
+  teamBLogo      String?
+  teamBPlayers   Json     // Array of LocalPlayer objects
+  
+  // Match settings
+  overs          Int      @default(10)
+  venue          String?  // Optional - can be null/empty
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("fixtures")
 }

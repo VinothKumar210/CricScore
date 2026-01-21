@@ -370,5 +370,22 @@ export const insertPlayerMatchHistorySchema = z.object({
   isManOfTheMatch: z.boolean().default(false),
 });
 
+// Fixture schema - for saving match setups to database
+export const insertFixtureSchema = z.object({
+  userId: z.string(),
+  teamAId: z.string().optional().nullable(),
+  teamAName: z.string().min(1, "Team A name is required"),
+  teamALogo: z.string().optional().nullable(),
+  teamAPlayers: z.array(localPlayerSchema),
+  teamBId: z.string().optional().nullable(),
+  teamBName: z.string().min(1, "Team B name is required"),
+  teamBLogo: z.string().optional().nullable(),
+  teamBPlayers: z.array(localPlayerSchema),
+  overs: z.number().int().min(1).max(50).default(10),
+  venue: z.string().optional().nullable(),
+});
+
+export type InsertFixture = z.infer<typeof insertFixtureSchema>;
+
 // Re-export Prisma model types
-export type { User, CareerStats, Team, TeamMember, TeamInvitation, Match, TeamMatch, TeamMatchPlayer, TeamStatistics, LocalMatch, MatchSpectator, OverHistory, MatchSummary, PlayerMatchHistory, GuestPlayer } from "@prisma/client";
+export type { User, CareerStats, Team, TeamMember, TeamInvitation, Match, TeamMatch, TeamMatchPlayer, TeamStatistics, LocalMatch, MatchSpectator, OverHistory, MatchSummary, PlayerMatchHistory, GuestPlayer, Fixture } from "@prisma/client";
