@@ -369,59 +369,9 @@ export default function Scoreboard() {
           return { ...prev, team1Batting: updateFn(prev.team1Batting) };
         }
       }
-      });
-    }, [battingTeamPlayers]);
-    
-    // Update batsman stats for no-ball (runs counted but no ball faced)
-    const updateBatsmanStatsNoball = useCallback((batsmanId: string, runs: number, isBoundary: boolean = false) => {
-      const updateFn = (stats: BatsmanStats[]): BatsmanStats[] => {
-        const existingIndex = stats.findIndex(b => b.id === batsmanId);
-        const batsman = battingTeamPlayers.find(p => p.id === batsmanId);
-        
-        if (existingIndex >= 0) {
-          const updated = [...stats];
-          const newRuns = updated[existingIndex].runs + runs;
-          const balls = updated[existingIndex].balls;
-          updated[existingIndex] = {
-            ...updated[existingIndex],
-            runs: newRuns,
-            fours: updated[existingIndex].fours + (runs === 4 && isBoundary ? 1 : 0),
-            sixes: updated[existingIndex].sixes + (runs === 6 && isBoundary ? 1 : 0),
-            strikeRate: balls > 0 ? (newRuns / balls) * 100 : 0
-          };
-          return updated;
-        } else if (batsman) {
-          return [...stats, {
-            id: batsmanId,
-            name: batsman.name,
-            runs,
-            balls: 0,
-            fours: runs === 4 && isBoundary ? 1 : 0,
-            sixes: runs === 6 && isBoundary ? 1 : 0,
-            strikeRate: 0,
-            isOut: false
-          }];
-        }
-        return stats;
-      };
-      
-      setMatchState(prev => {
-        if (prev.currentInnings === 1) {
-          if (prev.team1BattingFirst) {
-            return { ...prev, team1Batting: updateFn(prev.team1Batting) };
-          } else {
-            return { ...prev, team2Batting: updateFn(prev.team2Batting) };
-          }
-        } else {
-          if (prev.team1BattingFirst) {
-            return { ...prev, team2Batting: updateFn(prev.team2Batting) };
-          } else {
-            return { ...prev, team1Batting: updateFn(prev.team1Batting) };
-          }
-        }
-      });
-    }, [battingTeamPlayers]);
-    
+    });
+  }, [battingTeamPlayers]);
+  
   // Update bowler stats
   const updateBowlerStats = useCallback((bowlerId: string, runs: number, isWicket: boolean = false, isExtra: boolean = false, extraType?: string) => {
     const updateFn = (stats: BowlerStats[]): BowlerStats[] => {
@@ -687,18 +637,15 @@ export default function Scoreboard() {
     
       // Update batsman stats (only for bat runs on legal balls and no-balls)
       // On wides, batsman doesn't face the ball
-      // IMPORTANT: Use strikerBefore.id - the batsman who actually faced the ball
+      // IMPORTANT: Use strikerBefore (who actually faced the ball), not current state
       const batsmanFacedBall = extraType !== 'wide';
       const batsmanRuns = (extraType === 'bye' || extraType === 'legbye') ? 0 : completedRuns;
       
-      if (batsmanFacedBall && strikerBefore.id) {
-        // Always update balls faced for the striker who faced the ball
-        if (isLegal) {
-          updateBatsmanStats(strikerBefore.id, batsmanRuns, isBoundary);
-        } else if (extraType === 'noball' && batsmanRuns > 0) {
-          // No-ball: batsman gets runs but doesn't count as ball faced
-          updateBatsmanStatsNoball(strikerBefore.id, batsmanRuns, isBoundary);
-        }
+      if (batsmanFacedBall && batsmanRuns > 0) {
+        updateBatsmanStats(strikerBefore.id, batsmanRuns, isBoundary);
+      } else if (batsmanFacedBall && batsmanRuns === 0 && isLegal && extraType === 'none') {
+        // Dot ball - increment balls faced
+        updateBatsmanStats(strikerBefore.id, 0, false);
       }
     
     // Update bowler stats
