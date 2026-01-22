@@ -715,8 +715,8 @@ export default function Scoreboard() {
         [extrasKey]: prev[scoreKey].extras[extrasKey] + (extraType === 'noball' ? automaticRuns : totalRuns)
       } : prev[scoreKey].extras;
       
-      const newCurrentOver = isOverComplete ? [] : 
-        (isLegal ? [...prev.currentOver, displayText] : [...prev.currentOver, displayText]);
+        const newCurrentOver = [...prev.currentOver, displayText];
+
       
       // Update batsman stats inline - use strikerBefore.id (who actually faced the ball)
       let updatedBatting = prev[battingKey] as BatsmanStats[];
@@ -1037,10 +1037,17 @@ export default function Scoreboard() {
         ...prev,
         nonStrikeBatsman: { id: player.id, name: player.name }
       }));
-    }
-    
-    setShowBatsmanSelectDialog(false);
-  }, [matchState, currentBattingStats, toast]);
+      }
+      
+      setShowBatsmanSelectDialog(false);
+
+      // Check if end of over and trigger bowler selection
+      const balls = battingTeamScore.balls;
+      if (balls > 0 && balls % 6 === 0 && balls < matchState.matchOvers * 6) {
+        setTimeout(() => setShowBowlerSelectDialog(true), 300);
+      }
+    }, [matchState, currentBattingStats, toast, battingTeamScore.balls]);
+
   
   // Select bowler
   const handleSelectBowler = useCallback((player: Player) => {
@@ -1070,13 +1077,15 @@ export default function Scoreboard() {
       });
     }
     
-    setMatchState(prev => ({
-      ...prev,
-      currentBowler: { id: player.id, name: player.name }
-    }));
-    
-    setShowBowlerSelectDialog(false);
-  }, [currentBowlingStats]);
+      setMatchState(prev => ({
+        ...prev,
+        currentBowler: { id: player.id, name: player.name },
+        currentOver: []
+      }));
+      
+      setShowBowlerSelectDialog(false);
+    }, [currentBowlingStats]);
+
   
   // Add guest batsman to team
   const handleAddGuestBatsman = useCallback(async () => {
@@ -1305,13 +1314,15 @@ export default function Scoreboard() {
           economy: 0,
           wides: 0,
           noBalls: 0
-        }],
-        currentBowler: { id: player.id, name: player.name }
-      };
-    });
-    
-    setShowInitialBowlerSelect(false);
-  }, []);
+          }],
+          currentBowler: { id: player.id, name: player.name },
+          currentOver: []
+        };
+      });
+      
+      setShowInitialBowlerSelect(false);
+    }, []);
+
   
   // Reset match
   const handleResetMatch = useCallback(() => {
