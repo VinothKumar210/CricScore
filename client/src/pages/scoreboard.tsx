@@ -1072,8 +1072,9 @@ export default function Scoreboard() {
             </Button>
             <h1 className="text-lg font-bold text-gray-900">Match Centre</h1>
           </div>
-          
-            {/* Tabs Navigation */}
+        </div>
+        
+          {/* Tabs Navigation */}
             <Tabs defaultValue="scoring" className="w-full">
               <div className="px-4">
                 <TabsList className="bg-transparent border-b-0 h-auto p-0 w-full justify-start overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
@@ -1395,10 +1396,11 @@ export default function Scoreboard() {
                           >
                             End Innings
                           </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </TabsContent>
+                    </TabsContent>
 
               <TabsContent value="scorecard" className="flex-1 overflow-auto bg-gray-50 p-3">
                 <div className="max-w-4xl mx-auto space-y-4">
