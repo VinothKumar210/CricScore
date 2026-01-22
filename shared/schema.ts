@@ -185,6 +185,7 @@ export const insertLocalMatchSchema = z.object({
   allowSpectators: z.boolean().default(false),
   isRoomMatch: z.boolean().default(false),
   roomPassword: z.string().optional(),
+  fullState: z.any().optional(),
 });
 
 // Match spectator schema

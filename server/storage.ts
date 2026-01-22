@@ -112,6 +112,8 @@ export interface IStorage {
   createLocalMatch(match: InsertLocalMatch): Promise<LocalMatch>;
   getLocalMatch(id: string): Promise<LocalMatch | undefined>;
   updateLocalMatch(id: string, updates: Partial<LocalMatch>): Promise<LocalMatch | undefined>;
+  saveBall(localMatchId: string, ball: any, overNumber: number, innings: number): Promise<void>;
+  getMatchState(id: string): Promise<any>;
   getSpectatorMatches(userId: string): Promise<LocalMatch[]>;
   getOngoingMatches(): Promise<LocalMatch[]>;
 
@@ -1082,18 +1084,7 @@ export class PrismaStorage implements IStorage {
     }
   }
 
-  async updateLocalMatch(id: string, updates: {
-    status?: 'CREATED' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
-    currentInnings?: number;
-    currentOver?: number;
-    currentBall?: number;
-    myTeamScore?: number;
-    myTeamWickets?: number;
-    myTeamOvers?: number;
-    opponentTeamScore?: number;
-    opponentTeamWickets?: number;
-    opponentTeamOvers?: number;
-  }): Promise<LocalMatch | undefined> {
+  async updateLocalMatch(id: string, updates: Partial<LocalMatch>): Promise<LocalMatch | undefined> {
     try {
       const match = await prisma.localMatch.update({
         where: { id },
@@ -1103,6 +1094,43 @@ export class PrismaStorage implements IStorage {
     } catch {
       return undefined;
     }
+  }
+
+  async saveBall(localMatchId: string, ball: any, overNumber: number, innings: number): Promise<void> {
+    const existingOver = await prisma.overHistory.findFirst({
+      where: { localMatchId, overNumber, innings }
+    });
+
+    if (existingOver) {
+      const balls = existingOver.balls as any[];
+      balls.push(ball);
+      await prisma.overHistory.update({
+        where: { id: existingOver.id },
+        data: {
+          balls,
+          totalRuns: existingOver.totalRuns + (ball.completedRuns + ball.automaticRuns),
+          wickets: existingOver.wickets + (ball.wicket ? 1 : 0)
+        }
+      });
+    } else {
+      await prisma.overHistory.create({
+        data: {
+          localMatchId,
+          overNumber,
+          innings,
+          balls: [ball],
+          totalRuns: ball.completedRuns + ball.automaticRuns,
+          wickets: ball.wicket ? 1 : 0
+        }
+      });
+    }
+  }
+
+  async getMatchState(id: string): Promise<any> {
+    const match = await prisma.localMatch.findUnique({
+      where: { id }
+    });
+    return match?.fullState;
   }
 
   async getSpectatorMatches(userId: string): Promise<LocalMatch[]> {

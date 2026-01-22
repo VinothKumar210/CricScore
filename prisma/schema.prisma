@@ -336,6 +336,7 @@ model LocalMatch {
   opponentTeamScore     Int      @default(0)
   opponentTeamWickets   Int      @default(0)
   opponentTeamOvers     Float    @default(0)
+  fullState             Json?    // Complete MatchState object
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 

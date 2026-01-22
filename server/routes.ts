@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import jwt from "jsonwebtoken";
 import { loginSchema, registerSchema, profileSetupSchema, insertMatchSchema, insertTeamSchema, insertTeamInvitationSchema, insertLocalMatchSchema, insertMatchSpectatorSchema, teamMatchResultsSchema, insertMatchSummarySchema, insertPlayerMatchHistorySchema, insertGuestPlayerSchema, linkGuestPlayerSchema, transferCaptainSchema, insertFixtureSchema } from "@shared/schema";
 import { calculateManOfTheMatch } from "../shared/man-of-the-match";
+import { processBall, initialMatchState } from "@shared/scoring";
 import { z } from "zod";
 import { verifyFirebaseToken } from "./firebase-admin";
 
@@ -1586,7 +1587,24 @@ if (!updatedTeam) {
         matchDate: new Date(req.body.matchDate)
       });
 
-      const localMatch = await storage.createLocalMatch(validatedData);
+        const initialState = initialMatchState(validatedData.overs, true);
+        // Pre-fill players
+        initialState.team1Batting = validatedData.myTeamPlayers.map((p: any) => ({
+          id: p.id || Math.random().toString(36).substring(7),
+          name: p.name,
+          runs: 0, balls: 0, fours: 0, sixes: 0, strikeRate: 0, isOut: false
+        }));
+        initialState.team2Batting = validatedData.opponentTeamPlayers.map((p: any) => ({
+          id: p.id || Math.random().toString(36).substring(7),
+          name: p.name,
+          runs: 0, balls: 0, fours: 0, sixes: 0, strikeRate: 0, isOut: false
+        }));
+
+        const localMatch = await storage.createLocalMatch({
+          ...validatedData,
+          fullState: initialState as any
+        });
+
       
       // Add spectators if provided
       if (req.body.selectedSpectators && Array.isArray(req.body.selectedSpectators)) {
@@ -1769,8 +1787,72 @@ if (!updatedTeam) {
     }
   });
 
-  // Update match status and score (for match creators during live scoring)
-  app.patch("/api/local-matches/:id", authenticateToken, async (req: any, res) => {
+    // Record a ball for a local match
+    app.post("/api/local-matches/:id/ball", authenticateToken, async (req: any, res) => {
+      try {
+        const match = await storage.getLocalMatch(req.params.id);
+        if (!match) {
+          return res.status(404).json({ message: "Match not found" });
+        }
+        
+        if (match.creatorId !== req.userId) {
+          return res.status(403).json({ message: "Only match creator can record balls" });
+        }
+
+        const ballInputSchema = z.object({
+          completedRuns: z.number().int().min(0),
+          extraType: z.enum(['none', 'wide', 'noball', 'bye', 'legbye']),
+          wicket: z.object({
+            type: z.enum(['bowled', 'caught', 'lbw', 'stumped', 'run_out', 'hit_wicket']),
+            dismissedBatsman: z.enum(['striker', 'non-striker']),
+            dismissedAtEnd: z.enum(['striker-end', 'non-striker-end']),
+            runsBeforeDismissal: z.number().int().min(0),
+            fielder: z.string().optional()
+          }).nullable(),
+          isBoundary: z.boolean().optional()
+        });
+
+        const ballInput = ballInputSchema.parse(req.body);
+        
+        // Reconstruct or initialize state
+        let state = match.fullState as any;
+        if (!state) {
+          return res.status(400).json({ message: "Match state not initialized" });
+        }
+
+        const newState = processBall(state, ballInput);
+        
+        // Update database
+        const lastBall = newState.ballHistory[newState.ballHistory.length - 1];
+        await storage.saveBall(match.id, lastBall, lastBall.overNumber, newState.currentInnings);
+        
+        const updates: any = {
+          fullState: newState,
+          currentInnings: newState.currentInnings,
+          status: newState.isMatchComplete ? 'COMPLETED' : 'ONGOING',
+          myTeamScore: newState.team1Score.runs,
+          myTeamWickets: newState.team1Score.wickets,
+          myTeamOvers: (newState.team1Score.balls / 6) + (newState.team1Score.balls % 6) / 10,
+          opponentTeamScore: newState.team2Score.runs,
+          opponentTeamWickets: newState.team2Score.wickets,
+          opponentTeamOvers: (newState.team2Score.balls / 6) + (newState.team2Score.balls % 6) / 10,
+        };
+
+        await storage.updateLocalMatch(match.id, updates);
+        
+        res.json(newState);
+      } catch (error) {
+        console.error('Error recording ball:', error);
+        if (error instanceof z.ZodError) {
+          return res.status(400).json({ message: "Validation error", errors: error.errors });
+        }
+        res.status(500).json({ message: "Internal server error" });
+      }
+    });
+
+    // Update match status and score (for match creators during live scoring)
+    app.patch("/api/local-matches/:id", authenticateToken, async (req: any, res) => {
+
     try {
       const match = await storage.getLocalMatch(req.params.id);
       if (!match) {
