@@ -180,9 +180,6 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     const temp = newState.strikeBatsman;
     newState.strikeBatsman = newState.nonStrikeBatsman;
     newState.nonStrikeBatsman = temp;
-    
-    // Clear current bowler at end of over to force new selection
-    newState.currentBowler = { id: '', name: '' };
   }
 
   // Step 7: Free hit logic
@@ -209,7 +206,7 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
   }
 
   // Update Bowler Stats
-  const bowlerStats = newState[bowlingKey].find(b => b.id === newState.currentBowler.id);
+  const bowlerStats = newState[bowlingKey].find(b => b.id === state.currentBowler.id);
   if (bowlerStats) {
     if (isLegal) bowlerStats.balls += 1;
     bowlerStats.overs = formatOvers(bowlerStats.balls);
@@ -221,6 +218,11 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     bowlerStats.economy = bowlerStats.balls > 0 ? (bowlerStats.runs / (bowlerStats.balls / 6)) : 0;
     if (extraType === 'wide') bowlerStats.wides += 1;
     if (extraType === 'noball') bowlerStats.noBalls += 1;
+  }
+
+  // Clear current bowler at end of over to force new selection
+  if (isOverComplete && newState[scoreKey].balls < newState.matchOvers * 6) {
+    newState.currentBowler = { id: '', name: '' };
   }
 
   // Record Ball Event
