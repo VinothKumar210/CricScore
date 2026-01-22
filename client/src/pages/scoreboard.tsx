@@ -1291,9 +1291,9 @@ export default function Scoreboard() {
             <h1 className="text-lg font-bold text-gray-900">Match Centre</h1>
           </div>
           
-          {/* Tabs Navigation */}
-            <Tabs defaultValue="scoring" className="w-full flex flex-col flex-1">
-              <div className="px-4 shrink-0">
+            {/* Tabs Navigation */}
+            <Tabs defaultValue="scoring" className="w-full">
+              <div className="px-4">
                 <TabsList className="bg-transparent border-b-0 h-auto p-0 w-full justify-start overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
                 <TabsTrigger 
                   value="scoring" 
@@ -1335,202 +1335,202 @@ export default function Scoreboard() {
           </Tabs>
         </div>
       
-      {/* Main Content Area - White background for score display */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-white">
-        {/* Score Display Section */}
-        <div className="flex-1 overflow-y-auto p-3">
-          <div className="max-w-6xl mx-auto space-y-3">
-            {/* Team and Score Display */}
-            <div className="text-center space-y-1">
-              <h2 className="text-lg font-bold text-gray-900">
-                {localStorage.getItem('myTeamName') || 'Your Team'}
-              </h2>
-              <p className="text-xs text-gray-500">
-                  {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
-                  {matchState.currentInnings === 2 && matchState.target && (
-                    <span className="ml-2 text-blue-600 font-medium">
-                      Target: {matchState.target} | Need {Math.max(0, matchState.target - battingTeamScore.runs)} from {Math.max(0, matchState.matchOvers * 6 - battingTeamScore.balls)} balls
-                    </span>
-                  )}
-                </p>
-                
-                {matchState.isFreeHit && (
-                  <div className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
-                    FREE HIT
-                  </div>
-                )}
-                
-                <div className="text-4xl font-bold text-blue-600">
-                  {battingTeamScore.runs}-{battingTeamScore.wickets}
-                </div>
-              
-              {/* Match Info Row */}
-              <div className="flex justify-center gap-4 text-xs text-gray-500">
-                <span>Extras - {battingTeamScore.extras.wides + battingTeamScore.extras.noBalls + battingTeamScore.extras.byes + battingTeamScore.extras.legByes}</span>
-                <span>Overs - {formatOvers(battingTeamScore.balls)} / {matchState.matchOvers}</span>
-                <span>CRR - {battingTeamScore.balls > 0 ? (battingTeamScore.runs / (battingTeamScore.balls / 6)).toFixed(2) : '0.00'}</span>
-              </div>
-              
-              {/* Partnership */}
-                <div className="text-xs text-gray-500">
-                  Partnership - {getCurrentBatsmanStats(true).runs + getCurrentBatsmanStats(false).runs}({getCurrentBatsmanStats(true).balls + getCurrentBatsmanStats(false).balls})
-                </div>
-                
-                {/* Current Over Display */}
-                {matchState.currentOver.length > 0 && (
-                  <div className="flex items-center justify-center gap-2 mt-2">
-                    <span className="text-xs text-gray-500">This Over:</span>
-                    <div className="flex gap-1">
-                      {matchState.currentOver.map((ball, idx) => (
-                        <span 
-                          key={idx} 
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            ball === 'W' ? 'bg-red-500 text-white' :
-                            ball.includes('Wd') || ball.includes('Nb') ? 'bg-yellow-400 text-yellow-900' :
-                            ball === '4' || ball === '6' ? 'bg-green-500 text-white' :
-                            ball === '0' || ball === '•' ? 'bg-gray-300 text-gray-700' :
-                            'bg-blue-500 text-white'
-                          }`}
-                        >
-                          {ball}
-                        </span>
-                      ))}
+        {/* Main Content Area - White background for score display */}
+        <div className="flex-1 flex flex-col bg-white overflow-hidden">
+          {/* Score Display Section */}
+          <div className="flex-1 p-2 sm:p-3">
+            <div className="max-w-6xl mx-auto space-y-2 sm:space-y-3">
+              {/* Team and Score Display */}
+              <div className="text-center space-y-0.5 sm:space-y-1">
+                <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                  {localStorage.getItem('myTeamName') || 'Your Team'}
+                </h2>
+                <p className="text-[10px] sm:text-xs text-gray-500">
+                    {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
+                    {matchState.currentInnings === 2 && matchState.target && (
+                      <span className="ml-2 text-blue-600 font-medium">
+                        Target: {matchState.target} | Need {Math.max(0, matchState.target - battingTeamScore.runs)}
+                      </span>
+                    )}
+                  </p>
+                  
+                  {matchState.isFreeHit && (
+                    <div className="bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full text-[10px] font-bold animate-pulse inline-block">
+                      FREE HIT
                     </div>
+                  )}
+                  
+                  <div className="text-2xl sm:text-4xl font-bold text-blue-600 leading-tight">
+                    {battingTeamScore.runs}-{battingTeamScore.wickets}
                   </div>
-                )}
-              </div>
-            
-              {/* Current Batsmen Table */}
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-medium text-gray-700">Batsman</span>
-                  <span className="text-right ml-auto text-xs text-gray-500">R</span>
-                  <span className="text-center w-6 text-xs text-gray-500">B</span>
-                  <span className="text-center w-6 text-xs text-gray-500">4s</span>
-                  <span className="text-center w-6 text-xs text-gray-500">6s</span>
-                  <span className="text-center w-8 text-xs text-gray-500">SR</span>
+                
+                {/* Match Info Row */}
+                <div className="flex justify-center gap-3 sm:gap-4 text-[10px] sm:text-xs text-gray-500">
+                  <span>Extras - {battingTeamScore.extras.wides + battingTeamScore.extras.noBalls + battingTeamScore.extras.byes + battingTeamScore.extras.legByes}</span>
+                  <span>Overs - {formatOvers(battingTeamScore.balls)} / {matchState.matchOvers}</span>
+                  <span>CRR - {battingTeamScore.balls > 0 ? (battingTeamScore.runs / (battingTeamScore.balls / 6)).toFixed(2) : '0.00'}</span>
+                </div>
+                
+                {/* Partnership */}
+                  <div className="text-[10px] sm:text-xs text-gray-500">
+                    Partnership - {getCurrentBatsmanStats(true).runs + getCurrentBatsmanStats(false).runs}({getCurrentBatsmanStats(true).balls + getCurrentBatsmanStats(false).balls})
+                  </div>
+                  
+                  {/* Current Over Display */}
+                  {matchState.currentOver.length > 0 && (
+                    <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-1 sm:mt-2">
+                      <span className="text-[10px] sm:text-xs text-gray-500">This Over:</span>
+                      <div className="flex gap-0.5 sm:gap-1">
+                        {matchState.currentOver.map((ball, idx) => (
+                          <span 
+                            key={idx} 
+                            className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-[10px] sm:text-xs font-medium ${
+                              ball === 'W' ? 'bg-red-500 text-white' :
+                              ball.includes('Wd') || ball.includes('Nb') ? 'bg-yellow-400 text-yellow-900' :
+                              ball === '4' || ball === '6' ? 'bg-green-500 text-white' :
+                              ball === '0' || ball === '•' ? 'bg-gray-300 text-gray-700' :
+                              'bg-blue-500 text-white'
+                            }`}
+                          >
+                            {ball}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              
+                {/* Current Batsmen Table */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] sm:text-xs font-medium text-gray-700">Batsman</span>
+                    <span className="text-right ml-auto text-[10px] sm:text-xs text-gray-500">R</span>
+                    <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">B</span>
+                    <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">4s</span>
+                    <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">6s</span>
+                    <span className="text-center w-7 sm:w-8 text-[10px] sm:text-xs text-gray-500">SR</span>
+                  </div>
+                  <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
+                    <table className="w-full">
+                      <tbody>
+                        {(matchState.strikeBatsman.name || selectedOpeningBatsmen.length > 0) ? (
+                          <>
+                              <tr 
+                                className={`border-b cursor-pointer transition-colors hover:bg-blue-50 ${
+                                  matchState.strikeBatsman.id === (selectedOpeningBatsmen[0]?.id || matchState.strikeBatsman.id) ? 'bg-blue-100' : ''
+                                }`}
+                                onClick={() => {
+                                  if (!isMatchStarted && selectedOpeningBatsmen.length === 2 && selectedOpeningBowler) {
+                                    setMatchState(prev => ({
+                                      ...prev,
+                                      strikeBatsman: { id: selectedOpeningBatsmen[0].id, name: selectedOpeningBatsmen[0].name },
+                                      nonStrikeBatsman: { id: selectedOpeningBatsmen[1].id, name: selectedOpeningBatsmen[1].name },
+                                      currentBowler: { id: selectedOpeningBowler.id, name: selectedOpeningBowler.name }
+                                    }));
+                                    setIsMatchStarted(true);
+                                  }
+                                }}
+                              >
+                              <td className="p-1.5 sm:p-2 text-xs sm:text-sm font-medium" data-testid="batsman-1-name">
+                                <span className={matchState.strikeBatsman.id === (selectedOpeningBatsmen[0]?.id || matchState.strikeBatsman.id) ? 'bg-blue-200 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-sm' : ''}>
+                                  {selectedOpeningBatsmen[0]?.name || matchState.strikeBatsman.name || '-'}
+                                  {matchState.strikeBatsman.id === (selectedOpeningBatsmen[0]?.id || matchState.strikeBatsman.id) && ' *'}
+                                </span>
+                              </td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBatsmanStats(true).runs || 0}</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBatsmanStats(true).balls || 0}</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBatsmanStats(true).fours || 0}</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBatsmanStats(true).sixes || 0}</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBatsmanStats(true).strikeRate?.toFixed(1) || '0.0'}</td>
+                            </tr>
+                              <tr 
+                                className={`cursor-pointer transition-colors hover:bg-blue-50 ${
+                                  matchState.strikeBatsman.id === (selectedOpeningBatsmen[1]?.id) ? 'bg-blue-100' : ''
+                                }`}
+                                onClick={() => {
+                                  if (!isMatchStarted && selectedOpeningBatsmen.length === 2 && selectedOpeningBowler) {
+                                    setMatchState(prev => ({
+                                      ...prev,
+                                      strikeBatsman: { id: selectedOpeningBatsmen[1].id, name: selectedOpeningBatsmen[1].name },
+                                      nonStrikeBatsman: { id: selectedOpeningBatsmen[0].id, name: selectedOpeningBatsmen[0].name },
+                                      currentBowler: { id: selectedOpeningBowler.id, name: selectedOpeningBowler.name }
+                                    }));
+                                    setIsMatchStarted(true);
+                                  }
+                                }}
+                              >
+                              <td className="p-1.5 sm:p-2 text-xs sm:text-sm font-medium" data-testid="batsman-2-name">
+                                <span className={matchState.strikeBatsman.id === (selectedOpeningBatsmen[1]?.id) ? 'bg-blue-200 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-sm' : ''}>
+                                  {selectedOpeningBatsmen[1]?.name || matchState.nonStrikeBatsman.name || '-'}
+                                  {matchState.strikeBatsman.id === (selectedOpeningBatsmen[1]?.id) && ' *'}
+                                </span>
+                              </td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBatsmanStats(false).runs || 0}</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBatsmanStats(false).balls || 0}</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBatsmanStats(false).fours || 0}</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBatsmanStats(false).sixes || 0}</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBatsmanStats(false).strikeRate?.toFixed(1) || '0.0'}</td>
+                            </tr>
+                          </>
+                        ) : (
+                          <>
+                            <tr className="border-b">
+                              <td className="p-1.5 sm:p-2 text-xs sm:text-sm text-gray-400" data-testid="batsman-1-name">-</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
+                            </tr>
+                            <tr>
+                              <td className="p-1.5 sm:p-2 text-xs sm:text-sm text-gray-400" data-testid="batsman-2-name">-</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
+                              <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
+                            </tr>
+                          </>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  {!isMatchStarted && selectedOpeningBatsmen.length === 2 && (
+                    <p className="text-[10px] text-gray-500 mt-1 text-center">
+                      Click on a batsman to set as striker (*)
+                    </p>
+                  )}
+                </div>
+              
+              {/* Current Bowler Table */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] sm:text-xs font-medium text-gray-700">Bowler</span>
+                  <span className="text-right ml-auto text-[10px] sm:text-xs text-gray-500">O</span>
+                  <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">M</span>
+                  <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">R</span>
+                  <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">W</span>
+                  <span className="text-center w-7 sm:w-8 text-[10px] sm:text-xs text-gray-500">Eco</span>
                 </div>
                 <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
                   <table className="w-full">
                     <tbody>
-                      {(matchState.strikeBatsman.name || selectedOpeningBatsmen.length > 0) ? (
-                        <>
-                            <tr 
-                              className={`border-b cursor-pointer transition-colors hover:bg-blue-50 ${
-                                matchState.strikeBatsman.id === (selectedOpeningBatsmen[0]?.id || matchState.strikeBatsman.id) ? 'bg-blue-100' : ''
-                              }`}
-                              onClick={() => {
-                                if (!isMatchStarted && selectedOpeningBatsmen.length === 2 && selectedOpeningBowler) {
-                                  setMatchState(prev => ({
-                                    ...prev,
-                                    strikeBatsman: { id: selectedOpeningBatsmen[0].id, name: selectedOpeningBatsmen[0].name },
-                                    nonStrikeBatsman: { id: selectedOpeningBatsmen[1].id, name: selectedOpeningBatsmen[1].name },
-                                    currentBowler: { id: selectedOpeningBowler.id, name: selectedOpeningBowler.name }
-                                  }));
-                                  setIsMatchStarted(true);
-                                }
-                              }}
-                            >
-                            <td className="p-2 text-sm font-medium" data-testid="batsman-1-name">
-                              <span className={matchState.strikeBatsman.id === (selectedOpeningBatsmen[0]?.id || matchState.strikeBatsman.id) ? 'bg-blue-200 px-2 py-0.5 rounded text-sm' : ''}>
-                                {selectedOpeningBatsmen[0]?.name || matchState.strikeBatsman.name || '-'}
-                                {matchState.strikeBatsman.id === (selectedOpeningBatsmen[0]?.id || matchState.strikeBatsman.id) && ' *'}
-                              </span>
-                            </td>
-                            <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(true).runs || 0}</td>
-                            <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(true).balls || 0}</td>
-                            <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(true).fours || 0}</td>
-                            <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(true).sixes || 0}</td>
-                            <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(true).strikeRate?.toFixed(1) || '0.0'}</td>
-                          </tr>
-                            <tr 
-                              className={`cursor-pointer transition-colors hover:bg-blue-50 ${
-                                matchState.strikeBatsman.id === (selectedOpeningBatsmen[1]?.id) ? 'bg-blue-100' : ''
-                              }`}
-                              onClick={() => {
-                                if (!isMatchStarted && selectedOpeningBatsmen.length === 2 && selectedOpeningBowler) {
-                                  setMatchState(prev => ({
-                                    ...prev,
-                                    strikeBatsman: { id: selectedOpeningBatsmen[1].id, name: selectedOpeningBatsmen[1].name },
-                                    nonStrikeBatsman: { id: selectedOpeningBatsmen[0].id, name: selectedOpeningBatsmen[0].name },
-                                    currentBowler: { id: selectedOpeningBowler.id, name: selectedOpeningBowler.name }
-                                  }));
-                                  setIsMatchStarted(true);
-                                }
-                              }}
-                            >
-                            <td className="p-2 text-sm font-medium" data-testid="batsman-2-name">
-                              <span className={matchState.strikeBatsman.id === (selectedOpeningBatsmen[1]?.id) ? 'bg-blue-200 px-2 py-0.5 rounded text-sm' : ''}>
-                                {selectedOpeningBatsmen[1]?.name || matchState.nonStrikeBatsman.name || '-'}
-                                {matchState.strikeBatsman.id === (selectedOpeningBatsmen[1]?.id) && ' *'}
-                              </span>
-                            </td>
-                            <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(false).runs || 0}</td>
-                            <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(false).balls || 0}</td>
-                            <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(false).fours || 0}</td>
-                            <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(false).sixes || 0}</td>
-                            <td className="text-center p-2 text-sm">{getCurrentBatsmanStats(false).strikeRate?.toFixed(1) || '0.0'}</td>
-                          </tr>
-                        </>
-                      ) : (
-                        <>
-                          <tr className="border-b">
-                            <td className="p-2 text-sm text-gray-400" data-testid="batsman-1-name">-</td>
-                            <td className="text-center p-2 text-sm text-gray-600">-</td>
-                            <td className="text-center p-2 text-sm text-gray-600">-</td>
-                            <td className="text-center p-2 text-sm text-gray-600">-</td>
-                            <td className="text-center p-2 text-sm text-gray-600">-</td>
-                            <td className="text-center p-2 text-sm text-gray-600">-</td>
-                          </tr>
-                          <tr>
-                            <td className="p-2 text-sm text-gray-400" data-testid="batsman-2-name">-</td>
-                            <td className="text-center p-2 text-sm text-gray-600">-</td>
-                            <td className="text-center p-2 text-sm text-gray-600">-</td>
-                            <td className="text-center p-2 text-sm text-gray-600">-</td>
-                            <td className="text-center p-2 text-sm text-gray-600">-</td>
-                            <td className="text-center p-2 text-sm text-gray-600">-</td>
-                          </tr>
-                        </>
-                      )}
+                      <tr>
+                        <td className="p-1.5 sm:p-2 text-xs sm:text-sm font-medium" data-testid="bowler-name">
+                          {selectedOpeningBowler?.name || matchState.currentBowler.name || '-'}
+                        </td>
+                        <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBowlerStats().overs || '0.0'}</td>
+                        <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">0</td>
+                        <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBowlerStats().runs || 0}</td>
+                        <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBowlerStats().wickets || 0}</td>
+                        <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBowlerStats().economy?.toFixed(1) || '0.0'}</td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
-                {!isMatchStarted && selectedOpeningBatsmen.length === 2 && (
-                  <p className="text-xs text-gray-500 mt-1 text-center">
-                    Click on a batsman to set as striker (*)
-                  </p>
-                )}
-              </div>
-            
-            {/* Current Bowler Table */}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-medium text-gray-700">Bowler</span>
-                <span className="text-right ml-auto text-xs text-gray-500">O</span>
-                <span className="text-center w-6 text-xs text-gray-500">M</span>
-                <span className="text-center w-6 text-xs text-gray-500">R</span>
-                <span className="text-center w-6 text-xs text-gray-500">W</span>
-                <span className="text-center w-8 text-xs text-gray-500">Eco</span>
-              </div>
-              <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
-                <table className="w-full">
-                  <tbody>
-                    <tr>
-                      <td className="p-2 text-sm font-medium" data-testid="bowler-name">
-                        {selectedOpeningBowler?.name || matchState.currentBowler.name || '-'}
-                      </td>
-                      <td className="text-center p-2 text-sm">{getCurrentBowlerStats().overs || '0.0'}</td>
-                      <td className="text-center p-2 text-sm">0</td>
-                      <td className="text-center p-2 text-sm">{getCurrentBowlerStats().runs || 0}</td>
-                      <td className="text-center p-2 text-sm">{getCurrentBowlerStats().wickets || 0}</td>
-                      <td className="text-center p-2 text-sm">{getCurrentBowlerStats().economy?.toFixed(1) || '0.0'}</td>
-                    </tr>
-                  </tbody>
-                </table>
               </div>
             </div>
           </div>
-        </div>
         
           {/* Bottom Panel - Fixed at bottom with white background */}
           {!isMatchStarted ? (
