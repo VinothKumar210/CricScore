@@ -1036,831 +1036,709 @@ export default function Scoreboard() {
       });
     }, [matchState.strikeBatsman, matchState.nonStrikeBatsman, currentBattingStats]);
 
-  return (
-      <div className="h-screen flex flex-col overflow-hidden bg-background">
-        {/* Header with Back Button */}
-        <div className="bg-white border-b border-gray-200 shrink-0">
-          <div className="flex items-center p-3 max-w-6xl mx-auto">
-            <Button 
-              onClick={() => setLocation('/local-match')}
-              variant="ghost"
-              size="icon"
-              data-testid="button-back-to-create-match"
-              className="mr-3 text-gray-900 hover:bg-gray-100"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-lg font-bold text-gray-900">Match Centre</h1>
-          </div>
-          
-            {/* Tabs Navigation */}
-            <Tabs defaultValue="scoring" className="w-full">
-              <div className="px-4">
-                <TabsList className="bg-transparent border-b-0 h-auto p-0 w-full justify-start overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full">
-                <TabsTrigger 
-                  value="scoring" 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-4 py-2 text-sm text-gray-500 data-[state=active]:text-blue-600"
-                  data-testid="tab-scoring"
-                >
-                  Scoring
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="scorecard"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-4 py-2 text-sm text-gray-500 data-[state=active]:text-blue-600"
-                  data-testid="tab-scorecard"
-                >
-                  Scorecard
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="stats"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-4 py-2 text-sm text-gray-500 data-[state=active]:text-blue-600"
-                  data-testid="tab-stats"
-                >
-                  Stats
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="super-stars"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-4 py-2 text-sm text-gray-500 data-[state=active]:text-blue-600"
-                  data-testid="tab-super-stars"
-                >
-                  Super Stars
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="balls"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent px-4 py-2 text-sm text-gray-500 data-[state=active]:text-blue-600"
-                  data-testid="tab-balls"
-                >
-                  Balls
-                </TabsTrigger>
-              </TabsList>
+    return (
+        <div className="fixed inset-0 flex flex-col overflow-hidden bg-white z-50">
+          {/* Header with Back Button */}
+          <div className="bg-blue-600 text-white shrink-0 shadow-md">
+            <div className="flex items-center p-3 w-full">
+              <Button 
+                onClick={() => setLocation('/local-match')}
+                variant="ghost"
+                size="icon"
+                data-testid="button-back-to-create-match"
+                className="mr-2 text-white hover:bg-blue-700"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-lg font-bold">Match Centre</h1>
             </div>
-          </Tabs>
-        </div>
-      
-        {/* Main Content Area - White background for score display */}
-        <div className="flex-1 flex flex-col bg-white overflow-hidden">
-          {/* Score Display Section */}
-          <div className="flex-1 p-2 sm:p-3">
-            <div className="max-w-6xl mx-auto space-y-2 sm:space-y-3">
-              {/* Team and Score Display */}
-              <div className="text-center space-y-0.5 sm:space-y-1">
-                <h2 className="text-base sm:text-lg font-bold text-gray-900">
-                  {localStorage.getItem('myTeamName') || 'Your Team'}
-                </h2>
-                <p className="text-[10px] sm:text-xs text-gray-500">
-                    {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
-                    {matchState.currentInnings === 2 && matchState.target && (
-                      <span className="ml-2 text-blue-600 font-medium">
-                        Target: {matchState.target} | Need {Math.max(0, matchState.target - battingTeamScore.runs)}
-                      </span>
-                    )}
-                  </p>
-                  
-                  {matchState.isFreeHit && (
-                    <div className="bg-yellow-400 text-yellow-900 px-2 py-0.5 rounded-full text-[10px] font-bold animate-pulse inline-block">
-                      FREE HIT
-                    </div>
-                  )}
-                  
-                  <div className="text-2xl sm:text-4xl font-bold text-blue-600 leading-tight">
-                    {battingTeamScore.runs}-{battingTeamScore.wickets}
-                  </div>
-                
-                {/* Match Info Row */}
-                <div className="flex justify-center gap-3 sm:gap-4 text-[10px] sm:text-xs text-gray-500">
-                  <span>Extras - {battingTeamScore.extras.wides + battingTeamScore.extras.noBalls + battingTeamScore.extras.byes + battingTeamScore.extras.legByes}</span>
-                  <span>Overs - {formatOvers(battingTeamScore.balls)} / {matchState.matchOvers}</span>
-                  <span>CRR - {battingTeamScore.balls > 0 ? (battingTeamScore.runs / (battingTeamScore.balls / 6)).toFixed(2) : '0.00'}</span>
-                </div>
-                
-                {/* Partnership */}
-                  <div className="text-[10px] sm:text-xs text-gray-500">
-                    Partnership - {getCurrentBatsmanStats(true).runs + getCurrentBatsmanStats(false).runs}({getCurrentBatsmanStats(true).balls + getCurrentBatsmanStats(false).balls})
-                  </div>
-                  
-                  {/* Current Over Display */}
-                  {matchState.currentOver.length > 0 && (
-                    <div className="flex items-center justify-center gap-1.5 sm:gap-2 mt-1 sm:mt-2">
-                      <span className="text-[10px] sm:text-xs text-gray-500">This Over:</span>
-                      <div className="flex gap-0.5 sm:gap-1">
-                        {matchState.currentOver.map((ball, idx) => (
-                          <span 
-                            key={idx} 
-                            className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-[10px] sm:text-xs font-medium ${
-                              ball === 'W' ? 'bg-red-500 text-white' :
-                              ball.includes('Wd') || ball.includes('Nb') ? 'bg-yellow-400 text-yellow-900' :
-                              ball === '4' || ball === '6' ? 'bg-green-500 text-white' :
-                              ball === '0' || ball === '•' ? 'bg-gray-300 text-gray-700' :
-                              'bg-blue-500 text-white'
-                            }`}
-                          >
-                            {ball}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              
-                {/* Current Batsmen Table */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] sm:text-xs font-medium text-gray-700">Batsman</span>
-                    <span className="text-right ml-auto text-[10px] sm:text-xs text-gray-500">R</span>
-                    <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">B</span>
-                    <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">4s</span>
-                    <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">6s</span>
-                    <span className="text-center w-7 sm:w-8 text-[10px] sm:text-xs text-gray-500">SR</span>
-                  </div>
-                  <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
-                    <table className="w-full">
-                        <tbody>
-                          {activeBatsmen.length > 0 ? (
-                            <>
-                              {activeBatsmen.map((batsman, idx) => {
-                                const stats = getBatsmanStatsById(batsman.id);
-                                const isStriker = batsman.id === matchState.strikeBatsman.id;
-                                return (
-                                  <tr 
-                                    key={batsman.id}
-                                    className={`cursor-pointer transition-colors hover:bg-blue-50 ${isStriker ? 'bg-blue-100' : ''} ${idx === 0 && activeBatsmen.length > 1 ? 'border-b' : ''}`}
-                                    onClick={() => {
-                                      if (!isMatchStarted && activeBatsmen.length === 2 && selectedOpeningBowler) {
-                                        setMatchState(prev => ({
-                                          ...prev,
-                                          strikeBatsman: { id: batsman.id, name: batsman.name },
-                                          nonStrikeBatsman: { 
-                                            id: activeBatsmen[1-idx].id, 
-                                            name: activeBatsmen[1-idx].name 
-                                          },
-                                          currentBowler: { id: selectedOpeningBowler.id, name: selectedOpeningBowler.name }
-                                        }));
-                                        setIsMatchStarted(true);
-                                      }
-                                    }}
-                                  >
-                                    <td className="p-1.5 sm:p-2 text-xs sm:text-sm font-medium" data-testid={`batsman-${idx + 1}-name`}>
-                                      <span className={isStriker ? 'bg-blue-200 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-sm' : ''}>
-                                        {batsman.name}
-                                        {isStriker && ' *'}
-                                      </span>
-                                    </td>
-                                    <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{stats.runs || 0}</td>
-                                    <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{stats.balls || 0}</td>
-                                    <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{stats.fours || 0}</td>
-                                    <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{stats.sixes || 0}</td>
-                                    <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{stats.strikeRate?.toFixed(1) || '0.0'}</td>
-                                  </tr>
-                                );
-                              })}
-                              {activeBatsmen.length === 1 && (
-                                <tr className="border-t">
-                                  <td className="p-1.5 sm:p-2 text-xs sm:text-sm text-gray-400" data-testid="batsman-2-name">-</td>
-                                  <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                  <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                  <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                  <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                  <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                </tr>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <tr className="border-b">
-                                <td className="p-1.5 sm:p-2 text-xs sm:text-sm text-gray-400" data-testid="batsman-1-name">-</td>
-                                <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                              </tr>
-                              <tr>
-                                <td className="p-1.5 sm:p-2 text-xs sm:text-sm text-gray-400" data-testid="batsman-2-name">-</td>
-                                <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                                <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm text-gray-600">-</td>
-                              </tr>
-                            </>
-                          )}
-                        </tbody>
-                    </table>
-                  </div>
-                  {!isMatchStarted && activeBatsmen.length === 2 && (
-                    <p className="text-[10px] text-gray-500 mt-1 text-center">
-                      Click on a batsman to set as striker (*)
-                    </p>
-                  )}
-                </div>
-              
-              {/* Current Bowler Table */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] sm:text-xs font-medium text-gray-700">Bowler</span>
-                  <span className="text-right ml-auto text-[10px] sm:text-xs text-gray-500">O</span>
-                  <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">M</span>
-                  <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">R</span>
-                  <span className="text-center w-5 sm:w-6 text-[10px] sm:text-xs text-gray-500">W</span>
-                  <span className="text-center w-7 sm:w-8 text-[10px] sm:text-xs text-gray-500">Eco</span>
-                </div>
-                <div className="overflow-x-auto bg-white rounded-lg border border-gray-200">
-                  <table className="w-full">
-                    <tbody>
-                        <tr>
-                          <td className="p-1.5 sm:p-2 text-xs sm:text-sm font-medium" data-testid="bowler-name">
-                            {matchState.currentBowler.name || selectedOpeningBowler?.name || '-'}
-                          </td>
-                        <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBowlerStats().overs || '0.0'}</td>
-                        <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">0</td>
-                        <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBowlerStats().runs || 0}</td>
-                        <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBowlerStats().wickets || 0}</td>
-                        <td className="text-center p-1.5 sm:p-2 text-xs sm:text-sm">{getCurrentBowlerStats().economy?.toFixed(1) || '0.0'}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+            
+              {/* Tabs Navigation */}
+              <Tabs defaultValue="scoring" className="w-full">
+                <div className="px-2">
+                  <TabsList className="bg-transparent border-b-0 h-auto p-0 w-full justify-start overflow-x-auto scrollbar-hide">
+                  <TabsTrigger 
+                    value="scoring" 
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2 text-sm text-blue-100 data-[state=active]:text-white"
+                    data-testid="tab-scoring"
+                  >
+                    Scoring
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="scorecard"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2 text-sm text-blue-100 data-[state=active]:text-white"
+                    data-testid="tab-scorecard"
+                  >
+                    Scorecard
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="stats"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2 text-sm text-blue-100 data-[state=active]:text-white"
+                    data-testid="tab-stats"
+                  >
+                    Stats
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="super-stars"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-white data-[state=active]:bg-transparent px-4 py-2 text-sm text-blue-100 data-[state=active]:text-white"
+                    data-testid="tab-super-stars"
+                  >
+                    Stars
+                  </TabsTrigger>
+                </TabsList>
               </div>
-            </div>
+            </Tabs>
           </div>
         
-          {/* Bottom Panel - Fixed at bottom with white background */}
-          {!isMatchStarted ? (
-            <div className="bg-white border-t border-gray-200 p-3 shrink-0">
-              <div className="max-w-6xl mx-auto">
-                <div className="flex items-center justify-between mb-3">
-                  <button
-                    onClick={() => setLocation('/local-match')}
-                    className="text-gray-900 hover:text-gray-600"
-                    data-testid="button-close-selection-panel"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                  <h3 className="text-gray-900 font-bold text-lg">Select Players</h3>
-                  <div className="w-5"></div>
-                </div>
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col bg-white overflow-hidden">
+            {/* Score Display Section */}
+            <div className="flex-1 p-3 overflow-y-auto">
+              <div className="w-full space-y-3">
+                {/* Team and Score Display */}
+                <div className="text-center space-y-1 bg-blue-50 py-4 rounded-2xl border border-blue-100 shadow-sm">
+                  <h2 className="text-lg font-bold text-blue-900">
+                    {localStorage.getItem('myTeamName') || 'Your Team'}
+                  </h2>
+                  <p className="text-xs text-blue-600 font-medium uppercase tracking-wider">
+                      {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
+                      {matchState.currentInnings === 2 && matchState.target && (
+                        <span className="ml-2 bg-blue-600 text-white px-2 py-0.5 rounded-full text-[10px]">
+                          Target: {matchState.target} | Need {Math.max(0, matchState.target - battingTeamScore.runs)}
+                        </span>
+                      )}
+                    </p>
+                    
+                    {matchState.isFreeHit && (
+                      <div className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-black animate-pulse inline-block shadow-sm">
+                        FREE HIT
+                      </div>
+                    )}
+                    
+                    <div className="text-5xl font-black text-blue-600 tabular-nums">
+                      {battingTeamScore.runs}-{battingTeamScore.wickets}
+                    </div>
+                  
+                  {/* Match Info Row */}
+                  <div className="flex justify-center gap-4 text-xs font-bold text-blue-800">
+                    <span className="bg-white px-2 py-1 rounded-lg shadow-sm">Extras: {battingTeamScore.extras.wides + battingTeamScore.extras.noBalls + battingTeamScore.extras.byes + battingTeamScore.extras.legByes}</span>
+                    <span className="bg-white px-2 py-1 rounded-lg shadow-sm">Overs: {formatOvers(battingTeamScore.balls)} / {matchState.matchOvers}</span>
+                    <span className="bg-white px-2 py-1 rounded-lg shadow-sm">CRR: {battingTeamScore.balls > 0 ? (battingTeamScore.runs / (battingTeamScore.balls / 6)).toFixed(2) : '0.00'}</span>
+                  </div>
+                  
+                  {/* Partnership */}
+                    <div className="text-xs font-medium text-blue-500">
+                      Partnership: {getCurrentBatsmanStats(true).runs + getCurrentBatsmanStats(false).runs}({getCurrentBatsmanStats(true).balls + getCurrentBatsmanStats(false).balls})
+                    </div>
+                    
+                    {/* Current Over Display */}
+                    {matchState.currentOver.length > 0 && (
+                      <div className="flex items-center justify-center gap-2 mt-3 px-4">
+                        <div className="flex flex-wrap justify-center gap-1.5">
+                          {matchState.currentOver.map((ball, idx) => (
+                            <span 
+                              key={idx} 
+                              className={`min-w-[28px] h-7 flex items-center justify-center rounded-full text-xs font-bold shadow-sm ${
+                                ball === 'W' ? 'bg-red-500 text-white ring-2 ring-red-200' :
+                                ball.includes('Wd') || ball.includes('Nb') ? 'bg-yellow-400 text-yellow-900 ring-2 ring-yellow-200' :
+                                ball === '4' || ball === '6' ? 'bg-green-500 text-white ring-2 ring-green-200' :
+                                ball === '0' || ball === '•' ? 'bg-gray-100 text-gray-400 border border-gray-200' :
+                                'bg-blue-600 text-white ring-2 ring-blue-100'
+                              }`}
+                            >
+                              {ball === '•' ? '0' : ball}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 
-                {selectedOpeningBatsmen.length < 2 || !selectedOpeningBowler ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button
-                      onClick={() => setShowInitialBatsmanSelect(true)}
-                      className={`h-12 text-sm font-semibold border-2 overflow-hidden px-2 ${
-                        selectedOpeningBatsmen.length === 2 
-                          ? 'bg-green-100 text-green-700 border-green-300' 
-                          : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600'
-                      }`}
-                      data-testid="button-select-batsman-panel"
-                    >
-                      {selectedOpeningBatsmen.length === 2 ? '✓ Batsmen' : 'Select Batsman'}
-                    </Button>
-                    <Button
-                      onClick={() => setShowInitialBowlerSelect(true)}
-                      className={`h-12 text-sm font-semibold border-2 overflow-hidden px-2 ${
-                        selectedOpeningBowler 
-                          ? 'bg-green-100 text-green-700 border-green-300' 
-                          : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600'
-                      }`}
-                      data-testid="button-select-bowler-panel"
-                    >
-                      {selectedOpeningBowler ? '✓ Bowler' : 'Select Bowler'}
-                    </Button>
+                  {/* Current Batsmen Table */}
+                  <div className="space-y-1">
+                    <div className="overflow-hidden bg-white rounded-xl border border-blue-100 shadow-sm">
+                      <table className="w-full text-sm">
+                        <thead className="bg-blue-600 text-white">
+                          <tr>
+                            <th className="text-left p-2.5 font-bold">Batsman</th>
+                            <th className="p-2.5 font-bold">R</th>
+                            <th className="p-2.5 font-bold">B</th>
+                            <th className="p-2.5 font-bold">4s</th>
+                            <th className="p-2.5 font-bold">6s</th>
+                            <th className="p-2.5 font-bold">SR</th>
+                          </tr>
+                        </thead>
+                          <tbody>
+                            {activeBatsmen.length > 0 ? (
+                              <>
+                                {activeBatsmen.map((batsman, idx) => {
+                                  const stats = getBatsmanStatsById(batsman.id);
+                                  const isStriker = batsman.id === matchState.strikeBatsman.id;
+                                  return (
+                                    <tr 
+                                      key={batsman.id}
+                                      className={`transition-colors ${isStriker ? 'bg-blue-50' : 'bg-white'} ${idx === 0 && activeBatsmen.length > 1 ? 'border-b border-blue-50' : ''}`}
+                                    >
+                                      <td className="p-2.5 font-bold text-blue-900" data-testid={`batsman-${idx + 1}-name`}>
+                                        <div className="flex items-center gap-1.5">
+                                          {isStriker && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />}
+                                          {batsman.name}
+                                          {isStriker && <span className="text-blue-600 ml-1">*</span>}
+                                        </div>
+                                      </td>
+                                      <td className="text-center p-2.5 font-medium tabular-nums">{stats.runs || 0}</td>
+                                      <td className="text-center p-2.5 text-gray-500 tabular-nums">{stats.balls || 0}</td>
+                                      <td className="text-center p-2.5 text-gray-500 tabular-nums">{stats.fours || 0}</td>
+                                      <td className="text-center p-2.5 text-gray-500 tabular-nums">{stats.sixes || 0}</td>
+                                      <td className="text-center p-2.5 text-blue-600 font-medium tabular-nums">{stats.strikeRate?.toFixed(1) || '0.0'}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </>
+                            ) : (
+                              <tr>
+                                <td colSpan={6} className="p-4 text-center text-gray-400 italic">No batsmen selected</td>
+                              </tr>
+                            )}
+                          </tbody>
+                      </table>
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center text-gray-700 text-sm mb-3">
-                    <p>Click on a batsman name above to set as striker</p>
+                
+                {/* Current Bowler Table */}
+                <div className="space-y-1">
+                  <div className="overflow-hidden bg-white rounded-xl border border-blue-100 shadow-sm">
+                    <table className="w-full text-sm">
+                      <thead className="bg-blue-900 text-white">
+                        <tr>
+                          <th className="text-left p-2.5 font-bold">Bowler</th>
+                          <th className="p-2.5 font-bold">O</th>
+                          <th className="p-2.5 font-bold">M</th>
+                          <th className="p-2.5 font-bold">R</th>
+                          <th className="p-2.5 font-bold">W</th>
+                          <th className="p-2.5 font-bold">Eco</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                          <tr className="bg-blue-50/30">
+                            <td className="p-2.5 font-bold text-blue-900" data-testid="bowler-name">
+                              {matchState.currentBowler.name || selectedOpeningBowler?.name || 'Select Bowler'}
+                            </td>
+                          <td className="text-center p-2.5 font-medium tabular-nums">{getCurrentBowlerStats().overs || '0.0'}</td>
+                          <td className="text-center p-2.5 text-gray-500 tabular-nums">0</td>
+                          <td className="text-center p-2.5 text-gray-500 tabular-nums">{getCurrentBowlerStats().runs || 0}</td>
+                          <td className="text-center p-2.5 font-bold text-red-600 tabular-nums">{getCurrentBowlerStats().wickets || 0}</td>
+                          <td className="text-center p-2.5 text-blue-600 font-medium tabular-nums">{getCurrentBowlerStats().economy?.toFixed(1) || '0.0'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
-                )}
+                </div>
               </div>
             </div>
-          ) : (
-            <div className="bg-white border-t border-gray-200 p-3 shrink-0">
-              <div className="max-w-6xl mx-auto space-y-2">
-                {showInlineExtras ? (
-                  <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    <div className="flex items-center justify-between px-1">
-                      <h3 className="text-blue-600 font-bold text-sm">
-                        {extrasType === 'wd' ? 'Wide' : extrasType === 'nb' ? 'No Ball' : extrasType === 'b' ? 'Bye' : 'Leg Bye'} Runs
-                      </h3>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setShowInlineExtras(false)}
-                        className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+          
+            {/* Bottom Panel - Fixed at bottom */}
+            <div className="bg-white border-t border-blue-100 p-3 shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+              <div className="w-full space-y-3">
+                {!isMatchStarted ? (
+                  <div className="space-y-3">
+                    <h3 className="text-blue-900 font-black text-center text-lg">READY TO SCORE?</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        onClick={() => setShowInitialBatsmanSelect(true)}
+                        className={`h-14 text-sm font-black border-2 rounded-2xl transition-all ${
+                          selectedOpeningBatsmen.length === 2 
+                            ? 'bg-green-50 text-green-700 border-green-200' 
+                            : 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200'
+                        }`}
+                        data-testid="button-select-batsman-panel"
                       >
-                        <X className="h-4 w-4" />
+                        {selectedOpeningBatsmen.length === 2 ? '✓ BATSMEN READY' : 'SELECT BATSMEN'}
                       </Button>
-                    </div>
-                    <div className="grid grid-cols-5 gap-1">
-                      {[0, 1, 2, 3, 4].map(runs => (
-                        <Button
-                          key={runs}
-                          onClick={() => handleExtras(extrasType, runs)}
-                          className="h-12 text-lg font-bold bg-blue-600 text-white hover:bg-blue-700 border-0 shadow-sm"
-                        >
-                          {runs}
-                        </Button>
-                      ))}
+                      <Button
+                        onClick={() => setShowInitialBowlerSelect(true)}
+                        className={`h-14 text-sm font-black border-2 rounded-2xl transition-all ${
+                          selectedOpeningBowler 
+                            ? 'bg-green-50 text-green-700 border-green-200' 
+                            : 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200'
+                        }`}
+                        data-testid="button-select-bowler-panel"
+                      >
+                        {selectedOpeningBowler ? '✓ BOWLER READY' : 'SELECT BOWLER'}
+                      </Button>
                     </div>
                   </div>
-                ) : showInlineWicket ? (
-                  <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    <div className="flex items-center justify-between px-1">
-                      <h3 className="text-blue-600 font-bold text-sm">
-                        Record Wicket {wicketStep === 'fielder' ? '- Select Fielder' : wicketStep === 'runout_details' ? '- Run Out Details' : ''}
-                      </h3>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => {
-                          setShowInlineWicket(false);
-                          setWicketStep('how');
-                        }}
-                        className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    {wicketStep === 'how' && (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-4 justify-center py-1">
-                          <span className="text-xs font-semibold text-gray-600">Who is out?</span>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant={dismissedBatsman === 'striker' ? "default" : "outline"}
-                              onClick={() => setDismissedBatsman('striker')}
-                              className={dismissedBatsman === 'striker' ? "bg-blue-600 text-white" : "border-blue-200 text-blue-600"}
-                            >
-                              {matchState.strikeBatsman.name || 'Striker'}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={dismissedBatsman === 'non-striker' ? "default" : "outline"}
-                              onClick={() => setDismissedBatsman('non-striker')}
-                              className={dismissedBatsman === 'non-striker' ? "bg-blue-600 text-white" : "border-blue-200 text-blue-600"}
-                            >
-                              {matchState.nonStrikeBatsman.name || 'Non-Striker'}
-                            </Button>
-                          </div>
+                ) : (
+                  <div className="space-y-3">
+                    {showInlineExtras ? (
+                      <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div className="flex items-center justify-between px-1">
+                          <h3 className="text-blue-600 font-black text-base uppercase tracking-wider">
+                            {extrasType === 'wd' ? 'Wide' : extrasType === 'nb' ? 'No Ball' : extrasType === 'b' ? 'Bye' : 'Leg Bye'} Runs
+                          </h3>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setShowInlineExtras(false)}
+                            className="h-8 w-8 p-0 rounded-full hover:bg-red-50 hover:text-red-500"
+                          >
+                            <X className="h-5 w-5" />
+                          </Button>
                         </div>
-                        <div className="grid grid-cols-3 gap-1">
-                          {[
-                            { label: 'Bowled', value: 'bowled' },
-                            { label: 'LBW', value: 'lbw' },
-                            { label: 'Hit Wicket', value: 'hit_wicket' },
-                            { label: 'Caught', value: 'caught' },
-                            { label: 'Stumped', value: 'stumped' },
-                            { label: 'Run Out', value: 'run_out' }
-                          ].map(type => (
+                        <div className="grid grid-cols-5 gap-2">
+                          {[0, 1, 2, 3, 4].map(runs => (
                             <Button
-                              key={type.value}
-                              onClick={() => {
-                                setSelectedDismissalType(type.value);
-                                if (['bowled', 'lbw', 'hit_wicket'].includes(type.value)) {
-                                  handleInlineWicketSubmit(type.value);
-                                } else {
-                                  setWicketStep(type.value === 'run_out' ? 'runout_details' : 'fielder');
-                                }
-                              }}
-                              className="h-10 text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 border-0 shadow-sm"
+                              key={runs}
+                              onClick={() => handleExtras(extrasType, runs)}
+                              className="h-14 text-xl font-black bg-blue-600 text-white rounded-2xl shadow-md hover:bg-blue-700 active:scale-95 transition-all"
                             >
-                              {type.label}
+                              {runs}
                             </Button>
                           ))}
                         </div>
                       </div>
-                    )}
-                    
-                    {wicketStep === 'fielder' && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] text-center text-gray-500 font-medium">Select fielder who took the catch/stumping</p>
-                        <div className="grid grid-cols-3 gap-1 max-h-32 overflow-y-auto p-1 scrollbar-hide">
-                          {bowlingTeamPlayers.map(player => (
-                            <Button
-                              key={player.id}
-                              onClick={() => {
-                                setSelectedFielder(player.name);
-                                handleInlineWicketSubmit(selectedDismissalType, player.name);
-                              }}
-                              className="h-10 text-[10px] font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0 truncate shadow-sm"
-                            >
-                              {player.name}
-                            </Button>
-                          ))}
+                    ) : showInlineWicket ? (
+                      <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <div className="flex items-center justify-between px-1">
+                          <h3 className="text-red-600 font-black text-base uppercase tracking-wider">
+                            {wicketStep === 'how' ? 'How was out?' : wicketStep === 'fielder' ? 'Select Fielder' : 'Run Out Details'}
+                          </h3>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => {
+                              setShowInlineWicket(false);
+                              setWicketStep('how');
+                            }}
+                            className="h-8 w-8 p-0 rounded-full hover:bg-red-50 hover:text-red-500"
+                          >
+                            <X className="h-5 w-5" />
+                          </Button>
                         </div>
-                      </div>
-                    )}
-                    
-                    {wicketStep === 'runout_details' && (
-                      <div className="space-y-3">
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-semibold text-gray-600 block text-center">Completed Runs</span>
-                          <div className="flex gap-1 justify-center">
-                            {[0, 1, 2, 3].map(runs => (
+                        
+                        {wicketStep === 'how' && (
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-3 justify-center bg-gray-50 p-2 rounded-xl">
                               <Button
-                                key={runs}
                                 size="sm"
-                                variant={runoutCompletedRuns === runs ? "default" : "outline"}
-                                onClick={() => setRunoutCompletedRuns(runs)}
-                                className={`h-8 w-10 ${runoutCompletedRuns === runs ? "bg-blue-600 text-white" : "border-blue-200 text-blue-600"}`}
+                                variant={dismissedBatsman === 'striker' ? "default" : "outline"}
+                                onClick={() => setDismissedBatsman('striker')}
+                                className={`flex-1 h-10 rounded-lg font-bold ${dismissedBatsman === 'striker' ? "bg-red-600 text-white" : "border-red-100 text-red-600 bg-white"}`}
                               >
-                                {runs}
+                                {matchState.strikeBatsman.name || 'Striker'}
                               </Button>
-                            ))}
+                              <Button
+                                size="sm"
+                                variant={dismissedBatsman === 'non-striker' ? "default" : "outline"}
+                                onClick={() => setDismissedBatsman('non-striker')}
+                                className={`flex-1 h-10 rounded-lg font-bold ${dismissedBatsman === 'non-striker' ? "bg-red-600 text-white" : "border-red-100 text-red-600 bg-white"}`}
+                              >
+                                {matchState.nonStrikeBatsman.name || 'Non-Striker'}
+                              </Button>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              {[
+                                { label: 'Bowled', value: 'bowled' },
+                                { label: 'LBW', value: 'lbw' },
+                                { label: 'Hit Wicket', value: 'hit_wicket' },
+                                { label: 'Caught', value: 'caught' },
+                                { label: 'Stumped', value: 'stumped' },
+                                { label: 'Run Out', value: 'run_out' }
+                              ].map(type => (
+                                <Button
+                                  key={type.value}
+                                  onClick={() => {
+                                    setSelectedDismissalType(type.value);
+                                    if (['bowled', 'lbw', 'hit_wicket'].includes(type.value)) {
+                                      handleInlineWicketSubmit(type.value);
+                                    } else {
+                                      setWicketStep(type.value === 'run_out' ? 'runout_details' : 'fielder');
+                                    }
+                                  }}
+                                  className="h-12 text-xs font-black bg-red-600 text-white rounded-xl shadow-md hover:bg-red-700 active:scale-95 transition-all"
+                                >
+                                  {type.label}
+                                </Button>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-semibold text-gray-600 block text-center">Fielder & End</span>
-                          <div className="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto p-1 scrollbar-hide">
-                            <Button
-                              onClick={() => handleInlineWicketSubmit('run_out', undefined)}
-                              className="h-8 text-[10px] font-semibold bg-gray-500 text-white hover:bg-gray-600 border-0 shadow-sm"
-                            >
-                              None
-                            </Button>
+                        )}
+                        
+                        {wicketStep === 'fielder' && (
+                          <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
                             {bowlingTeamPlayers.map(player => (
                               <Button
                                 key={player.id}
                                 onClick={() => {
                                   setSelectedFielder(player.name);
-                                  handleInlineWicketSubmit('run_out', player.name);
+                                  handleInlineWicketSubmit(selectedDismissalType, player.name);
                                 }}
-                                className="h-8 text-[10px] font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0 truncate shadow-sm"
+                                className="h-12 text-xs font-bold bg-blue-600 text-white rounded-xl shadow-sm truncate"
                               >
                                 {player.name}
                               </Button>
                             ))}
                           </div>
+                        )}
+                        
+                        {wicketStep === 'runout_details' && (
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <span className="text-xs font-black text-blue-900 block text-center uppercase">Completed Runs</span>
+                              <div className="flex gap-2 justify-center">
+                                {[0, 1, 2, 3].map(runs => (
+                                  <Button
+                                    key={runs}
+                                    onClick={() => setRunoutCompletedRuns(runs)}
+                                    className={`h-12 w-14 text-lg font-black rounded-xl transition-all ${runoutCompletedRuns === runs ? "bg-blue-600 text-white shadow-lg" : "bg-blue-50 text-blue-600 border border-blue-100"}`}
+                                  >
+                                    {runs}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
+                              <Button
+                                onClick={() => handleInlineWicketSubmit('run_out', undefined)}
+                                className="h-12 text-xs font-black bg-gray-500 text-white rounded-xl col-span-2"
+                              >
+                                NO FIELDER (CONTINUE)
+                              </Button>
+                              {bowlingTeamPlayers.map(player => (
+                                <Button
+                                  key={player.id}
+                                  onClick={() => {
+                                    setSelectedFielder(player.name);
+                                    handleInlineWicketSubmit('run_out', player.name);
+                                  }}
+                                  className="h-12 text-xs font-bold bg-blue-600 text-white rounded-xl shadow-sm truncate"
+                                >
+                                  {player.name}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {/* Main Controls Grid */}
+                        <div className="grid grid-cols-4 gap-2">
+                          {/* Dot Ball & Singles */}
+                          <Button
+                            onClick={() => handleRunScored(0)}
+                            className="h-14 text-2xl font-black bg-gray-100 text-gray-400 border-2 border-gray-200 rounded-2xl hover:bg-gray-200 transition-all"
+                            data-testid="button-dot"
+                          >
+                            0
+                          </Button>
+                          <Button
+                            onClick={() => handleRunScored(1)}
+                            className="h-14 text-2xl font-black bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-100 active:scale-95 transition-all"
+                            data-testid="button-runs-1"
+                          >
+                            1
+                          </Button>
+                          <Button
+                            onClick={() => handleRunScored(2)}
+                            className="h-14 text-2xl font-black bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-100 active:scale-95 transition-all"
+                            data-testid="button-runs-2"
+                          >
+                            2
+                          </Button>
+                          <Button
+                            onClick={() => handleRunScored(3)}
+                            className="h-14 text-2xl font-black bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-100 active:scale-95 transition-all"
+                            data-testid="button-runs-3"
+                          >
+                            3
+                          </Button>
+
+                          {/* Boundaries */}
+                          <Button
+                            onClick={() => handleRunScored(4)}
+                            className="h-14 text-2xl font-black bg-green-600 text-white rounded-2xl shadow-lg shadow-green-100 active:scale-95 transition-all"
+                            data-testid="button-runs-4"
+                          >
+                            4
+                          </Button>
+                          <Button
+                            onClick={() => handleRunScored(6)}
+                            className="h-14 text-2xl font-black bg-green-600 text-white rounded-2xl shadow-lg shadow-green-100 active:scale-95 transition-all"
+                            data-testid="button-runs-6"
+                          >
+                            6
+                          </Button>
+
+                          {/* Extras Entry */}
+                          <Button
+                            onClick={() => {
+                              saveStateForUndo();
+                              setExtrasType('wd');
+                              setShowInlineExtras(true);
+                            }}
+                            className="h-14 text-sm font-black bg-yellow-400 text-yellow-900 rounded-2xl shadow-lg shadow-yellow-100 active:scale-95 transition-all"
+                            data-testid="button-wide"
+                          >
+                            WIDE
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              saveStateForUndo();
+                              setExtrasType('nb');
+                              setShowInlineExtras(true);
+                            }}
+                            className="h-14 text-sm font-black bg-yellow-400 text-yellow-900 rounded-2xl shadow-lg shadow-yellow-100 active:scale-95 transition-all"
+                            data-testid="button-no-ball"
+                          >
+                            NB
+                          </Button>
+
+                          {/* Functional Buttons */}
+                          <Button
+                            onClick={() => {
+                              saveStateForUndo();
+                              setExtrasType('lb');
+                              setShowInlineExtras(true);
+                            }}
+                            className="h-14 text-sm font-black bg-blue-50 text-blue-600 border border-blue-100 rounded-2xl hover:bg-blue-100 active:scale-95 transition-all"
+                            data-testid="button-leg-bye"
+                          >
+                            LB
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              saveStateForUndo();
+                              setExtrasType('b');
+                              setShowInlineExtras(true);
+                            }}
+                            className="h-14 text-sm font-black bg-blue-50 text-blue-600 border border-blue-100 rounded-2xl hover:bg-blue-100 active:scale-95 transition-all"
+                            data-testid="button-bye"
+                          >
+                            BYE
+                          </Button>
+                          <Button
+                            onClick={handleUndo}
+                            disabled={undoStack.length === 0}
+                            className="h-14 text-sm font-black bg-gray-900 text-white rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-30"
+                            data-testid="button-undo"
+                          >
+                            UNDO
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              saveStateForUndo();
+                              setShowInlineWicket(true);
+                              setWicketStep('how');
+                            }}
+                            className="h-14 text-sm font-black bg-red-600 text-white rounded-2xl shadow-lg shadow-red-100 active:scale-95 transition-all"
+                            data-testid="button-wicket"
+                          >
+                            OUT
+                          </Button>
                         </div>
                       </div>
                     )}
                   </div>
-                ) : (
-                  <>
-                    {/* Run Buttons Row 1 */}
-                    <div className="grid grid-cols-5 gap-1">
-                      {[1, 2, 3, 4, 6].map(runs => (
-                        <Button
-                          key={runs}
-                          onClick={() => handleRunScored(runs)}
-                          className="h-12 text-lg font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                          data-testid={`button-runs-${runs}`}
-                        >
-                          {runs}
-                        </Button>
-                      ))}
-                    </div>
-                    
-                    {/* Extras Row */}
-                    <div className="grid grid-cols-5 gap-1">
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('lb');
-                          setShowInlineExtras(true);
-                        }}
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                        data-testid="button-leg-bye"
-                      >
-                        LB
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('b');
-                          setShowInlineExtras(true);
-                        }}
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                        data-testid="button-bye"
-                      >
-                        Bye
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('wd');
-                          setShowInlineExtras(true);
-                        }}
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                        data-testid="button-wide"
-                      >
-                        Wide
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('nb');
-                          setShowInlineExtras(true);
-                        }}
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                        data-testid="button-no-ball"
-                      >
-                        NB
-                      </Button>
-                      <Button
-                        onClick={() => handleRunScored(0)}
-                        className="h-10 text-xl font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                        data-testid="button-dot"
-                      >
-                        •
-                      </Button>
-                    </div>
-                    
-                    {/* Bottom Controls */}
-                    <div className="grid grid-cols-5 gap-1">
-                      <Button
-                        variant="outline"
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                      >
-                        More
-                      </Button>
-                      <Button
-                        onClick={() => handleRunScored(0)}
-                        className="h-10 font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                      >
-                        <img src="/cricket-ball.svg" alt="ball" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                        <span className="hidden">0</span>
-                      </Button>
-                      <Button
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                      >
-                        4 5 6 7
-                      </Button>
-                      <Button
-                        onClick={handleUndo}
-                        disabled={undoStack.length === 0}
-                        className="h-10 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 border-0"
-                        data-testid="button-undo"
-                      >
-                        Undo
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setShowInlineWicket(true);
-                          setWicketStep('how');
-                        }}
-                        className="h-10 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 border-0"
-                        data-testid="button-wicket"
-                      >
-                        Out
-                      </Button>
-                    </div>
-                  </>
                 )}
               </div>
             </div>
-          )}
-      </div>
-
+          </div>
+  
       {/* Dialogs */}
       
-        {/* Initial Batsman Selection Dialog */}
-          <Dialog open={showInitialBatsmanSelect} onOpenChange={setShowInitialBatsmanSelect}>
-            <DialogContent className="fixed inset-0 max-w-none w-screen h-screen p-0 m-0 rounded-none bg-white flex flex-col z-[100] border-0">
-              <div className="bg-blue-600 text-white p-4 shrink-0 flex items-center">
-                <div className="flex-1">
-                  <DialogTitle className="text-white text-xl font-bold">Select Opening Batsmen</DialogTitle>
-                  <DialogDescription className="text-blue-100">Select 2 batsmen to open the innings</DialogDescription>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setShowInitialBatsmanSelect(false)}
-                  className="text-white hover:bg-blue-700"
-                >
-                  <X className="h-6 w-6" />
-                </Button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                <div className="space-y-3">
-                  {battingTeamPlayers.map((player, idx) => (
-                    <Button
-                      key={player.id || `p1-${idx}`}
-                      variant={selectedOpeningBatsmen.find(p => p.id === player.id) ? "default" : "outline"}
-                      className={`w-full justify-between h-14 rounded-xl text-lg font-semibold px-4 ${
-                        selectedOpeningBatsmen.find(p => p.id === player.id) 
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
-                          : 'border-2 border-blue-100 text-blue-600 hover:bg-blue-50 hover:border-blue-400'
-                      }`}
-                      onClick={() => handleSelectOpeningBatsman(player)}
-                      data-testid={`select-batsman-${player.id}`}
-                    >
-                      <span>{player.name}</span>
-                      {selectedOpeningBatsmen.find(p => p.id === player.id) && <div className="bg-white text-blue-600 rounded-full p-1"><Plus className="h-4 w-4 rotate-45" /></div>}
-                    </Button>
-                  ))}
-                </div>
-                
-                <div className="border-t border-blue-100 pt-6">
-                  <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
-                    <Plus className="h-4 w-4" /> Add Guest Player
-                  </p>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter guest player name"
-                      value={guestBatsmanName}
-                      onChange={(e) => setGuestBatsmanName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBatsman()}
-                      className="h-12 rounded-xl border-2 border-blue-100 focus:border-blue-400 text-lg"
-                    />
-                    <Button 
-                      onClick={handleAddGuestBatsman}
-                      className="h-12 w-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-                    >
-                      <Plus className="h-6 w-6" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        
-        {/* Initial Bowler Selection Dialog */}
-        <Dialog open={showInitialBowlerSelect} onOpenChange={setShowInitialBowlerSelect}>
-          <DialogContent className="fixed inset-0 max-w-none w-screen h-screen p-0 m-0 rounded-none bg-white flex flex-col z-[100] border-0">
-            <div className="bg-blue-600 text-white p-4 shrink-0 flex items-center">
-              <div className="flex-1">
-                <DialogTitle className="text-white text-xl font-bold">Select Opening Bowler</DialogTitle>
-                <DialogDescription className="text-blue-100">Select the bowler to start the innings</DialogDescription>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowInitialBowlerSelect(false)}
-                className="text-white hover:bg-blue-700"
-              >
-                <X className="h-6 w-6" />
-              </Button>
+      {/* Initial Batsman Selection Dialog */}
+        <Dialog open={showInitialBatsmanSelect} onOpenChange={setShowInitialBatsmanSelect}>
+          <DialogContent className="max-w-md p-0 overflow-hidden">
+            <div className="bg-blue-600 text-white p-4">
+              <DialogTitle className="text-white text-lg font-bold">Select Opening Batsmen</DialogTitle>
+              <DialogDescription className="text-blue-100">Select 2 batsmen to open the innings</DialogDescription>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="space-y-3">
-                {bowlingTeamPlayers.map((player, idx) => (
+            <div className="p-4 space-y-4">
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                {battingTeamPlayers.map((player, idx) => (
                   <Button
-                    key={player.id || `p2-${idx}`}
-                    variant={selectedOpeningBowler?.id === player.id ? "default" : "outline"}
-                    className={`w-full justify-between h-14 rounded-xl text-lg font-semibold px-4 ${
-                      selectedOpeningBowler?.id === player.id 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
-                        : 'border-2 border-blue-100 text-blue-600 hover:bg-blue-50 hover:border-blue-400'
+                    key={player.id || `p1-${idx}`}
+                    variant={selectedOpeningBatsmen.find(p => p.id === player.id) ? "default" : "outline"}
+                    className={`w-full justify-start ${
+                      selectedOpeningBatsmen.find(p => p.id === player.id) 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'border-blue-200 hover:bg-blue-50 hover:border-blue-400'
                     }`}
-                    onClick={() => handleSelectOpeningBowler(player)}
-                    data-testid={`select-bowler-${player.id}`}
+                    onClick={() => handleSelectOpeningBatsman(player)}
+                    data-testid={`select-batsman-${player.id}`}
                   >
-                    <span>{player.name}</span>
-                    {selectedOpeningBowler?.id === player.id && <div className="bg-white text-blue-600 rounded-full p-1"><Plus className="h-4 w-4 rotate-45" /></div>}
-                  </Button>
-                ))}
-              </div>
-              
-              <div className="border-t border-blue-100 pt-6">
-                <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
-                  <Plus className="h-4 w-4" /> Add Guest Player
-                </p>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter guest player name"
-                    value={guestBowlerName}
-                    onChange={(e) => setGuestBowlerName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBowler()}
-                    className="h-12 rounded-xl border-2 border-blue-100 focus:border-blue-400 text-lg"
-                  />
-                  <Button 
-                    onClick={handleAddGuestBowler}
-                    className="h-12 w-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-                  >
-                    <Plus className="h-6 w-6" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-        
-        {/* Batsman Selection Dialog */}
-        <Dialog open={showBatsmanSelectDialog} onOpenChange={setShowBatsmanSelectDialog}>
-          <DialogContent className="fixed inset-0 max-w-none w-screen h-screen p-0 m-0 rounded-none bg-white flex flex-col z-[100] border-0">
-            <div className="bg-blue-600 text-white p-4 shrink-0 flex items-center">
-              <div className="flex-1">
-                <DialogTitle className="text-white text-xl font-bold">Select New Batsman</DialogTitle>
-                <DialogDescription className="text-blue-100">Select the next batsman to come in</DialogDescription>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setShowBatsmanSelectDialog(false)}
-                className="text-white hover:bg-blue-700"
-              >
-                <X className="h-6 w-6" />
-              </Button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <div className="space-y-3">
-                {getAvailableBatsmen().map((player, idx) => (
-                  <Button
-                    key={player.id || `p3-${idx}`}
-                    variant="outline"
-                    className="w-full justify-start h-14 rounded-xl text-lg font-semibold px-4 border-2 border-blue-100 text-blue-600 hover:bg-blue-50 hover:border-blue-400"
-                    onClick={() => handleSelectBatsman(player)}
-                    data-testid={`select-new-batsman-${player.id}`}
-                  >
+                    {selectedOpeningBatsmen.find(p => p.id === player.id) && "✓ "}
                     {player.name}
                   </Button>
                 ))}
               </div>
               
-              <div className="border-t border-blue-100 pt-6">
-                <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
-                  <Plus className="h-4 w-4" /> Add Guest Player
-                </p>
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Add Guest Player</p>
                 <div className="flex gap-2">
                   <Input
                     placeholder="Enter guest player name"
                     value={guestBatsmanName}
                     onChange={(e) => setGuestBatsmanName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBatsman()}
-                    className="h-12 rounded-xl border-2 border-blue-100 focus:border-blue-400 text-lg"
+                    className="flex-1 border-blue-200 focus:border-blue-400"
                   />
                   <Button 
                     onClick={handleAddGuestBatsman}
-                    className="h-12 w-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
-                    <Plus className="h-6 w-6" />
+                    <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </div>
           </DialogContent>
         </Dialog>
-          
-          {/* Bowler Selection Dialog */}
-          <Dialog open={showBowlerSelectDialog} onOpenChange={setShowBowlerSelectDialog}>
-            <DialogContent className="fixed inset-0 max-w-none w-screen h-screen p-0 m-0 rounded-none bg-white flex flex-col z-[100] border-0">
-              <div className="bg-blue-600 text-white p-4 shrink-0 flex items-center">
-                <div className="flex-1">
-                  <DialogTitle className="text-white text-xl font-bold">Select Bowler</DialogTitle>
-                  <DialogDescription className="text-blue-100">Select the bowler for the next over</DialogDescription>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setShowBowlerSelectDialog(false)}
-                  className="text-white hover:bg-blue-700"
+      
+      {/* Initial Bowler Selection Dialog */}
+      <Dialog open={showInitialBowlerSelect} onOpenChange={setShowInitialBowlerSelect}>
+        <DialogContent className="max-w-md p-0 overflow-hidden">
+          <div className="bg-blue-600 text-white p-4">
+            <DialogTitle className="text-white text-lg font-bold">Select Opening Bowler</DialogTitle>
+            <DialogDescription className="text-blue-100">Select the bowler to start the innings</DialogDescription>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+              {bowlingTeamPlayers.map((player, idx) => (
+                <Button
+                  key={player.id || `p2-${idx}`}
+                  variant={selectedOpeningBowler?.id === player.id ? "default" : "outline"}
+                  className={`w-full justify-start ${
+                    selectedOpeningBowler?.id === player.id 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'border-blue-200 hover:bg-blue-50 hover:border-blue-400'
+                  }`}
+                  onClick={() => handleSelectOpeningBowler(player)}
+                  data-testid={`select-bowler-${player.id}`}
                 >
-                  <X className="h-6 w-6" />
+                  {selectedOpeningBowler?.id === player.id && "✓ "}
+                  {player.name}
+                </Button>
+              ))}
+            </div>
+            
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Add Guest Player</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter guest player name"
+                  value={guestBowlerName}
+                  onChange={(e) => setGuestBowlerName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBowler()}
+                  className="flex-1 border-blue-200 focus:border-blue-400"
+                />
+                <Button 
+                  onClick={handleAddGuestBowler}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                <div className="space-y-3">
-                  {bowlingTeamPlayers.map((player, idx) => (
-                    <Button
-                      key={player.id || `p4-${idx}`}
-                      variant={matchState.currentBowler.id === player.id ? "default" : "outline"}
-                      className={`w-full justify-between h-14 rounded-xl text-lg font-semibold px-4 ${
-                        matchState.currentBowler.id === player.id 
-                          ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' 
-                          : 'border-2 border-blue-100 text-blue-600 hover:bg-blue-50 hover:border-blue-400'
-                      }`}
-                      onClick={() => handleSelectBowler(player)}
-                      data-testid={`select-next-bowler-${player.id}`}
-                    >
-                      <div className="flex flex-col items-start">
-                        <span>{player.name}</span>
-                        {currentBowlingStats.find(b => b.id === player.id) && (
-                          <span className={`text-xs ${matchState.currentBowler.id === player.id ? 'text-blue-100' : 'text-blue-400'}`}>
-                            {currentBowlingStats.find(b => b.id === player.id)?.overs || '0.0'} overs • {currentBowlingStats.find(b => b.id === player.id)?.wickets || 0} wkts
-                          </span>
-                        )}
-                      </div>
-                      {matchState.currentBowler.id === player.id && <div className="bg-white text-blue-600 rounded-full p-1"><Plus className="h-4 w-4 rotate-45" /></div>}
-                    </Button>
-                  ))}
-                </div>
-                
-                <div className="border-t border-blue-100 pt-6">
-                  <p className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
-                    <Plus className="h-4 w-4" /> Add Guest Player
-                  </p>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter guest player name"
-                      value={guestBowlerName}
-                      onChange={(e) => setGuestBowlerName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBowler()}
-                      className="h-12 rounded-xl border-2 border-blue-100 focus:border-blue-400 text-lg"
-                    />
-                    <Button 
-                      onClick={handleAddGuestBowler}
-                      className="h-12 w-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md"
-                    >
-                      <Plus className="h-6 w-6" />
-                    </Button>
-                  </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Batsman Selection Dialog */}
+      <Dialog open={showBatsmanSelectDialog} onOpenChange={setShowBatsmanSelectDialog}>
+        <DialogContent className="max-w-md p-0 overflow-hidden">
+          <div className="bg-blue-600 text-white p-4">
+            <DialogTitle className="text-white text-lg font-bold">Select New Batsman</DialogTitle>
+            <DialogDescription className="text-blue-100">Select the next batsman to come in</DialogDescription>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+              {getAvailableBatsmen().map((player, idx) => (
+                <Button
+                  key={player.id || `p3-${idx}`}
+                  variant="outline"
+                  className="w-full justify-start border-blue-200 hover:bg-blue-50 hover:border-blue-400"
+                  onClick={() => handleSelectBatsman(player)}
+                  data-testid={`select-new-batsman-${player.id}`}
+                >
+                  {player.name}
+                </Button>
+              ))}
+            </div>
+            
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium text-gray-700 mb-2">Add Guest Player</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter guest player name"
+                  value={guestBatsmanName}
+                  onChange={(e) => setGuestBatsmanName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBatsman()}
+                  className="flex-1 border-blue-200 focus:border-blue-400"
+                />
+                <Button 
+                  onClick={handleAddGuestBatsman}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+        
+        {/* Bowler Selection Dialog */}
+        <Dialog open={showBowlerSelectDialog} onOpenChange={setShowBowlerSelectDialog}>
+          <DialogContent className="max-w-md p-0 overflow-hidden">
+            <div className="bg-blue-600 text-white p-4">
+              <DialogTitle className="text-white text-lg font-bold">Select Bowler</DialogTitle>
+              <DialogDescription className="text-blue-100">Select the bowler for the next over</DialogDescription>
+            </div>
+            <div className="p-4 space-y-4">
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                {bowlingTeamPlayers.map((player, idx) => (
+                  <Button
+                    key={player.id || `p4-${idx}`}
+                    variant={matchState.currentBowler.id === player.id ? "default" : "outline"}
+                    className={`w-full justify-start ${
+                      matchState.currentBowler.id === player.id 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'border-blue-200 hover:bg-blue-50 hover:border-blue-400'
+                    }`}
+                    onClick={() => handleSelectBowler(player)}
+                    data-testid={`select-next-bowler-${player.id}`}
+                  >
+                    {player.name}
+                    {currentBowlingStats.find(b => b.id === player.id) && 
+                      ` (${currentBowlingStats.find(b => b.id === player.id)?.overs || '0.0'} overs)`
+                    }
+                  </Button>
+                ))}
+              </div>
+              
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Add Guest Player</p>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Enter guest player name"
+                    value={guestBowlerName}
+                    onChange={(e) => setGuestBowlerName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBowler()}
+                    className="flex-1 border-blue-200 focus:border-blue-400"
+                  />
+                  <Button 
+                    onClick={handleAddGuestBowler}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            </DialogContent>
-          </Dialog>
+            </div>
+          </DialogContent>
+        </Dialog>
       
         {/* End Innings Dialog */}
       <Dialog open={showEndInningsDialog} onOpenChange={setShowEndInningsDialog}>

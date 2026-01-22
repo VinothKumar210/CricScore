@@ -132,6 +132,7 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     ? (newState.team1BattingFirst ? 'team2Bowling' : 'team1Bowling')
     : (newState.team1BattingFirst ? 'team1Bowling' : 'team2Bowling');
 
+  const bowlerIdBefore = newState.currentBowler.id;
   const strikerBefore = { ...newState.strikeBatsman };
   const nonStrikerBefore = { ...newState.nonStrikeBatsman };
 
@@ -180,6 +181,9 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     const temp = newState.strikeBatsman;
     newState.strikeBatsman = newState.nonStrikeBatsman;
     newState.nonStrikeBatsman = temp;
+    
+    // Clear current bowler at end of over to force new selection
+    newState.currentBowler = { id: '', name: '' };
   }
 
   // Step 7: Free hit logic
@@ -206,7 +210,7 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
   }
 
   // Update Bowler Stats
-  const bowlerStats = newState[bowlingKey].find(b => b.id === state.currentBowler.id);
+  const bowlerStats = newState[bowlingKey].find(b => b.id === bowlerIdBefore);
   if (bowlerStats) {
     if (isLegal) bowlerStats.balls += 1;
     bowlerStats.overs = formatOvers(bowlerStats.balls);
@@ -218,11 +222,6 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     bowlerStats.economy = bowlerStats.balls > 0 ? (bowlerStats.runs / (bowlerStats.balls / 6)) : 0;
     if (extraType === 'wide') bowlerStats.wides += 1;
     if (extraType === 'noball') bowlerStats.noBalls += 1;
-  }
-
-  // Clear current bowler at end of over to force new selection
-  if (isOverComplete && newState[scoreKey].balls < newState.matchOvers * 6) {
-    newState.currentBowler = { id: '', name: '' };
   }
 
   // Record Ball Event
@@ -247,8 +246,8 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     strikerAfter: newState.strikeBatsman,
     nonStrikerAfter: newState.nonStrikeBatsman,
     isFreeHit: wasFreeHit,
-    bowlerId: newState.currentBowler.id,
-    bowlerName: newState.currentBowler.name,
+    bowlerId: bowlerIdBefore,
+    bowlerName: state.currentBowler.name,
     displayText: ballDisplayText
   };
 
