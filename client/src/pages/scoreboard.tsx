@@ -1084,14 +1084,14 @@ export default function Scoreboard() {
                 </TabsTrigger>
               </TabsList>
             </div>
-          </Tabs>
-        </div>
-      
-        {/* Main Content Area - White background for score display */}
-        <div className="flex-1 flex flex-col bg-white overflow-hidden">
-          {/* Score Display Section */}
-          <div className="flex-1 p-2 sm:p-3">
-            <div className="max-w-6xl mx-auto space-y-2 sm:space-y-3">
+            </Tabs>
+            <div className="flex-1 overflow-hidden">
+              <TabsContent value="scoring" className="h-full m-0 flex flex-col overflow-hidden">
+                {/* Main Content Area - White background for score display */}
+                <div className="flex-1 flex flex-col bg-white overflow-y-auto">
+                  {/* Score Display Section */}
+                  <div className="p-2 sm:p-3">
+                    <div className="max-w-6xl mx-auto space-y-2 sm:space-y-3">
               {/* Team and Score Display */}
               <div className="text-center space-y-0.5 sm:space-y-1">
                 <h2 className="text-base sm:text-lg font-bold text-gray-900">
@@ -1271,10 +1271,146 @@ export default function Scoreboard() {
                   </table>
                   </div>
                 </div>
-              </div>
-            </DialogContent>
+                </div>
 
-        </Dialog>
+                {/* Scoring Controls Section */}
+                <div className="shrink-0 bg-gray-50 border-t border-gray-200 p-2 sm:p-3">
+                  <div className="max-w-6xl mx-auto space-y-2 sm:space-y-3">
+                    {/* Main Score Buttons */}
+                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5 sm:gap-2">
+                      {[0, 1, 2, 3, 4, 6].map((num) => (
+                        <Button
+                          key={num}
+                          onClick={() => handleScore(num)}
+                          disabled={!isMatchStarted || matchState.isMatchEnded}
+                          variant="outline"
+                          className="h-10 sm:h-12 text-base sm:text-lg font-bold border-blue-200 hover:bg-blue-600 hover:text-white transition-all"
+                          data-testid={`score-${num}`}
+                        >
+                          {num}
+                        </Button>
+                      ))}
+                      <Button
+                        onClick={() => handleScore(0, false, null, true)}
+                        disabled={!isMatchStarted || matchState.isMatchEnded}
+                        variant="destructive"
+                        className="h-10 sm:h-12 text-sm sm:text-base font-bold"
+                        data-testid="score-wicket"
+                      >
+                        W
+                      </Button>
+                    </div>
+
+                    {/* Extras and Actions */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex gap-1.5 sm:gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleScore(1, true, 'wd')}
+                          disabled={!isMatchStarted || matchState.isMatchEnded}
+                          className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200 text-[10px] sm:text-xs h-8"
+                          data-testid="score-wide"
+                        >
+                          Wd
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleScore(1, true, 'nb')}
+                          disabled={!isMatchStarted || matchState.isMatchEnded}
+                          className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200 text-[10px] sm:text-xs h-8"
+                          data-testid="score-noball"
+                        >
+                          Nb
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleScore(1, true, 'by')}
+                          disabled={!isMatchStarted || matchState.isMatchEnded}
+                          className="bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200 text-[10px] sm:text-xs h-8"
+                        >
+                          By
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleScore(1, true, 'lb')}
+                          disabled={!isMatchStarted || matchState.isMatchEnded}
+                          className="bg-gray-100 text-gray-800 hover:bg-gray-200 border-gray-200 text-[10px] sm:text-xs h-8"
+                        >
+                          Lb
+                        </Button>
+                      </div>
+
+                      <div className="flex gap-1.5 sm:gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleUndo}
+                          disabled={undoStack.length === 0}
+                          className="text-gray-500 hover:text-gray-700 h-8 px-2"
+                        >
+                          <Undo className="h-4 w-4 mr-1" />
+                          <span className="text-[10px] sm:text-xs">Undo</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setShowEndInningsDialog(true)}
+                          disabled={matchState.currentInnings === 2 || matchState.isMatchEnded}
+                          className="text-blue-600 hover:text-blue-700 h-8 px-2"
+                        >
+                          End Innings
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="scorecard" className="flex-1 overflow-auto bg-gray-50 p-3">
+              <div className="max-w-4xl mx-auto space-y-4">
+                <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+                  <div className="bg-blue-600 text-white p-3 font-bold flex justify-between">
+                    <span>Scorecard</span>
+                    <span>{battingTeamScore.runs}/{battingTeamScore.wickets} ({formatOvers(battingTeamScore.balls)})</span>
+                  </div>
+                  <div className="p-0">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="text-left p-2">Batter</th>
+                          <th className="text-right p-2">R</th>
+                          <th className="text-right p-2">B</th>
+                          <th className="text-right p-2">4s</th>
+                          <th className="text-right p-2">6s</th>
+                          <th className="text-right p-2">SR</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentBattingStats.map((stats) => (
+                          <tr key={stats.id} className="border-b">
+                            <td className="p-2">
+                              <div className="font-medium">{stats.name}</div>
+                              <div className="text-xs text-gray-500">{stats.isOut ? 'out' : 'not out'}</div>
+                            </td>
+                            <td className="text-right p-2">{stats.runs}</td>
+                            <td className="text-right p-2">{stats.balls}</td>
+                            <td className="text-right p-2">{stats.fours}</td>
+                            <td className="text-right p-2">{stats.sixes}</td>
+                            <td className="text-right p-2">{stats.strikeRate.toFixed(1)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+          </div>
       
       {/* Initial Bowler Selection Dialog */}
       <Dialog open={showInitialBowlerSelect} onOpenChange={setShowInitialBowlerSelect}>
