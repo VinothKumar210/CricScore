@@ -172,6 +172,8 @@ export default function Scoreboard() {
   const [showBowlerSelectDialog, setShowBowlerSelectDialog] = useState(false);
   const [showEndInningsDialog, setShowEndInningsDialog] = useState(false);
   const [showInlineExtras, setShowInlineExtras] = useState(false);
+  const [showInlineWicket, setShowInlineWicket] = useState(false);
+  const [wicketStep, setWicketStep] = useState<'how' | 'fielder' | 'runout_details'>('how');
   const [extrasType, setExtrasType] = useState<'wd' | 'nb' | 'b' | 'lb'>('wd');
   const [extrasRuns, setExtrasRuns] = useState(1);
   const [showMatchEndedDialog, setShowMatchEndedDialog] = useState(false);
@@ -907,8 +909,10 @@ export default function Scoreboard() {
       isBoundary: false
     });
     
-    // Reset dialog state
+    // Reset dialog and inline state
     setShowWicketDialog(false);
+    setShowInlineWicket(false);
+    setWicketStep('how');
     setSelectedDismissalType('');
     setSelectedFielder('');
     setDismissedBatsman('striker');
@@ -916,6 +920,64 @@ export default function Scoreboard() {
     setRunoutDismissedAtEnd('striker-end');
     
   }, [matchState, selectedDismissalType, selectedFielder, dismissedBatsman, runoutCompletedRuns, runoutDismissedAtEnd, processBall, toast]);
+  
+  // Handle inline wicket submission
+  const handleInlineWicketSubmit = useCallback((type?: string, fielder?: string) => {
+    const dType = type || selectedDismissalType;
+    const fName = fielder || selectedFielder;
+    
+    if (!dType) return;
+    
+    const dismissedId = dismissedBatsman === 'striker' 
+      ? matchState.strikeBatsman.id 
+      : matchState.nonStrikeBatsman.id;
+      
+    // Create wicket event
+    const wicketEvent: WicketEvent = {
+      type: dType as DismissalType,
+      dismissedBatsman,
+      dismissedAtEnd: dType === 'run_out' ? runoutDismissedAtEnd : 'striker-end',
+      runsBeforeDismissal: dType === 'run_out' ? runoutCompletedRuns : 0,
+      fielder: fName || undefined
+    };
+    
+    // Mark batsman as out
+    setMatchState(prev => {
+      const battingKey = prev.currentInnings === 1
+        ? (prev.team1BattingFirst ? 'team1Batting' : 'team2Batting')
+        : (prev.team1BattingFirst ? 'team2Batting' : 'team1Batting');
+      
+      return {
+        ...prev,
+        [battingKey]: prev[battingKey].map((b: BatsmanStats) => {
+          if (b.id === dismissedId) {
+            return {
+              ...b,
+              isOut: true,
+              dismissalType: dType,
+              bowler: prev.currentBowler.name,
+              fielder: fName || undefined
+            };
+          }
+          return b;
+        })
+      };
+    });
+    
+    processBall({
+      completedRuns: dType === 'run_out' ? runoutCompletedRuns : 0,
+      extraType: 'none',
+      wicket: wicketEvent,
+      isBoundary: false
+    });
+    
+    setShowInlineWicket(false);
+    setWicketStep('how');
+    setSelectedDismissalType('');
+    setSelectedFielder('');
+    setDismissedBatsman('striker');
+    setRunoutCompletedRuns(0);
+  }, [matchState, selectedDismissalType, selectedFielder, dismissedBatsman, runoutCompletedRuns, runoutDismissedAtEnd, processBall]);
   
   // Select new batsman
   const handleSelectBatsman = useCallback((player: Player) => {
@@ -1513,7 +1575,7 @@ export default function Scoreboard() {
                         </tbody>
                     </table>
                   </div>
-                  {!isMatchStarted && selectedOpeningBatsmen.length === 2 && (
+                  {!isMatchStarted && activeBatsmen.length === 2 && (
                     <p className="text-[10px] text-gray-500 mt-1 text-center">
                       Click on a batsman to set as striker (*)
                     </p>
@@ -1628,6 +1690,140 @@ export default function Scoreboard() {
                       ))}
                     </div>
                   </div>
+                ) : showInlineWicket ? (
+                  <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    <div className="flex items-center justify-between px-1">
+                      <h3 className="text-blue-600 font-bold text-sm">
+                        Record Wicket {wicketStep === 'fielder' ? '- Select Fielder' : wicketStep === 'runout_details' ? '- Run Out Details' : ''}
+                      </h3>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          setShowInlineWicket(false);
+                          setWicketStep('how');
+                        }}
+                        className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    {wicketStep === 'how' && (
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-4 justify-center py-1">
+                          <span className="text-xs font-semibold text-gray-600">Who is out?</span>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant={dismissedBatsman === 'striker' ? "default" : "outline"}
+                              onClick={() => setDismissedBatsman('striker')}
+                              className={dismissedBatsman === 'striker' ? "bg-blue-600 text-white" : "border-blue-200 text-blue-600"}
+                            >
+                              {matchState.strikeBatsman.name || 'Striker'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={dismissedBatsman === 'non-striker' ? "default" : "outline"}
+                              onClick={() => setDismissedBatsman('non-striker')}
+                              className={dismissedBatsman === 'non-striker' ? "bg-blue-600 text-white" : "border-blue-200 text-blue-600"}
+                            >
+                              {matchState.nonStrikeBatsman.name || 'Non-Striker'}
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1">
+                          {[
+                            { label: 'Bowled', value: 'bowled' },
+                            { label: 'LBW', value: 'lbw' },
+                            { label: 'Hit Wicket', value: 'hit_wicket' },
+                            { label: 'Caught', value: 'caught' },
+                            { label: 'Stumped', value: 'stumped' },
+                            { label: 'Run Out', value: 'run_out' }
+                          ].map(type => (
+                            <Button
+                              key={type.value}
+                              onClick={() => {
+                                setSelectedDismissalType(type.value);
+                                if (['bowled', 'lbw', 'hit_wicket'].includes(type.value)) {
+                                  handleInlineWicketSubmit(type.value);
+                                } else {
+                                  setWicketStep(type.value === 'run_out' ? 'runout_details' : 'fielder');
+                                }
+                              }}
+                              className="h-10 text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 border-0 shadow-sm"
+                            >
+                              {type.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {wicketStep === 'fielder' && (
+                      <div className="space-y-2">
+                        <p className="text-[10px] text-center text-gray-500 font-medium">Select fielder who took the catch/stumping</p>
+                        <div className="grid grid-cols-3 gap-1 max-h-32 overflow-y-auto p-1 scrollbar-hide">
+                          {bowlingTeamPlayers.map(player => (
+                            <Button
+                              key={player.id}
+                              onClick={() => {
+                                setSelectedFielder(player.name);
+                                handleInlineWicketSubmit(selectedDismissalType, player.name);
+                              }}
+                              className="h-10 text-[10px] font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0 truncate shadow-sm"
+                            >
+                              {player.name}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {wicketStep === 'runout_details' && (
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-semibold text-gray-600 block text-center">Completed Runs</span>
+                          <div className="flex gap-1 justify-center">
+                            {[0, 1, 2, 3].map(runs => (
+                              <Button
+                                key={runs}
+                                size="sm"
+                                variant={runoutCompletedRuns === runs ? "default" : "outline"}
+                                onClick={() => setRunoutCompletedRuns(runs)}
+                                className={`h-8 w-10 ${runoutCompletedRuns === runs ? "bg-blue-600 text-white" : "border-blue-200 text-blue-600"}`}
+                              >
+                                {runs}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-semibold text-gray-600 block text-center">Fielder & End</span>
+                          <div className="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto p-1 scrollbar-hide">
+                            <Button
+                              onClick={() => handleInlineWicketSubmit('run_out', undefined)}
+                              className="h-8 text-[10px] font-semibold bg-gray-500 text-white hover:bg-gray-600 border-0 shadow-sm"
+                            >
+                              None
+                            </Button>
+                            {bowlingTeamPlayers.map(player => (
+                              <Button
+                                key={player.id}
+                                onClick={() => {
+                                  setSelectedFielder(player.name);
+                                  handleInlineWicketSubmit('run_out', player.name);
+                                }}
+                                className="h-8 text-[10px] font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0 truncate shadow-sm"
+                              >
+                                {player.name}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <>
                     {/* Run Buttons Row 1 */}
@@ -1730,7 +1926,8 @@ export default function Scoreboard() {
                       <Button
                         onClick={() => {
                           saveStateForUndo();
-                          setShowWicketDialog(true);
+                          setShowInlineWicket(true);
+                          setWicketStep('how');
                         }}
                         className="h-10 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 border-0"
                         data-testid="button-wicket"
@@ -1939,106 +2136,6 @@ export default function Scoreboard() {
             </div>
           </DialogContent>
         </Dialog>
-      
-      {/* Wicket Dialog */}
-      <Dialog open={showWicketDialog} onOpenChange={setShowWicketDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Record Wicket</DialogTitle>
-            <DialogDescription>Select dismissal type and details</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Who is out?</Label>
-              <RadioGroup value={dismissedBatsman} onValueChange={(v) => setDismissedBatsman(v as 'striker' | 'non-striker')}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="striker" id="striker" />
-                  <Label htmlFor="striker">{matchState.strikeBatsman.name || 'Striker'}</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="non-striker" id="non-striker" />
-                  <Label htmlFor="non-striker">{matchState.nonStrikeBatsman.name || 'Non-striker'}</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            <div>
-              <Label>Dismissal Type</Label>
-              <Select value={selectedDismissalType} onValueChange={setSelectedDismissalType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select dismissal type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bowled">Bowled</SelectItem>
-                  <SelectItem value="caught">Caught</SelectItem>
-                  <SelectItem value="lbw">LBW</SelectItem>
-                  <SelectItem value="run_out">Run Out</SelectItem>
-                  <SelectItem value="stumped">Stumped</SelectItem>
-                  <SelectItem value="hit_wicket">Hit Wicket</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {(selectedDismissalType === 'caught' || selectedDismissalType === 'run_out' || selectedDismissalType === 'stumped') && (
-                <div>
-                  <Label>Fielder</Label>
-                  <Select value={selectedFielder} onValueChange={setSelectedFielder}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select fielder" />
-                    </SelectTrigger>
-                      <SelectContent>
-                        {bowlingTeamPlayers.map((player, idx) => (
-                          <SelectItem key={player.id || `f-${idx}`} value={player.name}>{player.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              {selectedDismissalType === 'run_out' && (
-                <>
-                  <div>
-                    <Label>Runs Completed Before Dismissal</Label>
-                    <div className="grid grid-cols-5 gap-2 mt-2">
-                      {[0, 1, 2, 3, 4].map(runs => (
-                        <Button
-                          key={runs}
-                          variant={runoutCompletedRuns === runs ? "default" : "outline"}
-                          onClick={() => setRunoutCompletedRuns(runs)}
-                          className={runoutCompletedRuns === runs ? "bg-blue-600" : ""}
-                        >
-                          {runs}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Dismissed At Which End?</Label>
-                    <RadioGroup 
-                      value={runoutDismissedAtEnd} 
-                      onValueChange={(v) => setRunoutDismissedAtEnd(v as 'striker-end' | 'non-striker-end')}
-                      className="mt-2"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="striker-end" id="striker-end" />
-                        <Label htmlFor="striker-end">Striker's End (Facing batsman's end)</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="non-striker-end" id="non-striker-end" />
-                        <Label htmlFor="non-striker-end">Non-striker's End (Bowler's end)</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                </>
-              )}
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowWicketDialog(false)}>Cancel</Button>
-              <Button onClick={handleWicket} className="bg-red-600 hover:bg-red-700">Confirm Wicket</Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
       
         {/* End Innings Dialog */}
       <Dialog open={showEndInningsDialog} onOpenChange={setShowEndInningsDialog}>
