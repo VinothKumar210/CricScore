@@ -196,12 +196,37 @@ if (!response.ok) {
     }
   };
 
-    const handleTossComplete = (tossWinner: "teamA" | "teamB", decision: "bat" | "bowl") => {
+    const handleTossComplete = async (tossWinner: "teamA" | "teamB", decision: "bat" | "bowl") => {
     const winnerTeam = tossWinner === "teamA" ? teamA : teamB;
     const loserTeam = tossWinner === "teamA" ? teamB : teamA;
 
     const battingFirst = decision === "bat" ? winnerTeam : loserTeam;
     const bowlingFirst = decision === "bat" ? loserTeam : winnerTeam;
+
+    // Create the match in the backend if user is logged in
+    let localMatchId = "";
+    if (user && teamA && teamB) {
+      try {
+        const response = await apiRequest("POST", "/api/local-matches", {
+          matchName: `${teamA.name} vs ${teamB.name}`,
+          venue: venue || "Local Ground",
+          matchDate: new Date(matchDate),
+          overs: overs,
+          myTeamName: teamA.name,
+          myTeamId: teamA.id.startsWith('local-') ? undefined : teamA.id,
+          opponentTeamName: teamB.name,
+          opponentTeamId: teamB.id.startsWith('local-') ? undefined : teamB.id,
+          myTeamPlayers: teamA.players,
+          opponentTeamPlayers: teamB.players,
+          allowSpectators: true
+        });
+        const match = await response.json();
+        localMatchId = match.id;
+        localStorage.setItem("localMatchId", localMatchId);
+      } catch (error) {
+        console.error("Failed to create match in backend:", error);
+      }
+    }
 
     localStorage.setItem("matchOvers", overs.toString());
     localStorage.setItem("tossCompleted", "true");
@@ -211,6 +236,7 @@ if (!response.ok) {
     localStorage.removeItem("cricscorer_match_state");
 
     const matchData = {
+      localMatchId,
       userTeamRole: battingFirst?.id === teamA?.id ? "batting" : "bowling",
       opponentTeamRole: battingFirst?.id === teamA?.id ? "bowling" : "batting",
       myTeamPlayers: teamA?.players || [],
