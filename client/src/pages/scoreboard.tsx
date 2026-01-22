@@ -494,16 +494,17 @@ export default function Scoreboard() {
       }
     }
 
-    // Show dialogs if necessary
-    if (!newState.isMatchComplete) {
-      if (isWicket && newState.team1Score.wickets < getMaxWickets()) {
-        setTimeout(() => setShowBatsmanSelectDialog(true), 150);
-      } else if (isOverComplete && !isWicket) {
-        setTimeout(() => setShowBowlerSelectDialog(true), 150);
+      // Show dialogs if necessary
+      if (!newState.isMatchComplete) {
+        if (isWicket && newState.team1Score.wickets < getMaxWickets()) {
+          setTimeout(() => setShowBatsmanSelectDialog(true), 150);
+        } else if (!newState.currentBowler.id) {
+          setTimeout(() => setShowBowlerSelectDialog(true), 150);
+        }
+      } else {
+        setShowMatchEndedDialog(true);
       }
-    } else {
-      setShowMatchEndedDialog(true);
-    }
+
   }, [matchState, saveStateForUndo, isMatchStarted, toast, getMaxWickets]);
 
 
@@ -682,16 +683,25 @@ export default function Scoreboard() {
       
       setShowBatsmanSelectDialog(false);
 
-      // Check if end of over and trigger bowler selection
-      const balls = battingTeamScore.balls;
-      if (balls > 0 && balls % 6 === 0 && balls < matchState.matchOvers * 6) {
+      // If current bowler is empty (end of over), trigger bowler selection
+      if (!matchState.currentBowler.id) {
         setTimeout(() => setShowBowlerSelectDialog(true), 300);
       }
-    }, [matchState, currentBattingStats, toast, battingTeamScore.balls]);
+    }, [matchState, currentBattingStats, toast]);
 
   
   // Select bowler
   const handleSelectBowler = useCallback((player: Player) => {
+    // Prevent consecutive overs from same bowler
+    if (matchState.lastBowlerId === player.id) {
+      toast({
+        title: "Invalid Selection",
+        description: "A bowler cannot bowl two consecutive overs",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Add bowler to bowling stats if not exists
     const existsInStats = currentBowlingStats.find(b => b.id === player.id);
     if (!existsInStats) {
@@ -725,7 +735,7 @@ export default function Scoreboard() {
       }));
       
       setShowBowlerSelectDialog(false);
-    }, [currentBowlingStats]);
+    }, [currentBowlingStats, matchState.lastBowlerId, toast]);
 
   
   // Add guest batsman to team
@@ -1259,390 +1269,11 @@ export default function Scoreboard() {
                       </tr>
                     </tbody>
                   </table>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        
-          {/* Bottom Panel - Fixed at bottom with white background */}
-          {!isMatchStarted ? (
-            <div className="bg-white border-t border-gray-200 p-3 shrink-0">
-              <div className="max-w-6xl mx-auto">
-                <div className="flex items-center justify-between mb-3">
-                  <button
-                    onClick={() => setLocation('/local-match')}
-                    className="text-gray-900 hover:text-gray-600"
-                    data-testid="button-close-selection-panel"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                  <h3 className="text-gray-900 font-bold text-lg">Select Players</h3>
-                  <div className="w-5"></div>
-                </div>
-                
-                {selectedOpeningBatsmen.length < 2 || !selectedOpeningBowler ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button
-                      onClick={() => setShowInitialBatsmanSelect(true)}
-                      className={`h-12 text-sm font-semibold border-2 overflow-hidden px-2 ${
-                        selectedOpeningBatsmen.length === 2 
-                          ? 'bg-green-100 text-green-700 border-green-300' 
-                          : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600'
-                      }`}
-                      data-testid="button-select-batsman-panel"
-                    >
-                      {selectedOpeningBatsmen.length === 2 ? '✓ Batsmen' : 'Select Batsman'}
-                    </Button>
-                    <Button
-                      onClick={() => setShowInitialBowlerSelect(true)}
-                      className={`h-12 text-sm font-semibold border-2 overflow-hidden px-2 ${
-                        selectedOpeningBowler 
-                          ? 'bg-green-100 text-green-700 border-green-300' 
-                          : 'bg-blue-600 hover:bg-blue-700 text-white border-blue-600'
-                      }`}
-                      data-testid="button-select-bowler-panel"
-                    >
-                      {selectedOpeningBowler ? '✓ Bowler' : 'Select Bowler'}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-center text-gray-700 text-sm mb-3">
-                    <p>Click on a batsman name above to set as striker</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white border-t border-gray-200 p-3 shrink-0">
-              <div className="max-w-6xl mx-auto space-y-2">
-                {showInlineExtras ? (
-                  <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    <div className="flex items-center justify-between px-1">
-                      <h3 className="text-blue-600 font-bold text-sm">
-                        {extrasType === 'wd' ? 'Wide' : extrasType === 'nb' ? 'No Ball' : extrasType === 'b' ? 'Bye' : 'Leg Bye'} Runs
-                      </h3>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setShowInlineExtras(false)}
-                        className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-5 gap-1">
-                      {[0, 1, 2, 3, 4].map(runs => (
-                        <Button
-                          key={runs}
-                          onClick={() => handleExtras(extrasType, runs)}
-                          className="h-12 text-lg font-bold bg-blue-600 text-white hover:bg-blue-700 border-0 shadow-sm"
-                        >
-                          {runs}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                ) : showInlineWicket ? (
-                  <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    <div className="flex items-center justify-between px-1">
-                      <h3 className="text-blue-600 font-bold text-sm">
-                        Record Wicket {wicketStep === 'fielder' ? '- Select Fielder' : wicketStep === 'runout_details' ? '- Run Out Details' : ''}
-                      </h3>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => {
-                          setShowInlineWicket(false);
-                          setWicketStep('how');
-                        }}
-                        className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    
-                    {wicketStep === 'how' && (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-4 justify-center py-1">
-                          <span className="text-xs font-semibold text-gray-600">Who is out?</span>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant={dismissedBatsman === 'striker' ? "default" : "outline"}
-                              onClick={() => setDismissedBatsman('striker')}
-                              className={dismissedBatsman === 'striker' ? "bg-blue-600 text-white" : "border-blue-200 text-blue-600"}
-                            >
-                              {matchState.strikeBatsman.name || 'Striker'}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={dismissedBatsman === 'non-striker' ? "default" : "outline"}
-                              onClick={() => setDismissedBatsman('non-striker')}
-                              className={dismissedBatsman === 'non-striker' ? "bg-blue-600 text-white" : "border-blue-200 text-blue-600"}
-                            >
-                              {matchState.nonStrikeBatsman.name || 'Non-Striker'}
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-1">
-                          {[
-                            { label: 'Bowled', value: 'bowled' },
-                            { label: 'LBW', value: 'lbw' },
-                            { label: 'Hit Wicket', value: 'hit_wicket' },
-                            { label: 'Caught', value: 'caught' },
-                            { label: 'Stumped', value: 'stumped' },
-                            { label: 'Run Out', value: 'run_out' }
-                          ].map(type => (
-                            <Button
-                              key={type.value}
-                              onClick={() => {
-                                setSelectedDismissalType(type.value);
-                                if (['bowled', 'lbw', 'hit_wicket'].includes(type.value)) {
-                                  handleInlineWicketSubmit(type.value);
-                                } else {
-                                  setWicketStep(type.value === 'run_out' ? 'runout_details' : 'fielder');
-                                }
-                              }}
-                              className="h-10 text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 border-0 shadow-sm"
-                            >
-                              {type.label}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {wicketStep === 'fielder' && (
-                      <div className="space-y-2">
-                        <p className="text-[10px] text-center text-gray-500 font-medium">Select fielder who took the catch/stumping</p>
-                        <div className="grid grid-cols-3 gap-1 max-h-32 overflow-y-auto p-1 scrollbar-hide">
-                          {bowlingTeamPlayers.map(player => (
-                            <Button
-                              key={player.id}
-                              onClick={() => {
-                                setSelectedFielder(player.name);
-                                handleInlineWicketSubmit(selectedDismissalType, player.name);
-                              }}
-                              className="h-10 text-[10px] font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0 truncate shadow-sm"
-                            >
-                              {player.name}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {wicketStep === 'runout_details' && (
-                      <div className="space-y-3">
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-semibold text-gray-600 block text-center">Completed Runs</span>
-                          <div className="flex gap-1 justify-center">
-                            {[0, 1, 2, 3].map(runs => (
-                              <Button
-                                key={runs}
-                                size="sm"
-                                variant={runoutCompletedRuns === runs ? "default" : "outline"}
-                                onClick={() => setRunoutCompletedRuns(runs)}
-                                className={`h-8 w-10 ${runoutCompletedRuns === runs ? "bg-blue-600 text-white" : "border-blue-200 text-blue-600"}`}
-                              >
-                                {runs}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <span className="text-[10px] font-semibold text-gray-600 block text-center">Fielder & End</span>
-                          <div className="grid grid-cols-4 gap-1 max-h-32 overflow-y-auto p-1 scrollbar-hide">
-                            <Button
-                              onClick={() => handleInlineWicketSubmit('run_out', undefined)}
-                              className="h-8 text-[10px] font-semibold bg-gray-500 text-white hover:bg-gray-600 border-0 shadow-sm"
-                            >
-                              None
-                            </Button>
-                            {bowlingTeamPlayers.map(player => (
-                              <Button
-                                key={player.id}
-                                onClick={() => {
-                                  setSelectedFielder(player.name);
-                                  handleInlineWicketSubmit('run_out', player.name);
-                                }}
-                                className="h-8 text-[10px] font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0 truncate shadow-sm"
-                              >
-                                {player.name}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    {/* Run Buttons Row 1 */}
-                    <div className="grid grid-cols-5 gap-1">
-                      {[1, 2, 3, 4, 6].map(runs => (
-                        <Button
-                          key={runs}
-                          onClick={() => handleRunScored(runs)}
-                          className="h-12 text-lg font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                          data-testid={`button-runs-${runs}`}
-                        >
-                          {runs}
-                        </Button>
-                      ))}
-                    </div>
-                    
-                    {/* Extras Row */}
-                    <div className="grid grid-cols-5 gap-1">
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('lb');
-                          setShowInlineExtras(true);
-                        }}
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                        data-testid="button-leg-bye"
-                      >
-                        LB
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('b');
-                          setShowInlineExtras(true);
-                        }}
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                        data-testid="button-bye"
-                      >
-                        Bye
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('wd');
-                          setShowInlineExtras(true);
-                        }}
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                        data-testid="button-wide"
-                      >
-                        Wide
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setExtrasType('nb');
-                          setShowInlineExtras(true);
-                        }}
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                        data-testid="button-no-ball"
-                      >
-                        NB
-                      </Button>
-                      <Button
-                        onClick={() => handleRunScored(0)}
-                        className="h-10 text-xl font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                        data-testid="button-dot"
-                      >
-                        •
-                      </Button>
-                    </div>
-                    
-                    {/* Bottom Controls */}
-                    <div className="grid grid-cols-5 gap-1">
-                      <Button
-                        variant="outline"
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                      >
-                        More
-                      </Button>
-                      <Button
-                        onClick={() => handleRunScored(0)}
-                        className="h-10 font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                      >
-                        <img src="/cricket-ball.svg" alt="ball" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                        <span className="hidden">0</span>
-                      </Button>
-                      <Button
-                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                      >
-                        4 5 6 7
-                      </Button>
-                      <Button
-                        onClick={handleUndo}
-                        disabled={undoStack.length === 0}
-                        className="h-10 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 border-0"
-                        data-testid="button-undo"
-                      >
-                        Undo
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          saveStateForUndo();
-                          setShowInlineWicket(true);
-                          setWicketStep('how');
-                        }}
-                        className="h-10 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 border-0"
-                        data-testid="button-wicket"
-                      >
-                        Out
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-      </div>
+            </DialogContent>
 
-      {/* Dialogs */}
-      
-      {/* Initial Batsman Selection Dialog */}
-        <Dialog open={showInitialBatsmanSelect} onOpenChange={setShowInitialBatsmanSelect}>
-          <DialogContent className="max-w-md p-0 overflow-hidden">
-            <div className="bg-blue-600 text-white p-4">
-              <DialogTitle className="text-white text-lg font-bold">Select Opening Batsmen</DialogTitle>
-              <DialogDescription className="text-blue-100">Select 2 batsmen to open the innings</DialogDescription>
-            </div>
-            <div className="p-4 space-y-4">
-              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-                {battingTeamPlayers.map((player, idx) => (
-                  <Button
-                    key={player.id || `p1-${idx}`}
-                    variant={selectedOpeningBatsmen.find(p => p.id === player.id) ? "default" : "outline"}
-                    className={`w-full justify-start ${
-                      selectedOpeningBatsmen.find(p => p.id === player.id) 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                        : 'border-blue-200 hover:bg-blue-50 hover:border-blue-400'
-                    }`}
-                    onClick={() => handleSelectOpeningBatsman(player)}
-                    data-testid={`select-batsman-${player.id}`}
-                  >
-                    {selectedOpeningBatsmen.find(p => p.id === player.id) && "✓ "}
-                    {player.name}
-                  </Button>
-                ))}
-              </div>
-              
-              <div className="border-t pt-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Add Guest Player</p>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Enter guest player name"
-                    value={guestBatsmanName}
-                    onChange={(e) => setGuestBatsmanName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddGuestBatsman()}
-                    className="flex-1 border-blue-200 focus:border-blue-400"
-                  />
-                  <Button 
-                    onClick={handleAddGuestBatsman}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </DialogContent>
         </Dialog>
       
       {/* Initial Bowler Selection Dialog */}
@@ -1746,26 +1377,40 @@ export default function Scoreboard() {
               <DialogDescription className="text-blue-100">Select the bowler for the next over</DialogDescription>
             </div>
             <div className="p-4 space-y-4">
-              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-                {bowlingTeamPlayers.map((player, idx) => (
-                  <Button
-                    key={player.id || `p4-${idx}`}
-                    variant={matchState.currentBowler.id === player.id ? "default" : "outline"}
-                    className={`w-full justify-start ${
-                      matchState.currentBowler.id === player.id 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                        : 'border-blue-200 hover:bg-blue-50 hover:border-blue-400'
-                    }`}
-                    onClick={() => handleSelectBowler(player)}
-                    data-testid={`select-next-bowler-${player.id}`}
-                  >
-                    {player.name}
-                    {currentBowlingStats.find(b => b.id === player.id) && 
-                      ` (${currentBowlingStats.find(b => b.id === player.id)?.overs || '0.0'} overs)`
-                    }
-                  </Button>
-                ))}
-              </div>
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                  {bowlingTeamPlayers.map((player, idx) => {
+                    const isLastBowler = matchState.lastBowlerId === player.id;
+                    const stats = currentBowlingStats.find(b => b.id === player.id);
+                    
+                    return (
+                      <Button
+                        key={player.id || `p4-${idx}`}
+                        variant={matchState.currentBowler.id === player.id ? "default" : "outline"}
+                        disabled={isLastBowler}
+                        className={`w-full justify-between ${
+                          matchState.currentBowler.id === player.id 
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                            : isLastBowler
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                              : 'border-blue-200 hover:bg-blue-50 hover:border-blue-400'
+                        }`}
+                        onClick={() => handleSelectBowler(player)}
+                        data-testid={`select-next-bowler-${player.id}`}
+                      >
+                        <span className="flex items-center gap-2">
+                          {player.name}
+                          {isLastBowler && <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">Last Over</span>}
+                        </span>
+                        {stats && (
+                          <span className="text-[10px] opacity-70">
+                            {stats.overs} ov • {stats.wickets} wk
+                          </span>
+                        )}
+                      </Button>
+                    );
+                  })}
+                </div>
+
               
               <div className="border-t pt-4">
                 <p className="text-sm font-medium text-gray-700 mb-2">Add Guest Player</p>

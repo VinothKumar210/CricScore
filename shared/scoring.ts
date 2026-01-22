@@ -74,6 +74,7 @@ export interface MatchState {
   result?: string;
   target?: number;
   isFreeHit: boolean;
+  lastBowlerId?: string;
   ballHistory: BallEventRecord[];
 }
 
@@ -180,6 +181,10 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     const temp = newState.strikeBatsman;
     newState.strikeBatsman = newState.nonStrikeBatsman;
     newState.nonStrikeBatsman = temp;
+    
+    // Track last bowler and clear current bowler
+    newState.lastBowlerId = newState.currentBowler.id;
+    newState.currentBowler = { id: '', name: '' };
   }
 
   // Step 7: Free hit logic
