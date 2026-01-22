@@ -1084,7 +1084,6 @@ export default function Scoreboard() {
                 </TabsTrigger>
               </TabsList>
             </div>
-            </Tabs>
             <div className="flex-1 overflow-hidden">
               <TabsContent value="scoring" className="h-full m-0 flex flex-col overflow-hidden">
                 {/* Main Content Area - White background for score display */}
@@ -1269,12 +1268,14 @@ export default function Scoreboard() {
                       </tr>
                     </tbody>
                   </table>
+                    </div>
                   </div>
                 </div>
-                </div>
+              </div>
+            </div>
 
-                {/* Scoring Controls Section */}
-                <div className="shrink-0 bg-gray-50 border-t border-gray-200 p-2 sm:p-3">
+            {/* Scoring Controls Section */}
+            <div className="shrink-0 bg-gray-50 border-t border-gray-200 p-2 sm:p-3">
                   <div className="max-w-6xl mx-auto space-y-2 sm:space-y-3">
                     {/* Main Score Buttons */}
                     <div className="grid grid-cols-4 sm:grid-cols-7 gap-1.5 sm:gap-2">
@@ -1368,8 +1369,7 @@ export default function Scoreboard() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </TabsContent>
+              </TabsContent>
 
             <TabsContent value="scorecard" className="flex-1 overflow-auto bg-gray-50 p-3">
               <div className="max-w-4xl mx-auto space-y-4">
