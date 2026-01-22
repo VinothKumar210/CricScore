@@ -74,7 +74,6 @@ export interface MatchState {
   result?: string;
   target?: number;
   isFreeHit: boolean;
-  lastBowlerId?: string;
   ballHistory: BallEventRecord[];
 }
 
@@ -182,8 +181,7 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     newState.strikeBatsman = newState.nonStrikeBatsman;
     newState.nonStrikeBatsman = temp;
     
-    // Track last bowler and clear current bowler
-    newState.lastBowlerId = newState.currentBowler.id;
+    // Clear current bowler at end of over to force new selection
     newState.currentBowler = { id: '', name: '' };
   }
 
