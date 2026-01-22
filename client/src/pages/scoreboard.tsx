@@ -171,7 +171,7 @@ export default function Scoreboard() {
   const [showBatsmanSelectDialog, setShowBatsmanSelectDialog] = useState(false);
   const [showBowlerSelectDialog, setShowBowlerSelectDialog] = useState(false);
   const [showEndInningsDialog, setShowEndInningsDialog] = useState(false);
-  const [showExtrasDialog, setShowExtrasDialog] = useState(false);
+  const [showInlineExtras, setShowInlineExtras] = useState(false);
   const [extrasType, setExtrasType] = useState<'wd' | 'nb' | 'b' | 'lb'>('wd');
   const [extrasRuns, setExtrasRuns] = useState(1);
   const [showMatchEndedDialog, setShowMatchEndedDialog] = useState(false);
@@ -840,7 +840,7 @@ export default function Scoreboard() {
       isBoundary: false
     });
     
-    setShowExtrasDialog(false);
+    setShowInlineExtras(false);
   }, [processBall]);
   
   // Handle wicket - uses processBall for consistent logic
@@ -1601,114 +1601,145 @@ export default function Scoreboard() {
           ) : (
             <div className="bg-white border-t border-gray-200 p-3 shrink-0">
               <div className="max-w-6xl mx-auto space-y-2">
-                {/* Run Buttons Row 1 */}
-                <div className="grid grid-cols-5 gap-1">
-                  {[1, 2, 3, 4, 6].map(runs => (
-                    <Button
-                      key={runs}
-                      onClick={() => handleRunScored(runs)}
-                      className="h-12 text-lg font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                      data-testid={`button-runs-${runs}`}
-                    >
-                      {runs}
-                    </Button>
-                  ))}
-                </div>
-                
-                {/* Extras Row */}
-                <div className="grid grid-cols-5 gap-1">
-                  <Button
-                    onClick={() => {
-                      saveStateForUndo();
-                      setExtrasType('lb');
-                      setShowExtrasDialog(true);
-                    }}
-                    className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                    data-testid="button-leg-bye"
-                  >
-                    LB
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      saveStateForUndo();
-                      setExtrasType('b');
-                      setShowExtrasDialog(true);
-                    }}
-                    className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                    data-testid="button-bye"
-                  >
-                    Bye
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      saveStateForUndo();
-                      setExtrasType('wd');
-                      setShowExtrasDialog(true);
-                    }}
-                    className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                    data-testid="button-wide"
-                  >
-                    Wide
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      saveStateForUndo();
-                      setExtrasType('nb');
-                      setShowExtrasDialog(true);
-                    }}
-                    className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                    data-testid="button-no-ball"
-                  >
-                    NB
-                  </Button>
-                  <Button
-                    onClick={() => handleRunScored(0)}
-                    className="h-10 text-xl font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                    data-testid="button-dot"
-                  >
-                    •
-                  </Button>
-                </div>
-                
-                {/* Bottom Controls */}
-                <div className="grid grid-cols-5 gap-1">
-                  <Button
-                    variant="outline"
-                    className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                  >
-                    More
-                  </Button>
-                  <Button
-                    onClick={() => handleRunScored(0)}
-                    className="h-10 font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                  >
-                    <img src="/cricket-ball.svg" alt="ball" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
-                    <span className="hidden">0</span>
-                  </Button>
-                  <Button
-                    className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
-                  >
-                    4 5 6 7
-                  </Button>
-                  <Button
-                    onClick={handleUndo}
-                    disabled={undoStack.length === 0}
-                    className="h-10 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 border-0"
-                    data-testid="button-undo"
-                  >
-                    Undo
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      saveStateForUndo();
-                      setShowWicketDialog(true);
-                    }}
-                    className="h-10 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 border-0"
-                    data-testid="button-wicket"
-                  >
-                    Out
-                  </Button>
-                </div>
+                {showInlineExtras ? (
+                  <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    <div className="flex items-center justify-between px-1">
+                      <h3 className="text-blue-600 font-bold text-sm">
+                        {extrasType === 'wd' ? 'Wide' : extrasType === 'nb' ? 'No Ball' : extrasType === 'b' ? 'Bye' : 'Leg Bye'} Runs
+                      </h3>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowInlineExtras(false)}
+                        className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-5 gap-1">
+                      {[0, 1, 2, 3, 4].map(runs => (
+                        <Button
+                          key={runs}
+                          onClick={() => handleExtras(extrasType, runs)}
+                          className="h-12 text-lg font-bold bg-blue-600 text-white hover:bg-blue-700 border-0 shadow-sm"
+                        >
+                          {runs}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Run Buttons Row 1 */}
+                    <div className="grid grid-cols-5 gap-1">
+                      {[1, 2, 3, 4, 6].map(runs => (
+                        <Button
+                          key={runs}
+                          onClick={() => handleRunScored(runs)}
+                          className="h-12 text-lg font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
+                          data-testid={`button-runs-${runs}`}
+                        >
+                          {runs}
+                        </Button>
+                      ))}
+                    </div>
+                    
+                    {/* Extras Row */}
+                    <div className="grid grid-cols-5 gap-1">
+                      <Button
+                        onClick={() => {
+                          saveStateForUndo();
+                          setExtrasType('lb');
+                          setShowInlineExtras(true);
+                        }}
+                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
+                        data-testid="button-leg-bye"
+                      >
+                        LB
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          saveStateForUndo();
+                          setExtrasType('b');
+                          setShowInlineExtras(true);
+                        }}
+                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
+                        data-testid="button-bye"
+                      >
+                        Bye
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          saveStateForUndo();
+                          setExtrasType('wd');
+                          setShowInlineExtras(true);
+                        }}
+                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
+                        data-testid="button-wide"
+                      >
+                        Wide
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          saveStateForUndo();
+                          setExtrasType('nb');
+                          setShowInlineExtras(true);
+                        }}
+                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
+                        data-testid="button-no-ball"
+                      >
+                        NB
+                      </Button>
+                      <Button
+                        onClick={() => handleRunScored(0)}
+                        className="h-10 text-xl font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
+                        data-testid="button-dot"
+                      >
+                        •
+                      </Button>
+                    </div>
+                    
+                    {/* Bottom Controls */}
+                    <div className="grid grid-cols-5 gap-1">
+                      <Button
+                        variant="outline"
+                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
+                      >
+                        More
+                      </Button>
+                      <Button
+                        onClick={() => handleRunScored(0)}
+                        className="h-10 font-bold bg-blue-600 text-white hover:bg-blue-700 border-0"
+                      >
+                        <img src="/cricket-ball.svg" alt="ball" className="w-4 h-4" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                        <span className="hidden">0</span>
+                      </Button>
+                      <Button
+                        className="h-10 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 border-0"
+                      >
+                        4 5 6 7
+                      </Button>
+                      <Button
+                        onClick={handleUndo}
+                        disabled={undoStack.length === 0}
+                        className="h-10 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 border-0"
+                        data-testid="button-undo"
+                      >
+                        Undo
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          saveStateForUndo();
+                          setShowWicketDialog(true);
+                        }}
+                        className="h-10 text-xs font-semibold bg-red-600 text-white hover:bg-red-700 border-0"
+                        data-testid="button-wicket"
+                      >
+                        Out
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -2009,34 +2040,7 @@ export default function Scoreboard() {
         </DialogContent>
       </Dialog>
       
-      {/* Extras Dialog */}
-      <Dialog open={showExtrasDialog} onOpenChange={setShowExtrasDialog}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>
-              {extrasType === 'wd' ? 'Wide' : extrasType === 'nb' ? 'No Ball' : extrasType === 'b' ? 'Bye' : 'Leg Bye'}
-            </DialogTitle>
-            <DialogDescription>Select the number of runs</DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-4 gap-2">
-            {[0, 1, 2, 3, 4].map(runs => (
-              <Button
-                key={runs}
-                variant={extrasRuns === runs ? "default" : "outline"}
-                onClick={() => setExtrasRuns(runs)}
-              >
-                {runs}
-              </Button>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowExtrasDialog(false)}>Cancel</Button>
-            <Button onClick={() => handleExtras(extrasType, extrasRuns)}>Confirm</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* End Innings Dialog */}
+        {/* End Innings Dialog */}
       <Dialog open={showEndInningsDialog} onOpenChange={setShowEndInningsDialog}>
         <DialogContent>
           <DialogHeader>
