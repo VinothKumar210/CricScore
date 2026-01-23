@@ -56,6 +56,27 @@ export interface PlayerInfo {
   name: string;
 }
 
+export interface FallOfWicket {
+  wicketNumber: number;
+  batsmanId: string;
+  batsmanName: string;
+  score: number;
+  overs: string;
+}
+
+export interface Partnership {
+  batsman1Id: string;
+  batsman1Name: string;
+  batsman1Runs: number;
+  batsman1Balls: number;
+  batsman2Id: string;
+  batsman2Name: string;
+  batsman2Runs: number;
+  batsman2Balls: number;
+  totalRuns: number;
+  totalBalls: number;
+}
+
 export interface MatchState {
   currentInnings: 1 | 2;
   team1Score: TeamScore;
@@ -75,6 +96,9 @@ export interface MatchState {
   target?: number;
   isFreeHit: boolean;
   ballHistory: BallEventRecord[];
+  fallOfWickets: FallOfWicket[];
+  partnerships: Partnership[];
+  currentPartnership: Partnership | null;
 }
 
 export interface BallEventRecord {
@@ -181,7 +205,7 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     const temp = newState.strikeBatsman;
     newState.strikeBatsman = newState.nonStrikeBatsman;
     newState.nonStrikeBatsman = temp;
-    
+
     // Clear current bowler at end of over to force new selection
     newState.currentBowler = { id: '', name: '' };
   }
@@ -251,9 +275,71 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     displayText: ballDisplayText
   };
 
+  // Update Partnership
+  if (!newState.currentPartnership) {
+    // Initialize if both batsmen present and no partnership active
+    if (strikerBefore.id && nonStrikerBefore.id) {
+      newState.currentPartnership = {
+        batsman1Id: strikerBefore.id,
+        batsman1Name: strikerBefore.name,
+        batsman1Runs: 0,
+        batsman1Balls: 0,
+        batsman2Id: nonStrikerBefore.id,
+        batsman2Name: nonStrikerBefore.name,
+        batsman2Runs: 0,
+        batsman2Balls: 0,
+        totalRuns: 0,
+        totalBalls: 0
+      };
+    }
+  }
+
+  if (newState.currentPartnership) {
+    const cp = newState.currentPartnership;
+    const runsAdded = (extraType === 'wide' || extraType === 'noball') ? totalRuns : completedRuns;
+    // Note: extras (wide/nb) count to partnership total? Yes, usually.
+    // But strictly partnership runs = runs off bat + extras faced?
+    // Standard: Partnership includes all runs added to total during the pair's stay.
+    cp.totalRuns += totalRuns;
+    if (isLegal) cp.totalBalls += 1;
+
+    // Individual contribution
+    if (extraType !== 'wide') {
+      const strikerId = strikerBefore.id;
+      if (strikerId === cp.batsman1Id) {
+        cp.batsman1Runs += (extraType === 'bye' || extraType === 'legbye') ? 0 : completedRuns;
+        cp.batsman1Balls += 1;
+      } else if (strikerId === cp.batsman2Id) {
+        cp.batsman2Runs += (extraType === 'bye' || extraType === 'legbye') ? 0 : completedRuns;
+        cp.batsman2Balls += 1;
+      }
+    }
+  }
+
+  // Handle Wicket for FOW and Partnership Close
+  if (wicket) {
+    const dismissedId = wicket.dismissedBatsman === 'striker' ? strikerBefore.id : nonStrikerBefore.id;
+    const dismissedName = wicket.dismissedBatsman === 'striker' ? strikerBefore.name : nonStrikerBefore.name;
+
+    // Add FOW
+    newState.fallOfWickets.push({
+      wicketNumber: newState[scoreKey].wickets, // Wicket count incremented earlier at Step 4
+      batsmanId: dismissedId,
+      batsmanName: dismissedName,
+      score: newState[scoreKey].runs,
+      overs: formatOvers(newState[scoreKey].balls)
+    });
+
+    // Close Partnership
+    if (newState.currentPartnership) {
+      newState.partnerships.push(newState.currentPartnership);
+      newState.currentPartnership = null;
+    }
+  }
+
   newState.currentOver.push(ballDisplayText);
   if (isOverComplete) newState.currentOver = [];
-  
+
   newState.ballHistory.push(ballEvent);
 
   // Check innings/match completion
@@ -263,7 +349,7 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
 
   const isLastBallOfInnings = isLegal && currentTotalBalls >= maxBalls;
   const isAllOut = currentTotalWickets >= 10;
-  
+
   // If target is reached in 2nd innings
   let targetReached = false;
   if (newState.currentInnings === 2 && newState.target !== undefined) {
@@ -314,6 +400,9 @@ export function initialMatchState(matchOvers: number = 20, team1BattingFirst: bo
     team1BattingFirst,
     isMatchComplete: false,
     isFreeHit: false,
-    ballHistory: []
+    ballHistory: [],
+    fallOfWickets: [],
+    partnerships: [],
+    currentPartnership: null
   };
 }

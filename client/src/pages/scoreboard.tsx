@@ -61,7 +61,8 @@ export default function Scoreboard() {
     const saved = localStorage.getItem(STORAGE_KEYS.MATCH_STATE);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return { ...createInitialMatchState(), ...parsed };
       } catch {
         return createInitialMatchState();
       }
@@ -1694,49 +1695,47 @@ export default function Scoreboard() {
                 </div>
 
                 {/* Fall of Wickets */}
-                {battingTeamScore.wickets > 0 && (
+                {matchState.fallOfWickets && matchState.fallOfWickets.length > 0 && (
                   <div>
                     <h3 className="text-blue-600 font-bold text-sm mb-2">Fall of Wickets</h3>
                     <div className="space-y-2">
-                      {currentBattingStats
-                        .filter(b => b.isOut)
-                        .map((batsman, idx) => (
-                          <div key={batsman.id || idx} className="flex justify-between text-sm py-1 border-b border-gray-100">
-                            <span className="text-gray-600">
-                              <span className="font-bold text-gray-900 mr-2">{idx + 1}</span>
-                              {batsman.name}
-                            </span>
-                            <span className="text-gray-500">{batsman.runs} ({batsman.balls})</span>
-                          </div>
-                        ))}
+                      {matchState.fallOfWickets.map((fow) => (
+                        <div key={fow.wicketNumber} className="flex justify-between text-sm py-1 border-b border-gray-100">
+                          <span className="text-gray-600">
+                            <span className="font-bold text-gray-900 mr-2">{fow.wicketNumber}</span>
+                            {fow.batsmanName}
+                          </span>
+                          <span className="text-gray-500">{fow.score} ({fow.overs})</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
                 {/* Partnership */}
-                {matchState.strikeBatsman.id && matchState.nonStrikeBatsman.id && (
+                {matchState.currentPartnership && (
                   <div>
                     <h3 className="text-blue-600 font-bold text-sm mb-2">Current Partnership</h3>
                     <div className="bg-blue-50 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="text-center">
-                          <div className="font-medium text-gray-900">{matchState.strikeBatsman.name}</div>
+                          <div className="font-medium text-gray-900">{matchState.currentPartnership.batsman1Name}</div>
                           <div className="text-sm text-gray-500">
-                            {getCurrentBatsmanStats(true).runs}({getCurrentBatsmanStats(true).balls})
+                            {matchState.currentPartnership.batsman1Runs}({matchState.currentPartnership.batsman1Balls})
                           </div>
                         </div>
                         <div className="text-center">
                           <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
-                            {getCurrentBatsmanStats(true).runs + getCurrentBatsmanStats(false).runs}
+                            {matchState.currentPartnership.totalRuns}
                           </div>
                           <div className="text-xs text-blue-600 mt-1">
-                            {getCurrentBatsmanStats(true).balls + getCurrentBatsmanStats(false).balls} Balls
+                            {matchState.currentPartnership.totalBalls} Balls
                           </div>
                         </div>
                         <div className="text-center">
-                          <div className="font-medium text-gray-900">{matchState.nonStrikeBatsman.name}</div>
+                          <div className="font-medium text-gray-900">{matchState.currentPartnership.batsman2Name}</div>
                           <div className="text-sm text-gray-500">
-                            {getCurrentBatsmanStats(false).runs}({getCurrentBatsmanStats(false).balls})
+                            {matchState.currentPartnership.batsman2Runs}({matchState.currentPartnership.batsman2Balls})
                           </div>
                         </div>
                       </div>
