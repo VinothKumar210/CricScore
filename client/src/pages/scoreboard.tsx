@@ -356,10 +356,11 @@ export default function Scoreboard() {
     });
   }, [bowlingTeamPlayers]);
 
-  // Get max wickets based on team size
+  // Max wickets is always 10 (standard cricket rules)
+  // This allows users to add guest players mid-match if team has fewer than 11
   const getMaxWickets = useCallback(() => {
-    return Math.max(battingTeamPlayers.length - 1, 1);
-  }, [battingTeamPlayers]);
+    return 10;
+  }, []);
 
   // Handle match end
   const handleMatchEnd = useCallback((reason: 'chase' | 'complete') => {
