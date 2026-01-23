@@ -411,6 +411,11 @@ export default function Scoreboard() {
       title: "Innings Complete",
       description: `Target: ${matchState.target} runs`
     });
+
+    // Trigger opening batsmen selection for the new innings
+    setTimeout(() => {
+      setShowInitialBatsmanSelect(true);
+    }, 300);
   }, [matchState.target, toast]);
 
   // Check if innings is complete
@@ -1110,11 +1115,6 @@ export default function Scoreboard() {
                   </h2>
                   <p className="text-xs text-blue-600 font-medium uppercase tracking-wider">
                     {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
-                    {matchState.currentInnings === 2 && matchState.target && (
-                      <span className="ml-2 bg-blue-600 text-white px-2 py-0.5 rounded-full text-[10px]">
-                        Target: {matchState.target} | Need {Math.max(0, matchState.target - battingTeamScore.runs)}
-                      </span>
-                    )}
                   </p>
 
                   {matchState.isFreeHit && (
@@ -1132,12 +1132,30 @@ export default function Scoreboard() {
                     <span className="bg-white px-2 py-1 rounded-lg shadow-sm">Extras: {battingTeamScore.extras.wides + battingTeamScore.extras.noBalls + battingTeamScore.extras.byes + battingTeamScore.extras.legByes}</span>
                     <span className="bg-white px-2 py-1 rounded-lg shadow-sm">Overs: {formatOvers(battingTeamScore.balls)} / {matchState.matchOvers}</span>
                     <span className="bg-white px-2 py-1 rounded-lg shadow-sm">CRR: {battingTeamScore.balls > 0 ? (battingTeamScore.runs / (battingTeamScore.balls / 6)).toFixed(2) : '0.00'}</span>
+                    {/* Required Run Rate - only in 2nd innings */}
+                    {matchState.currentInnings === 2 && matchState.target && (() => {
+                      const remainingRuns = Math.max(0, matchState.target - battingTeamScore.runs);
+                      const remainingBalls = Math.max(0, matchState.matchOvers * 6 - battingTeamScore.balls);
+                      const rrr = remainingBalls > 0 ? (remainingRuns / (remainingBalls / 6)).toFixed(2) : '0.00';
+                      return <span className="bg-white px-2 py-1 rounded-lg shadow-sm">RRR: {rrr}</span>;
+                    })()}
                   </div>
 
                   {/* Partnership */}
                   <div className="text-xs font-medium text-blue-500">
                     Partnership: {getCurrentBatsmanStats(true).runs + getCurrentBatsmanStats(false).runs}({getCurrentBatsmanStats(true).balls + getCurrentBatsmanStats(false).balls})
                   </div>
+
+                  {/* Target Chase Info - only in 2nd innings */}
+                  {matchState.currentInnings === 2 && matchState.target && (() => {
+                    const remainingRuns = Math.max(0, matchState.target - battingTeamScore.runs);
+                    const remainingBalls = Math.max(0, matchState.matchOvers * 6 - battingTeamScore.balls);
+                    return (
+                      <div className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold mt-1 inline-block">
+                        Target - {matchState.target} | Need {remainingRuns} runs of {remainingBalls} balls
+                      </div>
+                    );
+                  })()}
 
                   {/* Current Over Display */}
                   {matchState.currentOver.length > 0 && (
