@@ -47,7 +47,7 @@ export default function LocalMatch() {
       const savedOvers = localStorage.getItem("fixtureOvers");
       const savedFixtureId = localStorage.getItem("selectedFixtureId");
       const savedVenue = localStorage.getItem("fixtureVenue");
-      
+
       if (savedTeamA && savedTeamB) {
         const tA = JSON.parse(savedTeamA);
         const tB = JSON.parse(savedTeamB);
@@ -57,7 +57,7 @@ export default function LocalMatch() {
       if (savedOvers) setOvers(parseInt(savedOvers));
       if (savedFixtureId) setFixtureId(savedFixtureId);
       if (savedVenue) setVenue(savedVenue);
-      
+
       localStorage.removeItem("fixtureTeamA");
       localStorage.removeItem("fixtureTeamB");
       localStorage.removeItem("fixtureOvers");
@@ -82,7 +82,7 @@ export default function LocalMatch() {
 
   const handleTeamSelect = (team: { id: string; name: string; logo?: string; players?: any[] }) => {
     const teamSide = selectingTeam === "A" ? "my" : "opponent";
-    
+
     const selectedTeam: SelectedTeam = {
       id: team.id,
       name: team.name,
@@ -160,11 +160,11 @@ export default function LocalMatch() {
       venue: venue.trim() || null,
     };
 
-try {
-        const token = localStorage.getItem("auth_token");
-        const url = fixtureId ? `/api/fixtures/${fixtureId}` : '/api/fixtures';
-        const method = fixtureId ? 'PUT' : 'POST';
-      
+    try {
+      const token = localStorage.getItem("auth_token");
+      const url = fixtureId ? `/api/fixtures/${fixtureId}` : '/api/fixtures';
+      const method = fixtureId ? 'PUT' : 'POST';
+
       const response = await fetch(url, {
         method,
         headers: {
@@ -174,18 +174,18 @@ try {
         body: JSON.stringify(fixtureData),
       });
 
-if (!response.ok) {
-          throw new Error('Failed to save fixture');
-        }
+      if (!response.ok) {
+        throw new Error('Failed to save fixture');
+      }
 
-        clearFixturesCache();
-        await queryClient.invalidateQueries({ queryKey: ["/api/fixtures"] });
-          
-        toast({
+      clearFixturesCache();
+      await queryClient.invalidateQueries({ queryKey: ["/api/fixtures"] });
+
+      toast({
         title: "Fixture Saved",
         description: "Match fixture has been saved successfully.",
       });
-      
+
       setLocation("/create-match");
     } catch (error) {
       toast({
@@ -196,7 +196,7 @@ if (!response.ok) {
     }
   };
 
-    const handleTossComplete = async (tossWinner: "teamA" | "teamB", decision: "bat" | "bowl") => {
+  const handleTossComplete = async (tossWinner: "teamA" | "teamB", decision: "bat" | "bowl") => {
     const winnerTeam = tossWinner === "teamA" ? teamA : teamB;
     const loserTeam = tossWinner === "teamA" ? teamB : teamA;
 
@@ -229,10 +229,11 @@ if (!response.ok) {
     }
 
     localStorage.setItem("matchOvers", overs.toString());
+    localStorage.setItem("cricscorer_match_config", JSON.stringify({ overs }));
     localStorage.setItem("tossCompleted", "true");
     localStorage.setItem("tossWinner", winnerTeam?.name || "");
     localStorage.setItem("tossDecision", decision);
-    
+
     localStorage.removeItem("cricscorer_match_state");
 
     const matchData = {
@@ -416,14 +417,14 @@ if (!response.ok) {
         />
       )}
 
-        <Dialog open={addGuestPlayerOpen} onOpenChange={setAddGuestPlayerOpen}>
-          <DialogContent className="max-w-sm bg-white" aria-describedby="add-guest-player-desc">
-            <DialogHeader>
-              <DialogTitle className="text-gray-900">Add Guest Player</DialogTitle>
-              <DialogDescription id="add-guest-player-desc" className="sr-only">
-                Enter the name of a guest player to add to the team
-              </DialogDescription>
-            </DialogHeader>
+      <Dialog open={addGuestPlayerOpen} onOpenChange={setAddGuestPlayerOpen}>
+        <DialogContent className="max-w-sm bg-white" aria-describedby="add-guest-player-desc">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">Add Guest Player</DialogTitle>
+            <DialogDescription id="add-guest-player-desc" className="sr-only">
+              Enter the name of a guest player to add to the team
+            </DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <Input
               placeholder="Player Name"
