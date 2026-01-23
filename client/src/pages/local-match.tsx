@@ -234,6 +234,9 @@ export default function LocalMatch() {
     localStorage.setItem("tossCompleted", "true");
     localStorage.setItem("tossWinner", winnerTeam?.name || "");
     localStorage.setItem("tossDecision", decision);
+    // Store team names for scoreboard result display
+    localStorage.setItem("myTeamName", teamA?.name || "Team 1");
+    localStorage.setItem("opponentTeamName", teamB?.name || "Team 2");
 
     localStorage.removeItem("cricscorer_match_state");
 

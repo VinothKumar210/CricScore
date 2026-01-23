@@ -62,6 +62,7 @@ export interface FallOfWicket {
   batsmanName: string;
   score: number;
   overs: string;
+  inningsNumber: 1 | 2;
 }
 
 export interface Partnership {
@@ -99,6 +100,8 @@ export interface MatchState {
   fallOfWickets: FallOfWicket[];
   partnerships: Partnership[];
   currentPartnership: Partnership | null;
+  team1Name: string;
+  team2Name: string;
 }
 
 export interface BallEventRecord {
@@ -117,6 +120,7 @@ export interface BallEventRecord {
   bowlerId: string;
   bowlerName: string;
   displayText: string;
+  inningsNumber: 1 | 2;
 }
 
 export interface BallInput {
@@ -272,7 +276,8 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     isFreeHit: wasFreeHit,
     bowlerId: bowlerIdBefore,
     bowlerName: state.currentBowler.name,
-    displayText: ballDisplayText
+    displayText: ballDisplayText,
+    inningsNumber: newState.currentInnings
   };
 
   // Update Partnership
@@ -327,7 +332,8 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
       batsmanId: dismissedId,
       batsmanName: dismissedName,
       score: newState[scoreKey].runs,
-      overs: formatOvers(newState[scoreKey].balls)
+      overs: formatOvers(newState[scoreKey].balls),
+      inningsNumber: newState.currentInnings
     });
 
     // Close Partnership
@@ -360,23 +366,74 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
 
   if (isLastBallOfInnings || isAllOut || targetReached) {
     if (newState.currentInnings === 1) {
-      newState.currentInnings = 2;
-      newState.target = newState[scoreKey].runs + 1;
-      // Reset for 2nd innings (ideally handled by caller but good to have here)
+      // Transition to second innings with proper state reset
+      const target = newState[scoreKey].runs + 1;
+      return transitionToSecondInnings(newState, target);
     } else {
       newState.isMatchComplete = true;
+      // Calculate result with team names and margin
       const t1Runs = newState.team1Score.runs;
       const t2Runs = newState.team2Score.runs;
-      if (t1Runs > t2Runs) newState.result = "Team 1 Wins";
-      else if (t2Runs > t1Runs) newState.result = "Team 2 Wins";
-      else newState.result = "Match Tied";
+      const team1Name = newState.team1Name || 'Team 1';
+      const team2Name = newState.team2Name || 'Team 2';
+
+      if (t1Runs > t2Runs) {
+        // Team 1 won
+        if (newState.team1BattingFirst) {
+          // Team 1 batted first and defended - won by runs
+          newState.result = `${team1Name} won by ${t1Runs - t2Runs} runs`;
+        } else {
+          // Team 1 batted second and chased - won by wickets
+          const wicketsRemaining = 10 - newState.team1Score.wickets;
+          newState.result = `${team1Name} won by ${wicketsRemaining} wickets`;
+        }
+      } else if (t2Runs > t1Runs) {
+        // Team 2 won
+        if (newState.team1BattingFirst) {
+          // Team 2 batted second and chased - won by wickets
+          const wicketsRemaining = 10 - newState.team2Score.wickets;
+          newState.result = `${team2Name} won by ${wicketsRemaining} wickets`;
+        } else {
+          // Team 2 batted first and defended - won by runs
+          newState.result = `${team2Name} won by ${t2Runs - t1Runs} runs`;
+        }
+      } else {
+        newState.result = 'Match Tied';
+      }
     }
   }
 
   return newState;
 }
 
-export function initialMatchState(matchOvers: number = 20, team1BattingFirst: boolean = true): MatchState {
+/**
+ * Transition from first to second innings with proper state reset.
+ * This ensures all per-innings state is cleared while preserving match-wide data.
+ */
+export function transitionToSecondInnings(state: MatchState, target: number): MatchState {
+  return {
+    ...state,
+    currentInnings: 2,
+    target,
+    // Reset current players
+    strikeBatsman: { id: '', name: '' },
+    nonStrikeBatsman: { id: '', name: '' },
+    currentBowler: { id: '', name: '' },
+    // Reset current over state
+    currentOver: [],
+    isFreeHit: false,
+    // Reset current partnership (will be initialized when new batsmen come in)
+    currentPartnership: null
+    // Note: ballHistory, fallOfWickets, partnerships are preserved (match-wide with inningsNumber)
+  };
+}
+
+export function initialMatchState(
+  matchOvers: number = 20,
+  team1BattingFirst: boolean = true,
+  team1Name: string = 'Team 1',
+  team2Name: string = 'Team 2'
+): MatchState {
   const emptyScore = (): TeamScore => ({
     runs: 0,
     wickets: 0,
@@ -403,6 +460,8 @@ export function initialMatchState(matchOvers: number = 20, team1BattingFirst: bo
     ballHistory: [],
     fallOfWickets: [],
     partnerships: [],
-    currentPartnership: null
+    currentPartnership: null,
+    team1Name,
+    team2Name
   };
 }

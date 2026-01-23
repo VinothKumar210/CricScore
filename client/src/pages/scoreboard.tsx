@@ -59,15 +59,19 @@ export default function Scoreboard() {
   // Match state
   const [matchState, setMatchState] = useState<MatchState>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.MATCH_STATE);
+    const team1Name = localStorage.getItem('myTeamName') || 'Team 1';
+    const team2Name = localStorage.getItem('opponentTeamName') || 'Team 2';
+
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return { ...createInitialMatchState(), ...parsed };
+        // Ensure team names are always set
+        return { ...createInitialMatchState(20, true, team1Name, team2Name), ...parsed, team1Name, team2Name };
       } catch {
-        return createInitialMatchState();
+        return createInitialMatchState(20, true, team1Name, team2Name);
       }
     }
-    return createInitialMatchState();
+    return createInitialMatchState(20, true, team1Name, team2Name);
   });
 
   // UI state
@@ -393,22 +397,10 @@ export default function Scoreboard() {
     setShowMatchEndedDialog(true);
   }, [matchState, getMaxWickets]);
 
-  // Handle innings end
+  // Handle innings end - UI-specific resets
+  // Note: Match state (batsmen, bowler, etc.) is already reset by transitionToSecondInnings in scoring.ts
   const handleInningsEnd = useCallback(() => {
-    const firstInningsScore = battingTeamScore.runs;
-
-    setMatchState(prev => ({
-      ...prev,
-      currentInnings: 2,
-      target: firstInningsScore + 1,
-      strikeBatsman: { id: '', name: '' },
-      nonStrikeBatsman: { id: '', name: '' },
-      currentBowler: { id: '', name: '' },
-      currentOver: [],
-      isFreeHit: false,
-      ballHistory: []
-    }));
-
+    // Reset UI state for the new innings
     setIsMatchStarted(false);
     setSelectedOpeningBatsmen([]);
     setSelectedOpeningBowler(null);
@@ -416,9 +408,9 @@ export default function Scoreboard() {
 
     toast({
       title: "Innings Complete",
-      description: `Target: ${firstInningsScore + 1} runs`
+      description: `Target: ${matchState.target} runs`
     });
-  }, [battingTeamScore, toast]);
+  }, [matchState.target, toast]);
 
   // Check if innings is complete
   const checkInningsComplete = useCallback((runs: number, wickets: number, balls: number) => {
@@ -485,6 +477,9 @@ export default function Scoreboard() {
     const isWicket = params.wicket !== null;
     const isOverComplete = newState.currentBowler.id === '' && matchState.currentBowler.id !== '';
 
+    // Check if innings just transitioned (first innings ended)
+    const inningsTransitioned = matchState.currentInnings === 1 && newState.currentInnings === 2;
+
     // Update local state
     setMatchState(newState);
 
@@ -500,20 +495,21 @@ export default function Scoreboard() {
       }
     }
 
-    // Identify current batting score to check wickets
+    // Identify current batting score to check wickets (use new state for innings transition case)
     const currentBattingScore = newState.currentInnings === 1
       ? (newState.team1BattingFirst ? newState.team1Score : newState.team2Score)
       : (newState.team1BattingFirst ? newState.team2Score : newState.team1Score);
 
     // Show dialogs if necessary
-    if (!newState.isMatchComplete) {
-      if (isWicket && currentBattingScore.wickets < getMaxWickets()) {
-        setTimeout(() => setShowBatsmanSelectDialog(true), 150);
-      } else if (isOverComplete) {
-        setTimeout(() => setShowBowlerSelectDialog(true), 150);
-      }
-    } else {
+    if (newState.isMatchComplete) {
       setShowMatchEndedDialog(true);
+    } else if (inningsTransitioned) {
+      // Innings just ended, show the transition dialog
+      setShowEndInningsDialog(true);
+    } else if (isWicket && currentBattingScore.wickets < getMaxWickets()) {
+      setTimeout(() => setShowBatsmanSelectDialog(true), 150);
+    } else if (isOverComplete) {
+      setTimeout(() => setShowBowlerSelectDialog(true), 150);
     }
   }, [matchState, saveStateForUndo, isMatchStarted, toast, getMaxWickets]);
 
