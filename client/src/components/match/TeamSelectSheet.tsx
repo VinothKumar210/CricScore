@@ -23,12 +23,12 @@ interface TeamSuggestion {
   logoUrl?: string;
 }
 
-export function TeamSelectSheet({ 
-  open, 
-  onOpenChange, 
-  onTeamSelect, 
+export function TeamSelectSheet({
+  open,
+  onOpenChange,
+  onTeamSelect,
   isMyTeam,
-  onCreateTeam 
+  onCreateTeam
 }: TeamSelectSheetProps) {
   const { user } = useAuth();
   const [teamIdSearch, setTeamIdSearch] = useState("");
@@ -107,13 +107,15 @@ export function TeamSelectSheet({
 
     const players = [
       ...members.map((m: any) => ({
-        name: m.user?.username || m.username || "Unknown",
+        id: m.user?.id || m.userId || `member-${Math.random().toString(36).substr(2, 9)}`,
+        name: m.user?.profileName || m.user?.username || m.username || "Unknown",
         hasAccount: true,
         username: m.user?.username || m.username || "",
         userId: m.user?.id || m.userId,
         profileImage: m.user?.profileImage,
       })),
       ...guestPlayers.map((g: any) => ({
+        id: g.id || `guest-${Math.random().toString(36).substr(2, 9)}`,
         name: g.name,
         hasAccount: false,
         username: "",
@@ -147,11 +149,11 @@ export function TeamSelectSheet({
 
   const handleSearchByTeamId = async () => {
     if (!teamIdSearch.trim()) return;
-    
+
     setIsSearching(true);
     setSearchError(null);
     setShowSuggestions(false);
-    
+
     try {
       const teamWithMembers = await fetchTeamByCode(teamIdSearch.trim());
       onTeamSelect(teamWithMembers);
@@ -168,7 +170,7 @@ export function TeamSelectSheet({
     setIsSearching(true);
     setSearchError(null);
     setShowSuggestions(false);
-    
+
     try {
       const teamWithMembers = await fetchTeamWithMembers(suggestion.id);
       onTeamSelect(teamWithMembers);
@@ -198,18 +200,18 @@ export function TeamSelectSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl p-0 bg-white">
         <div className="bg-white text-gray-900 px-4 py-4 rounded-t-3xl flex items-center gap-3 border-b">
-          <button 
+          <button
             onClick={() => onOpenChange(false)}
             className="p-1 hover:bg-gray-100 rounded-full transition-colors"
           >
             <X className="h-5 w-5 text-gray-600" />
           </button>
           <SheetTitle className="text-gray-900 text-lg font-semibold">Select Team</SheetTitle>
-            <SheetDescription className="sr-only">
-              Search for a team by ID or select from your existing teams
-            </SheetDescription>
+          <SheetDescription className="sr-only">
+            Search for a team by ID or select from your existing teams
+          </SheetDescription>
         </div>
-        
+
         <div className="p-4 space-y-6 overflow-y-auto h-[calc(85vh-60px)] bg-white">
           <div>
             <h3 className="font-semibold text-blue-600 mb-3">Option 1</h3>
@@ -233,7 +235,7 @@ export function TeamSelectSheet({
                   <Search className="h-5 w-5" />
                 )}
               </button>
-              
+
               {showSuggestions && suggestions.length > 0 && (
                 <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                   {suggestions.map((suggestion) => (
@@ -244,9 +246,9 @@ export function TeamSelectSheet({
                     >
                       <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden shrink-0">
                         {suggestion.logoUrl ? (
-                          <img 
-                            src={suggestion.logoUrl} 
-                            alt={suggestion.name} 
+                          <img
+                            src={suggestion.logoUrl}
+                            alt={suggestion.name}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -282,7 +284,7 @@ export function TeamSelectSheet({
               <div>
                 <h3 className="font-semibold text-blue-600 mb-2">Option 3</h3>
                 <p className="text-sm text-gray-500 mb-3">Select one from your existing teams</p>
-                
+
                 {teamsLoading ? (
                   <div className="flex justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -298,9 +300,9 @@ export function TeamSelectSheet({
                       >
                         <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
                           {(team as any).logoUrl ? (
-                            <img 
-                              src={(team as any).logoUrl} 
-                              alt={team.name} 
+                            <img
+                              src={(team as any).logoUrl}
+                              alt={team.name}
                               className="w-full h-full object-cover"
                             />
                           ) : (
