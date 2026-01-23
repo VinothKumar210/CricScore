@@ -507,9 +507,11 @@ export default function Scoreboard() {
       // Innings just ended, show the transition dialog
       setShowEndInningsDialog(true);
     } else if (isWicket && currentBattingScore.wickets < getMaxWickets()) {
-      setTimeout(() => setShowBatsmanSelectDialog(true), 150);
+      // Show batsman selection immediately (removed 150ms delay for faster UX)
+      setShowBatsmanSelectDialog(true);
     } else if (isOverComplete) {
-      setTimeout(() => setShowBowlerSelectDialog(true), 150);
+      // Show bowler selection immediately (removed 150ms delay for faster UX)
+      setShowBowlerSelectDialog(true);
     }
   }, [matchState, saveStateForUndo, isMatchStarted, toast, getMaxWickets]);
 
