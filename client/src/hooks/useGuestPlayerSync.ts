@@ -66,10 +66,10 @@ export function useGuestPlayerSync() {
 
   const syncPendingPlayers = useCallback(async () => {
     if (isSyncing.current || !navigator.onLine) return;
-    
+
     isSyncing.current = true;
     const pending = getPendingPlayers();
-    
+
     for (const player of pending) {
       try {
         await apiRequest('POST', `/api/teams/${player.teamId}/guest-players`, {
@@ -78,12 +78,13 @@ export function useGuestPlayerSync() {
         });
         removePendingPlayer(player.teamId, player.name);
       } catch (error: any) {
-        if (error?.message?.includes('already exists')) {
+        // Remove from pending if already exists or if we don't have permission (403)
+        if (error?.message?.includes('already exists') || error?.message?.includes('403') || error?.message?.includes('Forbidden')) {
           removePendingPlayer(player.teamId, player.name);
         }
       }
     }
-    
+
     isSyncing.current = false;
   }, [getPendingPlayers, removePendingPlayer]);
 
@@ -93,7 +94,7 @@ export function useGuestPlayerSync() {
     };
 
     window.addEventListener('online', handleOnline);
-    
+
     if (navigator.onLine) {
       syncPendingPlayers();
     }
