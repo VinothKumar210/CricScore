@@ -13,6 +13,7 @@ import { PlayerSelectSheet } from "@/components/match/PlayerSelectSheet";
 import { cn } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { clearFixturesCache } from "@/hooks/use-fixtures-cache";
+import { apiRequest } from "@/lib/queryClient";
 import type { LocalPlayer } from "@shared/schema";
 
 interface SelectedTeam {
