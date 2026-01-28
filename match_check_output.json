@@ -1,0 +1,130 @@
+{
+  "found": true,
+  "matches": [
+    {
+      "id": "6979cf7b4c78eb5ab638debf",
+      "description": "GameChanger vs Kovai Bulls",
+      "date": "2026-01-28T08:57:31.260Z",
+      "result": "AWAY_WIN"
+    }
+  ],
+  "match": {
+    "id": "6979cf7b4c78eb5ab638debf",
+    "matchDate": "2026-01-28T08:57:31.249Z",
+    "venue": "Local Ground",
+    "homeTeamName": "GameChanger",
+    "homeTeamId": "6979cec74c78eb5ab638deba",
+    "awayTeamName": "Kovai Bulls",
+    "awayTeamId": "6979ce244c78eb5ab638deb4",
+    "result": "AWAY_WIN",
+    "winningTeam": "Kovai Bulls",
+    "firstInningsTeam": "GameChanger",
+    "firstInningsRuns": 20,
+    "firstInningsWickets": 0,
+    "firstInningsOvers": 2,
+    "secondInningsTeam": "Kovai Bulls",
+    "secondInningsRuns": 21,
+    "secondInningsWickets": 0,
+    "secondInningsOvers": 1.833333333333333,
+    "target": 21,
+    "totalOvers": 20,
+    "manOfTheMatchPlayerName": null,
+    "manOfTheMatchUserId": null,
+    "manOfTheMatchStats": null,
+    "firstInningsBatsmen": [
+      {
+        "name": "Vinoth_210",
+        "runs": 15,
+        "balls": 7,
+        "fours": 1,
+        "sixes": 1,
+        "isOut": false
+      },
+      {
+        "name": "hari",
+        "runs": 5,
+        "balls": 5,
+        "fours": 0,
+        "sixes": 0,
+        "isOut": false
+      }
+    ],
+    "firstInningsBowlers": [
+      {
+        "name": "vinoth",
+        "overs": 1,
+        "runs": 6,
+        "wickets": 0
+      },
+      {
+        "name": "abi",
+        "overs": 1,
+        "runs": 14,
+        "wickets": 0
+      }
+    ],
+    "secondInningsBatsmen": [
+      {
+        "name": "vinoth",
+        "runs": 17,
+        "balls": 7,
+        "fours": 1,
+        "sixes": 1,
+        "isOut": false
+      },
+      {
+        "name": "abi",
+        "runs": 4,
+        "balls": 4,
+        "fours": 0,
+        "sixes": 0,
+        "isOut": false
+      }
+    ],
+    "secondInningsBowlers": [
+      {
+        "name": "Vinoth_210",
+        "overs": 1,
+        "runs": 14,
+        "wickets": 0
+      },
+      {
+        "name": "hari",
+        "overs": 0.5,
+        "runs": 7,
+        "wickets": 0
+      }
+    ],
+    "createdAt": "2026-01-28T08:57:31.260Z"
+  },
+  "history": [
+    {
+      "id": "6979cf814c78eb5ab638dec7",
+      "userId": "6979ced74c78eb5ab638debc",
+      "matchSummaryId": "6979cf7b4c78eb5ab638debf",
+      "teamName": "GameChanger",
+      "teamId": "6979cec74c78eb5ab638deba",
+      "playerName": "hari",
+      "runsScored": 5,
+      "ballsFaced": 5,
+      "wicketsTaken": 0,
+      "oversBowled": 0.5,
+      "isManOfTheMatch": false,
+      "createdAt": "2026-01-28T08:57:37.417Z"
+    },
+    {
+      "id": "6979cf844c78eb5ab638deca",
+      "userId": "6979ce3a4c78eb5ab638deb6",
+      "matchSummaryId": "6979cf7b4c78eb5ab638debf",
+      "teamName": "Kovai Bulls",
+      "teamId": "6979ce244c78eb5ab638deb4",
+      "playerName": "abi",
+      "runsScored": 4,
+      "ballsFaced": 4,
+      "wicketsTaken": 0,
+      "oversBowled": 1,
+      "isManOfTheMatch": false,
+      "createdAt": "2026-01-28T08:57:40.283Z"
+    }
+  ]
+}

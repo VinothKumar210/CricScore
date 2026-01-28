@@ -272,7 +272,7 @@ export default function Teams() {
               Search for players by username and send them team invitations.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* User Search Section */}
             <div className="space-y-4">
@@ -280,7 +280,7 @@ export default function Teams() {
                 <Search className="mr-2 h-4 w-4" />
                 Find Player
               </h4>
-              
+
               <Form {...searchForm}>
                 <form onSubmit={searchForm.handleSubmit(onSearchUser)} className="space-y-4">
                   <FormField
@@ -323,7 +323,7 @@ export default function Teams() {
                     <UserPlus className="mr-2 h-4 w-4" />
                     Player Found
                   </h4>
-                  
+
                   <Card>
                     <CardContent className="pt-4">
                       <div className="space-y-2">
@@ -348,7 +348,7 @@ export default function Teams() {
                           <span className="font-medium">{searchedUser.bowlingStyle || "Not specified"}</span>
                         </div>
                       </div>
-                      
+
                       <div className="mt-4 flex space-x-2">
                         <Button
                           onClick={handleSendInvitation}
@@ -381,11 +381,11 @@ export default function Teams() {
           teams.map((team: any) => {
             const userRole = getUserRole(team);
             const RoleIcon = userRole.icon;
-            
+
             return (
-              <Link 
-                key={team.id} 
-                href={`/teams/${team.id}`}
+              <Link
+                key={team.id}
+                href={`/teams/${team.teamCode}`}
                 onClick={() => sessionStorage.setItem("teamDetailReferrer", "/teams")}
               >
                 <Card className="hover:shadow-lg transition-shadow cursor-pointer" data-testid={`card-team-${team.id}`}>
@@ -413,8 +413,8 @@ export default function Teams() {
 
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Team ID</span>
-                        <span className="font-medium text-foreground">{team.id.substring(0, 8)}...</span>
+                        <span className="text-muted-foreground">Team Code</span>
+                        <span className="font-medium text-foreground">{team.teamCode}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Role</span>

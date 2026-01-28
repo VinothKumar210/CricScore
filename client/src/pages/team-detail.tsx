@@ -225,7 +225,7 @@ function TeamMatchHistory({ teamId, teamName }: { teamId: string; teamName: stri
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
-      
+
       const url = `/api/team-match-history/${teamId}?page=${currentPage}&limit=${itemsPerPage}`;
       const response = await fetch(url, {
         headers,
@@ -258,10 +258,10 @@ function TeamMatchHistory({ teamId, teamName }: { teamId: string; teamName: stri
     const wholeOvers = Math.floor(overs);
     // Extract balls from decimal part (e.g., 4.3 -> 3 balls)
     const balls = Math.round((overs * 10) % 10);
-    
+
     // Ensure balls are in valid range 0-5 (6 balls = 1 over)
     const validBalls = Math.min(balls, 5);
-    
+
     return validBalls === 0 ? `${wholeOvers}.0` : `${wholeOvers}.${validBalls}`;
   };
 
@@ -269,35 +269,35 @@ function TeamMatchHistory({ teamId, teamName }: { teamId: string; teamName: stri
     // Determine which team the current team is (home or away) using teamId for accuracy
     const isHomeTeam = match.homeTeam?.id === teamId;
     const isAwayTeam = match.awayTeam?.id === teamId;
-    
+
     // If neither homeTeam nor awayTeam has the teamId, fall back to name comparison
     const isCurrentTeamHome = isHomeTeam || (!isAwayTeam && match.homeTeamName === teamName);
-    
-    const teamScore = isCurrentTeamHome 
+
+    const teamScore = isCurrentTeamHome
       ? (match.firstInningsTeam === match.homeTeamName ? match.firstInningsRuns : match.secondInningsRuns)
       : (match.firstInningsTeam === match.awayTeamName ? match.firstInningsRuns : match.secondInningsRuns);
-    const teamWickets = isCurrentTeamHome 
+    const teamWickets = isCurrentTeamHome
       ? (match.firstInningsTeam === match.homeTeamName ? match.firstInningsWickets : match.secondInningsWickets)
       : (match.firstInningsTeam === match.awayTeamName ? match.firstInningsWickets : match.secondInningsWickets);
-    const teamOvers = isCurrentTeamHome 
+    const teamOvers = isCurrentTeamHome
       ? (match.firstInningsTeam === match.homeTeamName ? match.firstInningsOvers : match.secondInningsOvers)
       : (match.firstInningsTeam === match.awayTeamName ? match.firstInningsOvers : match.secondInningsOvers);
-    
-    const opponentScore = isCurrentTeamHome 
+
+    const opponentScore = isCurrentTeamHome
       ? (match.firstInningsTeam === match.awayTeamName ? match.firstInningsRuns : match.secondInningsRuns)
       : (match.firstInningsTeam === match.homeTeamName ? match.firstInningsRuns : match.secondInningsRuns);
-    const opponentWickets = isCurrentTeamHome 
+    const opponentWickets = isCurrentTeamHome
       ? (match.firstInningsTeam === match.awayTeamName ? match.firstInningsWickets : match.secondInningsWickets)
       : (match.firstInningsTeam === match.homeTeamName ? match.firstInningsWickets : match.secondInningsWickets);
-    const opponentOvers = isCurrentTeamHome 
+    const opponentOvers = isCurrentTeamHome
       ? (match.firstInningsTeam === match.awayTeamName ? match.firstInningsOvers : match.secondInningsOvers)
       : (match.firstInningsTeam === match.homeTeamName ? match.firstInningsOvers : match.secondInningsOvers);
-    
+
     const opponentName = isCurrentTeamHome ? match.awayTeamName : match.homeTeamName;
     const isTeamWinner = match.winningTeam !== 'Draw' && match.winningTeam === teamName;
-    
+
     return (
-      <Card 
+      <Card
         className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary"
         onClick={() => setLocation(`/match-summary/${match.id}`)}
         data-testid={`team-match-card-${match.id}`}
@@ -351,8 +351,8 @@ function TeamMatchHistory({ teamId, teamName }: { teamId: string; teamName: stri
 
           {/* Match Result */}
           <div className="text-center">
-            <Badge 
-              variant={isTeamWinner ? "default" : "secondary"} 
+            <Badge
+              variant={isTeamWinner ? "default" : "secondary"}
               className="text-sm px-3 py-1"
               data-testid="text-match-result"
             >
@@ -434,7 +434,7 @@ function TeamMatchHistory({ teamId, teamName }: { teamId: string; teamName: stri
             <ChevronLeft className="h-4 w-4" />
             Previous
           </Button>
-          
+
           <div className="flex items-center space-x-1">
             {[...Array(Math.min(totalPages, 7))].map((_, i) => {
               let pageNum;
@@ -447,7 +447,7 @@ function TeamMatchHistory({ teamId, teamName }: { teamId: string; teamName: stri
               } else {
                 pageNum = currentPage - 3 + i;
               }
-              
+
               return (
                 <Button
                   key={pageNum}
@@ -462,7 +462,7 @@ function TeamMatchHistory({ teamId, teamName }: { teamId: string; teamName: stri
               );
             })}
           </div>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -767,17 +767,17 @@ export default function TeamDetail() {
         setSearchError("");
         return;
       }
-      
+
       try {
         const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchTerm.trim())}`);
         const users = await response.json();
-        
+
         // Filter out current user and already team members
-        const filteredUsers = users.filter((player: any) => 
+        const filteredUsers = users.filter((player: any) =>
           player.id !== user?.id && // Exclude current user
           !members?.some(member => member.id === player.id) // Exclude existing members
         );
-        
+
         setSearchResults(filteredUsers.slice(0, 10)); // Limit to 10 results
         setShowDropdown(filteredUsers.length > 0);
         setSearchError("");
@@ -806,30 +806,30 @@ export default function TeamDetail() {
       setSearchError("Please enter at least 2 characters");
       return;
     }
-    
+
     try {
       const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchTerm.trim())}`);
       const users = await response.json();
-      
+
       // Filter out current user and already team members
-      const filteredUsers = users.filter((player: any) => 
+      const filteredUsers = users.filter((player: any) =>
         player.id !== user?.id && // Exclude current user
         !members?.some(member => member.id === player.id) // Exclude existing members
       );
-      
+
       if (filteredUsers.length === 0) {
         setSearchError("No users found with that username");
         setSelectedUser(null);
         setShowDropdown(false);
         return;
       }
-      
+
       // If exact match found, select it
-      const exactMatch = filteredUsers.find((u: User) => 
+      const exactMatch = filteredUsers.find((u: User) =>
         u.username?.toLowerCase() === searchTerm.trim().toLowerCase() ||
         u.profileName?.toLowerCase() === searchTerm.trim().toLowerCase()
       );
-      
+
       if (exactMatch) {
         handleUserSelect(exactMatch);
       } else {
@@ -850,7 +850,7 @@ export default function TeamDetail() {
       setSearchError("Please select a user from the dropdown or search results");
       return;
     }
-    
+
     sendInviteMutation.mutate(selectedUser.username || "");
   };
 
@@ -930,7 +930,7 @@ export default function TeamDetail() {
   // Group members by role
   const captain = members?.find(member => member.id === team.captainId);
   const viceCaptain = members?.find(member => member.id === team.viceCaptainId);
-  const regularMembers = members?.filter(member => 
+  const regularMembers = members?.filter(member =>
     member.id !== team.captainId && member.id !== team.viceCaptainId
   ) || [];
 
@@ -938,10 +938,10 @@ export default function TeamDetail() {
     const isMemberCaptain = member.id === team.captainId;
     const isMemberViceCaptain = member.id === team.viceCaptainId;
     const isCurrentUser = member.id === user?.id;
-    
+
     // Determine what actions the current user can perform
     const canRemove = !isCurrentUser && (
-      (isCaptain && !isMemberCaptain) || 
+      (isCaptain && !isMemberCaptain) ||
       (isViceCaptain && !isMemberCaptain && !isMemberViceCaptain)
     );
     const canPromote = !isMemberCaptain && !isMemberViceCaptain && (isCaptain || isViceCaptain);
@@ -965,14 +965,14 @@ export default function TeamDetail() {
             </div>
             {/* Online status indicator could go here if needed */}
           </div>
-          
+
           {/* Player Info */}
           <div className="flex-1 min-w-0 space-y-1">
             <div className="flex items-center justify-between">
               <h4 className="font-semibold text-foreground text-base truncate pr-2">
                 {member.profileName || member.username}
               </h4>
-              
+
               {/* Role Badge */}
               <div className="flex items-center space-x-2 shrink-0">
                 {isMemberCaptain && (
@@ -992,7 +992,7 @@ export default function TeamDetail() {
                 )}
               </div>
             </div>
-            
+
             {/* Username and Player Role */}
             <div className="flex items-center space-x-3">
               <p className="text-sm text-muted-foreground font-mono">
@@ -1007,7 +1007,7 @@ export default function TeamDetail() {
                 </div>
               )}
             </div>
-            
+
             {/* Additional info could go here */}
             {isCurrentUser && (
               <div className="flex items-center space-x-1 mt-2">
@@ -1153,7 +1153,7 @@ export default function TeamDetail() {
             <span className="hidden sm:inline">Edit</span>
           </Button>
         )}
-        
+
         {/* Delete Button - Captain Only */}
         {isCaptain && (
           <AlertDialog>
@@ -1195,22 +1195,22 @@ export default function TeamDetail() {
       <div className="space-y-4">
         {/* Team info and actions */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pr-16 sm:pr-20">
-<div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl font-bold text-foreground break-words" data-testid="title-team-name">
-                  {team.name}
-                </h1>
-                {(team as any).teamCode && (
-                  <Badge variant="secondary" className="font-mono text-xs">
-                    {(team as any).teamCode}
-                  </Badge>
-                )}
-              </div>
-              <p className="text-muted-foreground mt-1">
-                {team.description || "No description provided"}
-              </p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold text-foreground break-words" data-testid="title-team-name">
+                {team.name}
+              </h1>
+              {(team as any).teamCode && (
+                <Badge variant="secondary" className="font-mono text-xs">
+                  {(team as any).teamCode}
+                </Badge>
+              )}
             </div>
-          
+            <p className="text-muted-foreground mt-1">
+              {team.description || "No description provided"}
+            </p>
+          </div>
+
           <div className="flex flex-wrap items-center gap-2">
             {isCaptain && (
               <Badge variant="default" className="flex items-center space-x-1 shrink-0">
@@ -1238,7 +1238,9 @@ export default function TeamDetail() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {/* Stats decommissioned
           <TeamStatistics teamId={id!} />
+          */}
         </CardContent>
       </Card>
 
@@ -1356,7 +1358,7 @@ export default function TeamDetail() {
                 const isCaptain = team?.captainId === user?.id;
                 const isCreator = guest.addedByUserId === user?.id;
                 const canManageGuest = isCaptain || isCreator;
-                
+
                 return (
                   <div
                     key={guest.id}
@@ -1368,7 +1370,7 @@ export default function TeamDetail() {
                           {guest.name.charAt(0).toUpperCase()}
                         </span>
                       </div>
-                      
+
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center justify-between">
                           <h4 className="font-semibold text-foreground text-base truncate pr-2">
@@ -1378,11 +1380,11 @@ export default function TeamDetail() {
                             Guest
                           </Badge>
                         </div>
-                        
+
                         <p className="text-xs text-muted-foreground">
                           Added by {guest.addedBy?.profileName || guest.addedBy?.username}
                         </p>
-                        
+
                         {/* Stats Summary */}
                         <div className="flex flex-wrap gap-2 mt-2">
                           <Badge variant="secondary" className="text-xs">
@@ -1471,7 +1473,7 @@ export default function TeamDetail() {
               Add a guest player to the team. You can link them to a real account later.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="guest-name">Guest Name</Label>
@@ -1483,7 +1485,7 @@ export default function TeamDetail() {
               />
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddGuestDialogOpen(false)}>
               Cancel
@@ -1515,7 +1517,7 @@ export default function TeamDetail() {
               Link "{selectedGuestPlayer?.name}" to a registered user. Their stats will be transferred.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="relative">
               <Input
@@ -1525,12 +1527,12 @@ export default function TeamDetail() {
                   const value = e.target.value;
                   setLinkSearchTerm(value);
                   setSelectedLinkUser(null);
-                  
+
                   if (value.trim().length >= 2) {
                     try {
                       const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(value.trim())}`);
                       const users = await response.json();
-                      const filteredUsers = users.filter((u: User) => 
+                      const filteredUsers = users.filter((u: User) =>
                         !members?.some(m => m.id === u.id)
                       );
                       setLinkSearchResults(filteredUsers.slice(0, 10));
@@ -1545,7 +1547,7 @@ export default function TeamDetail() {
                   }
                 }}
               />
-              
+
               {showLinkDropdown && linkSearchResults.length > 0 && (
                 <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto">
                   {linkSearchResults.map((player) => (
@@ -1572,7 +1574,7 @@ export default function TeamDetail() {
                 </div>
               )}
             </div>
-            
+
             {selectedLinkUser && (
               <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
                 <div className="flex items-center space-x-3">
@@ -1593,7 +1595,7 @@ export default function TeamDetail() {
               </div>
             )}
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsLinkGuestDialogOpen(false)}>
               Cancel
@@ -1634,7 +1636,7 @@ export default function TeamDetail() {
                 Search for a player by username and send them an invitation to join {team.name}.
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               {/* Search Input with Dropdown */}
               <div className="relative">
@@ -1663,10 +1665,10 @@ export default function TeamDetail() {
                       data-testid="input-search-username"
                       className={searchError ? "border-red-500" : ""}
                     />
-                    
+
                     {/* Live Search Dropdown */}
                     {showDropdown && searchResults.length > 0 && (
-                      <div 
+                      <div
                         data-dropdown
                         className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto"
                         onMouseDown={(e) => e.preventDefault()} // Prevent input from losing focus
@@ -1700,7 +1702,7 @@ export default function TeamDetail() {
                     <Search className="h-4 w-4" />
                   </Button>
                 </div>
-                
+
                 {/* Error Message */}
                 {searchError && (
                   <p className="text-sm text-red-500 mt-2" data-testid="search-error">
@@ -1708,7 +1710,7 @@ export default function TeamDetail() {
                   </p>
                 )}
               </div>
-              
+
               {/* Selected User Display */}
               {selectedUser && (
                 <div className="p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
@@ -1728,7 +1730,7 @@ export default function TeamDetail() {
                         </p>
                       </div>
                     </div>
-                    
+
                     <Button
                       size="sm"
                       onClick={handleInvite}
@@ -1742,7 +1744,7 @@ export default function TeamDetail() {
                 </div>
               )}
             </div>
-            
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
                 Cancel
@@ -1762,7 +1764,7 @@ export default function TeamDetail() {
                 Update your team's name and description.
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="team-name">Team Name</Label>
@@ -1774,7 +1776,7 @@ export default function TeamDetail() {
                   data-testid="input-team-name"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="team-description">Description</Label>
                 <Textarea
@@ -1787,12 +1789,12 @@ export default function TeamDetail() {
                 />
               </div>
             </div>
-            
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleUpdateTeam}
                 disabled={updateTeamMutation.isPending || !editForm.name.trim()}
                 data-testid="button-save-team"

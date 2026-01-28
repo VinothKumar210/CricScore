@@ -1099,41 +1099,347 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ============== DEPRECATED ENDPOINTS ==============
-  // These endpoints are deprecated and will be removed in a future version.
-  // Use /api/matches/submit-result instead.
-
-  /**
-   * @deprecated Use POST /api/matches/submit-result instead
-   * This endpoint is kept for backward compatibility but will be removed.
-   */
+  // Save local match results and update career stats
   app.post("/api/local-match-results", authenticateToken, async (req: any, res) => {
-    console.warn('DEPRECATED: /api/local-match-results is deprecated. Use /api/matches/submit-result instead.');
-    
-    // Return deprecation warning with redirect guidance
-    return res.status(410).json({
-      message: "This endpoint is deprecated",
-      deprecated: true,
-      useInstead: "POST /api/matches/submit-result",
-      documentation: "Please update your client to use the centralized /api/matches/submit-result endpoint which handles all match types (local, team, mixed) consistently."
-    });
+    try {
+      const {
+        matchName,
+        venue,
+        matchDate,
+        myTeamPlayers,
+        opponentTeamPlayers,
+        finalScore,
+        playerPerformances
+      } = req.body;
+
+      // Basic validation
+      if (!matchName || !venue || !matchDate || !myTeamPlayers || !opponentTeamPlayers || !playerPerformances) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+
+
+      // Calculate man of the match
+      const manOfTheMatchResult = calculateManOfTheMatch(playerPerformances, 'T20'); // Default to T20 format
+
+      const results = [];
+      const errors = [];
+
+      // Process performances for players with valid userIds
+      for (const performance of playerPerformances) {
+        const {
+          userId,
+          playerName,
+          runsScored = 0,
+          ballsFaced = 0,
+          oversBowled = 0,
+          runsConceded = 0,
+          wicketsTaken = 0,
+          catchesTaken = 0
+        } = performance;
+
+        // Only process if player has a valid userId (meaning they have an account)
+        if (userId) {
+          try {
+            // Determine if this player is man of the match
+            const isManOfTheMatch = manOfTheMatchResult &&
+              (manOfTheMatchResult.playerId === userId ||
+                (manOfTheMatchResult.playerName === playerName && !manOfTheMatchResult.playerId));
+
+            // Create match record for this player
+            const matchData = {
+              userId,
+              opponent: `Local Match vs ${myTeamPlayers.some((p: any) => p.userId === userId) ? 'Opponent Team' : 'My Team'}`,
+              matchDate: new Date(matchDate),
+              runsScored: parseInt(runsScored) || 0,
+              ballsFaced: parseInt(ballsFaced) || 0,
+              wasDismissed: false, // Default to false for local matches
+              oversBowled: parseFloat(oversBowled) || 0,
+              runsConceded: parseInt(runsConceded) || 0,
+              wicketsTaken: parseInt(wicketsTaken) || 0,
+              catchesTaken: parseInt(catchesTaken) || 0,
+              runOuts: 0, // Default to 0 for local matches
+              isManOfTheMatch: isManOfTheMatch || false
+            };
+
+            const match = await storage.createMatch(matchData);
+
+            // Update career statistics for this player (includes MOTM)
+            await storage.updateCareerStatsFromMatch(userId, matchData);
+
+            results.push({
+              playerName,
+              userId,
+              matchId: match.id,
+              status: 'success',
+              isManOfTheMatch: isManOfTheMatch
+            });
+          } catch (error) {
+            console.error(`Error saving match for player ${playerName}:`, error);
+            errors.push({
+              playerName,
+              userId,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            });
+          }
+        }
+      }
+
+      res.json({
+        message: "Local match results processed",
+        totalPlayers: playerPerformances.length,
+        playersWithAccounts: results.length,
+        successfulSaves: results.length,
+        errorCount: errors.length,
+        manOfTheMatch: manOfTheMatchResult,
+        results,
+        errors
+      });
+    } catch (error) {
+      console.error('Error processing local match results:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
-  /**
-   * @deprecated Use POST /api/matches/submit-result instead
-   * This endpoint is kept for backward compatibility but will be removed.
-   */
+  // Team match results endpoint - handles team vs team matches with database teams
   app.post("/api/team-match-results", authenticateToken, async (req: any, res) => {
-    console.warn('DEPRECATED: /api/team-match-results is deprecated. Use /api/matches/submit-result instead.');
-    
-    // Return deprecation warning with redirect guidance
-    return res.status(410).json({
-      message: "This endpoint is deprecated",
-      deprecated: true,
-      useInstead: "POST /api/matches/submit-result",
-      documentation: "Please update your client to use the centralized /api/matches/submit-result endpoint which handles all match types (local, team, mixed) consistently."
-    });
+    try {
+      const validatedData = teamMatchResultsSchema.parse(req.body);
+      const results = [];
+      let teamMatchId = null;
+
+      console.log('Processing team match results:', {
+        homeTeam: validatedData.homeTeamName,
+        awayTeam: validatedData.awayTeamName,
+        homeTeamId: validatedData.homeTeamId,
+        awayTeamId: validatedData.awayTeamId,
+        playerCount: validatedData.playerPerformances.length
+      });
+
+
+
+      // Calculate man of the match from player performances
+      const manOfTheMatchResult = calculateManOfTheMatch(validatedData.playerPerformances, 'T20');
+
+      // 1. Create team match record only if both teams are from database
+      if (validatedData.homeTeamId && validatedData.awayTeamId) {
+        console.log('Creating formal team match: both teams from database');
+        const teamMatch = await storage.createTeamMatch({
+          homeTeamId: validatedData.homeTeamId,
+          awayTeamId: validatedData.awayTeamId,
+          matchDate: validatedData.matchDate,
+          venue: validatedData.venue,
+          status: "COMPLETED",
+          result: validatedData.result,
+          homeTeamRuns: validatedData.homeTeamRuns,
+          homeTeamWickets: validatedData.homeTeamWickets,
+          homeTeamOvers: validatedData.homeTeamOvers,
+          awayTeamRuns: validatedData.awayTeamRuns,
+          awayTeamWickets: validatedData.awayTeamWickets,
+          awayTeamOvers: validatedData.awayTeamOvers
+        });
+        teamMatchId = teamMatch?.id;
+      } else if (validatedData.homeTeamId || validatedData.awayTeamId) {
+        console.log('Mixed team scenario - skipping formal team match creation but processing individual stats and team statistics');
+      }
+
+      // 2. Process each player's performance
+      for (const performance of validatedData.playerPerformances) {
+        // Skip players without user accounts
+        if (!performance.userId) {
+          console.log(`Skipping player ${performance.playerName} - no user account`);
+          continue;
+        }
+
+        try {
+          // Track original teamId for guest player scenarios
+          const originalTeamId = performance.teamId;
+          let isTeamMember = false;
+
+          // Validate team membership if player belongs to a database team
+          if (performance.teamId) {
+            isTeamMember = await storage.isTeamMember(performance.teamId, performance.userId);
+            if (!isTeamMember) {
+              console.log(`Player ${performance.playerName} is not a formal member of team ${performance.teamId} - treating as guest player`);
+              console.log(`Guest player will still contribute to team statistics but not formal team match records`);
+              // Keep teamId for team statistics calculation, but mark as guest
+              // performance.teamId stays as is for team stats calculation
+            } else {
+              console.log(`Player ${performance.playerName} is a validated member of team ${performance.teamId}`);
+            }
+          }
+
+          // Ensure player has career stats
+          const careerStats = await storage.ensureCareerStats(performance.userId);
+          if (!careerStats) {
+            results.push({
+              userId: performance.userId,
+              playerName: performance.playerName,
+              status: "error",
+              message: "Could not initialize career stats"
+            });
+            continue;
+          }
+
+          // Determine if this player is man of the match
+          const isManOfTheMatch = manOfTheMatchResult &&
+            (manOfTheMatchResult.playerId === performance.userId ||
+              (manOfTheMatchResult.playerName === performance.playerName && !manOfTheMatchResult.playerId));
+
+          // Create team match player record ONLY if:
+          // 1. We created a formal team match AND
+          // 2. Player has a teamId (database team) AND  
+          // 3. Player is a formal team member (not guest)
+          let teamMatchPlayerId = null;
+          if (teamMatchId && performance.teamId && isTeamMember) {
+            const teamMatchPlayer = await storage.createTeamMatchPlayer({
+              teamMatchId: teamMatchId,
+              userId: performance.userId,
+              teamId: performance.teamId,
+              runsScored: performance.runsScored,
+              ballsFaced: performance.ballsFaced,
+              wasDismissed: performance.wasDismissed,
+              oversBowled: performance.oversBowled,
+              runsConceded: performance.runsConceded,
+              wicketsTaken: performance.wicketsTaken,
+              catchesTaken: performance.catchesTaken
+            });
+            teamMatchPlayerId = teamMatchPlayer?.id;
+            console.log(`Created team match player record for member ${performance.playerName}`);
+          } else if (teamMatchId && performance.teamId && !isTeamMember) {
+            console.log(`Skipping team match player record for guest player ${performance.playerName}`);
+          }
+
+          // ALWAYS create individual match record for career stats with both innings data
+          const opponentName = performance.teamName === validatedData.homeTeamName
+            ? validatedData.awayTeamName
+            : validatedData.homeTeamName;
+
+          const individualMatch = await storage.createMatch({
+            userId: performance.userId,
+            opponent: `vs ${opponentName}`,
+            matchDate: validatedData.matchDate,
+            runsScored: performance.runsScored,
+            ballsFaced: performance.ballsFaced,
+            wasDismissed: performance.wasDismissed,
+            oversBowled: performance.oversBowled,
+            runsConceded: performance.runsConceded,
+            wicketsTaken: performance.wicketsTaken,
+            catchesTaken: performance.catchesTaken,
+            runOuts: performance.runOuts || 0,
+            isManOfTheMatch: isManOfTheMatch || false
+          });
+
+          // Career stats are automatically updated by createMatch()
+
+          results.push({
+            userId: performance.userId,
+            playerName: performance.playerName,
+            teamMatchPlayerId,
+            individualMatchId: individualMatch?.id,
+            isTeamMember: isTeamMember,
+            isGuestPlayer: !!originalTeamId && !isTeamMember,
+            teamId: originalTeamId, // Keep original for debugging
+            isManOfTheMatch: isManOfTheMatch || false,
+            status: "success"
+          });
+
+        } catch (error) {
+          console.error(`Error processing performance for ${performance.playerName}:`, error);
+          results.push({
+            userId: performance.userId,
+            playerName: performance.playerName,
+            status: "error",
+            message: error instanceof Error ? error.message : "Unknown error"
+          });
+        }
+      }
+
+      // 3. Update team statistics ONLY for database teams
+      const statisticsUpdates: Promise<void>[] = [];
+      const updatedTeamIds: string[] = [];
+
+      if (validatedData.homeTeamId) {
+        console.log(`Updating statistics for home team: ${validatedData.homeTeamId}`);
+        statisticsUpdates.push(
+          storage.calculateAndUpdateTeamStatistics(validatedData.homeTeamId!)
+            .then(() => {
+              updatedTeamIds.push(validatedData.homeTeamId!);
+              console.log(`Successfully updated statistics for home team: ${validatedData.homeTeamId}`);
+            })
+            .catch(error => {
+              console.error(`Failed to update statistics for home team ${validatedData.homeTeamId}:`, error);
+              throw error;
+            })
+        );
+      }
+
+      if (validatedData.awayTeamId) {
+        console.log(`Updating statistics for away team: ${validatedData.awayTeamId}`);
+        statisticsUpdates.push(
+          storage.calculateAndUpdateTeamStatistics(validatedData.awayTeamId!)
+            .then(() => {
+              updatedTeamIds.push(validatedData.awayTeamId!);
+              console.log(`Successfully updated statistics for away team: ${validatedData.awayTeamId}`);
+            })
+            .catch(error => {
+              console.error(`Failed to update statistics for away team ${validatedData.awayTeamId}:`, error);
+              throw error;
+            })
+        );
+      }
+
+      // Execute team statistics updates
+      let teamStatsError = null;
+      if (statisticsUpdates.length > 0) {
+        try {
+          await Promise.all(statisticsUpdates);
+          console.log(`Team statistics updated for ${updatedTeamIds.length} teams:`, updatedTeamIds);
+        } catch (error) {
+          console.error('Error updating team statistics:', error);
+          teamStatsError = error instanceof Error ? error.message : 'Unknown error';
+        }
+      }
+
+      const scenario = getMatchScenario(validatedData);
+      console.log(`Match processing completed. Scenario: ${scenario}, Players processed: ${results.length}`);
+
+      res.json({
+        message: "Team match results processed successfully",
+        scenario,
+        teamMatchId,
+        results,
+        playersProcessed: results.length,
+        updatedTeamIds,
+        teamsUpdated: updatedTeamIds.length,
+        teamStatsError,
+        manOfTheMatch: manOfTheMatchResult
+      });
+
+    } catch (error) {
+      console.error('Team match results error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      return handleDatabaseError(error, res);
+    }
   });
+
+  // Helper function to identify the match scenario
+  function getMatchScenario(data: any): string {
+    const hasHomeTeam = !!data.homeTeamId;
+    const hasAwayTeam = !!data.awayTeamId;
+
+    if (hasHomeTeam && hasAwayTeam) {
+      return "both_teams_from_database";
+    } else if (hasHomeTeam && !hasAwayTeam) {
+      return "only_home_team_from_database";
+    } else if (!hasHomeTeam && hasAwayTeam) {
+      return "only_away_team_from_database";
+    } else {
+      return "both_teams_local";
+    }
+  }
 
   // ============== SPECTATOR AND LIVE MATCH ROUTES ==============
 
@@ -1321,6 +1627,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({ message: "Spectator removed successfully" });
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Search users for spectators
+  app.get("/api/users/search", authenticateToken, async (req, res) => {
+    try {
+      const { q } = req.query;
+
+      if (!q || typeof q !== 'string') {
+        return res.status(400).json({ message: "Search query parameter 'q' required" });
+      }
+
+      if (q.trim().length < 3) {
+        return res.status(400).json({ message: "Search query must be at least 3 characters" });
+      }
+
+      const users = await storage.searchUsers(q.trim());
+      res.json(users);
     } catch (error) {
       return handleDatabaseError(error, res);
     }
@@ -1664,27 +1990,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ============== CENTRALIZED STATS SUBMISSION ==============
-  // This is the ONLY endpoint that should be used for submitting match results
+  // --- Stats & Guest Linking Routes ---
 
-  /**
-   * Centralized match result submission endpoint
-   * Handles all match types: local matches, team matches, mixed matches
-   * Creates MatchSummary, updates CareerStats, TeamStatistics, PlayerMatchHistory
-   */
-  app.post("/api/matches/submit-result", authenticateToken, async (req, res) => {
+  app.post("/api/teams/:id/guest-players", authenticateToken, async (req: any, res) => {
     try {
-      const matchData = teamMatchResultsSchema.parse(req.body);
-      // Process match result - creates MatchSummary, updates CareerStats, TeamStatistics, etc.
-      const result = await statsService.processMatchResult(matchData);
-      res.json(result);
-    } catch (error) {
-      console.error("Stats submission error:", error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      const { id } = req.params;
+      const { name, role } = req.body;
+
+      if (!name) {
+        return res.status(400).json({ message: "Name is required" });
       }
+
+      const team = await storage.getTeam(id);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      // Check permissions - allow captain, vice-captain, or any team member to add guests
+      const isCaptainOrVice = team.captainId === req.userId || team.viceCaptainId === req.userId;
+      const isTeamMember = await storage.isTeamMember(id, req.userId);
+
+      if (!isCaptainOrVice && !isTeamMember) {
+        return res.status(403).json({ message: "Not authorized to add guest players to this team" });
+      }
+
+      const guest = await storage.createGuestPlayer({
+        teamId: id,
+        name,
+        addedByUserId: req.userId,
+        matchesPlayed: 0,
+        totalRuns: 0,
+        ballsFaced: 0,
+        oversBowled: 0,
+        runsConceded: 0,
+        wicketsTaken: 0,
+        catchesTaken: 0,
+        runOuts: 0,
+        fours: 0,
+        sixes: 0
+      });
+
+      res.status(201).json(guest);
+    } catch (error) {
+      // Check for unique constraint violation if relevant
       return handleDatabaseError(error, res);
     }
+  });
+
+  // Stats decommissioned
+  app.post("/api/matches/submit-result-disabled", authenticateToken, async (req, res) => {
+    res.status(404).json({ message: "Stats system decommissioned" });
   });
 
   app.post("/api/stats/link-guest", authenticateToken, async (req, res) => {
@@ -1699,6 +2054,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       return handleDatabaseError(error, res);
     }
+  });
+
+  // Get user match history - Stats decommissioned
+  app.get("/api/user-match-history-disabled/:userId", authenticateToken, async (req: any, res) => {
+    res.status(404).json({ message: "Stats system decommissioned" });
+  });
+
+  // Get team statistics - Stats decommissioned
+  app.get("/api/teams/:id/statistics-disabled", authenticateToken, async (req: any, res) => {
+    res.status(404).json({ message: "Stats system decommissioned" });
   });
 
   const httpServer = createServer(app);

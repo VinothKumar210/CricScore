@@ -34,18 +34,18 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
       title: "My Cricket",
       items: [
         { name: "Dashboard", href: "/dashboard", icon: Gauge },
-        { name: "My Stats", href: "/statistics", icon: BarChart3 },
+        // { name: "My Stats", href: "/statistics", icon: BarChart3 },
         { name: "My Matches", href: "/my-matches", icon: Trophy },
         { name: "Profile", href: "/profile", icon: User },
       ]
     },
-      {
-        title: "Matches",
-        items: [
-          { name: "Create Match", href: "/create-match", icon: PlusCircle },
-          { name: "Live Rooms", href: "/live-scoreboard", icon: Eye },
-        ]
-      },
+    {
+      title: "Matches",
+      items: [
+        { name: "Create Match", href: "/create-match", icon: PlusCircle },
+        { name: "Live Rooms", href: "/live-scoreboard", icon: Eye },
+      ]
+    },
     {
       title: "Teams",
       items: [
@@ -71,9 +71,9 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
             <div className="relative">
               <div className="w-12 h-12 bg-gradient-to-br from-primary to-sky-500 rounded-xl flex items-center justify-center overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
                 {(user as any)?.profilePictureUrl ? (
-                  <img 
-                    src={(user as any).profilePictureUrl} 
-                    alt="Profile picture" 
+                  <img
+                    src={(user as any).profilePictureUrl}
+                    alt="Profile picture"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -104,7 +104,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               const Icon = item.icon;
               const isActive = location === item.href;
               const showBadge = item.hasBadge && hasPendingInvitations;
-              
+
               return (
                 <Link
                   key={item.name}
@@ -120,8 +120,8 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
                 >
                   <div className={cn(
                     "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-300 flex-shrink-0",
-                    isActive 
-                      ? "bg-white/20 text-white" 
+                    isActive
+                      ? "bg-white/20 text-white"
                       : "bg-muted group-hover:bg-primary/20 group-hover:text-primary"
                   )}>
                     <Icon className="w-4 h-4" />
@@ -140,7 +140,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
             })}
           </div>
         ))}
-        
+
         {/* Sign Out */}
         <div className="pt-3 mt-3 border-t border-border/50">
           <button

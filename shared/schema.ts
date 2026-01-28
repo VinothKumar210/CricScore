@@ -166,6 +166,7 @@ export const localPlayerSchema = z.object({
   hasAccount: z.boolean().default(false),
   username: z.string().optional(), // Username if player has account
   userId: z.string().optional(), // Only present if hasAccount is true
+  guestPlayerId: z.string().optional(), // For guest players linked to a team
   teamSide: z.enum(["my", "opponent"]).optional(), // Which team this player belongs to
 });
 
@@ -231,11 +232,11 @@ export const teamMatchResultsSchema = z.object({
   homeTeamName: z.string().min(1),   // always required for display
   awayTeamId: z.string().optional(), // null if local team  
   awayTeamName: z.string().min(1),   // always required for display
-  
+
   matchDate: z.string().transform(str => new Date(str)),
   venue: z.string().min(1),
   result: z.enum(["HOME_WIN", "AWAY_WIN", "DRAW"]),
-  
+
   // Match score details
   homeTeamRuns: z.number().int().min(0),
   homeTeamWickets: z.number().int().min(0).max(10),
@@ -243,29 +244,29 @@ export const teamMatchResultsSchema = z.object({
   awayTeamRuns: z.number().int().min(0),
   awayTeamWickets: z.number().int().min(0).max(10),
   awayTeamOvers: z.number().min(0),
-  
+
   playerPerformances: z.array(z.object({
     userId: z.string().optional(),     // null if player has no account
     playerName: z.string().min(1),     // always required
     teamId: z.string().optional(),     // null if not database team
     teamName: z.string().min(1),       // always required (home/away team name)
-    
+
     // Batting stats (combined across both innings)
     runsScored: z.number().int().min(0).default(0),
     ballsFaced: z.number().int().min(0).default(0),
     wasDismissed: z.boolean().default(false),
     fours: z.number().int().min(0).default(0),
     sixes: z.number().int().min(0).default(0),
-    
+
     // Bowling stats (combined across both innings)
     oversBowled: z.number().min(0).default(0),
     runsConceded: z.number().int().min(0).default(0),
     wicketsTaken: z.number().int().min(0).default(0),
-    
+
     // Fielding stats (combined across both innings)
     catchesTaken: z.number().int().min(0).default(0),
     runOuts: z.number().int().min(0).default(0),
-    
+
     // Match awards
     isManOfTheMatch: z.boolean().default(false)
   }))
@@ -317,37 +318,37 @@ export const insertMatchSummarySchema = z.object({
   id: z.string().optional(), // Will be generated
   matchDate: z.string().transform(str => new Date(str)),
   venue: z.string().min(1),
-  
+
   // Team information
   homeTeamName: z.string().min(1),
   homeTeamId: z.string().optional(), // null if local team
   awayTeamName: z.string().min(1),
   awayTeamId: z.string().optional(), // null if local team
-  
+
   // Match result
   result: z.enum(["HOME_WIN", "AWAY_WIN", "DRAW"]),
   winningTeam: z.string().min(1),
-  
+
   // Innings scores
   firstInningsTeam: z.string().min(1), // team name
   firstInningsRuns: z.number().int().min(0),
   firstInningsWickets: z.number().int().min(0).max(10),
   firstInningsOvers: z.number().min(0),
-  
+
   secondInningsTeam: z.string().min(1), // team name  
   secondInningsRuns: z.number().int().min(0),
   secondInningsWickets: z.number().int().min(0).max(10),
   secondInningsOvers: z.number().min(0),
-  
+
   // Match context
   target: z.number().int().min(0).optional(),
   totalOvers: z.number().int().min(1).max(50).default(20),
-  
+
   // Man of the match
   manOfTheMatchPlayerName: z.string().optional(),
   manOfTheMatchUserId: z.string().optional(),
   manOfTheMatchStats: z.any().optional(), // JSON object of stats
-  
+
   // Complete player data (JSON)
   firstInningsBatsmen: z.any(), // JSON array of batting stats
   firstInningsBowlers: z.any(), // JSON array of bowling stats
@@ -362,7 +363,7 @@ export const insertPlayerMatchHistorySchema = z.object({
   teamName: z.string().min(1), // which team they played for
   teamId: z.string().optional(), // null if local team
   playerName: z.string().min(1),
-  
+
   // Performance summary
   runsScored: z.number().int().min(0).default(0),
   ballsFaced: z.number().int().min(0).default(0),

@@ -152,11 +152,14 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      {/* Stats decommissioned */}
+      {/*
       <Route path="/statistics">
         <ProtectedRoute>
           <Statistics />
         </ProtectedRoute>
       </Route>
+      */}
 
       <Route path="/add-match">
         <ProtectedRoute>

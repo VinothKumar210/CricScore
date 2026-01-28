@@ -524,12 +524,28 @@ export default function Scoreboard() {
       // Assumption: Team 1 is "My Team" (Home), Team 2 is "Opponent" (Away) usually
       // Better logic: matchState might track teamIds if we added them. Assuming localStorage for local match.
 
+      // Build lookup for players to get correct userId (which might differ from the temporary match player id)
+      const allPlayers = [...(finalState.team1Players || []), ...(finalState.team2Players || [])];
+
+      const getUserId = (playerId: string) => {
+        const player = allPlayers.find(p => p.id === playerId);
+        if (player?.userId) return player.userId;
+        // Fallback for cases where id might be the userId (legacy/direct entry)
+        if (playerId && !playerId.startsWith('guest-') && !playerId.startsWith('local-') && !playerId.startsWith('p-')) {
+          return playerId;
+        }
+        return undefined;
+      };
+
       // Helper to process batting stats
       const processBatting = (stats: any[], teamId: string | null, teamName: string) => {
         stats.forEach(s => {
           // Find existing record or create new
           const existing = performances.find(p => p.playerName === s.name && p.teamName === teamName);
+          const userId = getUserId(s.id);
+
           if (existing) {
+            if (!existing.userId && userId) existing.userId = userId;
             existing.runsScored = s.runs || 0;
             existing.ballsFaced = s.balls || 0;
             existing.fours = s.fours || 0;
@@ -538,7 +554,7 @@ export default function Scoreboard() {
           } else {
             performances.push({
               playerName: s.name,
-              userId: s.id && !s.id.startsWith('guest-') ? s.id : undefined,
+              userId: userId,
               teamId: teamId || undefined,
               teamName,
               runsScored: s.runs || 0,
@@ -561,14 +577,17 @@ export default function Scoreboard() {
       const processBowling = (stats: any[], teamId: string | null, teamName: string) => {
         stats.forEach(s => {
           const existing = performances.find(p => p.playerName === s.name && p.teamName === teamName);
+          const userId = getUserId(s.id);
+
           if (existing) {
+            if (!existing.userId && userId) existing.userId = userId;
             existing.wicketsTaken = s.wickets || 0;
             existing.runsConceded = s.runs || 0;
             existing.oversBowled = parseFloat(s.overs) || 0;
           } else {
             performances.push({
               playerName: s.name,
-              userId: s.id && !s.id.startsWith('guest-') ? s.id : undefined,
+              userId: userId,
               teamId: teamId || undefined,
               teamName,
               runsScored: 0,
@@ -614,7 +633,7 @@ export default function Scoreboard() {
         awayTeamId: team2Id || undefined,
         awayTeamName: finalState.team2Name || 'Team 2',
         matchDate: new Date().toISOString(),
-        venue: localStorage.getItem('matchVenue') || 'Local Ground',
+        venue: localStorage.getItem('matchVenue') || finalState.venue || 'Local Ground',
         result,
         homeTeamRuns: finalState.team1Score?.runs || 0,
         homeTeamWickets: finalState.team1Score?.wickets || 0,
@@ -697,7 +716,8 @@ export default function Scoreboard() {
 
     // Show dialogs if necessary
     if (newState.isMatchComplete) {
-      await submitMatchResults(newState);
+      // Stats system decommissioned as per user request
+      // await submitMatchResults(newState);
       setShowMatchEndedDialog(true);
     } else if (inningsTransitioned) {
       // Innings just ended, show the transition dialog

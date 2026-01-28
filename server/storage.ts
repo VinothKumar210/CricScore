@@ -292,7 +292,7 @@ export class PrismaStorage implements IStorage {
             bestBowlingRuns: 0,
             catchesTaken: 0,
             runOuts: 0,
-            manOfTheMatchAwards: 0
+
           }
         });
       }
@@ -303,13 +303,25 @@ export class PrismaStorage implements IStorage {
     }
   }
 
-  async getTeam(id: string): Promise<Team | undefined> {
+  async getTeam(idOrCode: string): Promise<Team | undefined> {
     try {
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(idOrCode);
+
+      if (isObjectId) {
+        const team = await prisma.team.findUnique({
+          where: { id: idOrCode }
+        });
+        if (team) return team;
+      }
+
+      // Fallback: Try looking up by teamCode
       const team = await prisma.team.findUnique({
-        where: { id }
+        where: { teamCode: idOrCode }
       });
+
       return team || undefined;
-    } catch {
+    } catch (error) {
+      console.error("Error in getTeam:", error);
       return undefined;
     }
   }
@@ -528,8 +540,15 @@ export class PrismaStorage implements IStorage {
     }
   }
 
-  async getTeamMembers(teamId: string): Promise<(TeamMember & { user: User })[]> {
+  async getTeamMembers(idOrCode: string): Promise<(TeamMember & { user: User })[]> {
     try {
+      let teamId = idOrCode;
+      if (!/^[0-9a-fA-F]{24}$/.test(idOrCode)) {
+        const team = await this.getTeamByCode(idOrCode);
+        if (team) teamId = team.id;
+        else return [];
+      }
+
       const members = await prisma.teamMember.findMany({
         where: { teamId },
         include: { user: true }
@@ -579,8 +598,15 @@ export class PrismaStorage implements IStorage {
   }
 
   // Guest player operations
-  async getGuestPlayers(teamId: string): Promise<(GuestPlayer & { addedBy: User })[]> {
+  async getGuestPlayers(idOrCode: string): Promise<(GuestPlayer & { addedBy: User })[]> {
     try {
+      let teamId = idOrCode;
+      if (!/^[0-9a-fA-F]{24}$/.test(idOrCode)) {
+        const team = await this.getTeamByCode(idOrCode);
+        if (team) teamId = team.id;
+        else return [];
+      }
+
       const guestPlayers = await prisma.guestPlayer.findMany({
         where: { teamId },
         include: { addedBy: true }
@@ -826,7 +852,7 @@ export class PrismaStorage implements IStorage {
     const newWicketsTaken = (stats.wicketsTaken || 0) + match.wicketsTaken;
     const newCatchesTaken = (stats.catchesTaken || 0) + match.catchesTaken;
     const newRunOuts = (stats.runOuts || 0) + match.runOuts;
-    const newManOfTheMatchAwards = (stats.manOfTheMatchAwards || 0) + (match.isManOfTheMatch ? 1 : 0);
+
 
     const strikeRate = newBallsFaced > 0 ? (newTotalRuns / newBallsFaced) * 100 : 0;
     // Convert cricket overs to decimal for proper economy calculation
@@ -866,7 +892,7 @@ export class PrismaStorage implements IStorage {
       economy: parseFloat(economy.toFixed(2)),
       catchesTaken: newCatchesTaken,
       runOuts: newRunOuts,
-      manOfTheMatchAwards: newManOfTheMatchAwards,
+
     };
 
     // Only include best bowling fields if there's an update
@@ -991,8 +1017,20 @@ export class PrismaStorage implements IStorage {
   }
 
   // Team statistics operations
-  async getTeamStatistics(teamId: string): Promise<TeamStatistics | undefined> {
+  async getTeamStatistics(idOrCode: string): Promise<TeamStatistics | undefined> {
     try {
+      let teamId = idOrCode;
+
+      // Resolve teamCode to teamId if input is not a standard ObjectID
+      if (!/^[0-9a-fA-F]{24}$/.test(idOrCode)) {
+        const team = await this.getTeamByCode(idOrCode);
+        if (team) {
+          teamId = team.id;
+        } else {
+          return undefined;
+        }
+      }
+
       const stats = await prisma.teamStatistics.findUnique({
         where: { teamId },
         include: {
