@@ -56,6 +56,8 @@ model CareerStats {
   strikeRate     Float   @default(0)
   highestScore   Int     @default(0)
   timesOut       Int     @default(0)
+  fours          Int     @default(0)
+  sixes          Int     @default(0)
   // Bowling stats
   oversBowled    Float   @default(0)
   runsConceded   Int     @default(0)
@@ -66,8 +68,7 @@ model CareerStats {
   // Fielding stats
   catchesTaken   Int     @default(0)
   runOuts        Int     @default(0)
-  // Achievement stats
-  manOfTheMatchAwards Int @default(0)
+  stumpings      Int     @default(0)
   updatedAt      DateTime @default(now()) @updatedAt
 
   // Relations

@@ -4,6 +4,8 @@ type ToasterToast = {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
+  action?: React.ReactNode
+  variant?: "default" | "destructive"
   open?: boolean
 }
 
@@ -72,13 +74,13 @@ function genId() {
 }
 
 function toast({ ...props }: Omit<ToasterToast, "id">) {
-    const id = genId()
-    dispatch({ type: "ADD_TOAST", toast: { ...props, id, open: true } })
-    setTimeout(() => {
-      dispatch({ type: "DISMISS_TOAST", toastId: id })
-    }, 3000)
-    return { id }
-  }
+  const id = genId()
+  dispatch({ type: "ADD_TOAST", toast: { ...props, id, open: true } })
+  setTimeout(() => {
+    dispatch({ type: "DISMISS_TOAST", toastId: id })
+  }, 3000)
+  return { id }
+}
 
 function useToast() {
   const [state, setState] = React.useState<State>(memoryState)

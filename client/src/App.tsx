@@ -51,9 +51,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 lg:hidden transition-transform duration-300 ${
-        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
+      <div className={`fixed inset-y-0 left-0 z-50 lg:hidden transition-transform duration-300 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
         <Sidebar onNavigate={() => setIsMobileMenuOpen(false)} />
       </div>
 
@@ -140,7 +139,7 @@ function Router() {
       {/* Public routes */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
-      
+
       {/* Profile setup route */}
       <Route path="/profile-setup">
         {user && !user.profileComplete ? <ProfileSetup /> : <Login />}
@@ -152,104 +151,104 @@ function Router() {
           <Dashboard />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/statistics">
         <ProtectedRoute>
           <Statistics />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/add-match">
         <ProtectedRoute>
           <AddMatch />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/teams">
         <ProtectedRoute>
           <Teams />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/teams/:id">
         <ProtectedRoute>
           <TeamDetail />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/invitations">
         <ProtectedRoute>
           <Invitations />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/search">
         <ProtectedRoute>
           <SearchPlayers />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/team-search">
         <ProtectedRoute>
           <TeamSearch />
         </ProtectedRoute>
       </Route>
-      
-        <Route path="/create-match">
-          <ProtectedRoute>
-            <CreateMatch />
-          </ProtectedRoute>
-        </Route>
-        
-        <Route path="/local-match">
+
+      <Route path="/create-match">
+        <ProtectedRoute>
+          <CreateMatch />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/local-match">
         <ProtectedRoute>
           <LocalMatch />
         </ProtectedRoute>
       </Route>
-      
-      
+
+
       <Route path="/coin-toss">
         <ProtectedRoute>
           <CoinToss />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/match-scoring">
         <ProtectedRoute>
           <MatchScoring />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/scoreboard">
         <ProtectedRoute>
           <Scoreboard />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/live-scoreboard">
         <ProtectedRoute>
           <LiveScoreboard />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/match-view/:id">
         <ProtectedRoute>
           <MatchView />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/match-summary/:id">
         <ProtectedRoute>
           <MatchSummaryPage />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/my-matches">
         <ProtectedRoute>
           <MyMatchesPage />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/bowler-selection">
         <ProtectedRoute>
           <BowlerSelection />
@@ -261,7 +260,7 @@ function Router() {
           <Profile />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/player/:id">
         <ProtectedRoute>
           <Profile />
@@ -287,7 +286,25 @@ function Router() {
   );
 }
 
+import { offlineSync } from "./lib/offlineSync";
+
 function App() {
+  // Global offline sync listener
+  useEffect(() => {
+    const handleOnline = () => {
+      offlineSync.syncPendingMatches();
+    };
+
+    window.addEventListener('online', handleOnline);
+
+    // Also try on mount in case we just came back
+    if (navigator.onLine) {
+      offlineSync.syncPendingMatches();
+    }
+
+    return () => window.removeEventListener('online', handleOnline);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>

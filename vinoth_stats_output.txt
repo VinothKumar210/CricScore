@@ -1,0 +1,40 @@
+========== USER INFO ==========
+{
+  "id": "696f24cfaf3734e4e1bc3513",
+  "email": "vinoth@gmail.com",
+  "password": "$2b$10$6xgHHiG.1Bw0M3QSEQBmMOsilQTK0cxsDyWFV7t5cUC/Mnu01rGEi",
+  "username": "vinoth",
+  "profileName": "Vinoth",
+  "description": "",
+  "profilePictureUrl": null,
+  "role": "BATSMAN",
+  "battingHand": "RIGHT",
+  "bowlingStyle": null,
+  "profileComplete": true,
+  "createdAt": "2026-01-20T06:46:39.277Z"
+}
+
+========== CAREER STATS (ALL FIELDS) ==========
+{
+  "id": "696f24cfaf3734e4e1bc3514",
+  "userId": "696f24cfaf3734e4e1bc3513",
+  "matchesPlayed": 0,
+  "totalRuns": 0,
+  "ballsFaced": 0,
+  "strikeRate": 0,
+  "highestScore": 0,
+  "timesOut": 0,
+  "oversBowled": 0,
+  "runsConceded": 0,
+  "wicketsTaken": 0,
+  "economy": 0,
+  "bestBowlingWickets": 0,
+  "bestBowlingRuns": 0,
+  "catchesTaken": 0,
+  "runOuts": 0,
+  "manOfTheMatchAwards": 0,
+  "updatedAt": "2026-01-20T06:46:39.511Z"
+}
+
+========== RECENT MATCHES (up to 5) ==========
+No match records found.

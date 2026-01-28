@@ -47,14 +47,14 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User | undefined>;
   updateUserProfile(id: string, profile: ProfileSetup): Promise<User | undefined>;
-  
+
   // Career stats operations
   getCareerStats(userId: string): Promise<CareerStats | undefined>;
   createCareerStats(stats: InsertCareerStats): Promise<CareerStats>;
   updateCareerStats(userId: string, stats: Partial<CareerStats>): Promise<CareerStats | undefined>;
   updateCareerStatsFromMatch(userId: string, match: InsertMatch): Promise<void>;
   ensureCareerStats(userId: string): Promise<CareerStats | undefined>;
-  
+
   // Team operations
   getTeam(id: string): Promise<Team | undefined>;
   getTeamsByUser(userId: string): Promise<(Team & { captain: User, viceCaptain?: User })[]>;
@@ -62,13 +62,13 @@ export interface IStorage {
   createTeam(team: InsertTeam): Promise<Team>;
   updateTeam(id: string, updates: Partial<Team>): Promise<Team | undefined>;
   deleteTeam(id: string): Promise<boolean>;
-  
+
   // Team member operations
   getTeamMembers(teamId: string): Promise<(TeamMember & { user: User })[]>;
   addTeamMember(member: InsertTeamMember): Promise<TeamMember>;
   removeTeamMember(teamId: string, userId: string): Promise<boolean>;
   isTeamMember(teamId: string, userId: string): Promise<boolean>;
-  
+
   // Guest player operations
   getGuestPlayers(teamId: string): Promise<(GuestPlayer & { addedBy: User })[]>;
   getGuestPlayer(id: string): Promise<GuestPlayer | undefined>;
@@ -76,32 +76,32 @@ export interface IStorage {
   updateGuestPlayer(id: string, updates: Partial<GuestPlayer>): Promise<GuestPlayer | undefined>;
   deleteGuestPlayer(id: string): Promise<boolean>;
   linkGuestPlayerToUser(guestPlayerId: string, userId: string): Promise<{ success: boolean; message: string }>;
-  
+
   // Captain operations
   transferCaptain(teamId: string, newCaptainId: string, currentCaptainId: string): Promise<Team | undefined>;
-  
+
   // Team invitation operations
   getTeamInvitations(userId: string): Promise<(TeamInvitation & { team: Team, inviter: User })[]>;
   getSentInvitations(teamId: string): Promise<(TeamInvitation & { user: User })[]>;
   createTeamInvitation(invitation: InsertTeamInvitation): Promise<TeamInvitation>;
   updateInvitationStatus(id: string, status: "ACCEPTED" | "REJECTED"): Promise<TeamInvitation | undefined>;
-  
+
   // Match operations
   getMatches(userId: string): Promise<Match[]>;
   createMatch(match: InsertMatch): Promise<Match>;
-  
+
   // Auth operations
   validatePassword(email: string, password: string): Promise<{ user: User | null; errorType?: 'EMAIL_NOT_FOUND' | 'WRONG_PASSWORD' }>;
-  
+
   // Team match operations
   createTeamMatch(teamMatch: InsertTeamMatch): Promise<TeamMatch>;
   getTeamMatch(id: string): Promise<TeamMatch | undefined>;
   getTeamMatches(teamId: string): Promise<TeamMatch[]>;
-  
+
   // Team match player operations
   createTeamMatchPlayer(player: InsertTeamMatchPlayer): Promise<TeamMatchPlayer>;
   getTeamMatchPlayers(teamMatchId: string): Promise<(TeamMatchPlayer & { user: User })[]>;
-  
+
   // Team statistics operations
   getTeamStatistics(teamId: string): Promise<TeamStatistics | undefined>;
   createTeamStatistics(stats: InsertTeamStatistics): Promise<TeamStatistics>;
@@ -133,7 +133,7 @@ export interface IStorage {
   getMatchSummary(id: string): Promise<(MatchSummary & { homeTeam: Team | null, awayTeam: Team | null, manOfTheMatchUser: User | null, playerHistory: (PlayerMatchHistory & { user: User, team: Team | null })[] }) | undefined>;
   getUserMatchHistory(userId: string, page?: number, limit?: number): Promise<{ matches: { matchSummary: MatchSummary & { homeTeam: Team | null, awayTeam: Team | null, manOfTheMatchUser: User | null }, userPerformance: { runsScored: number, ballsFaced: number, wicketsTaken: number, oversBowled: number, isManOfTheMatch: boolean, teamName: string, playerName: string } }[], totalCount: number }>;
   getTeamMatchHistory(teamId: string, page?: number, limit?: number): Promise<{ matches: (MatchSummary & { homeTeam: Team | null, awayTeam: Team | null, manOfTheMatchUser: User | null, playerHistory: (PlayerMatchHistory & { user: User, team: Team | null })[] })[], totalCount: number }>;
-  
+
   // Player match history operations
   createPlayerMatchHistory(playerHistory: InsertPlayerMatchHistory): Promise<PlayerMatchHistory>;
   getPlayerMatchHistories(matchSummaryId: string): Promise<(PlayerMatchHistory & { user: User, team: Team | null })[]>;
@@ -182,7 +182,7 @@ export class PrismaStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const hashedPassword = await bcrypt.hash(insertUser.password, 10);
-    
+
     const user = await prisma.user.create({
       data: {
         ...insertUser,
@@ -190,10 +190,10 @@ export class PrismaStorage implements IStorage {
         profileComplete: false,
       }
     });
-    
+
     // Create initial career stats
     await this.createCareerStats({ userId: user.id });
-    
+
     return user;
   }
 
@@ -483,7 +483,7 @@ export class PrismaStorage implements IStorage {
   async createTeam(team: InsertTeam): Promise<Team> {
     const count = await prisma.team.count();
     const teamCode = `ctid${count + 1}`;
-    
+
     return await prisma.team.create({
       data: {
         ...team,
@@ -511,17 +511,17 @@ export class PrismaStorage implements IStorage {
       await prisma.teamMember.deleteMany({
         where: { teamId: id }
       });
-      
+
       // Delete team invitations
       await prisma.teamInvitation.deleteMany({
         where: { teamId: id }
       });
-      
+
       // Delete the team
       await prisma.team.delete({
         where: { id }
       });
-      
+
       return true;
     } catch {
       return false;
@@ -636,7 +636,7 @@ export class PrismaStorage implements IStorage {
       const guestPlayer = await prisma.guestPlayer.findUnique({
         where: { id: guestPlayerId }
       });
-      
+
       if (!guestPlayer) {
         return { success: false, message: "Guest player not found" };
       }
@@ -767,7 +767,7 @@ export class PrismaStorage implements IStorage {
         where: { id },
         data: { status }
       });
-      
+
       // If accepted, add user to team
       if (status === "ACCEPTED") {
         await this.addTeamMember({
@@ -775,7 +775,7 @@ export class PrismaStorage implements IStorage {
           userId: invitation.invitedUser,
         });
       }
-      
+
       return invitation;
     } catch {
       return undefined;
@@ -798,10 +798,10 @@ export class PrismaStorage implements IStorage {
     const createdMatch = await prisma.match.create({
       data: match
     });
-    
+
     // Update career stats
     await this.updateCareerStatsFromMatch(match.userId, match);
-    
+
     return createdMatch;
   }
 
@@ -836,16 +836,16 @@ export class PrismaStorage implements IStorage {
     // Update best bowling figures if this match's bowling performance is better
     const hasBestFigures = (stats as any).bestBowlingWickets != null && (stats as any).bestBowlingRuns != null;
     let updatedBestFigures: { wickets: number; runs: number } | null = null;
-    
+
     // Only consider updating if the player bowled in this match (wickets taken or runs conceded > 0)
     if (match.wicketsTaken > 0 || match.runsConceded > 0) {
       // Update if:
       // 1. No previous best figures, OR
       // 2. More wickets than current best, OR  
       // 3. Same wickets but fewer runs conceded
-      if (!hasBestFigures || 
-          match.wicketsTaken > (stats as any).bestBowlingWickets || 
-          (match.wicketsTaken === (stats as any).bestBowlingWickets && match.runsConceded < (stats as any).bestBowlingRuns)) {
+      if (!hasBestFigures ||
+        match.wicketsTaken > (stats as any).bestBowlingWickets ||
+        (match.wicketsTaken === (stats as any).bestBowlingWickets && match.runsConceded < (stats as any).bestBowlingRuns)) {
         updatedBestFigures = {
           wickets: match.wicketsTaken,
           runs: match.runsConceded
@@ -923,12 +923,12 @@ export class PrismaStorage implements IStorage {
     if (!user) {
       return { user: null, errorType: 'EMAIL_NOT_FOUND' };
     }
-    
+
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       return { user: null, errorType: 'WRONG_PASSWORD' };
     }
-    
+
     return { user };
   }
 
@@ -1405,9 +1405,9 @@ export class PrismaStorage implements IStorage {
         const opponentName = match.homeTeamId === teamId ? match.awayTeam.name : match.homeTeam.name;
         const matchKey = this.createCanonicalMatchKey(opponentName, match.matchDate);
         formalMatchKeys.add(matchKey);
-        
+
         formalMatchesPlayed++;
-        
+
         if (match.result === 'HOME_WIN' && match.homeTeamId === teamId) {
           formalMatchesWon++;
         } else if (match.result === 'AWAY_WIN' && match.awayTeamId === teamId) {
@@ -1451,13 +1451,13 @@ export class PrismaStorage implements IStorage {
           oversBowled: 0,
           runsConceded: 0
         };
-        
+
         existing.runs += stat.runsScored;
         existing.ballsFaced += stat.ballsFaced;
         existing.wickets += stat.wicketsTaken;
         existing.oversBowled += stat.oversBowled;
         existing.runsConceded += stat.runsConceded;
-        
+
         playerAggregates.set(stat.userId, existing);
       }
 
@@ -1481,15 +1481,15 @@ export class PrismaStorage implements IStorage {
       // Deduplicate individual matches by creating unique match keys
       const uniqueIndividualMatches = new Set<string>();
       const individualMatchPlayerMap = new Map<string, any[]>(); // matchKey -> player records
-      
+
       for (const match of memberIndividualMatches) {
         const opponentKey = match.opponent.replace(/^vs\s+/i, '').trim();
         const matchKey = this.createCanonicalMatchKey(opponentKey, match.matchDate);
-        
+
         // Skip if this match was already processed as a formal team match
         if (!processedMatches.has(matchKey)) {
           uniqueIndividualMatches.add(matchKey);
-          
+
           // Group player records by match for proper aggregation
           if (!individualMatchPlayerMap.has(matchKey)) {
             individualMatchPlayerMap.set(matchKey, []);
@@ -1501,7 +1501,7 @@ export class PrismaStorage implements IStorage {
       // Add stats from unique individual matches
       for (const matchKey of Array.from(uniqueIndividualMatches)) {
         const playerRecords = individualMatchPlayerMap.get(matchKey)!;
-        
+
         // Add stats for each player in this match (avoid double counting per player per match)
         for (const match of playerRecords) {
           const existing = playerAggregates.get(match.userId) || {
@@ -1511,20 +1511,20 @@ export class PrismaStorage implements IStorage {
             oversBowled: 0,
             runsConceded: 0
           };
-          
+
           existing.runs += match.runsScored;
           existing.ballsFaced += match.ballsFaced;
           existing.wickets += match.wicketsTaken;
           existing.oversBowled += match.oversBowled;
           existing.runsConceded += match.runsConceded;
-          
+
           playerAggregates.set(match.userId, existing);
         }
       }
 
       const uniqueIndividualMatchCount = uniqueIndividualMatches.size;
       console.log(`Team stats calculation: ${formalMatchesPlayed} formal matches + ${uniqueIndividualMatchCount} unique individual matches`);
-      
+
       // Update total matches played to include both formal and unique individual matches
       totalMatchesPlayed = formalMatchesPlayed + uniqueIndividualMatchCount;
 
@@ -1565,7 +1565,7 @@ export class PrismaStorage implements IStorage {
 
       // Create or update team statistics
       const existingStats = await this.getTeamStatistics(teamId);
-      
+
       if (existingStats) {
         await this.updateTeamStatistics(teamId, {
           matchesPlayed: totalMatchesPlayed,
@@ -1626,7 +1626,7 @@ export class PrismaStorage implements IStorage {
         secondInningsBowlers: matchSummary.secondInningsBowlers || [],
         manOfTheMatchStats: matchSummary.manOfTheMatchStats || null,
       };
-      
+
       const result = await prisma.matchSummary.create({
         data: dataToCreate
       });
@@ -1663,7 +1663,7 @@ export class PrismaStorage implements IStorage {
   async getUserMatchHistory(userId: string, page: number = 1, limit: number = 10): Promise<{ matches: any[], totalCount: number }> {
     try {
       const skip = (page - 1) * limit;
-      
+
       const [matches, totalCount] = await Promise.all([
         prisma.playerMatchHistory.findMany({
           where: { userId },
@@ -1709,7 +1709,7 @@ export class PrismaStorage implements IStorage {
   async getTeamMatchHistory(teamId: string, page: number = 1, limit: number = 10): Promise<{ matches: any[], totalCount: number }> {
     try {
       const skip = (page - 1) * limit;
-      
+
       const [matches, totalCount] = await Promise.all([
         prisma.matchSummary.findMany({
           where: {

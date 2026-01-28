@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useLocation } from 'wouter';
+import { apiRequest } from "@/lib/queryClient";
+import { Link, useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,8 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
 import { useGuestPlayerSync } from '@/hooks/useGuestPlayerSync';
+import { offlineSync } from "@/lib/offlineSync";
 import {
   processBall as sharedProcessBall,
   initialMatchState as createInitialMatchState,
@@ -44,7 +45,7 @@ const STORAGE_KEYS = {
 const formatOvers = (balls: number): string => {
   const overs = Math.floor(balls / 6);
   const remainingBalls = balls % 6;
-  return `${overs}.${remainingBalls}`;
+  return `${overs}.${remainingBalls} `;
 };
 
 export default function Scoreboard() {
@@ -71,7 +72,23 @@ export default function Scoreboard() {
         return createInitialMatchState(20, true, team1Name, team2Name);
       }
     }
-    return createInitialMatchState(20, true, team1Name, team2Name);
+
+    // Check matchData for toss decision
+    const savedMatchData = localStorage.getItem('matchData');
+    let team1BattingFirst = true;
+    if (savedMatchData) {
+      try {
+        const matchData = JSON.parse(savedMatchData);
+        if (matchData.userTeamRole === 'bowling') {
+          team1BattingFirst = false;
+        }
+      } catch (e) {
+        console.error('Error parsing match data', e);
+      }
+    }
+
+    // Default overs is 20, but will be updated by useEffect if savedConfig exists
+    return createInitialMatchState(20, team1BattingFirst, team1Name, team2Name);
   });
 
   // UI state
@@ -113,13 +130,18 @@ export default function Scoreboard() {
   const [guestBatsmanName, setGuestBatsmanName] = useState('');
   const [guestBowlerName, setGuestBowlerName] = useState('');
 
-  // Check if match has already started (has any balls bowled)
+  // Check if match has already started (current innings has batsmen and bowler selected)
   useEffect(() => {
-    const totalBalls = matchState.team1Score.balls + matchState.team2Score.balls;
-    if (totalBalls > 0) {
+    // Only consider match started if we have current batsmen and bowler
+    const hasStrikeBatsman = matchState.strikeBatsman.id !== '';
+    const hasNonStrikeBatsman = matchState.nonStrikeBatsman.id !== '';
+    const hasBowler = matchState.currentBowler.id !== '';
+
+    if (hasStrikeBatsman && hasNonStrikeBatsman && hasBowler) {
       setIsMatchStarted(true);
     }
-  }, [matchState]);
+    // Note: We don't set isMatchStarted to false here - that's done by handleInningsEnd
+  }, [matchState.strikeBatsman.id, matchState.nonStrikeBatsman.id, matchState.currentBowler.id]);
 
   // Load players on mount
   useEffect(() => {
@@ -362,6 +384,48 @@ export default function Scoreboard() {
     return 10;
   }, []);
 
+  // Format dismissal text from batsman stats
+  const formatDismissal = useCallback((batsman: BatsmanStats): string => {
+    if (!batsman.isOut) return "not out";
+    switch (batsman.dismissalType) {
+      case 'bowled': return `b ${batsman.bowler || ''} `;
+      case 'caught': return `c ${batsman.fielder || ''} b ${batsman.bowler || ''} `;
+      case 'lbw': return `lbw b ${batsman.bowler || ''} `;
+      case 'stumped': return `st ${batsman.fielder || ''} b ${batsman.bowler || ''} `;
+      case 'run_out': return `run out(${batsman.fielder || ''})`;
+      case 'hit_wicket': return `hit wicket b ${batsman.bowler || ''} `;
+      default: return batsman.dismissalType || '';
+    }
+  }, []);
+
+  // Get players who did not bat
+  const getDidNotBatPlayers = useCallback((teamPlayers: Player[], battingStats: BatsmanStats[]): Player[] => {
+    const battedIds = battingStats.map(b => b.id);
+    return teamPlayers.filter(p => !battedIds.includes(p.id));
+  }, []);
+
+  // Get fall of wickets for specific innings
+  const getFallOfWicketsForInnings = useCallback((innings: 1 | 2) => {
+    return matchState.fallOfWickets.filter(fow => fow.inningsNumber === innings);
+  }, [matchState.fallOfWickets]);
+
+  // Get first innings stats (for End of Innings dialog - when currentInnings is already 2)
+  const firstInningsBattingStats = useMemo(() => {
+    return matchState.team1BattingFirst ? matchState.team1Batting : matchState.team2Batting;
+  }, [matchState.team1BattingFirst, matchState.team1Batting, matchState.team2Batting]);
+
+  const firstInningsBowlingStats = useMemo(() => {
+    return matchState.team1BattingFirst ? matchState.team2Bowling : matchState.team1Bowling;
+  }, [matchState.team1BattingFirst, matchState.team1Bowling, matchState.team2Bowling]);
+
+  const firstInningsScore = useMemo(() => {
+    return matchState.team1BattingFirst ? matchState.team1Score : matchState.team2Score;
+  }, [matchState.team1BattingFirst, matchState.team1Score, matchState.team2Score]);
+
+  const firstInningsTeamPlayers = useMemo(() => {
+    return matchState.team1BattingFirst ? team1Players : team2Players;
+  }, [matchState.team1BattingFirst, team1Players, team2Players]);
+
   // Handle match end
   const handleMatchEnd = useCallback((reason: 'chase' | 'complete') => {
     let result = '';
@@ -401,7 +465,7 @@ export default function Scoreboard() {
   // Handle innings end - UI-specific resets
   // Note: Match state (batsmen, bowler, etc.) is already reset by transitionToSecondInnings in scoring.ts
   const handleInningsEnd = useCallback(() => {
-    // Reset UI state for the new innings
+    // Reset UI state for the new innings - this shows the bottom panel with SELECT BATSMEN / SELECT BOWLER buttons
     setIsMatchStarted(false);
     setSelectedOpeningBatsmen([]);
     setSelectedOpeningBowler(null);
@@ -412,10 +476,7 @@ export default function Scoreboard() {
       description: `Target: ${matchState.target} runs`
     });
 
-    // Trigger opening batsmen selection for the new innings
-    setTimeout(() => {
-      setShowInitialBatsmanSelect(true);
-    }, 300);
+    // User will use the bottom panel buttons to select batsmen, bowler, and start 2nd innings
   }, [matchState.target, toast]);
 
   // Check if innings is complete
@@ -455,6 +516,132 @@ export default function Scoreboard() {
    * 6. If over completes → swap strike
    * 7. Set free hit flag if no-ball
    */
+  const submitMatchResults = useCallback(async (finalState: any) => { // using any for state to avoid circular type issues if types aren't perfect
+    try {
+      const performances: any[] = [];
+      const team1Id = localStorage.getItem('myTeamId');
+      const team2Id = localStorage.getItem('opponentTeamId');
+      // Assumption: Team 1 is "My Team" (Home), Team 2 is "Opponent" (Away) usually
+      // Better logic: matchState might track teamIds if we added them. Assuming localStorage for local match.
+
+      // Helper to process batting stats
+      const processBatting = (stats: any[], teamId: string | null, teamName: string) => {
+        stats.forEach(s => {
+          // Find existing record or create new
+          const existing = performances.find(p => p.playerName === s.name && p.teamName === teamName);
+          if (existing) {
+            existing.runsScored = s.runs || 0;
+            existing.ballsFaced = s.balls || 0;
+            existing.fours = s.fours || 0;
+            existing.sixes = s.sixes || 0;
+            existing.wasDismissed = s.isOut || false;
+          } else {
+            performances.push({
+              playerName: s.name,
+              userId: s.id && !s.id.startsWith('guest-') ? s.id : undefined,
+              teamId: teamId || undefined,
+              teamName,
+              runsScored: s.runs || 0,
+              ballsFaced: s.balls || 0,
+              fours: s.fours || 0,
+              sixes: s.sixes || 0,
+              wasDismissed: s.isOut || false,
+              wicketsTaken: 0,
+              oversBowled: 0,
+              runsConceded: 0,
+              catchesTaken: 0,
+              runOuts: 0,
+              isManOfTheMatch: false
+            });
+          }
+        });
+      };
+
+      // Helper to process bowling stats
+      const processBowling = (stats: any[], teamId: string | null, teamName: string) => {
+        stats.forEach(s => {
+          const existing = performances.find(p => p.playerName === s.name && p.teamName === teamName);
+          if (existing) {
+            existing.wicketsTaken = s.wickets || 0;
+            existing.runsConceded = s.runs || 0;
+            existing.oversBowled = parseFloat(s.overs) || 0;
+          } else {
+            performances.push({
+              playerName: s.name,
+              userId: s.id && !s.id.startsWith('guest-') ? s.id : undefined,
+              teamId: teamId || undefined,
+              teamName,
+              runsScored: 0,
+              ballsFaced: 0,
+              fours: 0,
+              sixes: 0,
+              wasDismissed: false,
+              wicketsTaken: s.wickets || 0,
+              runsConceded: s.runs || 0,
+              oversBowled: parseFloat(s.overs) || 0,
+              catchesTaken: 0,
+              runOuts: 0,
+              isManOfTheMatch: false
+            });
+          }
+        });
+      };
+
+      // Process Team 1 (Batting & Bowling)
+      // Note: team1Batting is Team 1's batting stats.
+      // team1Bowling is Team 1's BOWLING stats (when Team 2 was batting).
+      processBatting(finalState.team1Batting, team1Id, finalState.team1Name);
+      processBowling(finalState.team1Bowling, team1Id, finalState.team1Name);
+
+      // Process Team 2
+      processBatting(finalState.team2Batting, team2Id, finalState.team2Name);
+      processBowling(finalState.team2Bowling, team2Id, finalState.team2Name);
+
+      // Determine match result
+      let result: 'HOME_WIN' | 'AWAY_WIN' | 'DRAW' = 'DRAW';
+      const team1Runs = finalState.team1Score?.runs || 0;
+      const team2Runs = finalState.team2Score?.runs || 0;
+      if (team1Runs > team2Runs) {
+        result = 'HOME_WIN';
+      } else if (team2Runs > team1Runs) {
+        result = 'AWAY_WIN';
+      }
+
+      // Build full payload matching teamMatchResultsSchema
+      const payload = {
+        homeTeamId: team1Id || undefined,
+        homeTeamName: finalState.team1Name || 'Team 1',
+        awayTeamId: team2Id || undefined,
+        awayTeamName: finalState.team2Name || 'Team 2',
+        matchDate: new Date().toISOString(),
+        venue: localStorage.getItem('matchVenue') || 'Local Ground',
+        result,
+        homeTeamRuns: finalState.team1Score?.runs || 0,
+        homeTeamWickets: finalState.team1Score?.wickets || 0,
+        homeTeamOvers: finalState.team1Score?.balls ? finalState.team1Score.balls / 6 : 0,
+        awayTeamRuns: finalState.team2Score?.runs || 0,
+        awayTeamWickets: finalState.team2Score?.wickets || 0,
+        awayTeamOvers: finalState.team2Score?.balls ? finalState.team2Score.balls / 6 : 0,
+        playerPerformances: performances
+      };
+
+      try {
+        await apiRequest('POST', '/api/matches/submit-result', payload);
+        toast({ title: 'Stats Saved', description: 'Career stats updated successfully.' });
+      } catch (e) {
+        console.error("Stats submission failed", e);
+        // Fallback to offline storage
+        offlineSync.savePendingMatch(payload);
+        toast({
+          title: 'Saved Offline',
+          description: 'Connection issue detected. Stats saved locally and will sync when online.'
+        });
+      }
+    } catch (err) {
+      console.error("Match processing error", err);
+    }
+  }, [toast]);
+
   const processBall = useCallback(async (params: {
     completedRuns: number;
     extraType: ExtraType;
@@ -489,7 +676,8 @@ export default function Scoreboard() {
     // Update local state
     setMatchState(newState);
 
-    // Sync with backend if possible
+    // Live sync removed as per user request - stats are only posted at end of match
+    /* 
     const localMatchId = localStorage.getItem("localMatchId");
     if (localMatchId) {
       try {
@@ -499,7 +687,8 @@ export default function Scoreboard() {
       } catch (error) {
         console.error("Failed to sync ball with backend:", error);
       }
-    }
+    } 
+    */
 
     // Identify current batting score to check wickets (use new state for innings transition case)
     const currentBattingScore = newState.currentInnings === 1
@@ -508,6 +697,7 @@ export default function Scoreboard() {
 
     // Show dialogs if necessary
     if (newState.isMatchComplete) {
+      await submitMatchResults(newState);
       setShowMatchEndedDialog(true);
     } else if (inningsTransitioned) {
       // Innings just ended, show the transition dialog
@@ -697,10 +887,10 @@ export default function Scoreboard() {
 
     setShowBatsmanSelectDialog(false);
 
-    // Check if end of over and trigger bowler selection
+    // Check if end of over and trigger bowler selection instantly
     const balls = battingTeamScore.balls;
     if (balls > 0 && balls % 6 === 0 && balls < matchState.matchOvers * 6) {
-      setTimeout(() => setShowBowlerSelectDialog(true), 300);
+      setShowBowlerSelectDialog(true);
     }
   }, [matchState, currentBattingStats, toast, battingTeamScore.balls]);
 
@@ -1111,7 +1301,10 @@ export default function Scoreboard() {
                 {/* Team and Score Display */}
                 <div className="text-center space-y-1 bg-blue-50 py-4 rounded-2xl border border-blue-100 shadow-sm">
                   <h2 className="text-lg font-bold text-blue-900">
-                    {localStorage.getItem('myTeamName') || 'Your Team'}
+                    {matchState.currentInnings === 1
+                      ? (matchState.team1BattingFirst ? matchState.team1Name : matchState.team2Name)
+                      : (matchState.team1BattingFirst ? matchState.team2Name : matchState.team1Name)
+                    }
                   </h2>
                   <p className="text-xs text-blue-600 font-medium uppercase tracking-wider">
                     {matchState.currentInnings === 1 ? '1st Innings' : '2nd Innings'}
@@ -1293,7 +1486,13 @@ export default function Scoreboard() {
                     {/* Show START MATCH button when both batsmen and bowler are selected */}
                     {selectedOpeningBatsmen.length === 2 && selectedOpeningBowler && (
                       <Button
-                        onClick={() => setShowStrikerSelect(true)}
+                        onClick={() => {
+                          setIsMatchStarted(true);
+                          toast({
+                            title: "Match Started!",
+                            description: `${matchState.strikeBatsman.name} is on strike. Let's go! 🏏`,
+                          });
+                        }}
                         className="w-full h-14 text-lg font-black bg-green-600 text-white rounded-2xl shadow-lg shadow-green-200 hover:bg-green-700 transition-all"
                         data-testid="button-start-match"
                       >
@@ -2170,38 +2369,324 @@ export default function Scoreboard() {
         )
       }
 
-      {/* End Innings Dialog */}
-      <Dialog open={showEndInningsDialog} onOpenChange={setShowEndInningsDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>End of Innings</DialogTitle>
-            <DialogDescription>
-              First innings complete. Score: {battingTeamScore.runs}/{battingTeamScore.wickets}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={handleInningsEnd}>Start 2nd Innings</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Match Ended Dialog */}
-      <Dialog open={showMatchEndedDialog} onOpenChange={setShowMatchEndedDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Match Complete</DialogTitle>
-            <DialogDescription>{matchState.result}</DialogDescription>
-          </DialogHeader>
-          <div className="text-center py-4">
-            <Trophy className="h-16 w-16 mx-auto text-yellow-500 mb-4" />
-            <p className="text-xl font-bold">{matchState.result}</p>
+      {/* End Innings Full-Page Scorecard */}
+      {showEndInningsDialog && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-white">
+          {/* Header */}
+          <div className="bg-blue-600 text-white p-4 shrink-0">
+            <div className="text-center">
+              <h1 className="text-lg font-bold">
+                {matchState.team1BattingFirst ? matchState.team1Name : matchState.team2Name}
+              </h1>
+              <p className="text-3xl font-black">
+                {firstInningsScore.runs}/{firstInningsScore.wickets}
+                <span className="text-lg font-normal text-blue-200 ml-2">
+                  ({formatOvers(firstInningsScore.balls)} ov)
+                </span>
+              </p>
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setLocation('/local-match')}>Back to Home</Button>
-            <Button onClick={handleResetMatch}>New Match</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto bg-white pb-20">
+            {/* Batting Section */}
+            <div className="px-2 py-2">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-blue-600 text-xs bg-blue-50">
+                    <th className="text-left p-2">Batting</th>
+                    <th className="p-1 text-center">R</th>
+                    <th className="p-1 text-center">B</th>
+                    <th className="p-1 text-center">4s</th>
+                    <th className="p-1 text-center">6s</th>
+                    <th className="p-1 text-center">S/R</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {firstInningsBattingStats.map((batsman, idx) => (
+                    <tr key={batsman.id || idx} className="border-b border-blue-100">
+                      <td className="p-2">
+                        <div className="text-blue-900 font-medium">{batsman.name}</div>
+                        <div className="text-gray-500 text-xs">{formatDismissal(batsman)}</div>
+                      </td>
+                      <td className="p-1 text-center text-blue-900 font-bold">{batsman.runs}</td>
+                      <td className="p-1 text-center text-gray-600">{batsman.balls}</td>
+                      <td className="p-1 text-center text-gray-600">{batsman.fours}</td>
+                      <td className="p-1 text-center text-gray-600">{batsman.sixes}</td>
+                      <td className="p-1 text-center text-gray-600">{batsman.strikeRate.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Extras */}
+              <div className="flex justify-between text-gray-600 text-sm p-2 border-b border-blue-100">
+                <span>Extras</span>
+                <span>
+                  {firstInningsScore.extras.wides + firstInningsScore.extras.noBalls + firstInningsScore.extras.byes + firstInningsScore.extras.legByes}
+                  {' '}(W {firstInningsScore.extras.wides}, NB {firstInningsScore.extras.noBalls}, B {firstInningsScore.extras.byes}, LB {firstInningsScore.extras.legByes})
+                </span>
+              </div>
+
+              {/* Total */}
+              <div className="flex justify-between text-blue-900 font-bold text-sm p-2 border-b border-blue-100 bg-blue-50">
+                <span>Total runs</span>
+                <span>{firstInningsScore.runs} ({firstInningsScore.wickets} wkts, {formatOvers(firstInningsScore.balls)} ov)</span>
+              </div>
+
+              {/* Did Not Bat */}
+              {(() => {
+                const didNotBat = getDidNotBatPlayers(firstInningsTeamPlayers, firstInningsBattingStats);
+                if (didNotBat.length === 0) return null;
+                return (
+                  <div className="p-2 text-gray-600 text-sm border-b border-blue-100">
+                    <span className="font-medium">Did not bat: </span>
+                    {didNotBat.map(p => p.name).join(' · ')}
+                  </div>
+                );
+              })()}
+
+              {/* Fall of Wickets */}
+              {(() => {
+                const fow = getFallOfWicketsForInnings(1);
+                if (fow.length === 0) return null;
+                return (
+                  <div className="p-2 text-gray-600 text-sm border-b border-blue-100">
+                    <div className="font-medium mb-1 text-blue-900">Fall of wickets</div>
+                    <div className="text-xs">
+                      {fow.map((f, idx) => (
+                        <span key={idx}>
+                          {f.score}/{f.wicketNumber} ({f.batsmanName}, {f.overs} ov)
+                          {idx < fow.length - 1 ? ' · ' : ''}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Bowling Section */}
+              <div className="mt-4">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-blue-600 text-xs bg-blue-50">
+                      <th className="text-left p-2">Bowling</th>
+                      <th className="p-1 text-center">O</th>
+                      <th className="p-1 text-center">M</th>
+                      <th className="p-1 text-center">R</th>
+                      <th className="p-1 text-center">W</th>
+                      <th className="p-1 text-center">Econ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {firstInningsBowlingStats.map((bowler, idx) => (
+                      <tr key={bowler.id || idx} className="border-b border-blue-100">
+                        <td className="p-2 text-blue-900 font-medium">{bowler.name}</td>
+                        <td className="p-1 text-center text-gray-600">{bowler.overs}</td>
+                        <td className="p-1 text-center text-gray-600">{bowler.maidens}</td>
+                        <td className="p-1 text-center text-gray-600">{bowler.runs}</td>
+                        <td className="p-1 text-center text-blue-900 font-bold">{bowler.wickets}</td>
+                        <td className="p-1 text-center text-gray-600">{bowler.economy.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Fixed Bottom Button */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-blue-100 p-4 shadow-lg">
+            <Button
+              onClick={handleInningsEnd}
+              className="w-full h-14 text-lg font-black bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+            >
+              Start 2nd Innings
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Match Ended Full-Page Scorecard */}
+      {showMatchEndedDialog && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-white">
+          {/* Header with Result */}
+          <div className="bg-blue-600 text-white p-4 shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="text-center flex-1">
+                <p className="text-2xl font-black tabular-nums">
+                  {matchState.team1Score.runs}/{matchState.team1Score.wickets}
+                </p>
+                <p className="text-xs text-blue-200">({formatOvers(matchState.team1Score.balls)})</p>
+              </div>
+              <div className="text-center flex-1 px-2">
+                <p className="text-xs text-white font-bold">{matchState.result}</p>
+              </div>
+              <div className="text-center flex-1">
+                <p className="text-2xl font-black tabular-nums">
+                  {matchState.team2Score.runs}/{matchState.team2Score.wickets}
+                </p>
+                <p className="text-xs text-blue-200">({formatOvers(matchState.team2Score.balls)})</p>
+              </div>
+            </div>
+
+            {/* Team Tabs */}
+            <div className="flex mt-4 border-b border-blue-500">
+              <button
+                onClick={() => setScorecardTeam('batting')}
+                className={`flex-1 py-2 text-sm font-bold transition-all ${scorecardTeam === 'batting'
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-blue-200'
+                  }`}
+              >
+                {matchState.team1Name}
+              </button>
+              <button
+                onClick={() => setScorecardTeam('bowling')}
+                className={`flex-1 py-2 text-sm font-bold transition-all ${scorecardTeam === 'bowling'
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-blue-200'
+                  }`}
+              >
+                {matchState.team2Name}
+              </button>
+            </div>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto bg-white pb-20">
+            {(() => {
+              // Determine which team's stats to show based on tab
+              const isTeam1 = scorecardTeam === 'batting';
+              const battingStats = isTeam1
+                ? (matchState.team1BattingFirst ? matchState.team1Batting : matchState.team2Batting)
+                : (matchState.team1BattingFirst ? matchState.team2Batting : matchState.team1Batting);
+              const bowlingStats = isTeam1
+                ? (matchState.team1BattingFirst ? matchState.team2Bowling : matchState.team1Bowling)
+                : (matchState.team1BattingFirst ? matchState.team1Bowling : matchState.team2Bowling);
+              const teamScore = isTeam1 ? matchState.team1Score : matchState.team2Score;
+              const teamPlayers = isTeam1 ? team1Players : team2Players;
+              const inningsNum = isTeam1
+                ? (matchState.team1BattingFirst ? 1 : 2)
+                : (matchState.team1BattingFirst ? 2 : 1);
+              const fow = matchState.fallOfWickets.filter(f => f.inningsNumber === inningsNum);
+
+              return (
+                <div className="px-2 py-2">
+                  {/* Batting Section */}
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-blue-600 text-xs bg-blue-50">
+                        <th className="text-left p-2">Batting</th>
+                        <th className="p-1 text-center">R</th>
+                        <th className="p-1 text-center">B</th>
+                        <th className="p-1 text-center">4s</th>
+                        <th className="p-1 text-center">6s</th>
+                        <th className="p-1 text-center">S/R</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {battingStats.map((batsman, idx) => (
+                        <tr key={batsman.id || idx} className="border-b border-blue-100">
+                          <td className="p-2">
+                            <div className="text-blue-900 font-medium">{batsman.name}</div>
+                            <div className="text-gray-500 text-xs">{formatDismissal(batsman)}</div>
+                          </td>
+                          <td className="p-1 text-center text-blue-900 font-bold">{batsman.runs}</td>
+                          <td className="p-1 text-center text-gray-600">{batsman.balls}</td>
+                          <td className="p-1 text-center text-gray-600">{batsman.fours}</td>
+                          <td className="p-1 text-center text-gray-600">{batsman.sixes}</td>
+                          <td className="p-1 text-center text-gray-600">{batsman.strikeRate.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* Extras */}
+                  <div className="flex justify-between text-gray-600 text-sm p-2 border-b border-blue-100">
+                    <span>Extras</span>
+                    <span>
+                      {teamScore.extras.wides + teamScore.extras.noBalls + teamScore.extras.byes + teamScore.extras.legByes}
+                      {' '}(W {teamScore.extras.wides}, NB {teamScore.extras.noBalls}, B {teamScore.extras.byes}, LB {teamScore.extras.legByes})
+                    </span>
+                  </div>
+
+                  {/* Total */}
+                  <div className="flex justify-between text-blue-900 font-bold text-sm p-2 border-b border-blue-100 bg-blue-50">
+                    <span>Total runs</span>
+                    <span>{teamScore.runs} ({teamScore.wickets} wkts, {formatOvers(teamScore.balls)} ov)</span>
+                  </div>
+
+                  {/* Did Not Bat */}
+                  {(() => {
+                    const didNotBat = getDidNotBatPlayers(teamPlayers, battingStats);
+                    if (didNotBat.length === 0) return null;
+                    return (
+                      <div className="p-2 text-gray-600 text-sm border-b border-blue-100">
+                        <span className="font-medium">Did not bat: </span>
+                        {didNotBat.map(p => p.name).join(' · ')}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Fall of Wickets */}
+                  {fow.length > 0 && (
+                    <div className="p-2 text-gray-600 text-sm border-b border-blue-100">
+                      <div className="font-medium mb-1 text-blue-900">Fall of wickets</div>
+                      <div className="text-xs">
+                        {fow.map((f, idx) => (
+                          <span key={idx}>
+                            {f.score}/{f.wicketNumber} ({f.batsmanName}, {f.overs} ov)
+                            {idx < fow.length - 1 ? ' · ' : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bowling Section */}
+                  <div className="mt-4">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-blue-600 text-xs bg-blue-50">
+                          <th className="text-left p-2">Bowling</th>
+                          <th className="p-1 text-center">O</th>
+                          <th className="p-1 text-center">M</th>
+                          <th className="p-1 text-center">R</th>
+                          <th className="p-1 text-center">W</th>
+                          <th className="p-1 text-center">Econ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bowlingStats.map((bowler, idx) => (
+                          <tr key={bowler.id || idx} className="border-b border-blue-100">
+                            <td className="p-2 text-blue-900 font-medium">{bowler.name}</td>
+                            <td className="p-1 text-center text-gray-600">{bowler.overs}</td>
+                            <td className="p-1 text-center text-gray-600">{bowler.maidens}</td>
+                            <td className="p-1 text-center text-gray-600">{bowler.runs}</td>
+                            <td className="p-1 text-center text-blue-900 font-bold">{bowler.wickets}</td>
+                            <td className="p-1 text-center text-gray-600">{bowler.economy.toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* Fixed Bottom Button */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-blue-100 p-4 shadow-lg">
+            <Button
+              onClick={() => setLocation('/local-match')}
+              className="w-full h-14 text-lg font-black bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+            >
+              Back to Home
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

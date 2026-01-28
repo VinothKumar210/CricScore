@@ -22,6 +22,8 @@ interface BattingStats {
   dismissalType: string;
   bowlerName: string;
   fielderName: string;
+  userId?: string;
+  guestId?: string;
 }
 
 interface BowlingStats {
@@ -31,6 +33,8 @@ interface BowlingStats {
   runs: number;
   wickets: number;
   economy: string;
+  userId?: string;
+  guestId?: string;
 }
 
 interface MatchSummary {
@@ -59,11 +63,23 @@ interface MatchSummary {
   secondInningsBowlers: BowlingStats[];
 }
 
+import { LinkPlayerDialog } from "@/components/match/LinkPlayerDialog";
+
 export default function MatchSummaryPage() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const { toast } = useToast();
+
+  const [linkDialogState, setLinkDialogState] = useState<{
+    isOpen: boolean;
+    playerName: string;
+    teamId?: string;
+    guestId?: string;
+  }>({
+    isOpen: false,
+    playerName: "",
+  });
 
   const { data: matchSummary, isLoading, error } = useQuery<MatchSummary>({
     queryKey: ['/api/match-summary', id],
@@ -72,7 +88,7 @@ export default function MatchSummaryPage() {
 
   const handlePDFDownload = async () => {
     if (!matchSummary) return;
-    
+
     setIsGeneratingPDF(true);
     try {
       // Get the main content element to capture
@@ -143,16 +159,16 @@ export default function MatchSummaryPage() {
         // Calculate the portion of canvas for this page
         const sourceY = (pageNum * pdfHeight) / widthRatio;
         const sourceHeight = Math.min(pdfHeight / widthRatio, canvasHeight - sourceY);
-        
+
         // Create a temporary canvas for this page slice
         const pageCanvas = document.createElement('canvas');
         const pageCtx = pageCanvas.getContext('2d');
-        
+
         if (!pageCtx) continue;
-        
+
         pageCanvas.width = canvasWidth;
         pageCanvas.height = sourceHeight;
-        
+
         // Draw the slice onto the page canvas
         pageCtx.fillStyle = '#ffffff';
         pageCtx.fillRect(0, 0, canvasWidth, sourceHeight);
@@ -161,15 +177,15 @@ export default function MatchSummaryPage() {
           0, sourceY, canvasWidth, sourceHeight,
           0, 0, canvasWidth, sourceHeight
         );
-        
+
         // Convert page canvas to image data
         const pageImgData = pageCanvas.toDataURL('image/png', 0.95);
-        
+
         // Add new page if not the first page
         if (pageNum > 0) {
           pdf.addPage();
         }
-        
+
         // Add the page image to PDF with proper scaling
         const pageScaledHeight = sourceHeight * widthRatio;
         pdf.addImage(
@@ -190,7 +206,7 @@ export default function MatchSummaryPage() {
 
       // Download the PDF
       pdf.save(filename);
-      
+
       // Success notification
       toast({
         title: "PDF Generated",
@@ -198,14 +214,14 @@ export default function MatchSummaryPage() {
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
-      
+
       // Show user-friendly error message
       toast({
         title: "PDF Generation Failed",
         description: "Unable to generate PDF. You can use your browser's print function as an alternative.",
         variant: "destructive",
       });
-      
+
       // Don't automatically trigger print - let user decide
     } finally {
       setIsGeneratingPDF(false);
@@ -214,12 +230,12 @@ export default function MatchSummaryPage() {
 
   const formatOvers = (overs: number): string => {
     if (overs === 0) return '0.0';
-    
+
     // Handle cricket format where overs are stored as decimal (e.g., 14.5 = 14 overs 3 balls)
     const wholeOvers = Math.floor(overs);
     const balls = Math.round((overs - wholeOvers) * 6);
     const clampedBalls = Math.min(Math.max(balls, 0), 5);
-    
+
     return clampedBalls === 0 ? `${wholeOvers}.0` : `${wholeOvers}.${clampedBalls}`;
   };
 
@@ -295,7 +311,7 @@ export default function MatchSummaryPage() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <div>
-                    <span className="font-medium">4s:</span> {stat.fours || 0} | 
+                    <span className="font-medium">4s:</span> {stat.fours || 0} |
                     <span className="font-medium">6s:</span> {stat.sixes || 0}
                   </div>
                   <div className="text-right">
@@ -324,6 +340,7 @@ export default function MatchSummaryPage() {
                   <TableHead className="text-right">6s</TableHead>
                   <TableHead className="text-right">SR</TableHead>
                   <TableHead>Dismissal</TableHead>
+                  <TableHead className="text-right w-[80px] no-print">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -351,6 +368,24 @@ export default function MatchSummaryPage() {
                           </div>
                         )}
                       </div>
+                    </TableCell>
+                    <TableCell className="text-right no-print">
+                      {!stat.userId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-blue-600"
+                          onClick={() => setLinkDialogState({
+                            isOpen: true,
+                            playerName: stat.playerName,
+                            guestId: stat.guestId,
+                            // Attempt to guess team: we don't strictly know here without context passing
+                            // but resolvedGuest query will try name matching
+                          })}
+                        >
+                          Link
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -428,6 +463,7 @@ export default function MatchSummaryPage() {
                   <TableHead className="text-right">Runs</TableHead>
                   <TableHead className="text-right">Wickets</TableHead>
                   <TableHead className="text-right">Economy</TableHead>
+                  <TableHead className="text-right w-[80px] no-print">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -445,6 +481,22 @@ export default function MatchSummaryPage() {
                       {stat.wickets || 0}
                     </TableCell>
                     <TableCell className="text-right">{stat.economy || '0.00'}</TableCell>
+                    <TableCell className="text-right no-print">
+                      {!stat.userId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-blue-600"
+                          onClick={() => setLinkDialogState({
+                            isOpen: true,
+                            playerName: stat.playerName,
+                            guestId: stat.guestId,
+                          })}
+                        >
+                          Link
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -483,109 +535,109 @@ export default function MatchSummaryPage() {
       <div id="match-summary-content">
         {/* Match Header */}
         <Card className="mb-8">
-        <CardContent className="pt-6">
-          <div className="text-center space-y-4">
-            <h1 className="text-3xl font-bold" data-testid="text-match-title">
-              Cricket Match Summary
-            </h1>
-            <div className="text-lg text-muted-foreground">
-              {formatDate(matchSummary.matchDate)} • {matchSummary.venue || 'Unknown Venue'}
-            </div>
-            
-            {/* Teams and Scores */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center my-8">
-              {/* Home Team */}
-              <div className="text-center">
-                <div className="text-2xl font-bold" data-testid="text-home-team">
-                  {matchSummary.homeTeamName}
-                </div>
-                <div className="text-3xl font-bold text-primary" data-testid="text-home-score">
-                  {matchSummary.homeTeamRuns}/{matchSummary.homeTeamWickets}
-                </div>
-                <div className="text-sm text-muted-foreground" data-testid="text-home-overs">
-                  ({formatOvers(matchSummary.homeTeamOvers || 0)} overs)
-                </div>
-              </div>
-
-              {/* VS */}
-              <div className="text-center">
-                <div className="text-4xl font-bold text-muted-foreground">VS</div>
-              </div>
-
-              {/* Away Team */}
-              <div className="text-center">
-                <div className="text-2xl font-bold" data-testid="text-away-team">
-                  {matchSummary.awayTeamName}
-                </div>
-                <div className="text-3xl font-bold text-primary" data-testid="text-away-score">
-                  {matchSummary.awayTeamRuns}/{matchSummary.awayTeamWickets}
-                </div>
-                <div className="text-sm text-muted-foreground" data-testid="text-away-overs">
-                  ({formatOvers(matchSummary.awayTeamOvers || 0)} overs)
-                </div>
-              </div>
-            </div>
-
-            {/* Match Result */}
-            <div className="text-center">
-              <Badge variant="secondary" className="text-lg px-4 py-2" data-testid="text-match-result">
-                {matchSummary.winningTeam === 'Draw' 
-                  ? '🤝 Match Drawn' 
-                  : `🏆 ${matchSummary.winningTeam} Won`
-                }
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* First Innings */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4" data-testid="text-first-innings-title">
-          First Innings
-        </h2>
-        <BattingTable stats={matchSummary.firstInningsBatsmen || []} inningsTitle="First" />
-        <BowlingTable stats={matchSummary.firstInningsBowlers || []} inningsTitle="First" />
-      </div>
-
-      {/* Second Innings */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4" data-testid="text-second-innings-title">
-          Second Innings
-        </h2>
-        <BattingTable stats={matchSummary.secondInningsBatsmen || []} inningsTitle="Second" />
-        <BowlingTable stats={matchSummary.secondInningsBowlers || []} inningsTitle="Second" />
-      </div>
-
-      {/* Man of the Match */}
-      {matchSummary.manOfTheMatchUser && (
-        <Card className="mb-8">
           <CardContent className="pt-6">
             <div className="text-center space-y-4">
-              <div className="flex justify-center items-center gap-2">
-                <Trophy className="h-8 w-8 text-amber-500" />
-                <h2 className="text-2xl font-bold">Man of the Match</h2>
+              <h1 className="text-3xl font-bold" data-testid="text-match-title">
+                Cricket Match Summary
+              </h1>
+              <div className="text-lg text-muted-foreground">
+                {formatDate(matchSummary.matchDate)} • {matchSummary.venue || 'Unknown Venue'}
               </div>
-              <div className="text-xl font-semibold text-amber-600 dark:text-amber-400" data-testid="text-mom-name">
-                {matchSummary.manOfTheMatchUser.profileName || matchSummary.manOfTheMatchUser.username || 'Unknown Player'}
-              </div>
-              {matchSummary.manOfTheMatchUser.username && (
-                <div className="text-sm text-muted-foreground" data-testid="text-mom-username">
-                  @{matchSummary.manOfTheMatchUser.username}
-                </div>
-              )}
-              {matchSummary.manOfTheMatchStats && (
-                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 max-w-md mx-auto">
-                  <div className="text-sm font-medium mb-2">Performance Score</div>
-                  <div className="text-2xl font-bold text-primary" data-testid="text-mom-score">
-                    {matchSummary.manOfTheMatchStats?.performanceScore || 0} points
+
+              {/* Teams and Scores */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center my-8">
+                {/* Home Team */}
+                <div className="text-center">
+                  <div className="text-2xl font-bold" data-testid="text-home-team">
+                    {matchSummary.homeTeamName}
+                  </div>
+                  <div className="text-3xl font-bold text-primary" data-testid="text-home-score">
+                    {matchSummary.homeTeamRuns}/{matchSummary.homeTeamWickets}
+                  </div>
+                  <div className="text-sm text-muted-foreground" data-testid="text-home-overs">
+                    ({formatOvers(matchSummary.homeTeamOvers || 0)} overs)
                   </div>
                 </div>
-              )}
+
+                {/* VS */}
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-muted-foreground">VS</div>
+                </div>
+
+                {/* Away Team */}
+                <div className="text-center">
+                  <div className="text-2xl font-bold" data-testid="text-away-team">
+                    {matchSummary.awayTeamName}
+                  </div>
+                  <div className="text-3xl font-bold text-primary" data-testid="text-away-score">
+                    {matchSummary.awayTeamRuns}/{matchSummary.awayTeamWickets}
+                  </div>
+                  <div className="text-sm text-muted-foreground" data-testid="text-away-overs">
+                    ({formatOvers(matchSummary.awayTeamOvers || 0)} overs)
+                  </div>
+                </div>
+              </div>
+
+              {/* Match Result */}
+              <div className="text-center">
+                <Badge variant="secondary" className="text-lg px-4 py-2" data-testid="text-match-result">
+                  {matchSummary.winningTeam === 'Draw'
+                    ? '🤝 Match Drawn'
+                    : `🏆 ${matchSummary.winningTeam} Won`
+                  }
+                </Badge>
+              </div>
             </div>
           </CardContent>
         </Card>
-      )}
+
+        {/* First Innings */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4" data-testid="text-first-innings-title">
+            First Innings
+          </h2>
+          <BattingTable stats={matchSummary.firstInningsBatsmen || []} inningsTitle="First" />
+          <BowlingTable stats={matchSummary.firstInningsBowlers || []} inningsTitle="First" />
+        </div>
+
+        {/* Second Innings */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold mb-4" data-testid="text-second-innings-title">
+            Second Innings
+          </h2>
+          <BattingTable stats={matchSummary.secondInningsBatsmen || []} inningsTitle="Second" />
+          <BowlingTable stats={matchSummary.secondInningsBowlers || []} inningsTitle="Second" />
+        </div>
+
+        {/* Man of the Match */}
+        {matchSummary.manOfTheMatchUser && (
+          <Card className="mb-8">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <div className="flex justify-center items-center gap-2">
+                  <Trophy className="h-8 w-8 text-amber-500" />
+                  <h2 className="text-2xl font-bold">Man of the Match</h2>
+                </div>
+                <div className="text-xl font-semibold text-amber-600 dark:text-amber-400" data-testid="text-mom-name">
+                  {matchSummary.manOfTheMatchUser.profileName || matchSummary.manOfTheMatchUser.username || 'Unknown Player'}
+                </div>
+                {matchSummary.manOfTheMatchUser.username && (
+                  <div className="text-sm text-muted-foreground" data-testid="text-mom-username">
+                    @{matchSummary.manOfTheMatchUser.username}
+                  </div>
+                )}
+                {matchSummary.manOfTheMatchStats && (
+                  <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 max-w-md mx-auto">
+                    <div className="text-sm font-medium mb-2">Performance Score</div>
+                    <div className="text-2xl font-bold text-primary" data-testid="text-mom-score">
+                      {matchSummary.manOfTheMatchStats?.performanceScore || 0} points
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Enhanced Styles for both PDF capture and print */}
@@ -717,6 +769,16 @@ export default function MatchSummaryPage() {
           }
         }
       `}</style>
+
+      <LinkPlayerDialog
+        isOpen={linkDialogState.isOpen}
+        onClose={() => setLinkDialogState(prev => ({ ...prev, isOpen: false }))}
+        guestParams={{
+          playerName: linkDialogState.playerName,
+          guestId: linkDialogState.guestId,
+          teamId: linkDialogState.teamId
+        }}
+      />
     </div>
   );
 }
