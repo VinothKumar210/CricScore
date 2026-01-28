@@ -1,0 +1,7 @@
+{
+  "projectId": "64381e92-88c2-453c-8c7c-68af8129854e",
+  "createdAt": 1769586178954,
+  "startupCommands": [
+    "npm run dev:separate"
+  ]
+}
