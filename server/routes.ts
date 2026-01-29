@@ -899,18 +899,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/teams/:id/guest-players", authenticateToken, async (req: any, res) => {
-    try {
-      const { id: inputId } = req.params;
+    app.post("/api/teams/:id/guest-players", authenticateToken, async (req: any, res) => {
+      try {
+        const { id: inputId } = req.params;
+        console.log('Adding guest player to team:', inputId);
 
-      const team = await storage.getTeam(inputId);
-      if (!team) {
-        return res.status(404).json({ message: "Team not found" });
-      }
+        const team = await storage.getTeam(inputId);
+        if (!team) {
+          console.log('Team not found for ID/code:', inputId);
+          return res.status(404).json({ message: "Team not found" });
+        }
 
-      const teamId = team.id;
+        const teamId = team.id;
+        console.log('Resolved teamId:', teamId);
 
-      const isMember = await storage.isTeamMember(teamId, req.userId);
+        const isMember = await storage.isTeamMember(teamId, req.userId);
+
       const isCaptain = team.captainId === req.userId;
       const isViceCaptain = team.viceCaptainId === req.userId;
 
