@@ -736,13 +736,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Remove team member
   app.delete("/api/teams/:id/members/:memberId", authenticateToken, async (req: any, res) => {
     try {
-      const { id: teamId, memberId } = req.params;
+      const { id: inputId, memberId } = req.params;
 
       // Get team to check permissions
-      const team = await storage.getTeam(teamId);
+      const team = await storage.getTeam(inputId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
+
+      const teamId = team.id;
 
       // Check if user has permission to remove members
       const isCaptain = team.captainId === req.userId;
@@ -783,14 +785,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Promote member to vice captain
   app.put("/api/teams/:id/promote-vice-captain", authenticateToken, async (req: any, res) => {
     try {
-      const { id: teamId } = req.params;
+      const { id: inputId } = req.params;
       const { memberId } = req.body;
 
       // Get team to check permissions
-      const team = await storage.getTeam(teamId);
+      const team = await storage.getTeam(inputId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
+
+      const teamId = team.id;
 
       // Only captain and vice captain can promote members
       const isCaptain = team.captainId === req.userId;
@@ -815,13 +819,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Demote vice captain to member
   app.put("/api/teams/:id/demote-vice-captain", authenticateToken, async (req: any, res) => {
     try {
-      const { id: teamId } = req.params;
+      const { id: inputId } = req.params;
 
       // Get team to check permissions
-      const team = await storage.getTeam(teamId);
+      const team = await storage.getTeam(inputId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
+
+      const teamId = team.id;
 
       // Only captain and vice captain can demote vice captain
       const isCaptain = team.captainId === req.userId;
@@ -846,14 +852,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transfer captaincy to another member
   app.put("/api/teams/:id/transfer-captaincy", authenticateToken, async (req: any, res) => {
     try {
-      const { id: teamId } = req.params;
+      const { id: inputId } = req.params;
       const { memberId } = req.body;
 
       // Get team to check permissions
-      const team = await storage.getTeam(teamId);
+      const team = await storage.getTeam(inputId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
+
+      const teamId = team.id;
 
       // Only captain can transfer captaincy
       if (team.captainId !== req.userId) {
@@ -893,12 +901,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/teams/:id/guest-players", authenticateToken, async (req: any, res) => {
     try {
-      const teamId = req.params.id;
+      const { id: inputId } = req.params;
 
-      const team = await storage.getTeam(teamId);
+      const team = await storage.getTeam(inputId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
+
+      const teamId = team.id;
 
       const isMember = await storage.isTeamMember(teamId, req.userId);
       const isCaptain = team.captainId === req.userId;
@@ -929,12 +939,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/teams/:teamId/guest-players/:guestId", authenticateToken, async (req: any, res) => {
     try {
-      const { teamId, guestId } = req.params;
+      const { teamId: inputTeamId, guestId } = req.params;
 
-      const team = await storage.getTeam(teamId);
+      const team = await storage.getTeam(inputTeamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
+
+      const teamId = team.id;
 
       const guestPlayer = await storage.getGuestPlayer(guestId);
       if (!guestPlayer || guestPlayer.teamId !== teamId) {
@@ -961,12 +973,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/teams/:teamId/guest-players/:guestId", authenticateToken, async (req: any, res) => {
     try {
-      const { teamId, guestId } = req.params;
+      const { teamId: inputTeamId, guestId } = req.params;
 
-      const team = await storage.getTeam(teamId);
+      const team = await storage.getTeam(inputTeamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
+
+      const teamId = team.id;
 
       const guestPlayer = await storage.getGuestPlayer(guestId);
       if (!guestPlayer || guestPlayer.teamId !== teamId) {
@@ -993,13 +1007,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/teams/:teamId/guest-players/:guestId/link", authenticateToken, async (req: any, res) => {
     try {
-      const { teamId, guestId } = req.params;
+      const { teamId: inputTeamId, guestId } = req.params;
       const { userId } = req.body;
 
-      const team = await storage.getTeam(teamId);
+      const team = await storage.getTeam(inputTeamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
+
+      const teamId = team.id;
 
       const guestPlayer = await storage.getGuestPlayer(guestId);
       if (!guestPlayer || guestPlayer.teamId !== teamId) {
