@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { AvatarWithFallback } from "@/components/avatar-with-fallback";
 import { User, Mail, Calendar, Trophy, Edit, Save, X, ArrowLeft, Target, TrendingUp, Award, BarChart3, Camera, Upload, ChevronLeft, ChevronRight, MapPin, Clock, Activity } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
@@ -33,10 +34,10 @@ export default function Profile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const matchesPerPage = 10;
-  
+
   // Determine if we're viewing another player's profile or our own
   const isOwnProfile = !id;
-  
+
   // Query for the profile user if viewing another player
   const { data: profileUser, isLoading: isProfileLoading } = useQuery<UserType>({
     queryKey: ["/api/users", id],
@@ -46,7 +47,7 @@ export default function Profile() {
   // Use current user if own profile, otherwise use queried profile user
   const user = isOwnProfile ? currentUser : profileUser;
   const isLoading = isOwnProfile ? false : isProfileLoading;
-  
+
   // Query for player statistics
   const { data: playerStats, isLoading: isStatsLoading, refetch: refetchStats } = useQuery<CareerStats>({
     queryKey: isOwnProfile ? ["/api/stats", currentUser?.id] : ["/api/users", id, "stats"],
@@ -153,13 +154,13 @@ export default function Profile() {
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
       });
-      
+
       // Invalidate and refetch relevant queries
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       if (!isOwnProfile) {
         queryClient.invalidateQueries({ queryKey: ["/api/users", id] });
       }
-      
+
       refreshUser();
       setIsEditing(false);
     },
@@ -368,22 +369,27 @@ export default function Profile() {
                   )}
                 </div>
               )}
-              <div 
-                className={`relative mx-auto w-20 h-20 bg-primary rounded-full flex items-center justify-center mb-4 overflow-hidden ${
-                  isOwnProfile && isEditing ? "cursor-pointer hover:opacity-80 transition-opacity" : ""
-                }`}
+              <div
+                className={`relative mx-auto mb-4 ${isOwnProfile && isEditing ? "cursor-pointer hover:opacity-80 transition-opacity" : ""
+                  }`}
                 onClick={handleProfilePictureClick}
                 data-testid="profile-picture-container"
               >
                 {profilePicturePreview || (user as any)?.profilePictureUrl ? (
-                  <img 
-                    src={profilePicturePreview || (user as any)?.profilePictureUrl} 
-                    alt="Profile picture" 
-                    className="w-full h-full object-cover"
-                    data-testid="img-profile-picture"
-                  />
+                  <div className="w-20 h-20 rounded-full overflow-hidden">
+                    <img
+                      src={profilePicturePreview || (user as any)?.profilePictureUrl}
+                      alt="Profile picture"
+                      className="w-full h-full object-cover"
+                      data-testid="img-profile-picture"
+                    />
+                  </div>
                 ) : (
-                  <User className="w-10 h-10 text-primary-foreground" />
+                  <AvatarWithFallback
+                    name={user?.profileName || user?.username}
+                    size="xl"
+                    className="w-20 h-20 text-2xl"
+                  />
                 )}
                 {isOwnProfile && isEditing && (
                   <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
@@ -408,7 +414,7 @@ export default function Profile() {
                   {/* Profile Information */}
                   <div className="space-y-4">
                     <h2 className="text-xl font-semibold border-b border-border pb-2">Profile Information</h2>
-                    
+
                     {/* Basic Info - Compact Layout */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between py-2">
@@ -418,7 +424,7 @@ export default function Profile() {
                         </div>
                         <span className="font-medium text-sm" data-testid="profile-email">{user.email}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between py-2">
                         <div className="flex items-center space-x-3">
                           <User className="w-4 h-4 text-muted-foreground" />
@@ -426,7 +432,7 @@ export default function Profile() {
                         </div>
                         <span className="font-medium text-sm" data-testid="profile-username">@{user.username}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between py-2">
                         <div className="flex items-center space-x-3">
                           <Trophy className="w-4 h-4 text-muted-foreground" />
@@ -434,7 +440,7 @@ export default function Profile() {
                         </div>
                         <span className="font-medium text-sm" data-testid="profile-name">{user.profileName || "Player"}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between py-2">
                         <div className="flex items-center space-x-3">
                           <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -445,7 +451,7 @@ export default function Profile() {
                         </span>
                       </div>
                     </div>
-                    
+
                     {/* Playing Style - Horizontal Layout */}
                     <div className="pt-4 border-t border-border">
                       <h3 className="text-lg font-medium mb-3">Playing Style</h3>
@@ -461,7 +467,7 @@ export default function Profile() {
                             {formatBowlingStyle(user.bowlingStyle)}
                           </Badge>
                         )}
-                        <Badge 
+                        <Badge
                           variant={user.profileComplete ? "default" : "destructive"}
                           className="text-xs"
                           data-testid="profile-status"
@@ -488,7 +494,7 @@ export default function Profile() {
                     {/* Edit Form */}
                     <div className="space-y-4">
                       <h2 className="text-xl font-semibold border-b border-border pb-2">Edit Profile</h2>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -503,7 +509,7 @@ export default function Profile() {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={form.control}
                           name="role"
@@ -524,7 +530,7 @@ export default function Profile() {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={form.control}
                           name="battingHand"
@@ -544,7 +550,7 @@ export default function Profile() {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={form.control}
                           name="bowlingStyle"
@@ -566,7 +572,7 @@ export default function Profile() {
                           )}
                         />
                       </div>
-                      
+
                       <FormField
                         control={form.control}
                         name="description"
@@ -778,166 +784,166 @@ export default function Profile() {
                   <>
                     {/* Match Cards */}
                     <div className="space-y-4">
-                  {matchHistory.matches.map((matchData: any) => {
-                    const match = matchData.matchSummary;
-                    const userPerformance = matchData.userPerformance;
-                    
-                    return (
-                      <Card 
-                        key={match.id}
-                        className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary"
-                        onClick={() => setLocation(`/match-summary/${match.id}`)}
-                        data-testid={`match-card-${match.id}`}
-                      >
-                        <CardContent className="p-4">
-                          {/* Match Header */}
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="font-semibold text-lg" data-testid="text-match-teams">
-                              {match.homeTeamName} vs {match.awayTeamName}
-                            </div>
-                            {userPerformance?.isManOfTheMatch && (
-                              <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">
-                                <Trophy className="w-3 h-3 mr-1" />
-                                MOM
-                              </Badge>
-                            )}
-                          </div>
+                      {matchHistory.matches.map((matchData: any) => {
+                        const match = matchData.matchSummary;
+                        const userPerformance = matchData.userPerformance;
 
-                          {/* Match Details */}
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-4 h-4" />
-                              <span>{formatDate(match.matchDate)}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              <span>{match.venue}</span>
-                            </div>
-                          </div>
-
-                          {/* Match Scores */}
-                          <div className="grid grid-cols-2 gap-4 mb-4">
-                            <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                              <div className="font-semibold text-sm">{match.homeTeamName}</div>
-                              <div className="text-xl font-bold text-primary">
-                                {match.firstInnings?.totalRuns || 0}/{match.firstInnings?.wicketsFallen || 0}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                ({formatOvers(match.firstInnings?.oversPlayed || 0)} ov)
-                              </div>
-                            </div>
-                            <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                              <div className="font-semibold text-sm">{match.awayTeamName}</div>
-                              <div className="text-xl font-bold text-primary">
-                                {match.secondInnings?.totalRuns || 0}/{match.secondInnings?.wicketsFallen || 0}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                ({formatOvers(match.secondInnings?.oversPlayed || 0)} ov)
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Match Result */}
-                          <div className="text-center mb-4">
-                            <Badge variant="secondary" className="text-sm px-3 py-1">
-                              {match.winningTeam === 'Draw' ? 'Match Drawn' : `${match.winningTeam} Won`}
-                            </Badge>
-                          </div>
-
-                          {/* Player Performance Summary */}
-                          {userPerformance && (
-                            <div className="bg-slate-50 dark:bg-slate-800/30 border rounded-lg p-3">
-                              <div className="text-sm font-medium text-muted-foreground mb-2">
-                                Performance Summary
-                              </div>
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                {userPerformance.ballsFaced > 0 && (
-                                  <div>
-                                    <span className="text-muted-foreground">Batting:</span>
-                                    <span className="ml-2 font-medium">
-                                      {userPerformance.runsScored}/{userPerformance.ballsFaced} balls
-                                    </span>
-                                  </div>
-                                )}
-                                {userPerformance.oversBowled > 0 && (
-                                  <div>
-                                    <span className="text-muted-foreground">Bowling:</span>
-                                    <span className="ml-2 font-medium">
-                                      {userPerformance.wicketsTaken}w, {formatOvers(userPerformance.oversBowled)} ov
-                                    </span>
-                                  </div>
-                                )}
-                                {userPerformance.catchesTaken > 0 && (
-                                  <div>
-                                    <span className="text-muted-foreground">Fielding:</span>
-                                    <span className="ml-2 font-medium">
-                                      {userPerformance.catchesTaken} catch{userPerformance.catchesTaken !== 1 ? 'es' : ''}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-
-                {/* Pagination */}
-                {totalMatchPages > 1 && (
-                  <div className="flex items-center justify-center space-x-2 mt-6">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentMatchPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentMatchPage === 1}
-                      data-testid="button-match-prev-page"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-                    
-                    <div className="flex items-center space-x-1">
-                      {[...Array(Math.min(totalMatchPages, 5))].map((_, i) => {
-                        let pageNum;
-                        if (totalMatchPages <= 5) {
-                          pageNum = i + 1;
-                        } else if (currentMatchPage <= 2) {
-                          pageNum = i + 1;
-                        } else if (currentMatchPage >= totalMatchPages - 1) {
-                          pageNum = totalMatchPages - 4 + i;
-                        } else {
-                          pageNum = currentMatchPage - 2 + i;
-                        }
-                        
                         return (
-                          <Button
-                            key={pageNum}
-                            variant={currentMatchPage === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setCurrentMatchPage(pageNum)}
-                            className="w-8 h-8 p-0"
-                            data-testid={`button-match-page-${pageNum}`}
+                          <Card
+                            key={match.id}
+                            className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary"
+                            onClick={() => setLocation(`/match-summary/${match.id}`)}
+                            data-testid={`match-card-${match.id}`}
                           >
-                            {pageNum}
-                          </Button>
+                            <CardContent className="p-4">
+                              {/* Match Header */}
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="font-semibold text-lg" data-testid="text-match-teams">
+                                  {match.homeTeamName} vs {match.awayTeamName}
+                                </div>
+                                {userPerformance?.isManOfTheMatch && (
+                                  <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-200">
+                                    <Trophy className="w-3 h-3 mr-1" />
+                                    MOM
+                                  </Badge>
+                                )}
+                              </div>
+
+                              {/* Match Details */}
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4" />
+                                  <span>{formatDate(match.matchDate)}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <MapPin className="w-4 h-4" />
+                                  <span>{match.venue}</span>
+                                </div>
+                              </div>
+
+                              {/* Match Scores */}
+                              <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                  <div className="font-semibold text-sm">{match.homeTeamName}</div>
+                                  <div className="text-xl font-bold text-primary">
+                                    {match.firstInnings?.totalRuns || 0}/{match.firstInnings?.wicketsFallen || 0}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    ({formatOvers(match.firstInnings?.oversPlayed || 0)} ov)
+                                  </div>
+                                </div>
+                                <div className="text-center p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                  <div className="font-semibold text-sm">{match.awayTeamName}</div>
+                                  <div className="text-xl font-bold text-primary">
+                                    {match.secondInnings?.totalRuns || 0}/{match.secondInnings?.wicketsFallen || 0}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground">
+                                    ({formatOvers(match.secondInnings?.oversPlayed || 0)} ov)
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Match Result */}
+                              <div className="text-center mb-4">
+                                <Badge variant="secondary" className="text-sm px-3 py-1">
+                                  {match.winningTeam === 'Draw' ? 'Match Drawn' : `${match.winningTeam} Won`}
+                                </Badge>
+                              </div>
+
+                              {/* Player Performance Summary */}
+                              {userPerformance && (
+                                <div className="bg-slate-50 dark:bg-slate-800/30 border rounded-lg p-3">
+                                  <div className="text-sm font-medium text-muted-foreground mb-2">
+                                    Performance Summary
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4 text-sm">
+                                    {userPerformance.ballsFaced > 0 && (
+                                      <div>
+                                        <span className="text-muted-foreground">Batting:</span>
+                                        <span className="ml-2 font-medium">
+                                          {userPerformance.runsScored}/{userPerformance.ballsFaced} balls
+                                        </span>
+                                      </div>
+                                    )}
+                                    {userPerformance.oversBowled > 0 && (
+                                      <div>
+                                        <span className="text-muted-foreground">Bowling:</span>
+                                        <span className="ml-2 font-medium">
+                                          {userPerformance.wicketsTaken}w, {formatOvers(userPerformance.oversBowled)} ov
+                                        </span>
+                                      </div>
+                                    )}
+                                    {userPerformance.catchesTaken > 0 && (
+                                      <div>
+                                        <span className="text-muted-foreground">Fielding:</span>
+                                        <span className="ml-2 font-medium">
+                                          {userPerformance.catchesTaken} catch{userPerformance.catchesTaken !== 1 ? 'es' : ''}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
                         );
                       })}
                     </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentMatchPage(prev => Math.min(prev + 1, totalMatchPages))}
-                      disabled={currentMatchPage === totalMatchPages}
-                      data-testid="button-match-next-page"
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
+
+                    {/* Pagination */}
+                    {totalMatchPages > 1 && (
+                      <div className="flex items-center justify-center space-x-2 mt-6">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentMatchPage(prev => Math.max(prev - 1, 1))}
+                          disabled={currentMatchPage === 1}
+                          data-testid="button-match-prev-page"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Previous
+                        </Button>
+
+                        <div className="flex items-center space-x-1">
+                          {[...Array(Math.min(totalMatchPages, 5))].map((_, i) => {
+                            let pageNum;
+                            if (totalMatchPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (currentMatchPage <= 2) {
+                              pageNum = i + 1;
+                            } else if (currentMatchPage >= totalMatchPages - 1) {
+                              pageNum = totalMatchPages - 4 + i;
+                            } else {
+                              pageNum = currentMatchPage - 2 + i;
+                            }
+
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={currentMatchPage === pageNum ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentMatchPage(pageNum)}
+                                className="w-8 h-8 p-0"
+                                data-testid={`button-match-page-${pageNum}`}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          })}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentMatchPage(prev => Math.min(prev + 1, totalMatchPages))}
+                          disabled={currentMatchPage === totalMatchPages}
+                          data-testid="button-match-next-page"
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </>
                 )}
               </CardContent>

@@ -8,6 +8,8 @@ import { processBall, initialMatchState } from "@shared/scoring";
 import { z } from "zod";
 import { verifyFirebaseToken } from "./firebase-admin";
 import { statsService } from "./services/stats_service";
+import { uploadImage, deleteImage } from "./services/cloudinary";
+import { guestService } from "./services/guest_service";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -261,6 +263,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
+      // Handle profile picture upload to Cloudinary
+      let profilePictureUrl = (currentUser as any).profilePictureUrl;
+      if (validatedData.profilePictureUrl && validatedData.profilePictureUrl.startsWith('data:')) {
+        try {
+          const uploadResult = await uploadImage(
+            validatedData.profilePictureUrl,
+            'profiles',
+            `user_${req.userId}`
+          );
+          profilePictureUrl = uploadResult.url;
+        } catch (uploadError) {
+          console.error('Profile picture upload failed:', uploadError);
+          // Continue without updating picture if upload fails
+        }
+      } else if (validatedData.profilePictureUrl) {
+        // Already a URL, use directly
+        profilePictureUrl = validatedData.profilePictureUrl;
+      }
+
       // Create a profile update object with username preserved
       const profileData = {
         username: currentUser.username!,
@@ -269,6 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: validatedData.role !== undefined ? validatedData.role : currentUser.role!,
         battingHand: validatedData.battingHand !== undefined ? validatedData.battingHand : currentUser.battingHand!,
         bowlingStyle: validatedData.bowlingStyle !== undefined ? validatedData.bowlingStyle : currentUser.bowlingStyle || undefined,
+        profilePictureUrl: profilePictureUrl,
       };
 
       const user = await storage.updateUserProfile(req.userId, profileData);
@@ -281,6 +303,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
       }
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Image upload endpoint (for profile pics, team logos, etc.)
+  app.post("/api/upload/image", authenticateToken, async (req: any, res) => {
+    try {
+      const { image, folder = 'general', publicId } = req.body;
+
+      if (!image) {
+        return res.status(400).json({ message: "Image data is required" });
+      }
+
+      // Validate image is base64
+      if (!image.startsWith('data:image/')) {
+        return res.status(400).json({ message: "Invalid image format. Must be base64 data URL" });
+      }
+
+      const result = await uploadImage(image, folder, publicId);
+      res.json({ url: result.url, publicId: result.publicId });
+    } catch (error) {
+      console.error('Image upload error:', error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+
+  // Team logo upload endpoint
+  app.patch("/api/teams/:teamId/logo", authenticateToken, async (req: any, res) => {
+    try {
+      const { teamId } = req.params;
+      const { logoUrl } = req.body;
+
+      if (!logoUrl) {
+        return res.status(400).json({ message: "Logo image is required" });
+      }
+
+      // Get team and verify user is captain or creator
+      const team = await storage.getTeam(teamId);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      if (team.createdById !== req.userId && team.captainId !== req.userId) {
+        return res.status(403).json({ message: "Only team creator or captain can update logo" });
+      }
+
+      // Upload to Cloudinary if base64
+      let finalLogoUrl = logoUrl;
+      if (logoUrl.startsWith('data:')) {
+        try {
+          const uploadResult = await uploadImage(logoUrl, 'teams', `team_${teamId}`);
+          finalLogoUrl = uploadResult.url;
+        } catch (uploadError) {
+          console.error('Team logo upload failed:', uploadError);
+          return res.status(500).json({ message: "Failed to upload logo" });
+        }
+      }
+
+      // Update team with new logo
+      const updatedTeam = await storage.updateTeam(teamId, { logoUrl: finalLogoUrl });
+      res.json(updatedTeam);
+    } catch (error) {
       return handleDatabaseError(error, res);
     }
   });
@@ -824,9 +908,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only team members can add guest players" });
       }
 
+      const guestCode = await guestService.generateGuestCode();
+
       const validatedData = insertGuestPlayerSchema.parse({
         ...req.body,
         teamId,
+        guestCode,
         addedByUserId: req.userId,
       });
 
@@ -1992,50 +2079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // --- Stats & Guest Linking Routes ---
 
-  app.post("/api/teams/:id/guest-players", authenticateToken, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const { name, role } = req.body;
 
-      if (!name) {
-        return res.status(400).json({ message: "Name is required" });
-      }
-
-      const team = await storage.getTeam(id);
-      if (!team) {
-        return res.status(404).json({ message: "Team not found" });
-      }
-
-      // Check permissions - allow captain, vice-captain, or any team member to add guests
-      const isCaptainOrVice = team.captainId === req.userId || team.viceCaptainId === req.userId;
-      const isTeamMember = await storage.isTeamMember(id, req.userId);
-
-      if (!isCaptainOrVice && !isTeamMember) {
-        return res.status(403).json({ message: "Not authorized to add guest players to this team" });
-      }
-
-      const guest = await storage.createGuestPlayer({
-        teamId: id,
-        name,
-        addedByUserId: req.userId,
-        matchesPlayed: 0,
-        totalRuns: 0,
-        ballsFaced: 0,
-        oversBowled: 0,
-        runsConceded: 0,
-        wicketsTaken: 0,
-        catchesTaken: 0,
-        runOuts: 0,
-        fours: 0,
-        sixes: 0
-      });
-
-      res.status(201).json(guest);
-    } catch (error) {
-      // Check for unique constraint violation if relevant
-      return handleDatabaseError(error, res);
-    }
-  });
 
   // Stats decommissioned
   app.post("/api/matches/submit-result-disabled", authenticateToken, async (req, res) => {
@@ -2064,6 +2108,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get team statistics - Stats decommissioned
   app.get("/api/teams/:id/statistics-disabled", authenticateToken, async (req: any, res) => {
     res.status(404).json({ message: "Stats system decommissioned" });
+  });
+
+  // --- Guest Player Routes ---
+
+  // Search guest by code
+  app.get("/api/guest/search/:code", async (req, res) => {
+    try {
+      const code = req.params.code.toLowerCase();
+      const guest = await guestService.findGuestByCode(code);
+
+      if (!guest) {
+        return res.status(404).json({ message: "Guest player not found" });
+      }
+
+      res.json(guest);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get guest stats
+  app.get("/api/guest/:id/stats", async (req, res) => {
+    try {
+      const stats = await guestService.calculateGuestStats(req.params.id);
+
+      if (!stats) {
+        return res.json({
+          matchesPlayed: 0,
+          totalRuns: 0,
+          wicketsTaken: 0,
+          highestScore: 0,
+          // Return empty stats object
+        });
+      }
+
+      res.json(stats);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get guest match history
+  app.get("/api/guest/:id/matches", async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+
+      const history = await guestService.getGuestMatchHistory(req.params.id, page, limit);
+      res.json(history);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
   });
 
   const httpServer = createServer(app);

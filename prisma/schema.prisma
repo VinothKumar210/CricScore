@@ -122,12 +122,14 @@ model TeamMember {
 }
 
 model GuestPlayer {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  teamId         String   @db.ObjectId
-  name           String
-  addedByUserId  String   @db.ObjectId
-  linkedUserId   String?  @db.ObjectId
-  createdAt      DateTime @default(now())
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  teamId           String   @db.ObjectId
+  name             String
+  guestCode        String   @unique  // NEW: Short unique ID (e.g., "g7x3k")
+  profilePictureUrl String?          // NEW: Optional profile pic
+  addedByUserId    String   @db.ObjectId
+  linkedUserId     String?  @db.ObjectId
+  createdAt        DateTime @default(now())
 
   matchesPlayed  Int      @default(0)
   totalRuns      Int      @default(0)
@@ -143,6 +145,7 @@ model GuestPlayer {
   team           Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   addedBy        User     @relation("GuestAddedBy", fields: [addedByUserId], references: [id])
   linkedUser     User?    @relation("GuestLinkedTo", fields: [linkedUserId], references: [id])
+  playerHistory  PlayerMatchHistory[] @relation("GuestPlayerHistory")
 
   @@map("guest_players")
 }
@@ -395,6 +398,8 @@ model MatchSummary {
   id                       String   @id @default(auto()) @map("_id") @db.ObjectId
   matchDate                DateTime
   venue                    String
+  matchType                String   @default("Open Match")  // NEW: "Open Match", "Tournament", etc.
+  matchFormat              String   @default("T20")         // NEW: "T20", "T10", "ODI", etc.
   
   // Team information
   homeTeamName             String
@@ -432,6 +437,18 @@ model MatchSummary {
   secondInningsBatsmen     Json     // Array of batting stats
   secondInningsBowlers     Json     // Array of bowling stats
   
+  // NEW: Fall of wickets (JSON)
+  firstInningsFOW          Json?    // [{wicket: 1, runs: 25, overs: 3.4, batsman: "Name"}]
+  secondInningsFOW         Json?
+  
+  // NEW: Partnerships (JSON)
+  firstInningsPartnerships  Json?   // [{batsman1, batsman2, runs, balls}]
+  secondInningsPartnerships Json?
+  
+  // NEW: Charts data (JSON)
+  wagonWheelData           Json?    // Shot directions per batsman
+  overByOverRuns           Json?    // [{over: 1, team1Runs: 8, team2Runs: 6}, ...]
+  
   createdAt                DateTime @default(now())
   
   // Relations
@@ -445,25 +462,39 @@ model MatchSummary {
 
 model PlayerMatchHistory {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String   @db.ObjectId
+  userId         String?  @db.ObjectId  // CHANGED: Now optional (one of userId or guestPlayerId must be set)
+  guestPlayerId  String?  @db.ObjectId  // NEW: Allow guest reference
   matchSummaryId String   @db.ObjectId
   teamName       String   // which team they played for
   teamId         String?  @db.ObjectId
   playerName     String
   
-  // Performance summary
-  runsScored       Int    @default(0)
-  ballsFaced       Int    @default(0)
-  wicketsTaken     Int    @default(0)
-  oversBowled      Float  @default(0)
+  // Batting performance
+  runsScored       Int     @default(0)
+  ballsFaced       Int     @default(0)
+  fours            Int     @default(0)   // NEW
+  sixes            Int     @default(0)   // NEW
+  wasDismissed     Boolean @default(false) // NEW
+  
+  // Bowling performance
+  wicketsTaken     Int     @default(0)
+  oversBowled      Float   @default(0)
+  runsConceded     Int     @default(0)   // NEW
+  maidenOvers      Int     @default(0)   // NEW
+  
+  // Fielding performance
+  catchesTaken     Int     @default(0)   // NEW
+  runOuts          Int     @default(0)   // NEW
+  
   isManOfTheMatch  Boolean @default(false)
   
   createdAt      DateTime @default(now())
   
   // Relations
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  matchSummary   MatchSummary @relation(fields: [matchSummaryId], references: [id], onDelete: Cascade)
-  team           Team?        @relation("PlayerMatchHistoryTeam", fields: [teamId], references: [id])
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guestPlayer    GuestPlayer?  @relation("GuestPlayerHistory", fields: [guestPlayerId], references: [id])
+  matchSummary   MatchSummary  @relation(fields: [matchSummaryId], references: [id], onDelete: Cascade)
+  team           Team?         @relation("PlayerMatchHistoryTeam", fields: [teamId], references: [id])
   
   @@unique([userId, matchSummaryId])
   @@map("player_match_history")
