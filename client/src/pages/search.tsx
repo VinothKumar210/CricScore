@@ -6,9 +6,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, User, Trophy, Users, ArrowLeft } from "lucide-react";
+import { Search, User, Trophy, Users, ArrowLeft, Copy } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { User as UserType } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
+import { AvatarWithFallback } from "@/components/avatar-with-fallback";
+
+interface GuestPlayer {
+  id: string;
+  name: string;
+  guestCode: string;
+  profilePictureUrl?: string;
+  matchesPlayed: number;
+  totalRuns: number;
+  wicketsTaken: number;
+  team: {
+    id: string;
+    name: string;
+  };
+  addedBy: {
+    username: string;
+    profileName?: string;
+  };
+}
 
 export default function SearchPlayers() {
   const [, setLocation] = useLocation();
@@ -16,15 +36,36 @@ export default function SearchPlayers() {
   const [searchInput, setSearchInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
-  const [inputPosition, setInputPosition] = useState<{top: number, left: number, width: number} | null>(null);
+  const [inputPosition, setInputPosition] = useState<{ top: number, left: number, width: number } | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
-  const { data: searchResults, isLoading, isError } = useQuery<UserType[]>({
+  // Detect if search term is a guest code (5 alphanumeric chars)
+  const isGuestCodeSearch = /^[a-zA-Z0-9]{5}$/.test(searchTerm);
+
+  // Search users
+  const { data: userResults, isLoading: isLoadingUsers, isError: isErrorUsers } = useQuery<UserType[]>({
     queryKey: ["search-users", searchTerm],
-    enabled: searchTerm.length >= 2,
+    enabled: searchTerm.length >= 2 && !isGuestCodeSearch,
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchTerm)}`);
+      return response.json();
+    },
+  });
+
+  // Search guest by code
+  const { data: guestResult, isLoading: isLoadingGuest, isError: isErrorGuest } = useQuery<GuestPlayer>({
+    queryKey: ["search-guest", searchTerm],
+    enabled: isGuestCodeSearch,
+    queryFn: async () => {
+      const response = await fetch(`/api/guest/${searchTerm}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Guest not found");
+        }
+        throw new Error("Failed to fetch guest");
+      }
       return response.json();
     },
   });
@@ -32,12 +73,12 @@ export default function SearchPlayers() {
   // Query for live suggestions (as user types)
   const { data: suggestions, isLoading: isSuggestionsLoading } = useQuery<UserType[]>({
     queryKey: ["suggestions", searchInput],
-    enabled: searchInput.length >= 1 && showSuggestions,
+    enabled: searchInput.length >= 1 && showSuggestions && !/^[a-zA-Z0-9]{5}$/.test(searchInput),
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(searchInput)}&limit=10`);
       return response.json();
     },
-    staleTime: 300, // Cache for 300ms to avoid too many requests
+    staleTime: 300,
   });
 
   const handleSearch = () => {
@@ -55,7 +96,7 @@ export default function SearchPlayers() {
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
-        setActiveSuggestion(prev => 
+        setActiveSuggestion(prev =>
           prev < suggestions.length - 1 ? prev + 1 : prev
         );
         break;
@@ -117,7 +158,7 @@ export default function SearchPlayers() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchInput(value);
-    if (value.length >= 1) {
+    if (value.length >= 1 && !/^[a-zA-Z0-9]{5}$/.test(value)) {
       updateInputPosition();
       setShowSuggestions(true);
     } else {
@@ -138,14 +179,13 @@ export default function SearchPlayers() {
   };
 
   const handleInputFocus = () => {
-    if (searchInput.length >= 1) {
+    if (searchInput.length >= 1 && !/^[a-zA-Z0-9]{5}$/.test(searchInput)) {
       updateInputPosition();
       setShowSuggestions(true);
     }
   };
 
   const handleInputBlur = () => {
-    // Delay hiding suggestions to allow clicking on them
     setTimeout(() => {
       setShowSuggestions(false);
       setActiveSuggestion(-1);
@@ -153,7 +193,6 @@ export default function SearchPlayers() {
     }, 200);
   };
 
-  // Click outside to close suggestions
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node)) {
@@ -165,6 +204,17 @@ export default function SearchPlayers() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const copyGuestCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    toast({
+      title: "Copied!",
+      description: "Guest code copied to clipboard",
+    });
+  };
+
+  const isLoading = isLoadingUsers || isLoadingGuest;
+  const isError = isErrorUsers || isErrorGuest;
 
   return (
     <>
@@ -187,7 +237,7 @@ export default function SearchPlayers() {
               </div>
               <div className="text-center space-y-2">
                 <h1 className="text-3xl font-bold text-foreground">Search Players</h1>
-                <p className="text-muted-foreground">Find and connect with cricket players</p>
+                <p className="text-muted-foreground">Find players by username or guest code (5 characters)</p>
               </div>
             </div>
 
@@ -198,7 +248,7 @@ export default function SearchPlayers() {
                   <div className="flex-1 relative" ref={suggestionsRef}>
                     <Input
                       ref={inputRef}
-                      placeholder="Search by username..."
+                      placeholder="Search by username or guest code..."
                       value={searchInput}
                       onChange={handleInputChange}
                       onKeyDown={handleKeyPress}
@@ -207,11 +257,10 @@ export default function SearchPlayers() {
                       data-testid="input-search-players"
                       autoComplete="off"
                     />
-                    
                   </div>
-                  <Button 
+                  <Button
                     onClick={handleSearch}
-                    disabled={searchInput.trim().length < 2}
+                    disabled={searchInput.trim().length < 1}
                     data-testid="button-search-players"
                   >
                     <Search className="w-4 h-4 mr-2" />
@@ -228,7 +277,7 @@ export default function SearchPlayers() {
             {searchTerm && (
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Search Results for "{searchTerm}"</h2>
-                
+
                 {isLoading && (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -238,71 +287,155 @@ export default function SearchPlayers() {
                 {isError && (
                   <Card>
                     <CardContent className="p-6 text-center">
-                      <p className="text-muted-foreground">Failed to search players. Please try again.</p>
+                      <p className="text-muted-foreground">Failed to search. Please try again.</p>
                     </CardContent>
                   </Card>
                 )}
 
-                {!isLoading && !isError && searchResults && (
+                {!isLoading && !isError && (
                   <>
-                    {searchResults.length === 0 ? (
-                      <Card>
-                        <CardContent className="p-6 text-center">
-                          <p className="text-muted-foreground">No players found matching "{searchTerm}"</p>
-                        </CardContent>
-                      </Card>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {searchResults.map((player: UserType) => (
-                          <Card 
-                            key={player.id} 
-                            className="hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => setLocation(`/player/${player.id}`)}
-                            data-testid={`player-card-${player.id}`}
+                    {/* Guest Results */}
+                    {isGuestCodeSearch && (
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-medium flex items-center gap-2">
+                          <Users className="w-5 h-5 text-orange-500" />
+                          Guest Players
+                        </h3>
+                        {guestResult ? (
+                          <Card
+                            className="hover:shadow-md transition-shadow cursor-pointer border-orange-200"
+                            onClick={() => setLocation(`/guest/${guestResult.guestCode}`)}
                           >
-                            <CardHeader className="text-center">
-                              <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-3">
-                                <User className="w-8 h-8 text-primary-foreground" />
-                              </div>
-                              <CardTitle className="text-lg">{player.profileName || "Player"}</CardTitle>
-                              <CardDescription>@{player.username}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                              {/* Playing Style */}
-                              <div className="space-y-2">
-                                <div className="flex justify-center">
-                                  <Badge variant="secondary" className="text-xs" data-testid={`player-role-${player.id}`}>
-                                    {player.role ? formatRole(player.role) : "Role not specified"}
-                                  </Badge>
-                                </div>
-                                <div className="flex justify-center space-x-2">
-                                  {player.battingHand && (
-                                    <Badge variant="outline" className="text-xs" data-testid={`player-batting-${player.id}`}>
-                                      {formatBattingHand(player.battingHand)}
+                            <CardContent className="p-6">
+                              <div className="flex items-start gap-4">
+                                <AvatarWithFallback
+                                  src={guestResult.profilePictureUrl}
+                                  name={guestResult.name}
+                                  size="lg"
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h3 className="text-lg font-semibold">{guestResult.name}</h3>
+                                    <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                                      Guest
                                     </Badge>
-                                  )}
-                                  {player.bowlingStyle && (
-                                    <Badge variant="outline" className="text-xs" data-testid={`player-bowling-${player.id}`}>
-                                      {formatBowlingStyle(player.bowlingStyle)}
+                                  </div>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-sm text-muted-foreground">Code:</span>
+                                    <code className="font-mono text-sm bg-orange-50 text-orange-700 px-2 py-0.5 rounded">
+                                      {guestResult.guestCode}
+                                    </code>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyGuestCode(guestResult.guestCode);
+                                      }}
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground mb-2">
+                                    Team: {guestResult.team.name}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Added by: {guestResult.addedBy.profileName || guestResult.addedBy.username}
+                                  </p>
+                                  <div className="flex gap-3 mt-3">
+                                    <Badge variant="secondary" className="text-xs">
+                                      {guestResult.matchesPlayed} matches
                                     </Badge>
-                                  )}
+                                    <Badge variant="secondary" className="text-xs">
+                                      {guestResult.totalRuns} runs
+                                    </Badge>
+                                    <Badge variant="secondary" className="text-xs">
+                                      {guestResult.wicketsTaken} wickets
+                                    </Badge>
+                                  </div>
                                 </div>
-                              </div>
-
-                              {/* Description */}
-                              {player.description && (
-                                <p className="text-sm text-muted-foreground text-center line-clamp-2" data-testid={`player-description-${player.id}`}>
-                                  {player.description}
-                                </p>
-                              )}
-
-                              {/* Member Since */}
-                              <div className="text-center text-xs text-muted-foreground">
-                                Member since {player.createdAt ? new Date(player.createdAt).toLocaleDateString() : "N/A"}
                               </div>
                             </CardContent>
                           </Card>
-                        ))}
+                        ) : (
+                          <Card>
+                            <CardContent className="p-6 text-center">
+                              <p className="text-muted-foreground">No guest player found with code "{searchTerm}"</p>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    )}
+
+                    {/* User Results */}
+                    {!isGuestCodeSearch && (
+                      <div className="space-y-3">
+                        <h3 className="text-lg font-medium flex items-center gap-2">
+                          <User className="w-5 h-5 text-blue-500" />
+                          Players
+                        </h3>
+                        {userResults && userResults.length === 0 ? (
+                          <Card>
+                            <CardContent className="p-6 text-center">
+                              <p className="text-muted-foreground">No players found matching "{searchTerm}"</p>
+                            </CardContent>
+                          </Card>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {userResults?.map((player: UserType) => (
+                              <Card
+                                key={player.id}
+                                className="hover:shadow-md transition-shadow cursor-pointer"
+                                onClick={() => setLocation(`/player/${player.id}`)}
+                                data-testid={`player-card-${player.id}`}
+                              >
+                                <CardHeader className="text-center">
+                                  <div className="mx-auto mb-3">
+                                    <AvatarWithFallback
+                                      src={player.profilePictureUrl}
+                                      name={player.profileName || player.username}
+                                      size="lg"
+                                    />
+                                  </div>
+                                  <CardTitle className="text-lg">{player.profileName || "Player"}</CardTitle>
+                                  <CardDescription>@{player.username}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                  <div className="space-y-2">
+                                    <div className="flex justify-center">
+                                      <Badge variant="secondary" className="text-xs" data-testid={`player-role-${player.id}`}>
+                                        {player.role ? formatRole(player.role) : "Role not specified"}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex justify-center space-x-2">
+                                      {player.battingHand && (
+                                        <Badge variant="outline" className="text-xs" data-testid={`player-batting-${player.id}`}>
+                                          {formatBattingHand(player.battingHand)}
+                                        </Badge>
+                                      )}
+                                      {player.bowlingStyle && (
+                                        <Badge variant="outline" className="text-xs" data-testid={`player-bowling-${player.id}`}>
+                                          {formatBowlingStyle(player.bowlingStyle)}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {player.description && (
+                                    <p className="text-sm text-muted-foreground text-center line-clamp-2" data-testid={`player-description-${player.id}`}>
+                                      {player.description}
+                                    </p>
+                                  )}
+
+                                  <div className="text-center text-xs text-muted-foreground">
+                                    Member since {player.createdAt ? new Date(player.createdAt).toLocaleDateString() : "N/A"}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </>
@@ -315,9 +448,9 @@ export default function SearchPlayers() {
               <Card>
                 <CardContent className="p-12 text-center">
                   <Search className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Search for Cricket Players</h3>
+                  <h3 className="text-lg font-semibold mb-2">Search for Players or Guests</h3>
                   <p className="text-muted-foreground">
-                    Enter a username in the search box above to find other cricket players and view their profiles.
+                    Enter a username to find players, or a 5-character code to find guest players.
                   </p>
                 </CardContent>
               </Card>
@@ -325,10 +458,10 @@ export default function SearchPlayers() {
           </div>
         </div>
       </div>
-      
+
       {/* Portal-based Suggestions Dropdown */}
       {showSuggestions && searchInput.length >= 1 && inputPosition && typeof document !== 'undefined' && createPortal(
-        <div 
+        <div
           ref={suggestionsRef}
           style={{
             position: 'fixed',
@@ -344,15 +477,14 @@ export default function SearchPlayers() {
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto"></div>
             </div>
           )}
-          
+
           {!isSuggestionsLoading && suggestions && suggestions.length > 0 && (
             <div className="py-1">
               {suggestions.slice(0, 10).map((user, index) => (
                 <div
                   key={user.id}
-                  className={`px-2 sm:px-3 py-2 sm:py-3 cursor-pointer hover:bg-accent transition-colors ${
-                    activeSuggestion === index ? 'bg-accent' : ''
-                  }`}
+                  className={`px-2 sm:px-3 py-2 sm:py-3 cursor-pointer hover:bg-accent transition-colors ${activeSuggestion === index ? 'bg-accent' : ''
+                    }`}
                   onMouseDown={() => selectSuggestion(user)}
                   data-testid={`suggestion-${user.id}`}
                 >
@@ -383,13 +515,13 @@ export default function SearchPlayers() {
               ))}
             </div>
           )}
-          
+
           {!isSuggestionsLoading && suggestions && suggestions.length === 0 && (
             <div className="p-3 text-center text-muted-foreground text-sm">
               No players found starting with "{searchInput}"
             </div>
           )}
-          
+
           {!isSuggestionsLoading && suggestions && suggestions.length > 0 && (
             <div className="px-3 py-2 border-t border-border">
               <p className="text-xs text-muted-foreground text-center">

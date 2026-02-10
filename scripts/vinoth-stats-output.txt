@@ -1,0 +1,91 @@
+=== USER @vinoth ===
+ID: 6979ccf64c78eb5ab638deb2
+Username: vinoth
+Name: Vinoth
+
+=== CAREER STATS ===
+{
+  "id": "6979ccf74c78eb5ab638deb3",
+  "userId": "6979ccf64c78eb5ab638deb2",
+  "matchesPlayed": 0,
+  "totalRuns": 0,
+  "ballsFaced": 0,
+  "strikeRate": 0,
+  "highestScore": 0,
+  "timesOut": 0,
+  "fours": 0,
+  "sixes": 0,
+  "oversBowled": 0,
+  "runsConceded": 0,
+  "wicketsTaken": 0,
+  "economy": 0,
+  "bestBowlingWickets": 0,
+  "bestBowlingRuns": 0,
+  "catchesTaken": 0,
+  "runOuts": 0,
+  "stumpings": 0,
+  "updatedAt": "2026-01-29T14:50:45.268Z"
+}
+
+=== PLAYER MATCH HISTORY ===
+Total match records: 0
+*** NO MATCH HISTORY RECORDS - this is why stats are missing ***
+
+=== ALL MATCH SUMMARIES ===
+Total recent matches: 2
+
+Match 1:
+  ID: 697c3112aa721e7fae6daf0f
+  Kovai Bulls vs GameChanger
+  Result: HOME_WIN
+  Home Score: undefined/undefined
+  Away Score: undefined/undefined
+  Date: Fri Jan 30 2026 09:48:26 GMT+0530 (India Standard Time)
+
+Match 2:
+  ID: 697c27c7ec05223290b4dfd9
+  Kovai Bulls vs GameChanger
+  Result: HOME_WIN
+  Home Score: undefined/undefined
+  Away Score: undefined/undefined
+  Date: Fri Jan 30 2026 09:08:47 GMT+0530 (India Standard Time)
+
+=== FIRST INNINGS BATSMEN (latest match) ===
+[
+  {
+    "playerName": "vinoth",
+    "runs": 15,
+    "balls": 5,
+    "fours": 0,
+    "sixes": 2,
+    "isOut": false
+  },
+  {
+    "playerName": "abi",
+    "runs": 4,
+    "balls": 4,
+    "fours": 0,
+    "sixes": 0,
+    "isOut": false
+  }
+]
+
+=== SECOND INNINGS BATSMEN (latest match) ===
+[
+  {
+    "playerName": "Vinoth_210",
+    "runs": 11,
+    "balls": 6,
+    "fours": 0,
+    "sixes": 1,
+    "isOut": false
+  },
+  {
+    "playerName": "abi",
+    "runs": 6,
+    "balls": 6,
+    "fours": 0,
+    "sixes": 0,
+    "isOut": false
+  }
+]

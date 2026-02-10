@@ -61,7 +61,6 @@ export const insertTeamMemberSchema = z.object({
 export const insertGuestPlayerSchema = z.object({
   teamId: z.string(),
   name: z.string().min(1, "Guest player name is required"),
-  guestCode: z.string(),
   addedByUserId: z.string(),
   linkedUserId: z.string().optional(),
   matchesPlayed: z.number().int().min(0).default(0),
@@ -248,7 +247,6 @@ export const teamMatchResultsSchema = z.object({
 
   playerPerformances: z.array(z.object({
     userId: z.string().optional(),     // null if player has no account
-    guestPlayerId: z.string().optional(),
     playerName: z.string().min(1),     // always required
     teamId: z.string().optional(),     // null if not database team
     teamName: z.string().min(1),       // always required (home/away team name)
@@ -360,8 +358,7 @@ export const insertMatchSummarySchema = z.object({
 
 // Player match participation schema - links players to match summaries
 export const insertPlayerMatchHistorySchema = z.object({
-  userId: z.string().optional(),
-  guestPlayerId: z.string().optional(),
+  userId: z.string(),
   matchSummaryId: z.string(),
   teamName: z.string().min(1), // which team they played for
   teamId: z.string().optional(), // null if local team

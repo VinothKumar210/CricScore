@@ -92,7 +92,8 @@ export default function LocalMatch() {
         id: p.id || p.userId || p.guestPlayerId || `p-${Math.random().toString(36).substr(2, 9)}`,
         name: p.name || p.user?.username || p.username || "Unknown",
         hasAccount: p.hasAccount ?? (!!p.user || !!p.userId),
-        username: p.username || p.user?.username || "",
+        username: p.username || p.user?.username || "",      // For registered users
+        guestCode: p.guestCode || "",                        // For guest players - CRITICAL for stats
         userId: p.userId || p.user?.id,
         profileImage: p.profileImage || p.user?.profileImage,
         teamSide: teamSide,

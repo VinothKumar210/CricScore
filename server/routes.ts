@@ -7,9 +7,9 @@ import { calculateManOfTheMatch } from "../shared/man-of-the-match";
 import { processBall, initialMatchState } from "@shared/scoring";
 import { z } from "zod";
 import { verifyFirebaseToken } from "./firebase-admin";
-import { statsService } from "./services/stats_service";
+import { statsService } from "./services/statsService.js";
 import { uploadImage, deleteImage } from "./services/cloudinary";
-import { guestService } from "./services/guest_service";
+import { prisma } from "./db.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 
@@ -265,7 +265,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle profile picture upload to Cloudinary
       let profilePictureUrl = (currentUser as any).profilePictureUrl;
+      console.log('[Profile Update] Current profilePictureUrl:', profilePictureUrl);
+      console.log('[Profile Update] Received profilePictureUrl:', validatedData.profilePictureUrl?.substring(0, 50));
+
       if (validatedData.profilePictureUrl && validatedData.profilePictureUrl.startsWith('data:')) {
+        console.log('[Profile Update] Uploading to Cloudinary...');
         try {
           const uploadResult = await uploadImage(
             validatedData.profilePictureUrl,
@@ -273,13 +277,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             `user_${req.userId}`
           );
           profilePictureUrl = uploadResult.url;
+          console.log('[Profile Update] Cloudinary upload successful:', profilePictureUrl);
         } catch (uploadError) {
-          console.error('Profile picture upload failed:', uploadError);
+          console.error('[Profile Update] Profile picture upload failed:', uploadError);
           // Continue without updating picture if upload fails
         }
       } else if (validatedData.profilePictureUrl) {
         // Already a URL, use directly
         profilePictureUrl = validatedData.profilePictureUrl;
+        console.log('[Profile Update] Using existing URL:', profilePictureUrl);
       }
 
       // Create a profile update object with username preserved
@@ -298,6 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
+      console.log('[Profile Update] Updated user profilePictureUrl:', (user as any).profilePictureUrl);
       res.json({ ...user, password: undefined });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -736,15 +743,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Remove team member
   app.delete("/api/teams/:id/members/:memberId", authenticateToken, async (req: any, res) => {
     try {
-      const { id: inputId, memberId } = req.params;
+      const { id: teamId, memberId } = req.params;
 
       // Get team to check permissions
-      const team = await storage.getTeam(inputId);
+      const team = await storage.getTeam(teamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
-
-      const teamId = team.id;
 
       // Check if user has permission to remove members
       const isCaptain = team.captainId === req.userId;
@@ -785,16 +790,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Promote member to vice captain
   app.put("/api/teams/:id/promote-vice-captain", authenticateToken, async (req: any, res) => {
     try {
-      const { id: inputId } = req.params;
+      const { id: teamId } = req.params;
       const { memberId } = req.body;
 
       // Get team to check permissions
-      const team = await storage.getTeam(inputId);
+      const team = await storage.getTeam(teamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
-
-      const teamId = team.id;
 
       // Only captain and vice captain can promote members
       const isCaptain = team.captainId === req.userId;
@@ -819,15 +822,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Demote vice captain to member
   app.put("/api/teams/:id/demote-vice-captain", authenticateToken, async (req: any, res) => {
     try {
-      const { id: inputId } = req.params;
+      const { id: teamId } = req.params;
 
       // Get team to check permissions
-      const team = await storage.getTeam(inputId);
+      const team = await storage.getTeam(teamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
-
-      const teamId = team.id;
 
       // Only captain and vice captain can demote vice captain
       const isCaptain = team.captainId === req.userId;
@@ -852,16 +853,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transfer captaincy to another member
   app.put("/api/teams/:id/transfer-captaincy", authenticateToken, async (req: any, res) => {
     try {
-      const { id: inputId } = req.params;
+      const { id: teamId } = req.params;
       const { memberId } = req.body;
 
       // Get team to check permissions
-      const team = await storage.getTeam(inputId);
+      const team = await storage.getTeam(teamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
-
-      const teamId = team.id;
 
       // Only captain can transfer captaincy
       if (team.captainId !== req.userId) {
@@ -899,22 +898,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-    app.post("/api/teams/:id/guest-players", authenticateToken, async (req: any, res) => {
-      try {
-        const { id: inputId } = req.params;
-        console.log('Adding guest player to team:', inputId);
+  app.post("/api/teams/:id/guest-players", authenticateToken, async (req: any, res) => {
+    try {
+      const teamId = req.params.id;
 
-        const team = await storage.getTeam(inputId);
-        if (!team) {
-          console.log('Team not found for ID/code:', inputId);
-          return res.status(404).json({ message: "Team not found" });
-        }
+      const team = await storage.getTeam(teamId);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
 
-        const teamId = team.id;
-        console.log('Resolved teamId:', teamId);
-
-        const isMember = await storage.isTeamMember(teamId, req.userId);
-
+      const isMember = await storage.isTeamMember(teamId, req.userId);
       const isCaptain = team.captainId === req.userId;
       const isViceCaptain = team.viceCaptainId === req.userId;
 
@@ -922,12 +915,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only team members can add guest players" });
       }
 
-      const guestCode = await guestService.generateGuestCode();
-
       const validatedData = insertGuestPlayerSchema.parse({
         ...req.body,
         teamId,
-        guestCode,
         addedByUserId: req.userId,
       });
 
@@ -943,14 +933,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/teams/:teamId/guest-players/:guestId", authenticateToken, async (req: any, res) => {
     try {
-      const { teamId: inputTeamId, guestId } = req.params;
+      const { teamId, guestId } = req.params;
 
-      const team = await storage.getTeam(inputTeamId);
+      const team = await storage.getTeam(teamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
-
-      const teamId = team.id;
 
       const guestPlayer = await storage.getGuestPlayer(guestId);
       if (!guestPlayer || guestPlayer.teamId !== teamId) {
@@ -977,14 +965,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/teams/:teamId/guest-players/:guestId", authenticateToken, async (req: any, res) => {
     try {
-      const { teamId: inputTeamId, guestId } = req.params;
+      const { teamId, guestId } = req.params;
 
-      const team = await storage.getTeam(inputTeamId);
+      const team = await storage.getTeam(teamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
-
-      const teamId = team.id;
 
       const guestPlayer = await storage.getGuestPlayer(guestId);
       if (!guestPlayer || guestPlayer.teamId !== teamId) {
@@ -1011,15 +997,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/teams/:teamId/guest-players/:guestId/link", authenticateToken, async (req: any, res) => {
     try {
-      const { teamId: inputTeamId, guestId } = req.params;
+      const { teamId, guestId } = req.params;
       const { userId } = req.body;
 
-      const team = await storage.getTeam(inputTeamId);
+      const team = await storage.getTeam(teamId);
       if (!team) {
         return res.status(404).json({ message: "Team not found" });
       }
-
-      const teamId = team.id;
 
       const guestPlayer = await storage.getGuestPlayer(guestId);
       if (!guestPlayer || guestPlayer.teamId !== teamId) {
@@ -1027,20 +1011,194 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const isCaptain = team.captainId === req.userId;
+      const isViceCaptain = team.viceCaptainId === req.userId;
       const isCreator = guestPlayer.addedByUserId === req.userId;
 
-      if (!isCaptain && !isCreator) {
-        return res.status(403).json({ message: "Only captain or creator can link guest player" });
+      if (!isCaptain && !isViceCaptain && !isCreator) {
+        return res.status(403).json({ message: "Only captain, vice-captain, or creator can link guest player" });
       }
 
-      const result = await storage.linkGuestPlayerToUser(guestId, userId);
-      if (!result.success) {
-        return res.status(400).json({ message: result.message });
+      const result = await statsService.linkGuestToUser(guestId, userId);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Link guest error:", error);
+      if (error.message) {
+        return res.status(400).json({ message: error.message });
       }
-
-      res.json({ message: result.message });
-    } catch (error) {
       return handleDatabaseError(error, res);
+    }
+  });
+
+  // ========================================
+  // Guest Player Search APIs (Phase 3)
+  // ========================================
+
+  // Get guest player by code (case-insensitive, public)
+  app.get("/api/guest/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+
+      // Validate code format
+      if (!/^[a-zA-Z0-9]{5}$/.test(code)) {
+        return res.status(400).json({ message: "Invalid guest code format" });
+      }
+
+      const guest = await storage.getGuestByCode(code.toLowerCase());
+
+      if (!guest) {
+        return res.status(404).json({ message: "Guest player not found" });
+      }
+
+      // If guest is linked to a user, return redirect info
+      if (guest.linkedUserId) {
+        return res.json({
+          ...guest,
+          redirectToUser: true,
+          linkedUser: guest.linkedUser,
+        });
+      }
+
+      res.json(guest);
+    } catch (error) {
+      console.error("Error fetching guest by code:", error);
+      return res.status(500).json({ message: "Failed to fetch guest player" });
+    }
+  });
+
+  // Link guest player to user by guestCode
+  // Auth: Captain or Vice-Captain of the guest's team
+  app.post("/api/guest/:code/link", authenticateToken, async (req: any, res) => {
+    try {
+      const { code } = req.params;
+      const { userId } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ message: "userId is required" });
+      }
+
+      // Validate code format
+      if (!/^[a-zA-Z0-9]{5}$/.test(code)) {
+        return res.status(400).json({ message: "Invalid guest code format" });
+      }
+
+      // Find the guest by code to check authorization
+      const guest = await prisma.guestPlayer.findFirst({
+        where: { guestCode: code.toLowerCase() }
+      });
+
+      if (!guest) {
+        return res.status(404).json({ message: "Guest player not found" });
+      }
+
+      if (guest.linkedUserId) {
+        return res.status(400).json({ message: "Guest player is already linked to a user" });
+      }
+
+      // Check authorization: must be captain or vice-captain of the guest's team
+      const team = await storage.getTeam(guest.teamId);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      const isCaptain = team.captainId === req.userId;
+      const isViceCaptain = team.viceCaptainId === req.userId;
+      const isCreator = guest.addedByUserId === req.userId;
+      const isSelfClaim = userId === req.userId; // User claiming their own stats
+
+      if (!isCaptain && !isViceCaptain && !isCreator && !isSelfClaim) {
+        return res.status(403).json({ message: "Only team captain, vice-captain, or the guest creator can link players" });
+      }
+
+      const result = await statsService.linkGuestByCode(code, userId);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Link guest by code error:", error);
+      if (error.message) {
+        return res.status(400).json({ message: error.message });
+      }
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get guest player stats by code
+  app.get("/api/guest/:code/stats", async (req, res) => {
+    try {
+      const { code } = req.params;
+
+      if (!/^[a-zA-Z0-9]{5}$/.test(code)) {
+        return res.status(400).json({ message: "Invalid guest code format" });
+      }
+
+      const guest = await storage.getGuestByCode(code.toLowerCase());
+
+      if (!guest) {
+        return res.status(404).json({ message: "Guest player not found" });
+      }
+
+      // Return stats from guest player record
+      const stats = {
+        id: guest.id,
+        name: guest.name,
+        guestCode: guest.guestCode,
+        matchesPlayed: guest.matchesPlayed,
+        batting: {
+          totalRuns: guest.totalRuns,
+          ballsFaced: guest.ballsFaced,
+          fours: guest.fours,
+          sixes: guest.sixes,
+          strikeRate: guest.ballsFaced > 0
+            ? ((guest.totalRuns / guest.ballsFaced) * 100).toFixed(2)
+            : "0.00",
+          average: guest.matchesPlayed > 0
+            ? (guest.totalRuns / guest.matchesPlayed).toFixed(2)
+            : "0.00",
+        },
+        bowling: {
+          wicketsTaken: guest.wicketsTaken,
+          runsConceded: guest.runsConceded,
+          oversBowled: guest.oversBowled,
+          economy: guest.oversBowled > 0
+            ? (guest.runsConceded / guest.oversBowled).toFixed(2)
+            : "0.00",
+        },
+        fielding: {
+          catchesTaken: guest.catchesTaken,
+          runOuts: guest.runOuts,
+        },
+      };
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching guest stats:", error);
+      return res.status(500).json({ message: "Failed to fetch guest stats" });
+    }
+  });
+
+  // Get guest player match history by code
+  app.get("/api/guest/:code/matches", async (req, res) => {
+    try {
+      const { code } = req.params;
+
+      if (!/^[a-zA-Z0-9]{5}$/.test(code)) {
+        return res.status(400).json({ message: "Invalid guest code format" });
+      }
+
+      const guest = await storage.getGuestByCode(code.toLowerCase());
+
+      if (!guest) {
+        return res.status(404).json({ message: "Guest player not found" });
+      }
+
+      // Get match history for this guest player
+      const matchHistory = await storage.getGuestMatchHistory(guest.id);
+
+      res.json({
+        matches: matchHistory,
+        totalCount: matchHistory.length,
+      });
+    } catch (error) {
+      console.error("Error fetching guest match history:", error);
+      return res.status(500).json({ message: "Failed to fetch match history" });
     }
   });
 
@@ -2099,11 +2257,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // --- Stats & Guest Linking Routes ---
 
+  app.post("/api/teams/:id/guest-players", authenticateToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { name, role } = req.body;
 
+      if (!name) {
+        return res.status(400).json({ message: "Name is required" });
+      }
 
-  // Stats decommissioned
-  app.post("/api/matches/submit-result-disabled", authenticateToken, async (req, res) => {
-    res.status(404).json({ message: "Stats system decommissioned" });
+      const team = await storage.getTeam(id);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+
+      // Check permissions - allow captain, vice-captain, or any team member to add guests
+      const isCaptainOrVice = team.captainId === req.userId || team.viceCaptainId === req.userId;
+      const isTeamMember = await storage.isTeamMember(id, req.userId);
+
+      if (!isCaptainOrVice && !isTeamMember) {
+        return res.status(403).json({ message: "Not authorized to add guest players to this team" });
+      }
+
+      const guest = await storage.createGuestPlayer({
+        teamId: id,
+        name,
+        addedByUserId: req.userId,
+        matchesPlayed: 0,
+        totalRuns: 0,
+        ballsFaced: 0,
+        oversBowled: 0,
+        runsConceded: 0,
+        wicketsTaken: 0,
+        catchesTaken: 0,
+        runOuts: 0,
+        fours: 0,
+        sixes: 0
+      });
+
+      res.status(201).json(guest);
+    } catch (error) {
+      // Check for unique constraint violation if relevant
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Submit match results and update stats
+  app.post("/api/matches/submit-result", async (req, res) => {
+    try {
+      const matchData = req.body;
+
+      // Basic validation
+      if (!matchData.homeTeamName || !matchData.awayTeamName) {
+        return res.status(400).json({ error: 'Team names are required' });
+      }
+
+      console.log('[Routes] Processing match result:', matchData.homeTeamName, 'vs', matchData.awayTeamName);
+
+      // Process match using stats service
+      const result = await statsService.processMatchResult(matchData);
+
+      res.json(result);
+    } catch (error) {
+      console.error('[Routes] Stats submission error:', error);
+      return handleDatabaseError(error, res);
+    }
   });
 
   app.post("/api/stats/link-guest", authenticateToken, async (req, res) => {
@@ -2120,7 +2338,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get user match history - Stats decommissioned
+  // Get user career stats by userId
+  app.get("/api/stats/:userId", authenticateToken, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+
+      // Get user to check if exists and get career stats
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          careerStats: true
+        }
+      });
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (!user.careerStats) {
+        // Return default empty stats
+        return res.json({
+          matchesPlayed: 0,
+          totalRuns: 0,
+          ballsFaced: 0,
+          fours: 0,
+          sixes: 0,
+          highestScore: 0,
+          oversBowled: 0,
+          runsConceded: 0,
+          wicketsTaken: 0,
+          bestBowling: null,
+          catches: 0,
+          runOuts: 0,
+          manOfTheMatch: 0,
+          timesOut: 0,
+        });
+      }
+
+      res.json(user.careerStats);
+    } catch (error) {
+      console.error("Get user stats error:", error);
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get user match history by userId
+  app.get("/api/matches/:userId", authenticateToken, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+
+      // Get match history for the user
+      const matchHistory = await prisma.playerMatchHistory.findMany({
+        where: { userId },
+        include: {
+          matchSummary: true
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 20
+      });
+
+      // Return match summaries
+      const matches = matchHistory.map(h => h.matchSummary);
+      res.json(matches);
+    } catch (error) {
+      console.error("Get user matches error:", error);
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get match summary by ID (for Match Centre)
+  app.get("/api/match-summary/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      const matchSummary = await prisma.matchSummary.findUnique({
+        where: { id },
+        include: {
+          manOfTheMatchUser: {
+            select: {
+              id: true,
+              username: true,
+            }
+          }
+        }
+      });
+
+      if (!matchSummary) {
+        return res.status(404).json({ message: "Match not found" });
+      }
+
+      res.json(matchSummary);
+    } catch (error) {
+      console.error("Get match summary error:", error);
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get user match history with pagination
+  app.get("/api/user-match-history/:userId", authenticateToken, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const skip = (page - 1) * limit;
+
+      // Get total count
+      const total = await prisma.playerMatchHistory.count({
+        where: { userId }
+      });
+
+      // Get match history for the user with pagination
+      const matchHistory = await prisma.playerMatchHistory.findMany({
+        where: { userId },
+        include: {
+          matchSummary: true
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit
+      });
+
+      res.json({
+        matches: matchHistory.map(h => ({
+          matchSummary: h.matchSummary,
+          userPerformance: {
+            runs: h.runsScored,
+            balls: h.ballsFaced,
+            wickets: h.wicketsTaken,
+            overs: h.oversBowled,
+            runsConceded: h.runsConceded,
+          }
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
+        }
+      });
+    } catch (error) {
+      console.error("Get user match history error:", error);
+      return handleDatabaseError(error, res);
+    }
+  });
   app.get("/api/user-match-history-disabled/:userId", authenticateToken, async (req: any, res) => {
     res.status(404).json({ message: "Stats system decommissioned" });
   });
@@ -2128,58 +2488,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get team statistics - Stats decommissioned
   app.get("/api/teams/:id/statistics-disabled", authenticateToken, async (req: any, res) => {
     res.status(404).json({ message: "Stats system decommissioned" });
-  });
-
-  // --- Guest Player Routes ---
-
-  // Search guest by code
-  app.get("/api/guest/search/:code", async (req, res) => {
-    try {
-      const code = req.params.code.toLowerCase();
-      const guest = await guestService.findGuestByCode(code);
-
-      if (!guest) {
-        return res.status(404).json({ message: "Guest player not found" });
-      }
-
-      res.json(guest);
-    } catch (error) {
-      return handleDatabaseError(error, res);
-    }
-  });
-
-  // Get guest stats
-  app.get("/api/guest/:id/stats", async (req, res) => {
-    try {
-      const stats = await guestService.calculateGuestStats(req.params.id);
-
-      if (!stats) {
-        return res.json({
-          matchesPlayed: 0,
-          totalRuns: 0,
-          wicketsTaken: 0,
-          highestScore: 0,
-          // Return empty stats object
-        });
-      }
-
-      res.json(stats);
-    } catch (error) {
-      return handleDatabaseError(error, res);
-    }
-  });
-
-  // Get guest match history
-  app.get("/api/guest/:id/matches", async (req, res) => {
-    try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-
-      const history = await guestService.getGuestMatchHistory(req.params.id, page, limit);
-      res.json(history);
-    } catch (error) {
-      return handleDatabaseError(error, res);
-    }
   });
 
   const httpServer = createServer(app);

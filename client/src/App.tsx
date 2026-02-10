@@ -28,8 +28,8 @@ import MatchView from "@/pages/match-view";
 import MatchSummaryPage from "@/pages/match-summary";
 import MyMatchesPage from "@/pages/my-matches";
 import TeamSearch from "@/pages/team-search";
-import BowlerSelection from "@/pages/bowler-selection";
 import GuestProfile from "@/pages/guest-profile";
+import BowlerSelection from "@/pages/bowler-selection";
 import { useEffect, useState } from "react";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -192,6 +192,11 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      {/* Guest Profile - Public route (no auth required) */}
+      <Route path="/guest/:code">
+        <GuestProfile />
+      </Route>
+
       <Route path="/team-search">
         <ProtectedRoute>
           <TeamSearch />
@@ -268,18 +273,6 @@ function Router() {
       <Route path="/player/:id">
         <ProtectedRoute>
           <Profile />
-        </ProtectedRoute>
-      </Route>
-
-      {/* Guest Profile Routes */}
-      <Route path="/guest">
-        <ProtectedRoute>
-          <GuestProfile />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/guest/:code">
-        <ProtectedRoute>
-          <GuestProfile />
         </ProtectedRoute>
       </Route>
 

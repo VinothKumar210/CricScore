@@ -4,6 +4,8 @@ import { useAuth } from "@/components/auth/auth-context";
 
 interface LocalPlayer {
   name: string;
+  username?: string;      // For registered users - unique username
+  guestCode?: string;     // For guest players - 5-char code
   isCaptain?: boolean;
   isWicketKeeper?: boolean;
 }
@@ -38,12 +40,12 @@ function getCachedFixtures(userId: string): Fixture[] | null {
     if (!cached) return null;
 
     const parsed: CachedFixtures = JSON.parse(cached);
-    
+
     if (parsed.userId !== userId) {
       localStorage.removeItem(CACHE_KEY);
       return null;
     }
-    
+
     if (Date.now() - parsed.timestamp > CACHE_MAX_AGE_MS) {
       localStorage.removeItem(CACHE_KEY);
       return null;
@@ -89,31 +91,31 @@ export function useFixturesCache() {
         throw new Error("Failed to fetch fixtures");
       }
       const data = await response.json();
-      
+
       if (user?.id) {
         setCachedFixtures(user.id, data);
       }
-      
+
       return data;
     },
     enabled: !!user,
-initialData: () => {
-        if (user?.id) {
-          return getCachedFixtures(user.id) ?? undefined;
+    initialData: () => {
+      if (user?.id) {
+        return getCachedFixtures(user.id) ?? undefined;
+      }
+      return undefined;
+    },
+    initialDataUpdatedAt: () => {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const parsed: CachedFixtures = JSON.parse(cached);
+          return parsed.timestamp;
         }
-        return undefined;
-      },
-      initialDataUpdatedAt: () => {
-        try {
-          const cached = localStorage.getItem(CACHE_KEY);
-          if (cached) {
-            const parsed: CachedFixtures = JSON.parse(cached);
-            return parsed.timestamp;
-          }
-        } catch {}
-        return 0;
-      },
-      staleTime: 30 * 1000,
+      } catch { }
+      return 0;
+    },
+    staleTime: 30 * 1000,
   });
 
   useEffect(() => {
@@ -138,10 +140,10 @@ initialData: () => {
   const updateCache = useCallback(
     (updater: (prev: Fixture[]) => Fixture[]) => {
       if (!user?.id) return;
-      
+
       const currentData = queryClient.getQueryData<Fixture[]>(["/api/fixtures"]) ?? [];
       const newData = updater(currentData);
-      
+
       queryClient.setQueryData(["/api/fixtures"], newData);
       setCachedFixtures(user.id, newData);
     },
@@ -165,9 +167,9 @@ initialData: () => {
     onMutate: async (id: string) => {
       await queryClient.cancelQueries({ queryKey: ["/api/fixtures"] });
       const previousFixtures = queryClient.getQueryData<Fixture[]>(["/api/fixtures"]);
-      
+
       updateCache((prev) => prev.filter((f) => f.id !== id));
-      
+
       return { previousFixtures };
     },
     onError: (_err, _id, context) => {

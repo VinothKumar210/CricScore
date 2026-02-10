@@ -176,7 +176,7 @@ async function verifyDatabaseConnection() {
   } else {
     log("Running in SEPARATE MODE - frontend on port 3000, backend on port 5000");
   }
-    const port = parseInt(process.env.PORT || '5000', 10);
+    const port = parseInt(process.env.PORT || '5001', 10);
   server.listen(port, () => {
     log(`serving on port ${port}`);
   });

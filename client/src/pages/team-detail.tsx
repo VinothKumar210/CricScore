@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/components/auth/auth-context";
 import { apiRequest } from "@/lib/queryClient";
-import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search, Trash2, Edit, BarChart3, Trophy, Target, Zap, Timer, Calendar, MapPin, ChevronLeft, ChevronRight, UserX, Link } from "lucide-react";
+import { AvatarWithFallback } from "@/components/avatar-with-fallback";
+import { Crown, Users, Shield, ArrowLeft, MoreVertical, UserMinus, TrendingUp, TrendingDown, UserCheck, UserPlus, Search, Trash2, Edit, BarChart3, Trophy, Target, Zap, Timer, Calendar, MapPin, ChevronLeft, ChevronRight, UserX, Link, Camera, Copy, Check } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Team, User, GuestPlayer } from "@shared/schema";
@@ -502,6 +503,8 @@ export default function TeamDetail() {
   const [linkSearchResults, setLinkSearchResults] = useState<User[]>([]);
   const [selectedLinkUser, setSelectedLinkUser] = useState<User | null>(null);
   const [showLinkDropdown, setShowLinkDropdown] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Detect where the user came from
   useEffect(() => {
@@ -758,6 +761,29 @@ export default function TeamDetail() {
     },
   });
 
+  const uploadLogoMutation = useMutation({
+    mutationFn: async (logoUrl: string) => {
+      const response = await apiRequest('PATCH', `/api/teams/${id}/logo`, { logoUrl });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Logo updated",
+        description: "Team logo updated successfully!",
+      });
+      setLogoPreview(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/teams", id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upload logo",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Live search effect
   useEffect(() => {
     const performLiveSearch = async () => {
@@ -898,6 +924,45 @@ export default function TeamDetail() {
 
   const handleDeleteTeam = () => {
     deleteTeamMutation.mutate();
+  };
+
+  const handleLogoClick = () => {
+    if (canManageMembers) {
+      logoInputRef.current?.click();
+    }
+  };
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please select an image smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        setLogoPreview(dataUrl);
+        uploadLogoMutation.mutate(dataUrl);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleTransferCaptaincy = (memberId: string) => {
@@ -1196,19 +1261,48 @@ export default function TeamDetail() {
         {/* Team info and actions */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 pr-16 sm:pr-20">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-foreground break-words" data-testid="title-team-name">
-                {team.name}
-              </h1>
-              {(team as any).teamCode && (
-                <Badge variant="secondary" className="font-mono text-xs">
-                  {(team as any).teamCode}
-                </Badge>
-              )}
+            <div className="flex items-center gap-4 flex-wrap">
+              {/* Team Logo */}
+              <div
+                className={`relative ${canManageMembers ? "cursor-pointer" : ""}`}
+                onClick={handleLogoClick}
+              >
+                <AvatarWithFallback
+                  src={logoPreview || (team as any)?.logoUrl}
+                  name={team.name}
+                  size="xl"
+                  className="w-16 h-16"
+                />
+                {canManageMembers && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
+                )}
+              </div>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleLogoUpload}
+                className="hidden"
+              />
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="text-2xl font-bold text-foreground break-words" data-testid="title-team-name">
+                    {team.name}
+                  </h1>
+                  {(team as any).teamCode && (
+                    <Badge variant="secondary" className="font-mono text-xs">
+                      {(team as any).teamCode}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-muted-foreground mt-1">
+                  {team.description || "No description provided"}
+                </p>
+              </div>
             </div>
-            <p className="text-muted-foreground mt-1">
-              {team.description || "No description provided"}
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -1238,9 +1332,7 @@ export default function TeamDetail() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Stats decommissioned
           <TeamStatistics teamId={id!} />
-          */}
         </CardContent>
       </Card>
 
@@ -1385,18 +1477,29 @@ export default function TeamDetail() {
                           Added by {guest.addedBy?.profileName || guest.addedBy?.username}
                         </p>
 
-                        {/* Stats Summary */}
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {guest.matchesPlayed} matches
-                          </Badge>
-                          <Badge variant="secondary" className="text-xs">
-                            {guest.totalRuns} runs
-                          </Badge>
-                          <Badge variant="secondary" className="text-xs">
-                            {guest.wicketsTaken} wkts
-                          </Badge>
-                        </div>
+                        {/* Guest Code with Copy Button */}
+                        {(guest as any).guestCode && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs text-muted-foreground">Code:</span>
+                            <code className="font-mono text-sm bg-orange-50 text-orange-700 px-2 py-0.5 rounded">
+                              {(guest as any).guestCode}
+                            </code>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {
+                                navigator.clipboard.writeText((guest as any).guestCode);
+                                toast({
+                                  title: "Copied!",
+                                  description: "Guest code copied to clipboard",
+                                });
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
 

@@ -21,7 +21,7 @@ export default function TeamSearch() {
   const [searchInput, setSearchInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeSuggestion, setActiveSuggestion] = useState(-1);
-  const [inputPosition, setInputPosition] = useState<{ top: number, left: number, width: number } | null>(null);
+  const [inputPosition, setInputPosition] = useState<{top: number, left: number, width: number} | null>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,7 +60,7 @@ export default function TeamSearch() {
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
-        setActiveSuggestion(prev =>
+        setActiveSuggestion(prev => 
           prev < suggestions.length - 1 ? prev + 1 : prev
         );
         break;
@@ -84,7 +84,7 @@ export default function TeamSearch() {
   };
 
   const selectSuggestion = (team: TeamWithCaptains) => {
-    setLocation(`/teams/${team.teamCode}`);
+    setLocation(`/teams/${team.id}`);
     setShowSuggestions(false);
     setActiveSuggestion(-1);
   };
@@ -175,10 +175,11 @@ export default function TeamSearch() {
           suggestions.map((team, index) => (
             <div
               key={team.id}
-              className={`p-3 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${index === activeSuggestion
-                  ? 'bg-blue-50 dark:bg-blue-900/20'
+              className={`p-3 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 ${
+                index === activeSuggestion 
+                  ? 'bg-blue-50 dark:bg-blue-900/20' 
                   : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                }`}
+              }`}
               onClick={() => selectSuggestion(team)}
               data-testid={`suggestion-team-${team.id}`}
             >
@@ -268,8 +269,8 @@ export default function TeamSearch() {
               />
               {renderSuggestions()}
             </div>
-            <Button
-              onClick={handleSearch}
+            <Button 
+              onClick={handleSearch} 
               disabled={!searchInput.trim()}
               data-testid="button-search"
             >
@@ -318,10 +319,10 @@ export default function TeamSearch() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {searchResults?.map((team) => (
-                  <Card
-                    key={team.id}
+                  <Card 
+                    key={team.id} 
                     className="cursor-pointer hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary"
-                    onClick={() => setLocation(`/teams/${team.teamCode}`)}
+                    onClick={() => setLocation(`/teams/${team.id}`)}
                     data-testid={`team-card-${team.id}`}
                   >
                     <CardContent className="p-4">

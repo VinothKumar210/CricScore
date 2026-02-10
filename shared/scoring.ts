@@ -4,6 +4,8 @@
 export interface BatsmanStats {
   id: string;
   name: string;
+  username?: string;    // For registered users - unique username
+  guestCode?: string;   // For guest players - 5-char code
   runs: number;
   balls: number;
   fours: number;
@@ -18,6 +20,8 @@ export interface BatsmanStats {
 export interface BowlerStats {
   id: string;
   name: string;
+  username?: string;    // For registered users - unique username
+  guestCode?: string;   // For guest players - 5-char code
   overs: string;
   balls: number;
   maidens: number;
@@ -42,6 +46,12 @@ export interface TeamScore {
 
 export type DismissalType = 'bowled' | 'caught' | 'lbw' | 'stumped' | 'run_out' | 'hit_wicket';
 export type ExtraType = 'none' | 'wide' | 'noball' | 'bye' | 'legbye';
+
+// 8 cricket field zones for wagon wheel
+export type ShotDirection =
+  | 'straight' | 'long-on' | 'mid-wicket' | 'square-leg'
+  | 'fine-leg' | 'third-man' | 'point' | 'cover';
+export type ShotDistance = 'short' | 'medium' | 'boundary';
 
 export interface WicketEvent {
   type: DismissalType;
@@ -121,6 +131,9 @@ export interface BallEventRecord {
   bowlerName: string;
   displayText: string;
   inningsNumber: 1 | 2;
+  // Wagon wheel data
+  shotDirection?: ShotDirection;
+  shotDistance?: ShotDistance;
 }
 
 export interface BallInput {
@@ -128,6 +141,8 @@ export interface BallInput {
   extraType: ExtraType;
   wicket: WicketEvent | null;
   isBoundary?: boolean;
+  shotDirection?: ShotDirection;
+  shotDistance?: ShotDistance;
 }
 
 export const formatOvers = (balls: number): string => {
@@ -277,7 +292,9 @@ export function processBall(state: MatchState, params: BallInput): MatchState {
     bowlerId: bowlerIdBefore,
     bowlerName: state.currentBowler.name,
     displayText: ballDisplayText,
-    inningsNumber: newState.currentInnings
+    inningsNumber: newState.currentInnings,
+    shotDirection: params.shotDirection,
+    shotDistance: params.shotDistance,
   };
 
   // Update Partnership

@@ -9,11 +9,11 @@ interface Fixture {
   teamAId?: string | null;
   teamAName: string;
   teamALogo?: string | null;
-  teamAPlayers: { name: string; isCaptain?: boolean; isWicketKeeper?: boolean; id?: string; userId?: string; guestPlayerId?: string }[];
+  teamAPlayers: { name: string; isCaptain?: boolean; isWicketKeeper?: boolean }[];
   teamBId?: string | null;
   teamBName: string;
   teamBLogo?: string | null;
-  teamBPlayers: { name: string; isCaptain?: boolean; isWicketKeeper?: boolean; id?: string; userId?: string; guestPlayerId?: string }[];
+  teamBPlayers: { name: string; isCaptain?: boolean; isWicketKeeper?: boolean }[];
   overs: number;
   venue?: string | null;
   createdAt: string;
@@ -22,7 +22,7 @@ interface Fixture {
 export default function CreateMatch() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-
+  
   const { fixtures, isLoading, error, deleteFixture, isDeleting } = useFixturesCache();
 
   const handleDeleteFixture = (id: string) => {
