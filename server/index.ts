@@ -6,19 +6,25 @@ import { prisma } from "./db";
 const app = express();
 
 const SEPARATE_MODE = process.env.SEPARATE_MODE === "true";
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
 
-if (SEPARATE_MODE) {
-    app.use((req, res, next) => {
-      res.header("Access-Control-Allow-Origin", "http://localhost:3001");
-      res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-      res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-      res.header("Access-Control-Allow-Credentials", "true");
-      if (req.method === "OPTIONS") {
-        return res.sendStatus(200);
-      }
-      next();
-    });
-  }
+if (SEPARATE_MODE || process.env.NODE_ENV === "production" || process.env.CLIENT_URL) {
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    // Allow the configured client URL, or localhost in dev, or reflection if strict matching isn't needed
+    // For security, strict matching to CLIENT_URL is best in production
+
+    res.header("Access-Control-Allow-Origin", CLIENT_URL);
+    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    res.header("Access-Control-Allow-Credentials", "true");
+
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(200);
+    }
+    next();
+  });
+}
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
@@ -71,10 +77,10 @@ app.use((req, res, next) => {
 async function verifyDatabaseConnection() {
   try {
     log("Verifying MongoDB connection...");
-    
+
     // Test connection by connecting to Prisma
     await prisma.$connect();
-    
+
     // For MongoDB, we can test by trying to count documents or find first
     // This is a lightweight operation that tests the connection
     const result = await prisma.user.count();
@@ -83,7 +89,7 @@ async function verifyDatabaseConnection() {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     log(`✗ MongoDB connection failed: ${errorMessage}`);
-    
+
     // Check for specific MongoDB errors
     if (errorMessage.includes('authentication failed') || errorMessage.includes('bad auth')) {
       log("Error: MongoDB authentication failed. Please verify your DATABASE_URL credentials.");
@@ -93,19 +99,19 @@ async function verifyDatabaseConnection() {
     } else if (errorMessage.includes('ConnectorError')) {
       log("Error: MongoDB connection error. Please check your DATABASE_URL configuration.");
     }
-    
+
     log("Warning: Starting server without database connection. Some features may not work.");
     return false;
   } finally {
     // Always disconnect after testing to avoid hanging connections
-    await prisma.$disconnect().catch(() => {});
+    await prisma.$disconnect().catch(() => { });
   }
 }
 
 (async () => {
   // Verify database connection before starting the server
   await verifyDatabaseConnection();
-  
+
   // Add nuclear cache-clearing endpoint for development
   if (app.get("env") === "development") {
     app.get('/__nuke', (req, res) => {
@@ -176,7 +182,7 @@ async function verifyDatabaseConnection() {
   } else {
     log("Running in SEPARATE MODE - frontend on port 3000, backend on port 5000");
   }
-    const port = parseInt(process.env.PORT || '5001', 10);
+  const port = parseInt(process.env.PORT || '5001', 10);
   server.listen(port, () => {
     log(`serving on port ${port}`);
   });

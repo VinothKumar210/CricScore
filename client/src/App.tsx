@@ -30,6 +30,8 @@ import MyMatchesPage from "@/pages/my-matches";
 import TeamSearch from "@/pages/team-search";
 import GuestProfile from "@/pages/guest-profile";
 import BowlerSelection from "@/pages/bowler-selection";
+import MatchInvites from "@/pages/match-invites";
+import MessagesPage from "@/pages/messages";
 import { useEffect, useState } from "react";
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -212,6 +214,18 @@ function Router() {
       <Route path="/local-match">
         <ProtectedRoute>
           <LocalMatch />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/match-invites">
+        <ProtectedRoute>
+          <MatchInvites />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/messages">
+        <ProtectedRoute>
+          <MessagesPage />
         </ProtectedRoute>
       </Route>
 

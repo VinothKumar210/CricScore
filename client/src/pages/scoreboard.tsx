@@ -117,6 +117,14 @@ export default function Scoreboard() {
   const [lastBallBatsmanName, setLastBallBatsmanName] = useState('');
   const [lastBallRuns, setLastBallRuns] = useState(0);
 
+  // Phase 8: More menu & Retire dialog
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showRetireDialog, setShowRetireDialog] = useState(false);
+  const [retireType, setRetireType] = useState<'retired_hurt' | 'retired_out'>('retired_hurt');
+  const [retireWhich, setRetireWhich] = useState<'striker' | 'non-striker'>('striker');
+  const [showOverChangeDialog, setShowOverChangeDialog] = useState(false);
+  const [newOversValue, setNewOversValue] = useState('');
+
   // Wicket dialog state
   const [selectedDismissalType, setSelectedDismissalType] = useState('');
   const [selectedFielder, setSelectedFielder] = useState('');
@@ -308,7 +316,9 @@ export default function Scoreboard() {
           fours: runs === 4 && isBoundary ? 1 : 0,
           sixes: runs === 6 && isBoundary ? 1 : 0,
           strikeRate: runs * 100,
-          isOut: false
+          isOut: false,
+          isRetired: false,
+          canReturn: false
         }];
       }
       return stats;
@@ -399,6 +409,9 @@ export default function Scoreboard() {
 
   // Format dismissal text from batsman stats
   const formatDismissal = useCallback((batsman: BatsmanStats): string => {
+    if (batsman.isRetired) {
+      return batsman.dismissalType === 'retired_hurt' ? 'retired hurt' : 'retired out';
+    }
     if (!batsman.isOut) return "not out";
     switch (batsman.dismissalType) {
       case 'bowled': return `b ${batsman.bowler || ''} `;
@@ -407,6 +420,8 @@ export default function Scoreboard() {
       case 'stumped': return `st ${batsman.fielder || ''} b ${batsman.bowler || ''} `;
       case 'run_out': return `run out(${batsman.fielder || ''})`;
       case 'hit_wicket': return `hit wicket b ${batsman.bowler || ''} `;
+      case 'retired_hurt': return 'retired hurt';
+      case 'retired_out': return 'retired out';
       default: return batsman.dismissalType || '';
     }
   }, []);
@@ -744,6 +759,16 @@ export default function Scoreboard() {
     // Use the shared scoring logic
     const newState = sharedProcessBall(matchState, params);
 
+    // Debug logging (Phase 8.2)
+    console.log('[BALL]', {
+      striker: matchState.strikeBatsman.name,
+      bowler: matchState.currentBowler.name,
+      innings: matchState.currentInnings,
+      runs: params.completedRuns,
+      extra: params.extraType,
+      wicket: params.wicket?.type || null
+    });
+
     // Check for UI triggers (dialogs) before updating state
     const isWicket = params.wicket !== null;
     const isOverComplete = newState.currentBowler.id === '' && matchState.currentBowler.id !== '';
@@ -754,37 +779,30 @@ export default function Scoreboard() {
     // Update local state
     setMatchState(newState);
 
-    // Live sync removed as per user request - stats are only posted at end of match
-    /* 
-    const localMatchId = localStorage.getItem("localMatchId");
-    if (localMatchId) {
-      try {
-        await apiRequest("POST", `/api/local-matches/${localMatchId}/ball`, {
-          ...params
-        });
-      } catch (error) {
-        console.error("Failed to sync ball with backend:", error);
-      }
-    } 
-    */
-
     // Identify current batting score to check wickets (use new state for innings transition case)
     const currentBattingScore = newState.currentInnings === 1
       ? (newState.team1BattingFirst ? newState.team1Score : newState.team2Score)
       : (newState.team1BattingFirst ? newState.team2Score : newState.team1Score);
 
-    // Show dialogs if necessary
+    // 8.1 Dialog priority fix: close ALL other dialogs before showing match end
     if (newState.isMatchComplete) {
+      setShowBatsmanSelectDialog(false);
+      setShowBowlerSelectDialog(false);
+      setShowEndInningsDialog(false);
+      setShowInlineExtras(false);
+      setShowInlineWicket(false);
       await submitMatchResults(newState);
       setShowMatchEndedDialog(true);
-    } else if (inningsTransitioned) {
-      // Innings just ended, show the transition dialog
+      return; // Early return - no other dialogs needed
+    }
+
+    if (inningsTransitioned) {
+      setShowBatsmanSelectDialog(false);
+      setShowBowlerSelectDialog(false);
       setShowEndInningsDialog(true);
     } else if (isWicket && currentBattingScore.wickets < getMaxWickets()) {
-      // Show batsman selection immediately (removed 150ms delay for faster UX)
       setShowBatsmanSelectDialog(true);
     } else if (isOverComplete) {
-      // Show bowler selection immediately (removed 150ms delay for faster UX)
       setShowBowlerSelectDialog(true);
     }
   }, [matchState, saveStateForUndo, isMatchStarted, toast, getMaxWickets]);
@@ -939,14 +957,135 @@ export default function Scoreboard() {
     });
   }, []);
 
+  // 8.3 Handle retire batsman
+  const handleRetireBatsman = useCallback(() => {
+    if (!matchState.strikeBatsman.id && !matchState.nonStrikeBatsman.id) return;
+
+    saveStateForUndo();
+
+    const retiredBatsmanId = retireWhich === 'striker'
+      ? matchState.strikeBatsman.id
+      : matchState.nonStrikeBatsman.id;
+
+    const isHurt = retireType === 'retired_hurt';
+
+    // Update batting stats - mark as retired (NOT as out, doesn't count as wicket)
+    setMatchState(prev => {
+      const battingKey = prev.currentInnings === 1
+        ? (prev.team1BattingFirst ? 'team1Batting' : 'team2Batting')
+        : (prev.team1BattingFirst ? 'team2Batting' : 'team1Batting');
+
+      const updatedBatting = prev[battingKey].map((b: BatsmanStats) => {
+        if (b.id === retiredBatsmanId) {
+          return {
+            ...b,
+            isRetired: true,
+            canReturn: isHurt, // retired hurt can come back
+            dismissalType: retireType
+          };
+        }
+        return b;
+      });
+
+      // Clear from crease
+      const newState = {
+        ...prev,
+        [battingKey]: updatedBatting,
+      };
+
+      if (retireWhich === 'striker') {
+        newState.strikeBatsman = { id: '', name: '' };
+      } else {
+        newState.nonStrikeBatsman = { id: '', name: '' };
+      }
+
+      return newState;
+    });
+
+    setShowRetireDialog(false);
+    setShowMoreMenu(false);
+
+    // Show batsman selection dialog
+    setShowBatsmanSelectDialog(true);
+
+    toast({
+      title: isHurt ? "Retired Hurt" : "Retired Out",
+      description: `${retireWhich === 'striker' ? matchState.strikeBatsman.name : matchState.nonStrikeBatsman.name} has ${isHurt ? 'retired hurt (can return)' : 'retired out'}`
+    });
+  }, [matchState, retireWhich, retireType, saveStateForUndo, toast]);
+
+  // 8.4 Handle over change
+  const handleOverChange = useCallback(() => {
+    const newOvers = parseInt(newOversValue);
+    if (isNaN(newOvers) || newOvers < 1 || newOvers > 50) {
+      toast({
+        title: "Invalid Overs",
+        description: "Please enter a valid number between 1 and 50",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const currentBalls = matchState.currentInnings === 1
+      ? (matchState.team1BattingFirst ? matchState.team1Score.balls : matchState.team2Score.balls)
+      : (matchState.team1BattingFirst ? matchState.team2Score.balls : matchState.team1Score.balls);
+    const currentOversPlayed = Math.ceil(currentBalls / 6);
+
+    if (newOvers < currentOversPlayed) {
+      toast({
+        title: "Invalid Overs",
+        description: `Cannot set overs below already bowled (${currentOversPlayed})`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    saveStateForUndo();
+
+    setMatchState(prev => {
+      const updated = { ...prev, matchOvers: newOvers };
+
+      // For 2nd innings reduction, recalculate target using simple par score
+      if (prev.currentInnings === 2 && prev.target && newOvers < prev.matchOvers) {
+        const firstInningsRuns = prev.team1BattingFirst
+          ? prev.team1Score.runs
+          : prev.team2Score.runs;
+        const originalOvers = prev.matchOvers;
+        // Simple DLS-like par score: proportional reduction
+        const revisedTarget = Math.ceil(firstInningsRuns * (newOvers / originalOvers)) + 1;
+        updated.target = revisedTarget;
+      }
+
+      return updated;
+    });
+
+    setShowOverChangeDialog(false);
+    setShowMoreMenu(false);
+    setNewOversValue('');
+
+    toast({
+      title: "Overs Updated",
+      description: `Match overs changed to ${newOvers}`
+    });
+  }, [matchState, newOversValue, saveStateForUndo, toast]);
+
   // Select new batsman
   const handleSelectBatsman = useCallback((player: Player) => {
-    // Check if batsman has already batted and is out
-    const hasAlreadyBatted = currentBattingStats.find(b => b.id === player.id && b.isOut);
-    if (hasAlreadyBatted) {
+    // Check if batsman has already batted and is out (or retired out)
+    const existingStats = currentBattingStats.find(b => b.id === player.id);
+    if (existingStats?.isOut) {
       toast({
         title: "Invalid Selection",
         description: "This batsman has already been dismissed",
+        variant: "destructive"
+      });
+      return;
+    }
+    // Allow retired hurt players to return
+    if (existingStats?.isRetired && !existingStats?.canReturn) {
+      toast({
+        title: "Invalid Selection",
+        description: "This batsman has retired out and cannot return",
         variant: "destructive"
       });
       return;
@@ -982,7 +1121,9 @@ export default function Scoreboard() {
             fours: 0,
             sixes: 0,
             strikeRate: 0,
-            isOut: false
+            isOut: false,
+            isRetired: false,
+            canReturn: false
           }]
         };
       });
@@ -1251,7 +1392,9 @@ export default function Scoreboard() {
           fours: 0,
           sixes: 0,
           strikeRate: 0,
-          isOut: false
+          isOut: false,
+          isRetired: false,
+          canReturn: false
         }]
       };
     });
@@ -1868,14 +2011,46 @@ export default function Scoreboard() {
                             >
                               BYE
                             </Button>
-                            <Button
-                              onClick={handleUndo}
-                              disabled={undoStack.length === 0}
-                              className="h-14 text-sm font-black bg-gray-900 text-white rounded-2xl shadow-lg active:scale-95 transition-all disabled:opacity-30"
-                              data-testid="button-undo"
-                            >
-                              UNDO
-                            </Button>
+                            {/* More Menu Button */}
+                            <div className="relative">
+                              <Button
+                                onClick={() => setShowMoreMenu(!showMoreMenu)}
+                                className="h-14 w-full text-sm font-black bg-gray-900 text-white rounded-2xl shadow-lg active:scale-95 transition-all"
+                                data-testid="button-more"
+                              >
+                                <ChevronDown className="w-4 h-4 mr-1" />
+                                MORE
+                              </Button>
+                              {showMoreMenu && (
+                                <div className="absolute bottom-16 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-150">
+                                  <button
+                                    onClick={() => { handleUndo(); setShowMoreMenu(false); }}
+                                    disabled={undoStack.length === 0}
+                                    className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-50 flex items-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed"
+                                  >
+                                    <Undo2 className="w-4 h-4" /> Undo Last Ball
+                                  </button>
+                                  <button
+                                    onClick={() => { setShowRetireDialog(true); setShowMoreMenu(false); }}
+                                    className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-50 flex items-center gap-3 border-t border-gray-100"
+                                  >
+                                    <Minus className="w-4 h-4" /> Retire Batsman
+                                  </button>
+                                  <button
+                                    onClick={() => { setShowOverChangeDialog(true); setNewOversValue(String(matchState.matchOvers)); setShowMoreMenu(false); }}
+                                    className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-50 flex items-center gap-3 border-t border-gray-100"
+                                  >
+                                    <Settings className="w-4 h-4" /> Change Overs
+                                  </button>
+                                  <button
+                                    onClick={() => { rotateStrike(); setShowMoreMenu(false); }}
+                                    className="w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-50 flex items-center gap-3 border-t border-gray-100"
+                                  >
+                                    <RotateCcw className="w-4 h-4" /> Swap Strike
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                             <Button
                               onClick={() => {
                                 saveStateForUndo();
@@ -2816,6 +2991,127 @@ export default function Scoreboard() {
         batsmanName={lastBallBatsmanName}
         runs={lastBallRuns}
       />
+
+      {/* Retire Batsman Dialog */}
+      <Dialog open={showRetireDialog} onOpenChange={setShowRetireDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Retire Batsman</DialogTitle>
+            <DialogDescription>
+              Select which batsman to retire and the retirement type.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* Which batsman */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Which Batsman?</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant={retireWhich === 'striker' ? 'default' : 'outline'}
+                  onClick={() => setRetireWhich('striker')}
+                  className={retireWhich === 'striker' ? 'bg-blue-600' : ''}
+                >
+                  {matchState.strikeBatsman.name || 'Striker'}
+                </Button>
+                <Button
+                  variant={retireWhich === 'non-striker' ? 'default' : 'outline'}
+                  onClick={() => setRetireWhich('non-striker')}
+                  className={retireWhich === 'non-striker' ? 'bg-blue-600' : ''}
+                >
+                  {matchState.nonStrikeBatsman.name || 'Non-Striker'}
+                </Button>
+              </div>
+            </div>
+            {/* Retirement type */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Retirement Type</Label>
+              <RadioGroup value={retireType} onValueChange={(v) => setRetireType(v as any)}>
+                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                  <RadioGroupItem value="retired_hurt" id="retired_hurt" />
+                  <Label htmlFor="retired_hurt" className="flex-1 cursor-pointer">
+                    <div className="font-medium">Retired Hurt</div>
+                    <div className="text-xs text-muted-foreground">Injury — can return to bat later</div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                  <RadioGroupItem value="retired_out" id="retired_out" />
+                  <Label htmlFor="retired_out" className="flex-1 cursor-pointer">
+                    <div className="font-medium">Retired Out</div>
+                    <div className="text-xs text-muted-foreground">Strategic — cannot return</div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRetireDialog(false)}>Cancel</Button>
+            <Button onClick={handleRetireBatsman} className="bg-red-600 hover:bg-red-700 text-white">
+              Confirm Retire
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Overs Dialog */}
+      <Dialog open={showOverChangeDialog} onOpenChange={setShowOverChangeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Change Match Overs</DialogTitle>
+            <DialogDescription>
+              Adjust the total overs for this match.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-muted-foreground">Current Overs</div>
+                <div className="text-2xl font-bold">{matchState.matchOvers}</div>
+              </div>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="text-muted-foreground">Overs Bowled</div>
+                <div className="text-2xl font-bold">
+                  {(() => {
+                    const balls = matchState.currentInnings === 1
+                      ? (matchState.team1BattingFirst ? matchState.team1Score.balls : matchState.team2Score.balls)
+                      : (matchState.team1BattingFirst ? matchState.team2Score.balls : matchState.team1Score.balls);
+                    return `${Math.floor(balls / 6)}.${balls % 6}`;
+                  })()}
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-overs">New Overs</Label>
+              <Input
+                id="new-overs"
+                type="number"
+                min={1}
+                max={50}
+                value={newOversValue}
+                onChange={(e) => setNewOversValue(e.target.value)}
+                className="text-lg font-bold text-center"
+              />
+            </div>
+            {matchState.currentInnings === 2 && matchState.target && parseInt(newOversValue) < matchState.matchOvers && (
+              <div className="bg-amber-50 border border-amber-200 p-3 rounded-lg text-sm">
+                <div className="font-medium text-amber-800">⚠️ Target will be revised</div>
+                <div className="text-amber-700 mt-1">
+                  Original Target: <strong>{matchState.target}</strong> →
+                  Revised Target: <strong>{Math.ceil(
+                    (matchState.team1BattingFirst ? matchState.team1Score.runs : matchState.team2Score.runs)
+                    * (parseInt(newOversValue) / matchState.matchOvers)
+                  ) + 1}</strong>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowOverChangeDialog(false)}>Cancel</Button>
+            <Button onClick={handleOverChange} className="bg-blue-600 hover:bg-blue-700 text-white">
+              Apply Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

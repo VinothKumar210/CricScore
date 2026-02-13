@@ -16,7 +16,6 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 // Helper function to handle database errors consistently
 function handleDatabaseError(error: unknown, res: any) {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
   // Check if it's a database connection error
   if (errorMessage.includes('authentication failed') ||
     errorMessage.includes('ConnectorError') ||
@@ -1722,12 +1721,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       initialState.team1Batting = validatedData.myTeamPlayers.map((p: any) => ({
         id: p.id || Math.random().toString(36).substring(7),
         name: p.name,
-        runs: 0, balls: 0, fours: 0, sixes: 0, strikeRate: 0, isOut: false
+        runs: 0, balls: 0, fours: 0, sixes: 0, strikeRate: 0, isOut: false, isRetired: false, canReturn: false
       }));
       initialState.team2Batting = validatedData.opponentTeamPlayers.map((p: any) => ({
         id: p.id || Math.random().toString(36).substring(7),
         name: p.name,
-        runs: 0, balls: 0, fours: 0, sixes: 0, strikeRate: 0, isOut: false
+        runs: 0, balls: 0, fours: 0, sixes: 0, strikeRate: 0, isOut: false, isRetired: false, canReturn: false
       }));
 
       const localMatch = await storage.createLocalMatch({
@@ -2488,6 +2487,518 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get team statistics - Stats decommissioned
   app.get("/api/teams/:id/statistics-disabled", authenticateToken, async (req: any, res) => {
     res.status(404).json({ message: "Stats system decommissioned" });
+  });
+
+  // ============================================================
+  // Phase 9: Location-Based Match Invites
+  // ============================================================
+
+  // --- Ground CRUD ---
+
+  // Create ground
+  app.post("/api/grounds", authenticateToken, async (req: any, res) => {
+    try {
+      const { teamId, groundName, latitude, longitude, address, isFavorite } = req.body;
+      if (!teamId || !groundName || latitude == null || longitude == null) {
+        return res.status(400).json({ message: "teamId, groundName, latitude, longitude are required" });
+      }
+      // Verify user is captain/creator of the team
+      const team = await prisma.team.findUnique({ where: { id: teamId } });
+      if (!team || (team.createdById !== req.userId && team.captainId !== req.userId)) {
+        return res.status(403).json({ message: "Only team creator or captain can add grounds" });
+      }
+      const ground = await prisma.ground.create({
+        data: { teamId, groundName, latitude, longitude, address, isFavorite: isFavorite || false, createdBy: req.userId }
+      });
+      res.status(201).json(ground);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // List grounds for a team
+  app.get("/api/grounds", authenticateToken, async (req: any, res) => {
+    try {
+      const { teamId } = req.query;
+      if (!teamId) return res.status(400).json({ message: "teamId query is required" });
+      const grounds = await prisma.ground.findMany({
+        where: { teamId: teamId as string },
+        orderBy: [{ isFavorite: 'desc' }, { groundName: 'asc' }]
+      });
+      res.json(grounds);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Update ground
+  app.put("/api/grounds/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const ground = await prisma.ground.findUnique({ where: { id: req.params.id }, include: { team: true } });
+      if (!ground) return res.status(404).json({ message: "Ground not found" });
+      if (ground.team.createdById !== req.userId && ground.team.captainId !== req.userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      const updated = await prisma.ground.update({
+        where: { id: req.params.id },
+        data: req.body
+      });
+      res.json(updated);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Delete ground (blocked if active invites)
+  app.delete("/api/grounds/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const ground = await prisma.ground.findUnique({
+        where: { id: req.params.id },
+        include: { team: true, invites: { where: { status: 'OPEN' } } }
+      });
+      if (!ground) return res.status(404).json({ message: "Ground not found" });
+      if (ground.team.createdById !== req.userId && ground.team.captainId !== req.userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      if (ground.invites.length > 0) {
+        return res.status(409).json({ message: "Cannot delete ground with active invites" });
+      }
+      await prisma.ground.delete({ where: { id: req.params.id } });
+      res.json({ message: "Ground deleted" });
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // --- Match Invites ---
+
+  // Create invite
+  app.post("/api/invites", authenticateToken, async (req: any, res) => {
+    try {
+      const { teamId, groundId, matchDate, matchTime, overs, description, expiresAt } = req.body;
+      if (!teamId || !groundId || !matchDate || !matchTime) {
+        return res.status(400).json({ message: "teamId, groundId, matchDate, matchTime are required" });
+      }
+      const team = await prisma.team.findUnique({ where: { id: teamId } });
+      if (!team || (team.createdById !== req.userId && team.captainId !== req.userId)) {
+        return res.status(403).json({ message: "Only team captain or creator can create invites" });
+      }
+      const invite = await prisma.matchInvite.create({
+        data: {
+          teamId, groundId, createdBy: req.userId,
+          matchDate: new Date(matchDate), matchTime,
+          overs: overs || 10, description,
+          expiresAt: expiresAt ? new Date(expiresAt) : null
+        },
+        include: { team: true, ground: true, responses: true }
+      });
+      res.status(201).json(invite);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // List nearby invites (with distance filtering)
+  app.get("/api/invites", authenticateToken, async (req: any, res) => {
+    try {
+      const { lat, lon, radius } = req.query;
+      const userLat = parseFloat(lat as string);
+      const userLon = parseFloat(lon as string);
+      const radiusKm = parseFloat(radius as string) || 50; // default 50km
+
+      // Fetch all open invites with ground coordinates
+      const invites = await prisma.matchInvite.findMany({
+        where: {
+          status: 'OPEN',
+          matchDate: { gte: new Date() } // Only future matches
+        },
+        include: {
+          team: { select: { id: true, name: true, logoUrl: true } },
+          ground: true,
+          creator: { select: { id: true, username: true, profileName: true } },
+          responses: {
+            include: {
+              fromUser: { select: { id: true, username: true, profileName: true } }
+            }
+          }
+        },
+        orderBy: { matchDate: 'asc' }
+      });
+
+      // If user provided location, filter by distance
+      if (!isNaN(userLat) && !isNaN(userLon)) {
+        const { filterByDistance } = await import("./services/locationService.js");
+        // Map invites to have lat/lon at top level for filtering
+        const invitesWithCoords = invites.map(inv => ({
+          ...inv,
+          latitude: inv.ground.latitude,
+          longitude: inv.ground.longitude
+        }));
+        const filtered = filterByDistance(invitesWithCoords, userLat, userLon, radiusKm);
+        return res.json(filtered);
+      }
+
+      res.json(invites);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get single invite detail
+  app.get("/api/invites/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const invite = await prisma.matchInvite.findUnique({
+        where: { id: req.params.id },
+        include: {
+          team: { select: { id: true, name: true, logoUrl: true } },
+          ground: true,
+          creator: { select: { id: true, username: true, profileName: true } },
+          responses: {
+            include: {
+              fromUser: { select: { id: true, username: true, profileName: true } }
+            }
+          }
+        }
+      });
+      if (!invite) return res.status(404).json({ message: "Invite not found" });
+      res.json(invite);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Respond to invite
+  app.post("/api/invites/:id/respond", authenticateToken, async (req: any, res) => {
+    try {
+      const { responseType, message, fromTeamId, fromTeamName } = req.body;
+      if (!responseType) return res.status(400).json({ message: "responseType is required" });
+
+      const invite = await prisma.matchInvite.findUnique({ where: { id: req.params.id } });
+      if (!invite) return res.status(404).json({ message: "Invite not found" });
+      if (invite.status !== 'OPEN') return res.status(400).json({ message: "Invite is no longer open" });
+
+      // Check if user already responded
+      const existing = await prisma.inviteResponse.findFirst({
+        where: { inviteId: req.params.id, fromUserId: req.userId }
+      });
+      if (existing) {
+        // Update existing response
+        const updated = await prisma.inviteResponse.update({
+          where: { id: existing.id },
+          data: { responseType, message, fromTeamId, fromTeamName }
+        });
+        return res.json(updated);
+      }
+
+      const response = await prisma.inviteResponse.create({
+        data: {
+          inviteId: req.params.id, fromUserId: req.userId,
+          responseType, message, fromTeamId, fromTeamName
+        },
+        include: { fromUser: { select: { id: true, username: true, profileName: true } } }
+      });
+      res.status(201).json(response);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Confirm invite (creator only)
+  app.post("/api/invites/:id/confirm", authenticateToken, async (req: any, res) => {
+    try {
+      const invite = await prisma.matchInvite.findUnique({ where: { id: req.params.id } });
+      if (!invite) return res.status(404).json({ message: "Invite not found" });
+      if (invite.createdBy !== req.userId) return res.status(403).json({ message: "Only invite creator can confirm" });
+
+      const updated = await prisma.matchInvite.update({
+        where: { id: req.params.id },
+        data: { status: 'CONFIRMED' },
+        include: { team: true, ground: true, responses: true }
+      });
+      res.json(updated);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Cancel invite (creator only)
+  app.delete("/api/invites/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const invite = await prisma.matchInvite.findUnique({ where: { id: req.params.id } });
+      if (!invite) return res.status(404).json({ message: "Invite not found" });
+      if (invite.createdBy !== req.userId) return res.status(403).json({ message: "Only invite creator can cancel" });
+
+      await prisma.matchInvite.update({
+        where: { id: req.params.id },
+        data: { status: 'CANCELLED' }
+      });
+      res.json({ message: "Invite cancelled" });
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Update user home location
+  app.put("/api/users/location", authenticateToken, async (req: any, res) => {
+    try {
+      const { latitude, longitude } = req.body;
+      if (latitude == null || longitude == null) {
+        return res.status(400).json({ message: "latitude and longitude are required" });
+      }
+      const updated = await prisma.user.update({
+        where: { id: req.userId },
+        data: { homeLatitude: latitude, homeLongitude: longitude }
+      });
+      res.json({ homeLatitude: updated.homeLatitude, homeLongitude: updated.homeLongitude });
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+  // ============================================================
+  // Phase 10: Messaging System
+  // ============================================================
+
+  // List user's conversations with last message & unread count
+  app.get("/api/conversations", authenticateToken, async (req: any, res) => {
+    try {
+      const memberships = await prisma.conversationMember.findMany({
+        where: { userId: req.userId },
+        include: {
+          conversation: {
+            include: {
+              members: {
+                include: { user: { select: { id: true, username: true, profileName: true, profilePictureUrl: true } } }
+              },
+              messages: {
+                where: { isDeleted: false },
+                take: 1,
+                orderBy: { createdAt: 'desc' },
+                include: { sender: { select: { id: true, profileName: true } } }
+              }
+            }
+          }
+        },
+        orderBy: { conversation: { updatedAt: 'desc' } }
+      });
+
+      const conversations = memberships.map(m => {
+        const conv = m.conversation;
+        const lastMessage = conv.messages[0] || null;
+        const unreadCount = 0; // Will be computed below
+        return { ...conv, lastMessage, unreadCount, myMembership: { lastReadAt: m.lastReadAt, isMuted: m.isMuted } };
+      });
+
+      // Compute unread counts
+      for (const conv of conversations) {
+        const membership = memberships.find(m => m.conversationId === conv.id);
+        if (membership) {
+          conv.unreadCount = await prisma.message.count({
+            where: {
+              conversationId: conv.id,
+              createdAt: { gt: membership.lastReadAt },
+              senderId: { not: req.userId },
+              isDeleted: false
+            }
+          });
+        }
+      }
+
+      res.json(conversations);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get or create DM conversation
+  app.post("/api/conversations/direct/:userId", authenticateToken, async (req: any, res) => {
+    try {
+      const otherUserId = req.params.userId;
+      if (otherUserId === req.userId) return res.status(400).json({ message: "Cannot message yourself" });
+
+      const { getOrCreateDirectConversation } = await import("./services/messageService.js");
+      const conversation = await getOrCreateDirectConversation(req.userId, otherUserId);
+      res.json(conversation);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get or create Team conversation
+  app.post("/api/conversations/team/:teamId", authenticateToken, async (req: any, res) => {
+    try {
+      const team = await prisma.team.findUnique({ where: { id: req.params.teamId } });
+      if (!team) return res.status(404).json({ message: "Team not found" });
+
+      // Verify user is a member of the team
+      const isMember = await prisma.teamMember.findFirst({
+        where: { teamId: req.params.teamId, userId: req.userId }
+      });
+      const isCreator = team.createdById === req.userId;
+      if (!isMember && !isCreator) return res.status(403).json({ message: "Not a team member" });
+
+      const { getOrCreateTeamConversation } = await import("./services/messageService.js");
+      const conversation = await getOrCreateTeamConversation(req.params.teamId, team.name, team.logoUrl || undefined);
+      res.json(conversation);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get or create Invite conversation
+  app.post("/api/conversations/invite/:inviteId", authenticateToken, async (req: any, res) => {
+    try {
+      const { getOrCreateInviteConversation } = await import("./services/messageService.js");
+      const conversation = await getOrCreateInviteConversation(req.params.inviteId, req.userId);
+      res.json(conversation);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Get paginated messages for a conversation
+  app.get("/api/conversations/:id/messages", authenticateToken, async (req: any, res) => {
+    try {
+      // Verify user is member
+      const membership = await prisma.conversationMember.findFirst({
+        where: { conversationId: req.params.id, userId: req.userId }
+      });
+      if (!membership) return res.status(403).json({ message: "Not a member of this conversation" });
+
+      const cursor = req.query.cursor as string | undefined;
+      const limit = parseInt(req.query.limit as string) || 30;
+
+      const messages = await prisma.message.findMany({
+        where: { conversationId: req.params.id },
+        take: limit + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        orderBy: { createdAt: 'desc' },
+        include: {
+          sender: { select: { id: true, username: true, profileName: true, profilePictureUrl: true } },
+          reactions: {
+            include: { user: { select: { id: true, profileName: true } } }
+          }
+        }
+      });
+
+      const hasMore = messages.length > limit;
+      if (hasMore) messages.pop();
+
+      res.json({ messages, hasMore, nextCursor: messages.length > 0 ? messages[messages.length - 1].id : null });
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Send a message
+  app.post("/api/conversations/:id/messages", authenticateToken, async (req: any, res) => {
+    try {
+      const membership = await prisma.conversationMember.findFirst({
+        where: { conversationId: req.params.id, userId: req.userId }
+      });
+      if (!membership) return res.status(403).json({ message: "Not a member of this conversation" });
+
+      const { content, type, mediaData, replyToId } = req.body;
+      if (!content && !mediaData) return res.status(400).json({ message: "Message content or media is required" });
+
+      let mediaUrl: string | null = null;
+
+      // Handle media upload (base64 image/audio)
+      if (mediaData && (type === 'IMAGE' || type === 'AUDIO')) {
+        const { uploadImage } = await import("./services/cloudinary.js");
+        const folder = type === 'IMAGE' ? 'chat-images' : 'chat-audio';
+        const result = await uploadImage(mediaData, folder);
+        mediaUrl = result.url;
+      }
+
+      const message = await prisma.message.create({
+        data: {
+          conversationId: req.params.id,
+          senderId: req.userId,
+          type: type || 'TEXT',
+          content: content || null,
+          mediaUrl,
+          replyToId: replyToId || null
+        },
+        include: {
+          sender: { select: { id: true, username: true, profileName: true, profilePictureUrl: true } },
+          reactions: true
+        }
+      });
+
+      // Update conversation updatedAt
+      await prisma.conversation.update({
+        where: { id: req.params.id },
+        data: { updatedAt: new Date() }
+      });
+
+      res.status(201).json(message);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Mark conversation as read
+  app.post("/api/conversations/:id/read", authenticateToken, async (req: any, res) => {
+    try {
+      const membership = await prisma.conversationMember.findFirst({
+        where: { conversationId: req.params.id, userId: req.userId }
+      });
+      if (!membership) return res.status(403).json({ message: "Not a member" });
+
+      await prisma.conversationMember.update({
+        where: { id: membership.id },
+        data: { lastReadAt: new Date() }
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Add/remove emoji reaction
+  app.post("/api/messages/:id/react", authenticateToken, async (req: any, res) => {
+    try {
+      const { emoji } = req.body;
+      if (!emoji) return res.status(400).json({ message: "emoji is required" });
+
+      // Check if user already reacted with this emoji
+      const existing = await prisma.messageReaction.findFirst({
+        where: { messageId: req.params.id, userId: req.userId, emoji }
+      });
+
+      if (existing) {
+        // Toggle off
+        await prisma.messageReaction.delete({ where: { id: existing.id } });
+        return res.json({ removed: true, emoji });
+      }
+
+      // Add reaction
+      const reaction = await prisma.messageReaction.create({
+        data: { messageId: req.params.id, userId: req.userId, emoji },
+        include: { user: { select: { id: true, profileName: true } } }
+      });
+      res.status(201).json(reaction);
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
+  // Delete own message (soft delete)
+  app.delete("/api/messages/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const message = await prisma.message.findUnique({ where: { id: req.params.id } });
+      if (!message) return res.status(404).json({ message: "Message not found" });
+      if (message.senderId !== req.userId) return res.status(403).json({ message: "Can only delete your own messages" });
+
+      await prisma.message.update({
+        where: { id: req.params.id },
+        data: { isDeleted: true, content: null, mediaUrl: null }
+      });
+      res.json({ deleted: true });
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
   });
 
   const httpServer = createServer(app);

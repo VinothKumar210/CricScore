@@ -12,6 +12,8 @@ export interface BatsmanStats {
   sixes: number;
   strikeRate: number;
   isOut: boolean;
+  isRetired: boolean;       // Whether batsman has retired
+  canReturn: boolean;       // Whether retired batsman can return (retired hurt = true, retired out = false)
   dismissalType?: string;
   bowler?: string;
   fielder?: string;
@@ -44,7 +46,7 @@ export interface TeamScore {
   };
 }
 
-export type DismissalType = 'bowled' | 'caught' | 'lbw' | 'stumped' | 'run_out' | 'hit_wicket';
+export type DismissalType = 'bowled' | 'caught' | 'lbw' | 'stumped' | 'run_out' | 'hit_wicket' | 'retired_hurt' | 'retired_out';
 export type ExtraType = 'none' | 'wide' | 'noball' | 'bye' | 'legbye';
 
 // 8 cricket field zones for wagon wheel

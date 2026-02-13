@@ -43,6 +43,18 @@ model User {
   playerMatchHistory PlayerMatchHistory[]
   fixtures        Fixture[]
 
+  // Phase 9: Location-based invites
+  homeLatitude    Float?
+  homeLongitude   Float?
+  grounds         Ground[]
+  matchInvites    MatchInvite[]
+  inviteResponses InviteResponse[]
+
+  // Phase 10: Messaging
+  conversationMemberships ConversationMember[]
+  sentMessages    Message[]
+  messageReactions MessageReaction[]
+
   @@map("users")
 }
 
@@ -104,6 +116,10 @@ model Team {
   matchSummariesAsHome MatchSummary[] @relation("MatchSummaryHomeTeam")
   matchSummariesAsAway MatchSummary[] @relation("MatchSummaryAwayTeam")
   playerMatchHistory PlayerMatchHistory[] @relation("PlayerMatchHistoryTeam")
+
+  // Phase 9: Location-based invites
+  grounds         Ground[]
+  matchInvites    MatchInvite[]
 
   @@map("teams")
 }
@@ -535,4 +551,155 @@ model Fixture {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("fixtures")
+}
+
+// Phase 9: Location-Based Match Invites
+
+model Ground {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  teamId      String   @db.ObjectId
+  groundName  String
+  latitude    Float
+  longitude   Float
+  address     String?
+  isFavorite  Boolean  @default(false)
+  createdBy   String   @db.ObjectId
+  createdAt   DateTime @default(now())
+
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator     User     @relation(fields: [createdBy], references: [id])
+  invites     MatchInvite[]
+
+  @@map("grounds")
+}
+
+model MatchInvite {
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  teamId           String       @db.ObjectId
+  groundId         String       @db.ObjectId
+  createdBy        String       @db.ObjectId
+  matchDate        DateTime
+  matchTime        String
+  overs            Int          @default(10)
+  description      String?
+  expiresAt        DateTime?
+  isRecurring      Boolean      @default(false)
+  recurringPattern String?
+  status           InviteStatus @default(OPEN)
+  createdAt        DateTime     @default(now())
+
+  team        Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  ground      Ground           @relation(fields: [groundId], references: [id])
+  creator     User             @relation(fields: [createdBy], references: [id])
+  responses   InviteResponse[]
+
+  @@map("match_invites")
+}
+
+model InviteResponse {
+  id           String       @id @default(auto()) @map("_id") @db.ObjectId
+  inviteId     String       @db.ObjectId
+  fromUserId   String       @db.ObjectId
+  fromTeamId   String?      @db.ObjectId
+  fromTeamName String?
+  responseType ResponseType
+  message      String?
+  createdAt    DateTime     @default(now())
+
+  invite       MatchInvite  @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  fromUser     User         @relation(fields: [fromUserId], references: [id])
+
+  @@map("invite_responses")
+}
+
+enum InviteStatus {
+  OPEN
+  CONFIRMED
+  CANCELLED
+  EXPIRED
+}
+
+enum ResponseType {
+  INTERESTED
+  ACCEPTED
+  DECLINED
+  WITHDRAWN
+}
+
+// ===== Phase 10: Messaging =====
+
+model Conversation {
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+  type        ConversationType
+  name        String?            // For team/invite chats
+  teamId      String?            @db.ObjectId
+  inviteId    String?            @db.ObjectId
+  avatarUrl   String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  members     ConversationMember[]
+  messages    Message[]
+
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId  String       @db.ObjectId
+  userId          String       @db.ObjectId
+  joinedAt        DateTime     @default(now())
+  lastReadAt      DateTime     @default(now())
+  isMuted         Boolean      @default(false)
+
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId  String       @db.ObjectId
+  senderId        String       @db.ObjectId
+  type            MessageType  @default(TEXT)
+  content         String?      // text content
+  mediaUrl        String?      // image/audio URL
+  replyToId       String?      @db.ObjectId
+  isDeleted       Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender          User         @relation(fields: [senderId], references: [id])
+  reactions       MessageReaction[]
+
+  @@map("messages")
+}
+
+model MessageReaction {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  messageId  String   @db.ObjectId
+  userId     String   @db.ObjectId
+  emoji      String   // e.g. "👍", "❤️", "😂"
+  createdAt  DateTime @default(now())
+
+  message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId, emoji])
+  @@map("message_reactions")
+}
+
+enum ConversationType {
+  DIRECT
+  TEAM
+  INVITE
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+  SYSTEM
 }
