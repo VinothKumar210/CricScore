@@ -1,11 +1,6 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { authService } from "./auth";
 
-// Base URL for API requests. 
-// In production (Vercel), this should be the Render backend URL.
-// In development, it falls back to empty string (relative path, proxied by Vite)
-const BASE_URL = import.meta.env.VITE_API_URL || "";
-
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     let errorData;
@@ -45,7 +40,7 @@ export async function apiRequest(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE_URL}${url}`, {
+  const res = await fetch(url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -70,11 +65,7 @@ export const getQueryFn: <T>(options: {
         headers["Authorization"] = `Bearer ${token}`;
       }
 
-      const url = queryKey.join("/");
-      // If url starts with /, append BASE_URL. If not, assume it's absolute or handled elsewhere (but usually api routes start with /)
-      const fullUrl = url.startsWith("http") ? url : `${BASE_URL}${url}`;
-
-      const res = await fetch(fullUrl, {
+      const res = await fetch(queryKey.join("/") as string, {
         headers,
         credentials: "include",
       });

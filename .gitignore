@@ -9,4 +9,7 @@ node_modules
 dist
 .env
 .vercel
+node_modules/
+.env
+
 

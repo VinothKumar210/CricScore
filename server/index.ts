@@ -5,20 +5,18 @@ import { prisma } from "./db";
 
 const app = express();
 
-const SEPARATE_MODE = process.env.SEPARATE_MODE === "true";
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:3000";
+const SEPARATE_MODE = process.env.SEPARATE_MODE === "true" || process.env.NODE_ENV === "production";
 
-if (SEPARATE_MODE || process.env.NODE_ENV === "production" || process.env.CLIENT_URL) {
+if (SEPARATE_MODE) {
   app.use((req, res, next) => {
+    const allowedOrigins = [process.env.CLIENT_ORIGIN || "http://localhost:3000", "http://localhost:5173", "http://localhost:3001"];
     const origin = req.headers.origin;
-    // Allow the configured client URL, or localhost in dev, or reflection if strict matching isn't needed
-    // For security, strict matching to CLIENT_URL is best in production
-
-    res.header("Access-Control-Allow-Origin", CLIENT_URL);
+    if (origin && (allowedOrigins.includes(origin) || !process.env.CLIENT_ORIGIN)) {
+      res.header("Access-Control-Allow-Origin", origin || "*");
+    }
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     res.header("Access-Control-Allow-Credentials", "true");
-
     if (req.method === "OPTIONS") {
       return res.sendStatus(200);
     }
