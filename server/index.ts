@@ -10,10 +10,17 @@ const SEPARATE_MODE = process.env.SEPARATE_MODE === "true" || process.env.NODE_E
 
 if (SEPARATE_MODE) {
   app.use((req, res, next) => {
-    const allowedOrigins = [process.env.CLIENT_ORIGIN || "http://localhost:3000", "http://localhost:5173", "http://localhost:3001"];
+    const allowedOrigins = [
+      process.env.CLIENT_ORIGIN || "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:3001",
+      "https://cric-score-five.vercel.app"
+    ];
     const origin = req.headers.origin;
     if (origin && (allowedOrigins.includes(origin) || !process.env.CLIENT_ORIGIN)) {
       res.header("Access-Control-Allow-Origin", origin || "*");
+    } else if (origin) {
+      console.log(`CORS Blocked: Origin '${origin}' not in`, allowedOrigins);
     }
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
