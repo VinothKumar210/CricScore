@@ -40,7 +40,8 @@ export async function apiRequest(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+  const res = await fetch(baseUrl + url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
@@ -65,7 +66,8 @@ export const getQueryFn: <T>(options: {
         headers["Authorization"] = `Bearer ${token}`;
       }
 
-      const res = await fetch(queryKey.join("/") as string, {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+      const res = await fetch(baseUrl + (queryKey.join("/") as string), {
         headers,
         credentials: "include",
       });
