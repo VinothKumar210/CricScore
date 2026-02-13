@@ -225,6 +225,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check username availability
+  app.get("/api/users/check-username", authenticateToken, async (req: any, res) => {
+    try {
+      const { username } = req.query;
+      if (!username || typeof username !== 'string') {
+        return res.status(400).json({ message: "Username required" });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      // Available if no user found OR user found is the current user
+      const isAvailable = !user || user.id === req.userId;
+
+      res.json({
+        available: isAvailable,
+        message: isAvailable ? "Username available" : "Username already taken"
+      });
+    } catch (error) {
+      return handleDatabaseError(error, res);
+    }
+  });
+
   // Profile routes
   app.put("/api/profile", authenticateToken, async (req: any, res) => {
     try {

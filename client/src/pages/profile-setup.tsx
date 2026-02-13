@@ -52,11 +52,11 @@ export default function ProfileSetup() {
     }
 
     setUsernameStatus({ checking: true, available: null, message: "" });
-    
+
     try {
-      const response = await fetch(`/api/users/check-username?username=${encodeURIComponent(username)}`);
+      const response = await apiRequest("GET", `/api/users/check-username?username=${encodeURIComponent(username)}`);
       const data = await response.json();
-      
+
       setUsernameStatus({
         checking: false,
         available: data.available,
@@ -121,7 +121,7 @@ export default function ProfileSetup() {
                 {/* Basic Info */}
                 <div className="space-y-4">
                   <h2 className="text-xl font-semibold border-b border-border pb-2">Basic Information</h2>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -135,11 +135,11 @@ export default function ProfileSetup() {
                                 placeholder="Choose a unique username"
                                 data-testid="input-username"
                                 className={
-                                  usernameStatus.available === true 
-                                    ? "border-green-500 focus:border-green-500" 
-                                    : usernameStatus.available === false 
-                                    ? "border-red-500 focus:border-red-500" 
-                                    : ""
+                                  usernameStatus.available === true
+                                    ? "border-green-500 focus:border-green-500"
+                                    : usernameStatus.available === false
+                                      ? "border-red-500 focus:border-red-500"
+                                      : ""
                                 }
                                 {...field}
                               />
@@ -159,14 +159,13 @@ export default function ProfileSetup() {
                           <div className="space-y-1">
                             <p className="text-xs text-muted-foreground">This will be your unique identifier</p>
                             {usernameStatus.message && (
-                              <p 
-                                className={`text-xs ${
-                                  usernameStatus.available === true 
-                                    ? "text-green-600" 
-                                    : usernameStatus.available === false 
-                                    ? "text-red-600" 
-                                    : "text-muted-foreground"
-                                }`}
+                              <p
+                                className={`text-xs ${usernameStatus.available === true
+                                    ? "text-green-600"
+                                    : usernameStatus.available === false
+                                      ? "text-red-600"
+                                      : "text-muted-foreground"
+                                  }`}
                                 data-testid="username-status-message"
                               >
                                 {usernameStatus.message}
@@ -177,7 +176,7 @@ export default function ProfileSetup() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="role"
@@ -199,7 +198,7 @@ export default function ProfileSetup() {
                       )}
                     />
                   </div>
-                  
+
                   <FormField
                     control={form.control}
                     name="profileName"
@@ -218,7 +217,7 @@ export default function ProfileSetup() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="description"
@@ -244,7 +243,7 @@ export default function ProfileSetup() {
                 {/* Playing Style */}
                 <div className="space-y-4">
                   <h2 className="text-xl font-semibold border-b border-border pb-2">Playing Style</h2>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -265,7 +264,7 @@ export default function ProfileSetup() {
                         </FormItem>
                       )}
                     />
-                    
+
                     {(selectedRole === "BOWLER" || selectedRole === "ALL_ROUNDER") && (
                       <FormField
                         control={form.control}
