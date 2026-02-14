@@ -58,7 +58,7 @@ export function TeamSelectSheet({
           }
 
           const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
-          const response = await fetch(`${baseUrl}/api/teams/search?q=${encodeURIComponent(teamIdSearch.trim())}`, { headers });
+          const response = await fetch(`${baseUrl}/api/teams/search?q=${encodeURIComponent(teamIdSearch.trim())}`, { headers, credentials: "include" });
           if (response.ok) {
             const teams = await response.json();
             setSuggestions(teams.map((t: any) => ({
@@ -94,9 +94,9 @@ export function TeamSelectSheet({
 
     const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
     const [teamResponse, membersResponse, guestPlayersResponse] = await Promise.all([
-      fetch(`${baseUrl}/api/teams/${teamId}`, { headers }),
-      fetch(`${baseUrl}/api/teams/${teamId}/members`, { headers }),
-      fetch(`${baseUrl}/api/teams/${teamId}/guest-players`, { headers }),
+      fetch(`${baseUrl}/api/teams/${teamId}`, { headers, credentials: "include" }),
+      fetch(`${baseUrl}/api/teams/${teamId}/members`, { headers, credentials: "include" }),
+      fetch(`${baseUrl}/api/teams/${teamId}/guest-players`, { headers, credentials: "include" }),
     ]);
 
     if (!teamResponse.ok) {
@@ -141,7 +141,7 @@ export function TeamSelectSheet({
     }
 
     const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
-    const teamResponse = await fetch(`${baseUrl}/api/teams/by-code/${encodeURIComponent(teamCode)}`, { headers });
+    const teamResponse = await fetch(`${baseUrl}/api/teams/by-code/${encodeURIComponent(teamCode)}`, { headers, credentials: "include" });
     if (!teamResponse.ok) {
       throw new Error("Team not found");
     }

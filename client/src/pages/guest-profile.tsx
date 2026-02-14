@@ -58,7 +58,8 @@ export default function GuestProfile() {
         queryKey: ["guest", code],
         enabled: !!code,
         queryFn: async () => {
-            const response = await fetch(`/api/guest/${code}`);
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+            const response = await fetch(`${baseUrl}/api/guest/${code}`);
             if (!response.ok) {
                 if (response.status === 404) {
                     throw new Error("Guest player not found");

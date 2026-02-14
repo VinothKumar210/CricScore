@@ -82,10 +82,12 @@ export function useFixturesCache() {
     queryKey: ["/api/fixtures"],
     queryFn: async () => {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch("/api/fixtures", {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+      const response = await fetch(`${baseUrl}/api/fixtures`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
       });
       if (!response.ok) {
         throw new Error("Failed to fetch fixtures");
@@ -153,11 +155,13 @@ export function useFixturesCache() {
   const deleteFixtureMutation = useMutation({
     mutationFn: async (id: string) => {
       const token = localStorage.getItem("auth_token");
-      const response = await fetch(`/api/fixtures/${id}`, {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+      const response = await fetch(`${baseUrl}/api/fixtures/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
       });
       if (!response.ok) {
         throw new Error("Failed to delete fixture");

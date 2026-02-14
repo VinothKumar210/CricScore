@@ -46,10 +46,10 @@ class AuthService {
   async login(email: string, password: string): Promise<User> {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const idToken = await userCredential.user.getIdToken();
-    
+
     const response = await apiRequest('POST', '/api/auth/firebase-login', { idToken });
     const data: AuthResponse = await response.json();
-    
+
     this.setAuthData(data.token, data.user);
     return data.user;
   }
@@ -57,10 +57,10 @@ class AuthService {
   async register(email: string, password: string): Promise<User> {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const idToken = await userCredential.user.getIdToken();
-    
+
     const response = await apiRequest('POST', '/api/auth/firebase-register', { idToken });
     const data: AuthResponse = await response.json();
-    
+
     this.setAuthData(data.token, data.user);
     return data.user;
   }
@@ -68,29 +68,31 @@ class AuthService {
   async loginWithGoogle(): Promise<User> {
     const result = await signInWithPopup(auth, googleProvider);
     const idToken = await result.user.getIdToken();
-    
+
     const response = await apiRequest('POST', '/api/auth/firebase-google', { idToken });
     const data: AuthResponse = await response.json();
-    
+
     this.setAuthData(data.token, data.user);
     return data.user;
   }
 
   async me(): Promise<User | null> {
     if (!this.token) return null;
-    
+
     try {
-      const response = await fetch('/api/auth/me', {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+      const response = await fetch(baseUrl + '/api/auth/me', {
         headers: {
           'Authorization': `Bearer ${this.token}`,
         },
+        credentials: "include",
       });
-      
+
       if (!response.ok) {
         this.logout();
         return null;
       }
-      
+
       const user: User = await response.json();
       this.user = user;
       localStorage.setItem('user_data', JSON.stringify(user));

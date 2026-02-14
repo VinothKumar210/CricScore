@@ -21,7 +21,7 @@ export default function CreateLiveMatch() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  
+
   // Spectator states
   const [allowSpectators, setAllowSpectators] = useState(false);
   const [selectedSpectators, setSelectedSpectators] = useState<string[]>([]);
@@ -52,16 +52,9 @@ export default function CreateLiveMatch() {
 
     setIsSearchingSpectators(true);
     try {
-      const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-      });
-      
-      if (response.ok) {
-        const users = await response.json();
-        setSpectatorSearchResults(users);
-      }
+      const response = await apiRequest('GET', `/api/users/search?q=${encodeURIComponent(query)}`);
+      const users = await response.json();
+      setSpectatorSearchResults(users);
     } catch (error) {
       console.error('Error searching spectators:', error);
     } finally {
@@ -124,7 +117,7 @@ export default function CreateLiveMatch() {
           Create a live cricket match that spectators can follow in real-time
         </p>
       </div>
-      
+
       <Card>
         <CardContent className="p-6">
           <Form {...form}>
@@ -267,7 +260,7 @@ export default function CreateLiveMatch() {
                   <EyeIcon className="mr-2 h-5 w-5" />
                   Spectator Settings
                 </h3>
-                
+
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
@@ -292,7 +285,7 @@ export default function CreateLiveMatch() {
                         Search and invite users to watch your match. They'll receive notifications when the match starts.
                       </div>
                     </div>
-                    
+
                     <div className="relative">
                       <Input
                         placeholder="Search users by username..."
@@ -305,7 +298,7 @@ export default function CreateLiveMatch() {
                         className="pr-8"
                       />
                       <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      
+
                       {/* Search Results */}
                       {spectatorSearch.length >= 2 && spectatorSearchResults.length > 0 && (
                         <div className="absolute top-full left-0 right-0 z-50 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-y-auto mt-1">
