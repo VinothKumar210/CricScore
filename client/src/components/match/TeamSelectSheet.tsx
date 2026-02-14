@@ -57,7 +57,8 @@ export function TeamSelectSheet({
             headers['Authorization'] = `Bearer ${token}`;
           }
 
-          const response = await fetch(`/api/teams/search?q=${encodeURIComponent(teamIdSearch.trim())}`, { headers });
+          const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+          const response = await fetch(`${baseUrl}/api/teams/search?q=${encodeURIComponent(teamIdSearch.trim())}`, { headers });
           if (response.ok) {
             const teams = await response.json();
             setSuggestions(teams.map((t: any) => ({
@@ -91,10 +92,11 @@ export function TeamSelectSheet({
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
     const [teamResponse, membersResponse, guestPlayersResponse] = await Promise.all([
-      fetch(`/api/teams/${teamId}`, { headers }),
-      fetch(`/api/teams/${teamId}/members`, { headers }),
-      fetch(`/api/teams/${teamId}/guest-players`, { headers }),
+      fetch(`${baseUrl}/api/teams/${teamId}`, { headers }),
+      fetch(`${baseUrl}/api/teams/${teamId}/members`, { headers }),
+      fetch(`${baseUrl}/api/teams/${teamId}/guest-players`, { headers }),
     ]);
 
     if (!teamResponse.ok) {
@@ -138,7 +140,8 @@ export function TeamSelectSheet({
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const teamResponse = await fetch(`/api/teams/by-code/${encodeURIComponent(teamCode)}`, { headers });
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+    const teamResponse = await fetch(`${baseUrl}/api/teams/by-code/${encodeURIComponent(teamCode)}`, { headers });
     if (!teamResponse.ok) {
       throw new Error("Team not found");
     }

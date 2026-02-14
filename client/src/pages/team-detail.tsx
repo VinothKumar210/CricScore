@@ -221,22 +221,8 @@ function TeamMatchHistory({ teamId, teamName }: { teamId: string; teamName: stri
   const { data: matchHistory, isLoading, error } = useQuery<TeamMatchHistoryData>({
     queryKey: ['/api/team-match-history', teamId, currentPage, itemsPerPage],
     queryFn: async () => {
-      const token = (await import("@/lib/auth")).authService.getToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
-
       const url = `/api/team-match-history/${teamId}?page=${currentPage}&limit=${itemsPerPage}`;
-      const response = await fetch(url, {
-        headers,
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error(`${response.status}: ${response.statusText}`);
-      }
-
+      const response = await apiRequest('GET', url);
       return await response.json();
     },
     enabled: !!teamId,

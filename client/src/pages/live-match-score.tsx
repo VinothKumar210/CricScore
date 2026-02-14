@@ -103,7 +103,7 @@ export default function LiveMatchScore() {
     ws.addEventListener('open', () => {
       console.log('WebSocket connected for live match scoring');
       setIsConnected(true);
-      
+
       // Join this match room for broadcasting
       ws.send(JSON.stringify({
         type: 'join_live_match',
@@ -133,43 +133,31 @@ export default function LiveMatchScore() {
   const addBallMutation = useMutation({
     mutationFn: async (ballData: BallInput) => {
       if (!matchData) throw new Error('Match data not available');
-      
+
       const currentScore = matchData.currentScore || { runs: 0, wickets: 0, overs: 0, ballsInOver: 0 };
-      
+
       // Calculate next ball position
       let nextBallInOver = currentScore.ballsInOver + 1;
       let nextOverNumber = currentScore.overs + 1;
-      
+
       // Handle over completion (6 legal balls per over)
       if (nextBallInOver > 6) {
         nextBallInOver = 1;
         nextOverNumber += 1;
       }
-      
+
       // If it's an extra (wide/no-ball), don't advance the ball count
       if (ballData.isExtra && (ballData.extraType === 'wide' || ballData.extraType === 'no-ball')) {
         nextBallInOver = currentScore.ballsInOver || 1;
         nextOverNumber = currentScore.overs + 1;
       }
 
-      const response = await fetch(`/api/live-matches/${matchId}/balls`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify({
-          ...ballData,
-          overNumber: nextOverNumber,
-          ballInOver: nextBallInOver,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to add ball');
-      }
-
+      const data = {
+        ...ballData,
+        overNumber: nextOverNumber,
+        ballInOver: nextBallInOver,
+      };
+      const response = await apiRequest('POST', `/api/live-matches/${matchId}/balls`, data);
       return response.json();
     },
     onSuccess: () => {
@@ -183,11 +171,11 @@ export default function LiveMatchScore() {
         bowlerName: '',
         commentary: ''
       });
-      
+
       // Refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/live-matches', matchId] });
       queryClient.invalidateQueries({ queryKey: ['/api/live-matches', matchId, 'balls'] });
-      
+
       toast({
         title: "Ball recorded!",
         description: "The ball has been recorded and spectators have been notified.",
@@ -205,25 +193,12 @@ export default function LiveMatchScore() {
   // Start/Update match status mutation
   const updateMatchStatusMutation = useMutation({
     mutationFn: async (newStatus: 'live' | 'completed') => {
-      const response = await fetch(`/api/live-matches/${matchId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update match status');
-      }
-
+      const response = await apiRequest('PUT', `/api/live-matches/${matchId}`, { status: newStatus });
       return response.json();
     },
     onSuccess: (updatedMatch) => {
       queryClient.invalidateQueries({ queryKey: ['/api/live-matches', matchId] });
-      
+
       toast({
         title: "Match status updated!",
         description: `Match is now ${updatedMatch.status}. Spectators have been notified.`,
@@ -241,24 +216,11 @@ export default function LiveMatchScore() {
   // Send notifications to spectators
   const sendNotificationMutation = useMutation({
     mutationFn: async ({ title, body }: { title: string; body: string }) => {
-      const response = await fetch(`/api/live-matches/${matchId}/notify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify({ 
-          title, 
-          body,
-          data: { matchId } 
-        }),
+      const response = await apiRequest('POST', `/api/live-matches/${matchId}/notify`, {
+        title,
+        body,
+        data: { matchId }
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to send notifications');
-      }
-
       return response.json();
     },
     onSuccess: (result) => {
@@ -350,8 +312,8 @@ export default function LiveMatchScore() {
     }
   };
 
-  const recentBalls = ballsData ? 
-    [...ballsData].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10) 
+  const recentBalls = ballsData ?
+    [...ballsData].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10)
     : [];
 
   return (
@@ -486,8 +448,8 @@ export default function LiveMatchScore() {
           </AlertDialog>
         )}
 
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="h-16"
           onClick={() => setLocation(`/live-match/${matchId}/view`)}
           data-testid="button-spectator-view"
@@ -498,8 +460,8 @@ export default function LiveMatchScore() {
           </div>
         </Button>
 
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="h-16"
           onClick={() => sendNotificationMutation.mutate({
             title: "Match Update",
@@ -548,8 +510,8 @@ export default function LiveMatchScore() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="runs">Runs</Label>
-                <Select 
-                  value={ballInput.runs.toString()} 
+                <Select
+                  value={ballInput.runs.toString()}
                   onValueChange={(value) => setBallInput(prev => ({ ...prev, runs: parseInt(value) }))}
                 >
                   <SelectTrigger data-testid="select-runs">
@@ -568,8 +530,8 @@ export default function LiveMatchScore() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="wicket" 
+                  <Checkbox
+                    id="wicket"
                     checked={ballInput.isWicket}
                     onCheckedChange={(checked) => setBallInput(prev => ({ ...prev, isWicket: !!checked }))}
                     data-testid="checkbox-wicket"
@@ -577,8 +539,8 @@ export default function LiveMatchScore() {
                   <Label htmlFor="wicket">Wicket</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="extra" 
+                  <Checkbox
+                    id="extra"
                     checked={ballInput.isExtra}
                     onCheckedChange={(checked) => setBallInput(prev => ({ ...prev, isExtra: !!checked }))}
                     data-testid="checkbox-extra"
@@ -591,8 +553,8 @@ export default function LiveMatchScore() {
             {ballInput.isExtra && (
               <div>
                 <Label htmlFor="extraType">Extra Type</Label>
-                <Select 
-                  value={ballInput.extraType} 
+                <Select
+                  value={ballInput.extraType}
                   onValueChange={(value) => setBallInput(prev => ({ ...prev, extraType: value }))}
                 >
                   <SelectTrigger data-testid="select-extra-type">
@@ -620,7 +582,7 @@ export default function LiveMatchScore() {
               />
             </div>
 
-            <Button 
+            <Button
               onClick={handleAddBall}
               disabled={addBallMutation.isPending || matchData.status !== 'live'}
               className="w-full"
@@ -655,10 +617,10 @@ export default function LiveMatchScore() {
                             {ball.overNumber}.{ball.ballInOver}
                           </Badge>
                           <span className="font-medium">
-                            {ball.isWicket ? 'WICKET!' : 
-                             ball.runs === 6 ? 'SIX!' :
-                             ball.runs === 4 ? 'FOUR!' :
-                             `${ball.runs} run${ball.runs !== 1 ? 's' : ''}`}
+                            {ball.isWicket ? 'WICKET!' :
+                              ball.runs === 6 ? 'SIX!' :
+                                ball.runs === 4 ? 'FOUR!' :
+                                  `${ball.runs} run${ball.runs !== 1 ? 's' : ''}`}
                           </span>
                           {ball.isExtra && (
                             <Badge variant="secondary" className="text-xs">

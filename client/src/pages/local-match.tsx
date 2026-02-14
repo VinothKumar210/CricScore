@@ -163,22 +163,10 @@ export default function LocalMatch() {
     };
 
     try {
-      const token = localStorage.getItem("auth_token");
       const url = fixtureId ? `/api/fixtures/${fixtureId}` : '/api/fixtures';
       const method = fixtureId ? 'PUT' : 'POST';
 
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(fixtureData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save fixture');
-      }
+      await apiRequest(method, url, fixtureData);
 
       clearFixturesCache();
       await queryClient.invalidateQueries({ queryKey: ["/api/fixtures"] });

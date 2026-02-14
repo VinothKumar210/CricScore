@@ -59,14 +59,15 @@ export default function SearchPlayers() {
     queryKey: ["search-guest", searchTerm],
     enabled: isGuestCodeSearch,
     queryFn: async () => {
-      const response = await fetch(`/api/guest/${searchTerm}`);
-      if (!response.ok) {
-        if (response.status === 404) {
+      try {
+        const response = await apiRequest('GET', `/api/guest/${searchTerm}`);
+        return await response.json();
+      } catch (error: any) {
+        if (error.message?.includes('404')) {
           throw new Error("Guest not found");
         }
         throw new Error("Failed to fetch guest");
       }
-      return response.json();
     },
   });
 

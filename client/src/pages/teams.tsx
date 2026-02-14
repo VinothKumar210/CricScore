@@ -92,15 +92,7 @@ export default function Teams() {
 
   const searchUserMutation = useMutation({
     mutationFn: async (username: string) => {
-      const response = await fetch(`/api/users/search?username=${encodeURIComponent(username)}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-      });
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error);
-      }
+      const response = await apiRequest('GET', `/api/users/search?username=${encodeURIComponent(username)}`);
       return response.json();
     },
     onSuccess: (userData: User) => {
@@ -272,7 +264,7 @@ export default function Teams() {
               Search for players by username and send them team invitations.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* User Search Section */}
             <div className="space-y-4">
@@ -280,7 +272,7 @@ export default function Teams() {
                 <Search className="mr-2 h-4 w-4" />
                 Find Player
               </h4>
-              
+
               <Form {...searchForm}>
                 <form onSubmit={searchForm.handleSubmit(onSearchUser)} className="space-y-4">
                   <FormField
@@ -323,7 +315,7 @@ export default function Teams() {
                     <UserPlus className="mr-2 h-4 w-4" />
                     Player Found
                   </h4>
-                  
+
                   <Card>
                     <CardContent className="pt-4">
                       <div className="space-y-2">
@@ -348,7 +340,7 @@ export default function Teams() {
                           <span className="font-medium">{searchedUser.bowlingStyle || "Not specified"}</span>
                         </div>
                       </div>
-                      
+
                       <div className="mt-4 flex space-x-2">
                         <Button
                           onClick={handleSendInvitation}
@@ -381,10 +373,10 @@ export default function Teams() {
           teams.map((team: any) => {
             const userRole = getUserRole(team);
             const RoleIcon = userRole.icon;
-            
+
             return (
-              <Link 
-                key={team.id} 
+              <Link
+                key={team.id}
                 href={`/teams/${team.id}`}
                 onClick={() => sessionStorage.setItem("teamDetailReferrer", "/teams")}
               >

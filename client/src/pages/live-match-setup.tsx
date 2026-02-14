@@ -80,13 +80,13 @@ export default function LiveMatchSetup() {
   // Validate username with debounce
   const validateUsername = async (username: string) => {
     if (!username || username.length < 3) return;
-    
+
     setValidatingUsername(username);
-    
+
     try {
-      const response = await fetch(`/api/users/lookup-username?username=${encodeURIComponent(username)}`);
+      const response = await apiRequest('GET', `/api/users/lookup-username?username=${encodeURIComponent(username)}`);
       const data = await response.json();
-      
+
       setUsernameValidation(prev => ({
         ...prev,
         [username]: {
@@ -102,18 +102,18 @@ export default function LiveMatchSetup() {
         [username]: { isValid: false }
       }));
     }
-    
+
     setValidatingUsername(null);
   };
 
   // Debounced username validation
   useEffect(() => {
     if (!spectatorInput) return;
-    
+
     const timer = setTimeout(() => {
       validateUsername(spectatorInput);
     }, 500);
-    
+
     return () => clearTimeout(timer);
   }, [spectatorInput]);
 
@@ -127,15 +127,9 @@ export default function LiveMatchSetup() {
     const searchTeams = async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(`/api/teams/search?q=${encodeURIComponent(opponentTeamSearch)}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-          },
-        });
-        if (response.ok) {
-          const results = await response.json();
-          setSearchResults(results);
-        }
+        const response = await apiRequest('GET', `/api/teams/search?q=${encodeURIComponent(opponentTeamSearch)}`);
+        const results = await response.json();
+        setSearchResults(results);
       } catch (error) {
         console.error('Error searching teams:', error);
       }
@@ -149,7 +143,7 @@ export default function LiveMatchSetup() {
   const addSpectator = () => {
     const username = spectatorInput.trim();
     if (!username) return;
-    
+
     if (username === user?.username) {
       toast({
         title: "Cannot add yourself",
@@ -158,7 +152,7 @@ export default function LiveMatchSetup() {
       });
       return;
     }
-    
+
     if (formData.spectatorUsernames.includes(username)) {
       toast({
         title: "Username already added",
@@ -167,7 +161,7 @@ export default function LiveMatchSetup() {
       });
       return;
     }
-    
+
     const validation = usernameValidation[username];
     if (!validation?.isValid) {
       toast({
@@ -177,7 +171,7 @@ export default function LiveMatchSetup() {
       });
       return;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       spectatorUsernames: [...prev.spectatorUsernames, username]
@@ -214,7 +208,7 @@ export default function LiveMatchSetup() {
   // Add player from team to spectators
   const addPlayerAsSpectator = (player: any) => {
     if (!player.username) return;
-    
+
     if (player.username === user?.username) {
       toast({
         title: "Cannot add yourself",
@@ -223,7 +217,7 @@ export default function LiveMatchSetup() {
       });
       return;
     }
-    
+
     if (formData.spectatorUsernames.includes(player.username)) {
       toast({
         title: "Player already added",
@@ -232,12 +226,12 @@ export default function LiveMatchSetup() {
       });
       return;
     }
-    
+
     setFormData(prev => ({
       ...prev,
       spectatorUsernames: [...prev.spectatorUsernames, player.username]
     }));
-    
+
     // Update validation cache
     setUsernameValidation(prev => ({
       ...prev,
@@ -251,20 +245,7 @@ export default function LiveMatchSetup() {
 
   const createLiveMatchMutation = useMutation({
     mutationFn: async (data: LiveMatchForm) => {
-      const response = await fetch("/api/live-matches", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem('auth_token')}`,
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to create live match");
-      }
-      
+      const response = await apiRequest('POST', "/api/live-matches", data);
       return response.json();
     },
     onSuccess: (liveMatch) => {
@@ -272,7 +253,7 @@ export default function LiveMatchSetup() {
         title: "Live match created!",
         description: `${formData.spectatorUsernames.length} spectators will be notified when you start scoring.`,
       });
-      
+
       // Navigate to the live scoring page
       setLocation(`/live-match/${liveMatch.id}/score`);
     },
@@ -287,7 +268,7 @@ export default function LiveMatchSetup() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.matchName.trim() || !formData.venue.trim() || !formData.myTeamName.trim() || !formData.opponentTeamName.trim()) {
       toast({
         title: "Missing required fields",
@@ -296,12 +277,12 @@ export default function LiveMatchSetup() {
       });
       return;
     }
-    
+
     createLiveMatchMutation.mutate(formData);
   };
 
-  const isFormValid = formData.matchName.trim() && formData.venue.trim() && 
-                     formData.myTeamName.trim() && formData.opponentTeamName.trim();
+  const isFormValid = formData.matchName.trim() && formData.venue.trim() &&
+    formData.myTeamName.trim() && formData.opponentTeamName.trim();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 to-white">
@@ -352,7 +333,7 @@ export default function LiveMatchSetup() {
                   />
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="matchDate">Match Date *</Label>
@@ -385,7 +366,7 @@ export default function LiveMatchSetup() {
                   />
                 </div>
               </div>
-              
+
               <div>
                 <Label htmlFor="overs">Overs per Innings</Label>
                 <Input
@@ -442,9 +423,8 @@ export default function LiveMatchSetup() {
                           <div
                             key={team.id}
                             onClick={() => handleMyTeamSelect(team.id)}
-                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                              selectedMyTeam === team.id ? 'border-sky-500 bg-sky-50' : 'border-gray-200 hover:border-gray-300'
-                            }`}
+                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${selectedMyTeam === team.id ? 'border-sky-500 bg-sky-50' : 'border-gray-200 hover:border-gray-300'
+                              }`}
                             data-testid={`card-my-team-${team.id}`}
                           >
                             <div className="flex items-center justify-between">
@@ -478,9 +458,8 @@ export default function LiveMatchSetup() {
                           <div
                             key={player.id}
                             onClick={() => addPlayerAsSpectator(player)}
-                            className={`p-2 border rounded-lg cursor-pointer transition-colors hover:border-sky-300 ${
-                              formData.spectatorUsernames.includes(player.username || '') ? 'border-green-500 bg-green-50' : 'border-gray-200'
-                            }`}
+                            className={`p-2 border rounded-lg cursor-pointer transition-colors hover:border-sky-300 ${formData.spectatorUsernames.includes(player.username || '') ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                              }`}
                             data-testid={`card-my-team-player-${player.id}`}
                           >
                             <div className="flex items-center gap-2">
@@ -567,9 +546,8 @@ export default function LiveMatchSetup() {
                           <div
                             key={player.id}
                             onClick={() => addPlayerAsSpectator(player)}
-                            className={`p-2 border rounded-lg cursor-pointer transition-colors hover:border-sky-300 ${
-                              formData.spectatorUsernames.includes(player.username || '') ? 'border-green-500 bg-green-50' : 'border-gray-200'
-                            }`}
+                            className={`p-2 border rounded-lg cursor-pointer transition-colors hover:border-sky-300 ${formData.spectatorUsernames.includes(player.username || '') ? 'border-green-500 bg-green-50' : 'border-gray-200'
+                              }`}
                             data-testid={`card-opponent-team-player-${player.id}`}
                           >
                             <div className="flex items-center gap-2">
