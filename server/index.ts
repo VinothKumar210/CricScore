@@ -35,6 +35,12 @@ if (SEPARATE_MODE) {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
+// Fix for Google Login popup (Cross-Origin-Opener-Policy)
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  next();
+});
+
 // Prevent HTML caching in development to fix preview refresh issues
 if (app.get("env") === "development") {
   app.use((req, res, next) => {
