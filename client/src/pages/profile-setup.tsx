@@ -63,10 +63,18 @@ export default function ProfileSetup() {
         message: data.message
       });
     } catch (error) {
+      console.error("Username check error:", error);
+      let errorMsg = "Unable to check username availability";
+
+      // Try to get more specific error if possible
+      if (error instanceof Error) {
+        errorMsg = error.message;
+      }
+
       setUsernameStatus({
         checking: false,
         available: null,
-        message: "Unable to check username availability"
+        message: errorMsg
       });
     }
   }, []);
@@ -161,10 +169,10 @@ export default function ProfileSetup() {
                             {usernameStatus.message && (
                               <p
                                 className={`text-xs ${usernameStatus.available === true
-                                    ? "text-green-600"
-                                    : usernameStatus.available === false
-                                      ? "text-red-600"
-                                      : "text-muted-foreground"
+                                  ? "text-green-600"
+                                  : usernameStatus.available === false
+                                    ? "text-red-600"
+                                    : "text-muted-foreground"
                                   }`}
                                 data-testid="username-status-message"
                               >

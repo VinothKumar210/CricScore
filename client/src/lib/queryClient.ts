@@ -41,15 +41,27 @@ export async function apiRequest(
   }
 
   const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
-  const res = await fetch(baseUrl + url, {
-    method,
-    headers,
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
 
-  await throwIfResNotOk(res);
-  return res;
+  // Warn if in production but no base URL is set
+  if (!baseUrl && !window.location.hostname.includes("localhost") && !window.location.hostname.includes("127.0.0.1")) {
+    console.warn("⚠️ API Request to relative path in production! Make sure VITE_API_BASE_URL is set.");
+  }
+
+  const fullUrl = baseUrl + url;
+  try {
+    const res = await fetch(fullUrl, {
+      method,
+      headers,
+      body: data ? JSON.stringify(data) : undefined,
+      credentials: "include",
+    });
+
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    console.error(`API Request failed: ${method} ${fullUrl}`, error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
