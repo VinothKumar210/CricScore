@@ -10,38 +10,36 @@
 (See previous contracts)
 
 ## Match Management
+(See previous contracts)
 
-### `POST /api/matches`
-- **Description:** Create a new match.
-- **Auth:** OWNER, CAPTAIN, VICE_CAPTAIN (of either home or away team? Currently implementation trusts authed user to pick valid teams, creating logic might need refinement on specific team permissions if strict).
+## Scoring Engine
+
+### `POST /api/matches/:id/operations`
+- **Description:** Submit a scoring operation. atomic and versioned.
+- **Auth:** OWNER, CAPTAIN, VICE_CAPTAIN
 - **Body:**
   ```json
   {
-    "matchType": "TEAM_MATCH",
-    "homeTeamId": "...",
-    "awayTeamId": "...",
-    "overs": 20,
-    "ballType": "RED_TENNIS",
-    "powerplayEnabled": true,
-    "venue": "Cheapauk",
-    "matchDate": "2026-05-12T10:00:00Z"
+    "clientOpId": "uuid-v4",
+    "expectedVersion": 5,
+    "type": "DELIVER_BALL",
+    "payload": {
+       "runs": 4,
+       "strikerId": "...",
+       "bowlerId": "..."
+    }
   }
   ```
-- **Response:** `{ success: true, data: { match: MatchSummary } }`
+- **Response:**
+  - `200 OK`: `{ success: true, data: { status: 'SUCCESS', version: 6, op: MatchOp } }`
+  - `409 Conflict`: `{ success: false, error: 'Version Mismatch', code: 'VERSION_CONFLICT', data: { currentVersion: 7 } }`
 
-### `GET /api/matches/:id`
-- **Description:** Get match details.
+### `GET /api/matches/:id/state`
+- **Description:** Get reconstructed match state.
 - **Auth:** Bearer Token
-- **Response:** `{ success: true, data: { match: MatchSummary & { homeTeam, awayTeam } } }`
+- **Response:** `{ success: true, data: { state: MatchState } }`
 
-### `GET /api/matches`
-- **Description:** List matches with filters.
-- **Auth:** Bearer Token
-- **Query Params:** `?teamId=...&status=LIVE&date=2026-05-12`
-- **Response:** `{ success: true, data: { matches: MatchSummary[] } }`
-
-### `PATCH /api/matches/:id/status`
-- **Description:** Update match status (Lifecycle).
-- **Auth:** OWNER, CAPTAIN (of participating teams)
-- **Body:** `{ "status": "LIVE" }`
-- **Response:** `{ success: true, data: { match: MatchSummary } }`
+### `GET /api/matches/:id/operations`
+- **Description:** Get operations list for syncing.
+- **Query:** `?since=5`
+- **Response:** `{ success: true, data: { operations: MatchOp[] } }`

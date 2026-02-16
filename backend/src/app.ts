@@ -7,6 +7,7 @@ import authRoutes from './routes/authRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import teamRoutes from './routes/teamRoutes.js';
 import matchRoutes from './routes/matchRoutes.js';
+import scoringRoutes from './routes/scoringRoutes.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
 dotenv.config();
@@ -38,6 +39,7 @@ app.use('/api', authRoutes);
 app.use('/api', profileRoutes);
 app.use('/api', teamRoutes);
 app.use('/api', matchRoutes);
+app.use('/api', scoringRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

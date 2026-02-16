@@ -10,7 +10,12 @@
 - [x] Reliability Score
 
 ## Phase 3: Match Core
-- [x] Match Creation (Validation)
-- [x] Match Retrieval & Filtering
+- [x] Match Creation & Lifecycle
 - [x] Match Permission Middleware
-- [x] Status Transition Logic (Lifecycle)
+
+## Phase 4: Scoring Engine (Core)
+- [x] Operation Log (MatchOp) Schema Usage
+- [x] Deterministic State Reconstruction
+- [x] Optimistic Concurrency Control (Version checks)
+- [x] Undo System (Logical Reversal)
+- [x] Idempotency Handling

@@ -2,11 +2,12 @@
 
 ## Completed
 - [x] **STEP 1-5:** Auth, Profile, Team System
-- [x] **STEP 6:** Match Core System (Creation, Config, Lifecycle)
+- [x] **STEP 6:** Match Core System
+- [x] **STEP 7:** Scoring Engine Core (Ops, Reconstruction, Undo)
 
 ## Next Steps
-- [ ] **STEP 7:** Scoring Engine (Ball-by-ball state machine)
-- [ ] **STEP 8:** Stats Engine
+- [ ] **STEP 8:** Scoring Stats & Finalization (Player Stats, Match Result)
+- [ ] **STEP 9:** WebSocket Integration (Live Updates)
 
 ## Technical Debt & Cleanup
-- [ ] Frontend: Match Creation UI, Match List UI
+- [ ] Frontend: Scoring UI
