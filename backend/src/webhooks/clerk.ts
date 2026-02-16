@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { Webhook } from 'svix';
-import { userService } from '../services/userService';
-import { sendError, sendSuccess } from '../utils/response';
+import { userService } from '../services/userService.js';
+import { sendError, sendSuccess } from '../utils/response.js';
 
 export const clerkWebhookHandler = async (req: Request, res: Response) => {
     const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;

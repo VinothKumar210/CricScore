@@ -3,8 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes';
-import { errorHandler } from './middlewares/errorHandler';
+import authRoutes from './routes/authRoutes.js';
+import { errorHandler } from './middlewares/errorHandler.js';
 
 dotenv.config();
 

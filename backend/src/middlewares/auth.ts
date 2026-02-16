@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
-import { ClerkExpressRequireAuth, RequireAuthProp } from '@clerk/clerk-sdk-node'; // or '@clerk/express' depending on version
-import { userService } from '../services/userService';
-import { sendError } from '../utils/response';
-import { prisma } from '../utils/db';
+import type { Request, Response, NextFunction } from 'express';
+import type { RequireAuthProp } from '@clerk/clerk-sdk-node'; // or '@clerk/express' depending on version
+import { userService } from '../services/userService.js';
+import { sendError } from '../utils/response.js';
+import { prisma } from '../utils/db.js';
 
 // Custom middleware to sync Clerk user with our DB
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {

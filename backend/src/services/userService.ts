@@ -1,5 +1,5 @@
-import { prisma } from '../utils/db';
-import { User } from '@prisma/client';
+import { prisma } from '../utils/db.js';
+import type { User } from '@prisma/client';
 
 export const userService = {
     /**
