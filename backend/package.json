@@ -17,6 +17,8 @@
     "@clerk/clerk-sdk-node": "^4.13.23",
     "@clerk/express": "^1.7.70",
     "@prisma/client": "^6.19.2",
+    "@types/cors": "^2.8.19",
+    "@types/morgan": "^1.9.10",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
@@ -26,9 +28,7 @@
     "svix": "^1.85.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
-    "@types/morgan": "^1.9.10",
     "@types/node": "^25.2.3",
     "nodemon": "^3.1.11",
     "prisma": "^6.19.2",

@@ -25,9 +25,9 @@ export const userService = {
             data: {
                 clerkId,
                 email,
-                phoneNumber,
+                phoneNumber: phoneNumber || null,
                 fullName: fullName || 'New User',
-                profilePictureUrl: imageUrl,
+                profilePictureUrl: imageUrl || null,
                 role: 'BATSMAN', // Default
                 onboardingComplete: false,
             },
