@@ -15,6 +15,7 @@ import messageRoutes from './routes/messageRoutes.js';
 import groundRoutes from './routes/groundRoutes.js';
 import inviteRoutes from './routes/inviteRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
+import tournamentRoutes from './routes/tournamentRoutes.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { initSocket } from './socket/index.js';
 
@@ -60,6 +61,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/grounds', groundRoutes);
 app.use('/api/invites', inviteRoutes);
 app.use('/api/user/locations', locationRoutes);
+app.use('/api/tournaments', tournamentRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

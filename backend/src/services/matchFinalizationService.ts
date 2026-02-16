@@ -9,7 +9,7 @@ export const matchFinalizationService = {
      */
     finalizeMatch: async (matchId: string, userId: string) => {
         // 1. Transaction Start
-        return prisma.$transaction(async (tx: any) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // Check if already finalized (Idempotency)
             const match = await tx.matchSummary.findUnique({ where: { id: matchId } });
             if (!match) throw { statusCode: 404, message: 'Match not found', code: 'NOT_FOUND' };
@@ -140,6 +140,13 @@ export const matchFinalizationService = {
 
             return { message: 'Match finalized successfully' };
         });
+
+        // Post-Transaction: Handle Tournament Updates
+        // Dynamic import to avoid circular dependency issues if any (though usually fine in functions)
+        const { handleMatchCompletion } = await import('./tournamentService.js');
+        handleMatchCompletion(matchId).catch(console.error);
+
+        return result;
     }
 };
 
