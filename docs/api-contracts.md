@@ -1,61 +1,75 @@
 # API Contracts
 
 ## Authentication
-
-### `GET /api/auth/me`
-- **Description:** Get current authenticated user details.
-- **Auth:** Bearer Token (Firebase ID Token)
-- **Response:**
-  ```json
-  { "success": true, "data": { "user": User } }
-  ```
-- **Errors:** `401 NO_TOKEN`, `401 TOKEN_EXPIRED`, `401 INVALID_TOKEN`
-
----
+(See previous contracts)
 
 ## Profile
+(See previous contracts)
 
-### `PATCH /api/profile`
-- **Description:** Update the authenticated user's profile fields.
-- **Auth:** Bearer Token (Firebase ID Token)
-- **Body (all fields optional):**
+## Team Management
+
+### `POST /api/teams`
+- **Description:** Create a new team. Authenticated user becomes OWNER and CAPTAIN.
+- **Auth:** Bearer Token
+- **Body:**
   ```json
   {
-    "fullName": "Vinoth Kumar",
-    "username": "vinoth_42",
-    "description": "Opening batsman",
-    "dateOfBirth": "1998-05-15",
-    "city": "Chennai",
-    "state": "Tamil Nadu",
-    "country": "India",
-    "jerseyNumber": 7,
-    "role": "BATSMAN",
-    "battingHand": "RIGHT_HANDED",
-    "battingPosition": "OPENER",
-    "bowlingStyle": "RIGHT_ARM_MEDIUM",
-    "bowlingSubType": "RIGHT_ARM_MEDIUM",
-    "onboardingComplete": true,
-    "profilePictureUrl": "https://..."
+    "name": "Chennai Super Kings",
+    "shortName": "CSK",
+    "city": "Chennai"
   }
   ```
-- **Enum Values:**
-  - `role`: `BATSMAN`, `BOWLER`, `ALL_ROUNDER`, `WICKET_KEEPER_BATSMAN`
-  - `battingHand`: `RIGHT_HANDED`, `LEFT_HANDED`
-  - `battingPosition`: `OPENER`, `TOP_ORDER`, `MIDDLE_ORDER`, `LOWER_ORDER`, `FINISHER`
-  - `bowlingStyle`: `RIGHT_ARM_FAST`, `RIGHT_ARM_MEDIUM`, `LEFT_ARM_FAST`, `LEFT_ARM_MEDIUM`, `RIGHT_ARM_SPIN`, `LEFT_ARM_SPIN`
-  - `bowlingSubType`: `RIGHT_ARM_FAST`, `RIGHT_ARM_MEDIUM`, `LEFT_ARM_FAST`, `LEFT_ARM_MEDIUM`, `RIGHT_ARM_OFF_SPIN`, `RIGHT_ARM_LEG_SPIN`, `LEFT_ARM_ORTHODOX`, `LEFT_ARM_CHINAMAN`, `SLOW_LEFT_ARM`
-- **Response:**
-  ```json
-  { "success": true, "data": { "user": User } }
-  ```
-- **Errors:** `400 INVALID_ENUM`, `400 INVALID_TYPE`, `400 NO_FIELDS`, `409 USERNAME_TAKEN`
+- **Response:** `{ success: true, data: { team: Team } }`
 
-### `GET /api/profile/username-available?username=xyz`
-- **Description:** Check if a username is available (case-insensitive).
-- **Auth:** Bearer Token (Firebase ID Token)
-- **Query Params:** `username` (required, min 3 chars)
-- **Response:**
+### `GET /api/teams/:id`
+- **Description:** Get team details, members, and reliability score.
+- **Auth:** Bearer Token (Any user)
+- **Response:** `{ success: true, data: { team: Team & { reliability: number } } }`
+
+### `PATCH /api/teams/:id`
+- **Description:** Update team details.
+- **Auth:** OWNER or CAPTAIN
+- **Body:** `{ "name": "...", "city": "...", "bannerUrl": "..." }`
+- **Response:** `{ success: true, data: { team: Team } }`
+
+### `DELETE /api/teams/:id`
+- **Description:** Delete team permanently.
+- **Auth:** OWNER only
+- **Response:** `{ success: true, data: { message: "Team deleted successfully" } }`
+
+### `POST /api/teams/:id/members`
+- **Description:** Add a user to the team directly.
+- **Auth:** OWNER, CAPTAIN, VICE_CAPTAIN
+- **Body:** `{ "userId": "...", "role": "PLAYER" }`
+- **Response:** `{ success: true, data: { member: TeamMember } }`
+
+### `DELETE /api/teams/:id/members/:memberId`
+- **Description:** Remove a member.
+- **Auth:** OWNER or CAPTAIN (Captain cannot remove Owner)
+- **Response:** `{ success: true, data: { message: "Member removed" } }`
+
+### `PATCH /api/teams/:id/members/:memberId`
+- **Description:** Change a member's role.
+- **Auth:** OWNER or CAPTAIN
+- **Body:** `{ "role": "VICE_CAPTAIN" }`
+- **Response:** `{ success: true, data: { member: TeamMember } }`
+
+### `POST /api/teams/join`
+- **Description:** Join team using an invite code.
+- **Auth:** Bearer Token
+- **Body:** `{ "joinCode": "A7B2-9XZ1" }`
+- **Response:** `{ success: true, data: { member: TeamMember } }`
+
+### `GET /api/teams/:id/qr`
+- **Description:** Get QR code and invite code for a team.
+- **Auth:** Team Member
+- **Response:** 
   ```json
-  { "success": true, "data": { "username": "xyz", "available": true } }
+  { 
+    "success": true, 
+    "data": { 
+      "inviteCode": "A7B2-9XZ1", 
+      "qrCode": "data:image/png;base64,..." 
+    } 
+  }
   ```
-- **Errors:** `400 MISSING_PARAM`

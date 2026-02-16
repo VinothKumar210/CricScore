@@ -1,18 +1,17 @@
 # Implemented Features
 
 ## Phase 1: Authentication & Profile System
-- [x] Project Initialization (`frontend`, `backend` folders)
-- [x] Firebase Authentication Setup (migrated from Clerk)
-- [x] Firebase Admin SDK (backend token verification)
-- [x] User Schema Definition
-- [x] Rate Limiting (Global)
-- [x] Deployment Config (Vercel/Render)
-- [x] Auto-create User on first login
-- [x] Profile Update Endpoint (`PATCH /api/profile`)
-- [x] Username Auto-Generation
-- [x] Username Availability Check (`GET /api/profile/username-available`)
-- [x] Enum Validation (Role, BattingHand, BowlingStyle, etc.)
-- [x] `lastSeenAt` Tracking
-- [ ] Profile Wizard UI (Frontend)
+- [x] Project Initialization
+- [x] Firebase Authentication
+- [x] User Profile System (Wizard, Auto-provisioning)
 
-*(This file will be updated after every successful feature merge)*
+## Phase 2: Team Management
+- [x] Team Schema (Team, TeamMember)
+- [x] Team CRUD (Create, Read, Update, Delete)
+- [x] Role-Based Permissions (OWNER, CAPTAIN, VICE_CAPTAIN, PLAYER)
+- [x] Permission Middleware (`requireTeamRole`)
+- [x] Member Management (Add, Remove, Change Role)
+- [x] Join by Code (Auto-assign PLAYER role)
+- [x] QR Code Generation
+- [x] Reliability Score Calculation
+- [x] Transaction Support for Critical Actions

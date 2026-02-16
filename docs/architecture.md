@@ -40,7 +40,7 @@
 - User Profile (Schema + Wizard).
 
 ### Phase 2: Core Data Models
-- Team Management.
+- Team Management (CRUD, Roles, QR Join).
 - Match Setup (Basic Models).
 - **Checkpoint:** Verify DB relationships.
 

@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
+import teamRoutes from './routes/teamRoutes.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 
 dotenv.config();
@@ -34,6 +35,7 @@ app.use(express.json()); // Essential for parsing JSON bodies
 // Routes
 app.use('/api', authRoutes);
 app.use('/api', profileRoutes);
+app.use('/api', teamRoutes);
 
 // Global Error Handler
 app.use(errorHandler);
