@@ -1,17 +1,16 @@
 # Implemented Features
 
 ## Phase 1: Authentication & Profile System
-- [x] Project Initialization
 - [x] Firebase Authentication
-- [x] User Profile System (Wizard, Auto-provisioning)
+- [x] User Profile System
 
 ## Phase 2: Team Management
-- [x] Team Schema (Team, TeamMember)
-- [x] Team CRUD (Create, Read, Update, Delete)
-- [x] Role-Based Permissions (OWNER, CAPTAIN, VICE_CAPTAIN, PLAYER)
-- [x] Permission Middleware (`requireTeamRole`)
-- [x] Member Management (Add, Remove, Change Role)
-- [x] Join by Code (Auto-assign PLAYER role)
-- [x] QR Code Generation
-- [x] Reliability Score Calculation
-- [x] Transaction Support for Critical Actions
+- [x] Team CRUD & Roles
+- [x] QR Join & Member Management
+- [x] Reliability Score
+
+## Phase 3: Match Core
+- [x] Match Creation (Validation)
+- [x] Match Retrieval & Filtering
+- [x] Match Permission Middleware
+- [x] Status Transition Logic (Lifecycle)

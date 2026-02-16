@@ -7,69 +7,41 @@
 (See previous contracts)
 
 ## Team Management
+(See previous contracts)
 
-### `POST /api/teams`
-- **Description:** Create a new team. Authenticated user becomes OWNER and CAPTAIN.
-- **Auth:** Bearer Token
+## Match Management
+
+### `POST /api/matches`
+- **Description:** Create a new match.
+- **Auth:** OWNER, CAPTAIN, VICE_CAPTAIN (of either home or away team? Currently implementation trusts authed user to pick valid teams, creating logic might need refinement on specific team permissions if strict).
 - **Body:**
   ```json
   {
-    "name": "Chennai Super Kings",
-    "shortName": "CSK",
-    "city": "Chennai"
+    "matchType": "TEAM_MATCH",
+    "homeTeamId": "...",
+    "awayTeamId": "...",
+    "overs": 20,
+    "ballType": "RED_TENNIS",
+    "powerplayEnabled": true,
+    "venue": "Cheapauk",
+    "matchDate": "2026-05-12T10:00:00Z"
   }
   ```
-- **Response:** `{ success: true, data: { team: Team } }`
+- **Response:** `{ success: true, data: { match: MatchSummary } }`
 
-### `GET /api/teams/:id`
-- **Description:** Get team details, members, and reliability score.
-- **Auth:** Bearer Token (Any user)
-- **Response:** `{ success: true, data: { team: Team & { reliability: number } } }`
-
-### `PATCH /api/teams/:id`
-- **Description:** Update team details.
-- **Auth:** OWNER or CAPTAIN
-- **Body:** `{ "name": "...", "city": "...", "bannerUrl": "..." }`
-- **Response:** `{ success: true, data: { team: Team } }`
-
-### `DELETE /api/teams/:id`
-- **Description:** Delete team permanently.
-- **Auth:** OWNER only
-- **Response:** `{ success: true, data: { message: "Team deleted successfully" } }`
-
-### `POST /api/teams/:id/members`
-- **Description:** Add a user to the team directly.
-- **Auth:** OWNER, CAPTAIN, VICE_CAPTAIN
-- **Body:** `{ "userId": "...", "role": "PLAYER" }`
-- **Response:** `{ success: true, data: { member: TeamMember } }`
-
-### `DELETE /api/teams/:id/members/:memberId`
-- **Description:** Remove a member.
-- **Auth:** OWNER or CAPTAIN (Captain cannot remove Owner)
-- **Response:** `{ success: true, data: { message: "Member removed" } }`
-
-### `PATCH /api/teams/:id/members/:memberId`
-- **Description:** Change a member's role.
-- **Auth:** OWNER or CAPTAIN
-- **Body:** `{ "role": "VICE_CAPTAIN" }`
-- **Response:** `{ success: true, data: { member: TeamMember } }`
-
-### `POST /api/teams/join`
-- **Description:** Join team using an invite code.
+### `GET /api/matches/:id`
+- **Description:** Get match details.
 - **Auth:** Bearer Token
-- **Body:** `{ "joinCode": "A7B2-9XZ1" }`
-- **Response:** `{ success: true, data: { member: TeamMember } }`
+- **Response:** `{ success: true, data: { match: MatchSummary & { homeTeam, awayTeam } } }`
 
-### `GET /api/teams/:id/qr`
-- **Description:** Get QR code and invite code for a team.
-- **Auth:** Team Member
-- **Response:** 
-  ```json
-  { 
-    "success": true, 
-    "data": { 
-      "inviteCode": "A7B2-9XZ1", 
-      "qrCode": "data:image/png;base64,..." 
-    } 
-  }
-  ```
+### `GET /api/matches`
+- **Description:** List matches with filters.
+- **Auth:** Bearer Token
+- **Query Params:** `?teamId=...&status=LIVE&date=2026-05-12`
+- **Response:** `{ success: true, data: { matches: MatchSummary[] } }`
+
+### `PATCH /api/matches/:id/status`
+- **Description:** Update match status (Lifecycle).
+- **Auth:** OWNER, CAPTAIN (of participating teams)
+- **Body:** `{ "status": "LIVE" }`
+- **Response:** `{ success: true, data: { match: MatchSummary } }`
