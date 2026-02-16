@@ -20,13 +20,12 @@
   --popover-foreground: hsl(222.2, 84%, 4.9%);
 
   /* Sophisticated primary color with gradients */
-  --primary: hsl(221, 83%, 53%);
-  /* #2563EB */
-  --primary-gradient: linear-gradient(135deg, hsl(221, 83%, 53%) 0%, hsl(230, 85%, 60%) 100%);
+  --primary: hsl(220, 90%, 56%);
+  --primary-gradient: linear-gradient(135deg, hsl(220, 90%, 56%) 0%, hsl(230, 85%, 60%) 100%);
   --primary-foreground: hsl(0, 0%, 100%);
-  --primary-hover: hsl(221, 83%, 48%);
-  --primary-light: hsl(221, 83%, 85%);
-  --primary-dark: hsl(221, 83%, 40%);
+  --primary-hover: hsl(220, 90%, 52%);
+  --primary-light: hsl(220, 90%, 85%);
+  --primary-dark: hsl(220, 90%, 40%);
 
   /* Enhanced secondary colors */
   --secondary: hsla(210, 40%, 96%, 0.8);
@@ -146,9 +145,8 @@
   --card-foreground: hsl(210, 40%, 98%);
   --popover: hsl(222.2, 84%, 4.9%);
   --popover-foreground: hsl(210, 40%, 98%);
-  --primary: hsl(221, 83%, 53%);
-  /* Keep consistency or slightly lighter */
-  --primary-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(199, 89%, 48%);
+  --primary-foreground: hsl(222.2, 84%, 4.9%);
   --secondary: hsl(217.2, 32.6%, 17.5%);
   --secondary-foreground: hsl(210, 40%, 98%);
   --muted: hsl(217.2, 32.6%, 17.5%);
