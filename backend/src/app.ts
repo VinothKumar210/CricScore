@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import http from 'http';
 import authRoutes from './routes/authRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
 import teamRoutes from './routes/teamRoutes.js';
@@ -10,7 +11,12 @@ import matchRoutes from './routes/matchRoutes.js';
 import scoringRoutes from './routes/scoringRoutes.js';
 import matchFinalizationRoutes from './routes/matchFinalizationRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
+import groundRoutes from './routes/groundRoutes.js';
+import inviteRoutes from './routes/inviteRoutes.js';
+import locationRoutes from './routes/locationRoutes.js';
 import { errorHandler } from './middlewares/errorHandler.js';
+import { initSocket } from './socket/index.js';
 
 dotenv.config();
 
@@ -25,6 +31,12 @@ const limiter = rateLimit({
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Create HTTP Server
+const httpServer = http.createServer(app);
+
+// Initialize Socket.io
+initSocket(httpServer);
 
 // Middleware
 app.use(helmet());
@@ -44,12 +56,16 @@ app.use('/api', matchRoutes);
 app.use('/api', scoringRoutes);
 app.use('/api', matchFinalizationRoutes);
 app.use('/api', statsRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/grounds', groundRoutes);
+app.use('/api/invites', inviteRoutes);
+app.use('/api/user/locations', locationRoutes);
 
 // Global Error Handler
 app.use(errorHandler);
 
 // Start Server
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 

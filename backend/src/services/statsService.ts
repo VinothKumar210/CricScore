@@ -45,35 +45,26 @@ export const statsService = {
         const bowling = await prisma.bowlingPerformance.aggregate({
             where: { userId },
             _sum: {
-                // balls: true, removed because not in schema.
-                // Wait, schema has 'overs' (float). Summing floats is risky (1.1 + 0.5 = 1.6 != 2.0).
-                // Better to derive from balls if available. 
-                // Schema has 'overs' (Float), 'maidens', 'runs', 'wickets'.
-                // Does it have 'balls'? 
-                // Let's check schema (Step 1313). No 'balls' in BowlingPerformance.
-                // It has 'overs' (Float), 'maidens', 'runs', 'wickets', 'economy', 'dotBalls', 'wides', 'noBalls'.
-                // Storing 'overs' as float (e.g. 10.2) makes aggregation hard. 
-                // But we can approximate or use logic. 
-                // Creating a custom Sum? 
-                // Actually, `overs` is `balls / 6` + `(balls % 6)/10`.
-                // Standard: convert overs to balls for aggregation.
-                // But we can't do that inside `aggregate`.
-                // We will sum `overs` and maintain it as best effort, or better:
-                // We should have stored `balls` in BowlingPerformance! 
-                // Step 8 stored `overs` as float. 
-                // This is a schema limitation I missed.
-                // Workaround: Iterate all bowling records? Expensive.
-                // Or sum 'overs' and handle decimal?
-                // 10.2 + 5.4 = 15.6 -> 16.0 overs.
-                // This logic needs to happen in JS if DB sum returns 15.6.
-                // Let's rely on JS sum if dataset small? No.
-                // Better: Sum `overs`.
-                runs: true,
                 wickets: true,
+                runs: true,
                 maidens: true,
-                overs: true
+                overs: true,
+                dotBalls: true,
+                wides: true,
+                noBalls: true
             }
         });
+        // We will sum `overs` and maintain it as best effort, or better:
+        // We should have stored `balls` in BowlingPerformance! 
+        // Step 8 stored `overs` as float. 
+        // This is a schema limitation I missed.
+        // Workaround: Iterate all bowling records? Expensive.
+        // Or sum 'overs' and handle decimal?
+        // 10.2 + 5.4 = 15.6 -> 16.0 overs.
+        // This logic needs to happen in JS if DB sum returns 15.6.
+        // Let's rely on JS sum if dataset small? No.
+        // Better: Sum `overs`.
+
 
         // Best Bowling
         const bestBowling = await prisma.bowlingPerformance.findFirst({
