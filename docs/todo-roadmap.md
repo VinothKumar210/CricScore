@@ -1,12 +1,11 @@
 # Todo / Roadmap
 
 ## Completed
-- [x] **STEP 1-7:** Auth, Team, Match Core, Scoring Ops
-- [x] **STEP 8:** Match Finalization (Summary & Stats Generation)
+- [x] **STEP 1-8:** Auth, Team, Match Core, Scoring, Finalization
+- [x] **STEP 9:** Stats Engine (Aggregation & Leaderboards)
 
 ## Next Steps
-- [ ] **STEP 9:** Statistics Engine (Career Stats, Leaderboards)
-- [ ] **STEP 10:** WebSocket Integration
+- [ ] **STEP 10:** WebSocket Integration (Live Match Updates)
 
 ## Technical Debt
 - [ ] Frontend: Scoring UI
