@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,19 @@ function AuthScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (err: any) {
+      setError(err.message || "Google sign-in failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +74,16 @@ function AuthScreen() {
 
         <Button type="submit" disabled={loading}>
           {loading ? "Loading..." : isSignUp ? "Sign Up" : "Sign In"}
+        </Button>
+
+        <div className="flex items-center gap-2">
+          <hr className="flex-1" />
+          <span className="text-xs text-gray-400">OR</span>
+          <hr className="flex-1" />
+        </div>
+
+        <Button type="button" variant="outline" disabled={loading} onClick={handleGoogleSignIn}>
+          Sign in with Google
         </Button>
 
         <button
