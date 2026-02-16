@@ -1,7 +1,7 @@
 # CricScore Architecture & Implementation Strategy
 
 ## 1. Major Subsystems
-1. **Authentication & User Management:** Clerk integration, User profiles (players stats), Roles.
+1. **Authentication & User Management:** Firebase Auth integration, User profiles (player stats), Roles.
 2. **Team Management:** Team creation, membership, roles (Owner/Captain), QR code joining.
 3. **Match Management:** Match creation, formats (T20, Test), scheduling.
 4. **Live Scoring Engine:** State machine for ball-by-ball updates, extensive validation (no-balls, wickets, extras).
@@ -36,7 +36,7 @@
 
 ### Phase 1: Foundation (Current)
 - Project Init (`frontend`, `backend`).
-- Auth (Clerk).
+- Auth (Firebase).
 - User Profile (Schema + Wizard).
 
 ### Phase 2: Core Data Models
