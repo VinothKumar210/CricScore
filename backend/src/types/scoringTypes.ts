@@ -23,6 +23,8 @@ export interface PlayerState {
     isOut: boolean;
     outType?: string;
     bowlerId?: string; // Who took the wicket
+    fielderId?: string; // Who took the catch/run-out
+    fielderName?: string; // Cache name if needed
 }
 
 export interface BowlerState {
@@ -32,6 +34,9 @@ export interface BowlerState {
     runsConceded: number;
     wickets: number;
     maidens: number;
+    dotBalls: number;
+    wides: number;
+    noBalls: number;
 }
 
 export interface MatchState {
