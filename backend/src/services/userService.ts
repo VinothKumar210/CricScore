@@ -3,19 +3,19 @@ import type { User } from '@prisma/client';
 
 export const userService = {
     /**
-     * Find a user by their Clerk ID
+     * Find a user by their Firebase UID
      */
-    findByClerkId: async (clerkId: string): Promise<User | null> => {
+    findByFirebaseUid: async (firebaseUid: string): Promise<User | null> => {
         return prisma.user.findUnique({
-            where: { clerkId },
+            where: { firebaseUid },
         });
     },
 
     /**
-     * Create a new user from Clerk data
+     * Create a new user from Firebase data
      */
     createUser: async (
-        clerkId: string,
+        firebaseUid: string,
         email: string,
         phoneNumber?: string | null,
         fullName?: string | null,
@@ -23,7 +23,7 @@ export const userService = {
     ): Promise<User> => {
         return prisma.user.create({
             data: {
-                clerkId,
+                firebaseUid,
                 email,
                 phoneNumber: phoneNumber || null,
                 fullName: fullName || 'New User',
@@ -33,37 +33,4 @@ export const userService = {
             },
         });
     },
-
-    /**
-     * Sync user from Clerk Webhook payload
-     * Ensures idempotency (find or create)
-     */
-    syncUser: async (data: any): Promise<User> => {
-        const { id: clerkId, email_addresses, phone_numbers, first_name, last_name, image_url } = data;
-
-        const email = email_addresses?.[0]?.email_address || '';
-        const phoneNumber = phone_numbers?.[0]?.phone_number || null;
-        const fullName = `${first_name || ''} ${last_name || ''}`.trim() || 'User';
-
-        const existingUser = await prisma.user.findUnique({
-            where: { clerkId },
-        });
-
-        if (existingUser) {
-            // Optional: Update fields if changed? For now, we assume profile is managed in-app.
-            // But we might want to sync email/phone if changed in Clerk.
-            return existingUser;
-        }
-
-        return prisma.user.create({
-            data: {
-                clerkId,
-                email,
-                phoneNumber,
-                fullName,
-                profilePictureUrl: image_url,
-                onboardingComplete: false,
-            },
-        });
-    }
 };

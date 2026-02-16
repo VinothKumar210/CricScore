@@ -1,48 +1,46 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { RequireAuthProp } from '@clerk/clerk-sdk-node'; // or '@clerk/express' depending on version
+import { firebaseAuth } from '../utils/firebaseAdmin.js';
 import { userService } from '../services/userService.js';
 import { sendError } from '../utils/response.js';
 import { prisma } from '../utils/db.js';
 
-// Custom middleware to sync Clerk user with our DB
+/**
+ * Firebase Auth middleware.
+ * Verifies the Firebase ID token from the Authorization header,
+ * finds or creates the user in the database, and attaches to req.user.
+ */
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {
-    // 1. Verify Token (using Clerk's middleware logic manually or wrapper)
-    // For simplicity with @clerk/express, we assume app.use(ClerkExpressRequireAuth()) is called globally or we wrap it here.
-    // But strictly, we want a custom one that does the DB lookup.
+    const authHeader = req.headers.authorization;
 
-    // Actually, let's use the explicit Clerk middleware first to populate req.auth
-    // This function assumes req.auth is already populated by ClerkExpressRequireAuth() or similar.
-    // BUT the prompt asked to "Implement ClerkExpressRequireAuth middleware" AND "Create custom middleware".
-
-    if (!req.auth || !req.auth.userId) {
-        return sendError(res, "Unauthorized", 401);
+    if (!authHeader?.startsWith('Bearer ')) {
+        return sendError(res, 'Missing or invalid Authorization header', 401);
     }
 
-    const clerkId = req.auth.userId;
+    const idToken = authHeader.split('Bearer ')[1];
+
+    if (!idToken) {
+        return sendError(res, 'Missing token', 401);
+    }
 
     try {
+        // 1. Verify Firebase ID Token
+        const decodedToken = await firebaseAuth.verifyIdToken(idToken);
+        const firebaseUid = decodedToken.uid;
+
         // 2. Find User in DB
-        let user = await userService.findByClerkId(clerkId);
+        let user = await userService.findByFirebaseUid(firebaseUid);
 
-        // 3. Auto-Create if missing (Fallback for webhooks failure)
+        // 3. Auto-Create if missing (first login)
         if (!user) {
-            // We might not have email/phone here easily without fetching from Clerk API.
-            // For efficiency, we create a stub and let Webhook fill details later, 
-            // OR fetch from Clerk API now. Fetching is safer for "first login".
-            // Let's create a basic user.
-            // For now, we'll try to get details from Clerk if possible, but the SDK on backend
-            // allows `clerkClient.users.getUser(clerkId)`.
-
-            // Let's just create a minimal record to allow the request to proceed.
-            // The webhook should have ideally handled this.
-            console.warn(`[Auth] User ${clerkId} not found in DB. Auto-creating stub.`);
+            console.log(`[Auth] New user ${firebaseUid}. Creating record.`);
             user = await prisma.user.create({
                 data: {
-                    clerkId,
-                    email: `temp_${clerkId}@cricscore.app`, // Placeholder
-                    fullName: 'New User',
+                    firebaseUid,
+                    email: decodedToken.email || `user_${firebaseUid}@cricscore.app`,
+                    fullName: decodedToken.name || 'New User',
+                    profilePictureUrl: decodedToken.picture || null,
                     onboardingComplete: false,
-                }
+                },
             });
         }
 
@@ -50,7 +48,7 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
         req.user = user;
         next();
     } catch (error) {
-        console.error("[AuthMiddleware] Error:", error);
-        return sendError(res, "Authentication Error", 500);
+        console.error('[AuthMiddleware] Token verification failed:', error);
+        return sendError(res, 'Invalid or expired token', 401);
     }
 };
