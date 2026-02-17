@@ -56,7 +56,8 @@ export const matchService = {
                 venue,
                 matchDate: new Date(matchDate || Date.now()),
                 status: 'SCHEDULED', // Initial state
-                // Init scores (technically null/0 by default but explicit schema usage)
+                // Link to fixture if provided (Schema already has this field)
+                tournamentFixtureId: data.tournamentFixtureId || null
             }
         });
     },

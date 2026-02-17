@@ -62,9 +62,16 @@ export const generateKnockoutFixtures = (
                 status: 'UPCOMING'
             });
         } else {
-            // Bye (Odd number of teams) - Advance directly? index i
-            // Logic to handle byes is complex. For now, we assume simple pairing.
-            // If leftover, create a dummy match or handle dynamically.
+            // Bye (Odd number of teams)
+            // Create a BYE fixture (Away Team NULL)
+            fixtures.push({
+                tournamentId,
+                round: roundName,
+                matchNumber: matchNumber++,
+                homeTeamId: teamIds[i],
+                awayTeamId: null, // Bye
+                status: 'SCHEDULED' // Will be auto-advanced
+            });
         }
     }
 

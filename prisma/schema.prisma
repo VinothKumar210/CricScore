@@ -407,7 +407,8 @@ model MatchOp {
 
   match           MatchSummary @relation(fields: [matchId], references: [id])
 
-  @@index([matchId, opIndex])
+  @@unique([matchId, opIndex])
+  @@unique([matchId, clientOpId])
 }
 
 // -----------------------------------------------------------------------------
@@ -601,6 +602,7 @@ model TournamentFixture {
   
   tournament      Tournament  @relation(fields: [tournamentId], references: [id])
 
+  @@unique([tournamentId, round, matchNumber])
   @@index([tournamentId])
 }
 

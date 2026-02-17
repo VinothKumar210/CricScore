@@ -1,8 +1,7 @@
 import { prisma } from '../utils/db.js';
 import { redisClient } from './presenceService.js'; // Reuse redis client
 import { calculateDistance } from '../utils/geoUtils.js';
-// Remove imports that might be missing in generated client
-// import { BallType, TimeSlot, NotificationType } from '@prisma/client';
+import { notificationService } from './notificationService.js';
 
 const PROPOSAL_PREFIX = 'invite:proposal:'; // invite:proposal:<seekerId>:<teamId>
 const PROPOSAL_TTL = 86400 * 7; // 7 days
@@ -143,15 +142,14 @@ export const respondToInvite = async (
         const key = `${PROPOSAL_PREFIX}${inviteId}:${responderTeamId}`;
         await redisClient.setex(key, PROPOSAL_TTL, JSON.stringify(proposal));
 
-        // Notify Inviter
-        await prisma.notification.create({
-            data: {
-                userId: invite.team.ownerId,
-                type: 'MATCH_INVITE' as any, // Use cast
-                title: 'New Counter Proposal',
-                body: `A team has proposed changes to your invite.`,
-                data: { inviteId, responderTeamId, proposal }
-            } as any
+        // Notify Inviter (fire-and-forget via centralized service)
+        await notificationService.createNotification({
+            userId: invite.team.ownerId,
+            type: 'MATCH_INVITE',
+            title: 'New Counter Proposal',
+            body: 'A team has proposed changes to your invite.',
+            data: { inviteId, responderTeamId, proposal },
+            dedupeKey: `counter:${inviteId}:${responderTeamId}`,
         });
 
         return { status: 'PROPOSAL_SENT' };

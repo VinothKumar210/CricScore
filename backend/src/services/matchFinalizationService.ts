@@ -9,7 +9,7 @@ export const matchFinalizationService = {
      */
     finalizeMatch: async (matchId: string, userId: string) => {
         // 1. Transaction Start
-        const result = await prisma.$transaction(async (tx: any) => {
+        const txResult = await prisma.$transaction(async (tx: any) => {
             // Check if already finalized (Idempotency)
             const match = await tx.matchSummary.findUnique({ where: { id: matchId } });
             if (!match) throw { statusCode: 404, message: 'Match not found', code: 'NOT_FOUND' };
@@ -19,49 +19,12 @@ export const matchFinalizationService = {
             }
 
             // 2. Reconstruct State
-            // We use the main service which uses DB, but here we are in a transaction.
-            // Ideally we should pass `tx` to `scoringEngine` or fetch ops using `tx`.
-            // For now, fetching ops using `tx` and reconstructing purely.
             const ops = await tx.matchOp.findMany({
                 where: { matchId },
                 orderBy: { opIndex: 'asc' },
             });
 
-            // We need to import reconstructMatchState or use scoringEngine helper if exposed?
-            // Since `reconstructMatchState` is in utils, let's use it.
-            // Need to import it at top.
             const { reconstructMatchState } = await import('../utils/stateReconstructor.js');
-            // const state: MatchState = reconstructMatchState(matchId, ops as MatchOp[]);
-
-            // 3. Compute Result
-            let result = 'MATCH_TIED';
-            let winnerId = null;
-            let winMargin = 'Tie';
-
-            // Simplified Logic: 
-            // In a real scenario, we check innings 1 score vs innings 2 target.
-            // Assuming 2 innings for now.
-
-            // This logic is highly dependent on match type (T20, Test).
-            // Assuming Limited Overs.
-
-            // Wait, state only has "totalRuns". It doesn't split by innings clearly 
-            // unless we tracked innings separately in state.
-            // `MatchState` has `currentInnings`. But does it store *past* innings scores?
-            // `stateReconstructor` as implemented currently calculates specific fields but 
-            // might not fully archive previous innings data if not designed for it.
-            // The `MatchState` interface has `batsmen` map. Ideally we need stats Per Innings.
-
-            // CRITICAL: `MatchState` works for "Current Live State". 
-            // To finalize, we need data for BOTH innings.
-            // Workaround: Replay ops and snapshot state at `END_INNINGS` op?
-            // Or: `MatchState` accumulates everything? No, usually valid state is current.
-            // WE NEED TO PARSE INNINGS SEPARATELY.
-
-            // Strategy: Split ops by Innings 1 and Innings 2. Reconstruct independently.
-            // Ops stream: [START_INNINGS 1, ... END_INNINGS, START_INNINGS 2, ... END_INNINGS]
-
-            // We will partition ops based on `START_INNINGS` markers.
 
             const inningsOpsv1: MatchOp[] = [];
             const inningsOpsv2: MatchOp[] = [];
@@ -74,11 +37,10 @@ export const matchFinalizationService = {
                     currentInn = payload.inningsNumber;
                 }
 
-                // Collect Player IDs for name resolution
                 if (payload.strikerId) playerIds.add(payload.strikerId);
                 if (payload.nonStrikerId) playerIds.add(payload.nonStrikerId);
                 if (payload.bowlerId) playerIds.add(payload.bowlerId);
-                if (payload.batsmanId) playerIds.add(payload.batsmanId); // if used
+                if (payload.batsmanId) playerIds.add(payload.batsmanId);
 
                 if (currentInn === 1) inningsOpsv1.push(op);
                 else if (currentInn === 2) inningsOpsv2.push(op);
@@ -100,17 +62,20 @@ export const matchFinalizationService = {
             const state2 = reconstructMatchState(matchId, inningsOpsv2);
 
             // Determine Winner
+            let result = 'MATCH_TIED';
+            let winnerId: string | null = null;
+            let winMargin = 'Tie';
+
             const score1 = state1.totalRuns;
             const score2 = state2.totalRuns;
             const wickets2 = state2.wickets;
 
-            // If team2 chased
             if (score2 > score1) {
-                winnerId = state2.battingTeamId; // Team 2 wins
+                winnerId = state2.battingTeamId;
                 winMargin = `${10 - wickets2} wickets`;
                 result = 'WIN';
             } else if (score1 > score2) {
-                winnerId = state1.battingTeamId; // Team 1 wins
+                winnerId = state1.battingTeamId;
                 winMargin = `${score1 - score2} runs`;
                 result = 'WIN';
             } else {
@@ -119,7 +84,7 @@ export const matchFinalizationService = {
             }
 
             // 4. Update MatchSummary
-            const winningTeamName = winnerId === match.homeTeamId ? match.homeTeamName : match.awayTeamName; // Approximate names if not stored in state
+            const winningTeamName = winnerId === match.homeTeamId ? match.homeTeamName : match.awayTeamName;
 
             await tx.matchSummary.update({
                 where: { id: matchId },
@@ -128,7 +93,6 @@ export const matchFinalizationService = {
                     result,
                     winningTeamName: result === 'WIN' ? winningTeamName : null,
                     winMargin,
-                    // manOfTheMatchId: calculateMOM(state1, state2) // To implement later
                 }
             });
 
@@ -138,15 +102,55 @@ export const matchFinalizationService = {
                 await createInningsRecord(tx, matchId, 2, state2, inningsOpsv2, getName);
             }
 
-            return { message: 'Match finalized successfully' };
+            // 6. Tournament Fixture Linking & Advancement
+            let tournamentIdToInvalidate: string | null = null;
+
+            if (match.tournamentFixtureId) {
+                const fixture = await tx.tournamentFixture.findUnique({
+                    where: { id: match.tournamentFixtureId },
+                    include: { tournament: true }
+                });
+
+                if (fixture && fixture.status !== 'COMPLETED') {
+                    // 1. Link & Complete Fixture
+                    await tx.tournamentFixture.update({
+                        where: { id: match.tournamentFixtureId },
+                        data: {
+                            matchSummaryId: matchId,
+                            status: 'COMPLETED',
+                            winnerId,
+                        }
+                    });
+
+                    tournamentIdToInvalidate = fixture.tournamentId;
+
+                    // 2. Advance Bracket (Transaction Safe)
+                    if (fixture.tournament.format === 'KNOCKOUT' && winnerId) {
+                        // Import valid helper
+                        const { advanceKnockoutBracket } = await import('./tournamentService.js');
+                        await advanceKnockoutBracket(tx, { ...fixture, matchNumber: fixture.matchNumber, round: fixture.round }, winnerId!);
+                    }
+                }
+            }
+
+            return { message: 'Match finalized successfully', tournamentIdToInvalidate };
         });
 
-        // Post-Transaction: Handle Tournament Updates
-        // Dynamic import to avoid circular dependency issues if any (though usually fine in functions)
-        const { handleMatchCompletion } = await import('./tournamentService.js');
-        handleMatchCompletion(matchId).catch(console.error);
+        // 7. Post-Transaction: Cache Invalidation
+        // This is safe because if transaction failed, we threw error and didn't reach here.
+        if ((txResult as any).tournamentIdToInvalidate) {
+            const { default: redis } = await import('../utils/redis.js');
+            const tid = (txResult as any).tournamentIdToInvalidate;
+            if (redis) {
+                await redis.del(`tournament:${tid}:standings`).catch(console.warn);
+            }
+        }
 
-        return result;
+        // Remove old hook call
+        // const { handleMatchCompletion } = await import('./tournamentService.js');
+        // handleMatchCompletion(matchId).catch(console.error);
+
+        return { message: 'Match finalized successfully' };
     }
 };
 
