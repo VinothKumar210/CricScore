@@ -16,6 +16,8 @@ import groundRoutes from './routes/groundRoutes.js';
 import inviteRoutes from './routes/inviteRoutes.js';
 import locationRoutes from './routes/locationRoutes.js';
 import tournamentRoutes from './routes/tournamentRoutes.js';
+import apiKeyRoutes from './routes/apiKeyRoutes.js';
+import publicRoutes from './routes/publicRoutes.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { initSocket } from './socket/index.js';
 
@@ -62,6 +64,8 @@ app.use('/api/grounds', groundRoutes);
 app.use('/api/invites', inviteRoutes);
 app.use('/api/user/locations', locationRoutes);
 app.use('/api/tournaments', tournamentRoutes);
+app.use('/api/keys', apiKeyRoutes);
+app.use('/public/v1', publicRoutes);
 
 // Global Error Handler
 app.use(errorHandler);
