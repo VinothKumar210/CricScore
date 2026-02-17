@@ -5,19 +5,29 @@ export const redisClient = new Redis(redisUrl);
 
 // Key Prefixes
 const ONLINE_KEY = 'user:online:';
-const TYPING_KEY = 'user:typing:';
+
+// TTL for presence keys — auto-expires if server crashes
+const PRESENCE_TTL_SECONDS = 30;
 
 export const presenceService = {
     /**
-     * Mark user as online.
+     * Mark user as online with TTL.
+     * Key auto-expires after 30 seconds if not refreshed.
      */
     setUserOnline: async (userId: string, socketId: string) => {
-        await redisClient.set(`${ONLINE_KEY}${userId}`, socketId);
-        // Optional: Set expire if needed, but connection persists.
+        await redisClient.setex(`${ONLINE_KEY}${userId}`, PRESENCE_TTL_SECONDS, socketId);
     },
 
     /**
-     * Mark user as offline.
+     * Refresh TTL — called every 15 seconds as heartbeat.
+     * Keeps the user online as long as the socket is alive.
+     */
+    refreshPresence: async (userId: string) => {
+        await redisClient.expire(`${ONLINE_KEY}${userId}`, PRESENCE_TTL_SECONDS);
+    },
+
+    /**
+     * Mark user as offline — immediate cleanup on graceful disconnect.
      */
     setUserOffline: async (userId: string) => {
         await redisClient.del(`${ONLINE_KEY}${userId}`);
@@ -37,7 +47,6 @@ export const presenceService = {
     getUsersPresence: async (userIds: string[]): Promise<Record<string, boolean>> => {
         if (userIds.length === 0) return {};
         const keys = userIds.map(id => `${ONLINE_KEY}${id}`);
-        // MGET returns values or null
         const results = await redisClient.mget(keys);
 
         const status: Record<string, boolean> = {};

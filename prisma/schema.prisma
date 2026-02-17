@@ -61,6 +61,7 @@ model User {
   sentMessages        Message[]          @relation("Sender")
   conversationMembers ConversationMember[]
   starredMessages     StarredMessage[]
+  reactions           MessageReaction[]
   chatPollVotes       ChatPollVote[]
 
 
@@ -476,8 +477,23 @@ model Message {
   sender          User         @relation("Sender", fields: [senderId], references: [id])
   
   starredBy       StarredMessage[]
+  reactions       MessageReaction[]
 
   @@index([conversationId, createdAt])
+}
+
+model MessageReaction {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  messageId String   @db.ObjectId
+  userId    String   @db.ObjectId
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message   Message  @relation(fields: [messageId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([messageId])
 }
 
 model ChatPoll {
@@ -485,7 +501,7 @@ model ChatPoll {
   conversationId String    @db.ObjectId
   messageId      String    @db.ObjectId
   question       String
-  options        Json      // [{id, text, voters: [userId]}]
+  options        Json      // [{id, text}] - Voters stored in ChatPollVote
   isAnonymous    Boolean   @default(false)
   expiresAt      DateTime?
   createdAt      DateTime  @default(now())
