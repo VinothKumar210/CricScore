@@ -65,7 +65,15 @@ app.use('/api/invites', inviteRoutes);
 app.use('/api/user/locations', locationRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/keys', apiKeyRoutes);
+app.use('/api/tournaments', tournamentRoutes);
+app.use('/api/keys', apiKeyRoutes);
 app.use('/public/v1', publicRoutes);
+
+import deviceRoutes from './routes/deviceRoutes.js';
+app.use('/api/devices', deviceRoutes);
+
+import { initPushListener } from './listeners/pushListener.js';
+initPushListener();
 
 // Global Error Handler
 app.use(errorHandler);

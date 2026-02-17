@@ -96,6 +96,12 @@ export const matchFinalizationService = {
                 }
             });
 
+            // Reliability: Increment matchesConfirmed
+            // We use raw update because user might not be owner of both teams, but logic requires both stats updated.
+            // This is a system-level update triggered by match completion.
+            await tx.team.update({ where: { id: match.homeTeamId }, data: { matchesConfirmed: { increment: 1 } } });
+            await tx.team.update({ where: { id: match.awayTeamId }, data: { matchesConfirmed: { increment: 1 } } });
+
             // 5. Create Innings Records & Stats
             await createInningsRecord(tx, matchId, 1, state1, inningsOpsv1, getName);
             if (inningsOpsv2.length > 0) {

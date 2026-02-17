@@ -80,5 +80,17 @@ export const initSocket = (httpServer: any) => {
         });
     });
 
+    // Integrated Event Bus for Real-Time Notifications
+    import('../events/eventBus.js').then(({ eventBus }) => {
+        // Remove existing listeners to prevent duplicates (if hot reloaded)
+        eventBus.removeAllListeners('notification.created');
+
+        eventBus.on('notification.created', (notification) => {
+            // Emit to /chat namespace
+            io.of('/chat').to(`user:${notification.userId}`).emit('notification:new', notification);
+            console.log(`🔔 Notification emitted to user:${notification.userId}`);
+        });
+    });
+
     return io;
 };

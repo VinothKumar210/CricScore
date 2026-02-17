@@ -42,45 +42,42 @@ export const notificationService = {
                 return null;
             }
 
-            // 2. Deduplication check (if dedupeKey provided)
-            if (dedupeKey) {
-                const cutoff = new Date(Date.now() - DEDUPE_WINDOW_MS);
+            // 2. Create Notification (DB Constraint handles dedupe)
+            // We strip dedupeKey from data object to avoid redundancy
+            const finalData = { ...data };
+            if (finalData.dedupeKey) delete finalData.dedupeKey;
 
-                const existing = await prisma.notification.findFirst({
-                    where: {
+            try {
+                const notification = await prisma.notification.create({
+                    data: {
                         userId,
-                        createdAt: { gte: cutoff },
-                        // Store dedupeKey inside data.dedupeKey for lookup
-                        data: {
-                            path: ['dedupeKey'],
-                            equals: dedupeKey,
-                        },
+                        type: type as any,
+                        title,
+                        body,
+                        data: finalData,
+                        dedupeKey: dedupeKey || null // Top-level field
                     } as any,
                 });
 
-                if (existing) {
-                    // Skip — duplicate notification within window
+                // Emit Domain Event (Fire-and-forget for sockets/push)
+                // We use dynamic import or ensure eventBus is safe.
+                // Better to import at top level as it is a pure node module.
+                // But let's check imports first.
+                // We need to import eventBus.
+                const { eventBus } = await import('../events/eventBus.js');
+                eventBus.emit('notification.created', notification);
+
+                return notification;
+            } catch (error: any) {
+                // Handle Unique Constraint Violation (P2002)
+                if (error.code === 'P2002') {
+                    // Swallow error - duplicate notification ignored
                     return null;
                 }
+                throw error; // Rethrow other errors
             }
-
-            // 3. Create notification
-            const notification = await prisma.notification.create({
-                data: {
-                    userId,
-                    type: type as any,
-                    title,
-                    body,
-                    data: {
-                        ...(data || {}),
-                        ...(dedupeKey ? { dedupeKey } : {}),
-                    },
-                } as any,
-            });
-
-            return notification;
         } catch (error) {
-            // 4. Log and swallow — notification failure must NEVER break main logic
+            // 3. Log and swallow — notification failure must NEVER break main logic
             console.error('[NotificationService] Failed to create notification:', error);
             return null;
         }

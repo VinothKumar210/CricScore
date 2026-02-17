@@ -111,10 +111,22 @@ export const getFeed = async (
     // 5. Append Distance (Optional, calculated just for frontend display if needed)
     // $near guarantees sort, but doesn't inject 'distance' field unless using $geoNear aggregate.
     // We can re-calc Haversine cheaply for these 50 items if the UI needs "5 km away".
-    const finalResult = result.map((invite: any) => ({
-        ...invite,
-        distance: calculateDistance(userLat, userLon, invite.latitude, invite.longitude)
-    }));
+    const finalResult = result.map((invite: any) => {
+        const team = invite.team;
+        let reliability = 100;
+        if (team && team.matchesConfirmed > 0) {
+            reliability = Math.round(((team.matchesConfirmed - team.matchesCancelled) / team.matchesConfirmed) * 100);
+        }
+
+        return {
+            ...invite,
+            distance: calculateDistance(userLat, userLon, invite.latitude, invite.longitude),
+            team: {
+                ...team,
+                reliability
+            }
+        };
+    });
 
     return finalResult;
 };

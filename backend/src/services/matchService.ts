@@ -133,5 +133,33 @@ export const matchService = {
             where: { id: matchId },
             data: { status: newStatus }
         });
+    },
+
+    /**
+     * Cancel match with attribution.
+     * Updates status to ABANDONED and increments cancelling team's cancellation count.
+     */
+    cancelMatch: async (matchId: string, cancellingTeamId: string) => {
+        const match = await prisma.matchSummary.findUnique({ where: { id: matchId } });
+        if (!match) throw { statusCode: 404, message: 'Match not found', code: 'NOT_FOUND' };
+
+        if (match.status === 'COMPLETED' || match.status === 'ABANDONED') {
+            throw { statusCode: 400, message: 'Match already finished', code: 'MATCH_FINISHED' };
+        }
+
+        if (match.homeTeamId !== cancellingTeamId && match.awayTeamId !== cancellingTeamId) {
+            throw { statusCode: 403, message: 'Team not part of this match', code: 'UNAUTHORIZED' };
+        }
+
+        return prisma.$transaction([
+            prisma.matchSummary.update({
+                where: { id: matchId },
+                data: { status: 'ABANDONED', result: 'MATCH_ABANDONED' } // using ABANDONED as per schema
+            }),
+            prisma.team.update({
+                where: { id: cancellingTeamId },
+                data: { matchesCancelled: { increment: 1 } }
+            })
+        ]);
     }
 };
