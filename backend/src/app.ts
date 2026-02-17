@@ -72,6 +72,9 @@ app.use('/public/v1', publicRoutes);
 import deviceRoutes from './routes/deviceRoutes.js';
 app.use('/api/devices', deviceRoutes);
 
+import notificationRoutes from './routes/notificationRoutes.js';
+app.use('/api/notifications', notificationRoutes);
+
 import { initPushListener } from './listeners/pushListener.js';
 initPushListener();
 
