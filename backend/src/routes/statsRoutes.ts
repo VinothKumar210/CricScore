@@ -54,7 +54,7 @@ router.get('/stats/team/:id', requireAuth, async (req: Request, res: Response) =
 router.get('/stats/leaderboard', requireAuth, async (req: Request, res: Response) => {
     try {
         const category = req.query.category as any;
-        const limit = parseInt(req.query.limit as string) || 10;
+        const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
 
         if (!['runs', 'wickets'].includes(category)) {
             return sendError(res, 'Invalid category', 400, 'INVALID_PARAM');

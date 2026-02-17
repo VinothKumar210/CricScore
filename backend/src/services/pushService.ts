@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import { prisma } from '../utils/db.js';
+import { redisClient } from './presenceService.js';
 
 // Ensure Firebase Admin is initialized (It should be in app.ts/index.ts)
 // process.env.GOOGLE_APPLICATION_CREDENTIALS must be set or initialized manually
@@ -25,6 +26,18 @@ export const pushService = {
             });
 
             if (devices.length === 0) return;
+
+            // RATE LIMIT: 50 per hour
+            const dateKey = new Date().toISOString().slice(0, 13).replace(/[-T]/g, ''); // YYYYMMDDHH
+            const rateKey = `push:hour:${userId}:${dateKey}`;
+
+            const count = await redisClient.incr(rateKey);
+            if (count === 1) await redisClient.expire(rateKey, 3600);
+
+            if (count > 50) {
+                console.warn(`[PushService] Rate limit exceeded for user ${userId}`);
+                return; // Silently skip
+            }
 
             const tokens = devices.map((d: { token: string }) => d.token);
 

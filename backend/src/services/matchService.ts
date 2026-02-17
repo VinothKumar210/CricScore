@@ -1,4 +1,5 @@
 import { prisma } from '../utils/db.js';
+import { redisClient } from './presenceService.js';
 import type { MatchSummary, MatchStatus } from '@prisma/client';
 
 export const matchService = {
@@ -19,6 +20,16 @@ export const matchService = {
             homeTeamName, // Optional overrides or fetch from DB
             awayTeamName
         } = data;
+
+        // RATE LIMIT: Max 5 matches per day per user
+        const dateKey = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const rateKey = `match:create:${userId}:${dateKey}`;
+        const count = await redisClient.incr(rateKey);
+        if (count === 1) await redisClient.expire(rateKey, 86400);
+
+        if (count > 5) {
+            throw { statusCode: 429, message: 'Daily match creation limit reached (Max 5)', code: 'RATE_LIMIT_EXCEEDED' };
+        }
 
         // Validation
         if (homeTeamId === awayTeamId) {

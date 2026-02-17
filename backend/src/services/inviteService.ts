@@ -1,5 +1,5 @@
 import { prisma } from '../utils/db.js';
-import { redisClient } from './presenceService.js'; // Reuse redis client
+import { redisClient } from './presenceService.js';
 import { calculateDistance } from '../utils/geoUtils.js';
 import { notificationService } from './notificationService.js';
 
@@ -29,6 +29,31 @@ export const createInvite = async (
         type: 'Point',
         coordinates: [data.longitude, data.latitude]
     };
+
+    // 1. Check Active Invites Count (Max 5)
+    const activeCount = await prisma.matchSeeker.count({
+        where: {
+            teamId: teamId,
+            isActive: true
+        }
+    });
+
+    if (activeCount >= 5) {
+        throw { statusCode: 429, message: 'Too many active invites (Max 5)', code: 'RATE_LIMIT_EXCEEDED' };
+    }
+
+    // 2. Check Daily Creation Limit (Max 10 per team) using Redis
+    const dateKey = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+    const rateKey = `invite:daily:${teamId}:${dateKey}`;
+
+    const count = await redisClient.incr(rateKey);
+    if (count === 1) {
+        await redisClient.expire(rateKey, 86400); // 24 hours
+    }
+
+    if (count > 10) {
+        throw { statusCode: 429, message: 'Daily invite limit reached (Max 10)', code: 'RATE_LIMIT_EXCEEDED' };
+    }
 
     const invite = await prisma.matchSeeker.create({
         data: {

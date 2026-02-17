@@ -38,6 +38,33 @@ export const registerChatHandlers = (io: Server, socket: Socket, user: any) => {
         const { clientMessageId, conversationId, content, type, mediaUrl } = payload;
 
         try {
+            // RATE LIMIT: 10 messages per 5 seconds
+            const now = Date.now();
+            const windowStart = now - 5000;
+            const rateKey = `chat:rate:${conversationId}:${user.id}`;
+
+            const pipeline = redisClient.pipeline();
+            pipeline.zremrangebyscore(rateKey, 0, windowStart);
+            pipeline.zcard(rateKey);
+            pipeline.zadd(rateKey, now, `${now}-${Math.random()}`); // Unique member
+            pipeline.expire(rateKey, 10); // Auto-cleanup
+
+            const results = await pipeline.exec();
+            // results[1][1] is count AFTER removing old but BEFORE adding new? 
+            // No, exec runs in order. 
+            // zcard is index 1. 
+            // If count > 10, invalid.
+            const count = (results?.[1]?.[1] as number) || 0;
+
+            if (count > 10) {
+                socket.emit('error', {
+                    clientMessageId,
+                    message: 'Rate limit exceeded. Slow down.',
+                    code: 'RATE_LIMIT'
+                });
+                return;
+            }
+
             const message = await messageService.saveMessage(
                 user.id,
                 conversationId,

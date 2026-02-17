@@ -23,17 +23,16 @@ import { initSocket } from './socket/index.js';
 
 dotenv.config();
 
-import rateLimit from 'express-rate-limit';
+import { globalLimiter } from './middlewares/rateLimit.js';
 
 // Global Rate Limiter
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again later.'
-});
+// const limiter = rateLimit({ ... }); // Removed old in-memory limiter
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Trust Proxy (Required for Rate Limiting behind load balancers/cloud)
+app.set('trust proxy', 1);
 
 // Create HTTP Server
 const httpServer = http.createServer(app);
@@ -48,7 +47,7 @@ app.use(cors({
     credentials: true,
 }));
 app.use(morgan('dev'));
-app.use(limiter); // Apply rate limiting
+app.use(globalLimiter); // Apply Redis-backed rate limiting
 app.use(express.json()); // Essential for parsing JSON bodies
 
 // Routes
