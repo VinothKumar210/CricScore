@@ -112,6 +112,7 @@ model Team {
   grounds           Ground[]
   matchSeekers      MatchSeeker[]
   inviteTemplates   InviteTemplate[]
+  sentProposals     InviteProposal[]
   seasons           TeamSeason[]
   
   // Tournament Relations
@@ -201,12 +202,14 @@ model MatchSeeker {
   message       String?
   latitude      Float
   longitude     Float
+  location      Json?     // GeoJSON: { type: "Point", coordinates: [lon, lat] }
   radius        Int       @default(15)
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
   expiresAt     DateTime
   
   team          Team      @relation(fields: [teamId], references: [id])
+  proposals     InviteProposal[]
 
   @@index([latitude, longitude])
   @@index([isActive, expiresAt])
@@ -223,6 +226,31 @@ model InviteTemplate {
   description String?
   
   team        Team      @relation(fields: [teamId], references: [id])
+}
+
+model InviteProposal {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  seekerId      String   @db.ObjectId
+  fromTeamId    String   @db.ObjectId
+  proposedDate  DateTime?
+  proposedTime  String?
+  proposedOvers Int?
+  proposedGroundId String? @db.ObjectId
+  status        ProposalStatus @default(PENDING)
+  createdAt     DateTime @default(now())
+
+  seeker        MatchSeeker @relation(fields: [seekerId], references: [id])
+  fromTeam      Team        @relation(fields: [fromTeamId], references: [id])
+
+  @@index([seekerId])
+  @@unique([seekerId, fromTeamId])
+}
+
+enum ProposalStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
 }
 
 // -----------------------------------------------------------------------------
@@ -266,6 +294,9 @@ model MatchSummary {
 
   // Tournament
   tournamentFixtureId String?   @db.ObjectId
+  
+  // Invite System Link (Prevents Duplicate Matches)
+  matchSeekerId       String?   @unique @db.ObjectId
 
   @@index([matchDate])
   @@index([homeTeamId])
