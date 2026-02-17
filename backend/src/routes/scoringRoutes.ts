@@ -4,51 +4,61 @@ import { requireAuth } from '../middlewares/auth.js';
 import { requireMatchRole } from '../middlewares/matchPermission.js';
 import { scoringEngine } from '../services/scoringEngine.js';
 import { sendSuccess, sendError } from '../utils/response.js';
+import { redisClient } from '../services/presenceService.js';
 
 const router = Router();
 
 // -----------------------------------------------------------------------------
-// Per-Match Scoring Rate Limiter
-// 60 operations / minute / matchId / userId
-// In-memory Map — resets on server restart (acceptable for scoring ops).
+// Redis-Based Scoring Rate Limiter (Sliding Window via Sorted Set)
+// 60 operations / 60 seconds / matchId + userId
+// Horizontally scalable — shared across all server instances.
+// Fail-open — if Redis is unavailable, requests are allowed.
 // -----------------------------------------------------------------------------
 
-interface RateLimitEntry {
-    count: number;
-    windowStart: number;
-}
+const SCORING_RATE_WINDOW_MS = 60_000; // 60 seconds
+const SCORING_RATE_MAX = 60;
+const SCORING_RATE_TTL_SECONDS = 120; // Key expires after 2 minutes of inactivity
+const SCORING_RATE_PREFIX = 'score:rate:';
 
-const scoringRateLimits = new Map<string, RateLimitEntry>();
-const SCORING_RATE_WINDOW_MS = 60_000; // 1 minute
-const SCORING_RATE_MAX = 60; // 60 ops per window
+/**
+ * Check and record a scoring operation against the rate limit.
+ * Uses Redis sorted set with timestamps as scores for a sliding window.
+ *
+ * @returns true if allowed, false if rate limited
+ */
+const checkScoringRateLimit = async (matchId: string, userId: string): Promise<boolean> => {
+    try {
+        const key = `${SCORING_RATE_PREFIX}${matchId}:${userId}`;
+        const now = Date.now();
+        const windowStart = now - SCORING_RATE_WINDOW_MS;
 
-// Cleanup stale entries every 5 minutes
-setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of scoringRateLimits) {
-        if (now - entry.windowStart > SCORING_RATE_WINDOW_MS * 2) {
-            scoringRateLimits.delete(key);
+        // Atomic pipeline: remove old entries, count remaining, add new, set TTL
+        const pipeline = redisClient.pipeline();
+        pipeline.zremrangebyscore(key, 0, windowStart);     // 1. Remove expired entries
+        pipeline.zcard(key);                                  // 2. Count remaining
+        pipeline.zadd(key, now, `${now}:${Math.random()}`);  // 3. Add current timestamp (unique member)
+        pipeline.expire(key, SCORING_RATE_TTL_SECONDS);       // 4. Set TTL
+
+        const results = await pipeline.exec();
+
+        // results[1] = [error, count] from zcard
+        if (results && results[1] && results[1][1] !== null) {
+            const count = results[1][1] as number;
+            if (count >= SCORING_RATE_MAX) {
+                // Over limit — remove the entry we just added
+                // (it was added before we checked, but pipeline is atomic)
+                // Actually count was checked BEFORE zadd in pipeline order,
+                // so count reflects pre-add state. If count >= MAX, reject.
+                return false;
+            }
         }
-    }
-}, 5 * 60_000);
 
-const checkScoringRateLimit = (matchId: string, userId: string): boolean => {
-    const key = `${matchId}:${userId}`;
-    const now = Date.now();
-    const entry = scoringRateLimits.get(key);
-
-    if (!entry || now - entry.windowStart > SCORING_RATE_WINDOW_MS) {
-        // New window
-        scoringRateLimits.set(key, { count: 1, windowStart: now });
+        return true;
+    } catch (error) {
+        // Fail-open: if Redis is unavailable, allow the request
+        console.warn('[ScoringRateLimit] Redis unavailable, allowing request:', error);
         return true;
     }
-
-    if (entry.count >= SCORING_RATE_MAX) {
-        return false; // Rate limited
-    }
-
-    entry.count += 1;
-    return true;
 };
 
 // --- Scoring Operations ---
@@ -62,8 +72,8 @@ router.post('/matches/:id/operations', requireAuth, requireMatchRole(['OWNER', '
         const matchId = req.params.id as string;
         const userId = req.user!.id;
 
-        // Per-match rate limit check
-        if (!checkScoringRateLimit(matchId, userId)) {
+        // Per-match rate limit check (Redis-backed)
+        if (!(await checkScoringRateLimit(matchId, userId))) {
             return sendError(res, 'Scoring rate limit exceeded. Max 60 ops/minute per match.', 429, 'RATE_LIMITED');
         }
 
