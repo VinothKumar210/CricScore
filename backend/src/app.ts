@@ -75,6 +75,9 @@ app.use('/api/devices', deviceRoutes);
 import { initPushListener } from './listeners/pushListener.js';
 initPushListener();
 
+import { initProximityListener } from './listeners/proximityListener.js';
+initProximityListener();
+
 // Global Error Handler
 app.use(errorHandler);
 

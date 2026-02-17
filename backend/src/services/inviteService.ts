@@ -39,8 +39,10 @@ export const createInvite = async (
         } as any
     });
 
-    // TODO: Trigger Proximity Alerts (Async)
-    // triggerProximityAlerts(invite);
+    // 5. Emit Event for Proximity Alerts (Async)
+    import('../events/eventBus.js').then(({ eventBus }) => {
+        eventBus.emit('invite.created', invite);
+    });
 
     return invite;
 };
