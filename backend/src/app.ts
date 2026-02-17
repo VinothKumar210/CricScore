@@ -70,9 +70,12 @@ app.use('/public/v1', publicRoutes);
 // Global Error Handler
 app.use(errorHandler);
 
+import { messageScheduler } from './scheduler/messageScheduler.js';
+
 // Start Server
 httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    messageScheduler.start();
 });
 
 export default app;

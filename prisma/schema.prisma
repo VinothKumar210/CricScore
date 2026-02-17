@@ -470,6 +470,7 @@ model Message {
   // Status
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+  sentAt          DateTime?   // For scheduled messages
   deliveredAt     DateTime?
   readAt          DateTime?
   
@@ -480,6 +481,7 @@ model Message {
   reactions       MessageReaction[]
 
   @@index([conversationId, createdAt])
+  @@index([scheduledAt, sentAt]) // For scheduler
 }
 
 model MessageReaction {
