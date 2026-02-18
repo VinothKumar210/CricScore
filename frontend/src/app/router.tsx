@@ -14,6 +14,11 @@ import { ScoringPage } from '../pages/match/ScoringPage';
 import { TournamentDetailPage } from '../pages/tournaments/TournamentDetailPage';
 import { MatchCreatePage } from '../pages/match/MatchCreatePage';
 
+// Tab Components
+import { MatchSummaryTab } from '../features/matches/tabs/MatchSummaryTab';
+import { MatchScorecardTab } from '../features/matches/tabs/MatchScorecardTab';
+import { MatchInfoTab } from '../features/matches/tabs/MatchInfoTab';
+
 export const router = createBrowserRouter([
     {
         path: '/',
@@ -35,7 +40,15 @@ export const router = createBrowserRouter([
             { path: '/profile', element: <ProfilePage /> },
             { path: '/tournaments/:id', element: <TournamentDetailPage /> },
             { path: '/match/create', element: <MatchCreatePage /> },
-            { path: '/match/:id', element: <MatchDetailPage /> },
+            {
+                path: '/match/:id',
+                element: <MatchDetailPage />,
+                children: [
+                    { index: true, element: <MatchSummaryTab /> },
+                    { path: 'scorecard', element: <MatchScorecardTab /> },
+                    { path: 'info', element: <MatchInfoTab /> },
+                ]
+            },
         ],
     },
     {

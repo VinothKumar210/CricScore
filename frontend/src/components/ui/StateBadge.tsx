@@ -1,24 +1,25 @@
 import { clsx } from 'clsx';
-
-type BadgeStatus = 'live' | 'completed' | 'scheduled' | 'abandoned';
+import { MatchStatus } from '../../features/matches/types';
 
 interface StateBadgeProps {
-    status: BadgeStatus;
+    status: MatchStatus;
     className?: string;
 }
 
-const statusStyles: Record<BadgeStatus, string> = {
-    live: 'bg-danger/10 text-danger',
-    completed: 'bg-success/10 text-success',
-    scheduled: 'bg-warning/10 text-warning',
-    abandoned: 'bg-gray-200 text-gray-600',
+const statusStyles: Record<MatchStatus, string> = {
+    LIVE: 'bg-danger/10 text-danger',
+    COMPLETED: 'bg-success/10 text-success',
+    SCHEDULED: 'bg-warning/10 text-warning',
+    ABANDONED: 'bg-textSecondary/20 text-textSecondary',
+    INNINGS_BREAK: 'bg-warning/10 text-warning',
 };
 
-const statusLabels: Record<BadgeStatus, string> = {
-    live: 'Live',
-    completed: 'Completed',
-    scheduled: 'Scheduled',
-    abandoned: 'Abandoned',
+const statusLabels: Record<MatchStatus, string> = {
+    LIVE: 'Live',
+    COMPLETED: 'Completed',
+    SCHEDULED: 'Scheduled',
+    ABANDONED: 'Abandoned',
+    INNINGS_BREAK: 'Innings Break',
 };
 
 export const StateBadge: React.FC<StateBadgeProps> = ({ status, className }) => {
@@ -30,7 +31,7 @@ export const StateBadge: React.FC<StateBadgeProps> = ({ status, className }) => 
                 className
             )}
         >
-            {status === 'live' && (
+            {status === 'LIVE' && (
                 <span className="w-1.5 h-1.5 rounded-full bg-danger mr-1.5 animate-pulse" />
             )}
             {statusLabels[status]}
