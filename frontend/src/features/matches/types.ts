@@ -40,3 +40,34 @@ export interface HomeFeedResponse {
     yourMatches: MatchFeedItem[];
     liveMatches: MatchFeedItem[];
 }
+
+// Scorecard Types
+export interface BattingEntry {
+    playerId: string;
+    name: string;
+    runs: number;
+    balls: number;
+    fours: number;
+    sixes: number;
+    strikeRate: number;
+    dismissal?: string;
+}
+
+export interface BowlingEntry {
+    playerId: string;
+    name: string;
+    overs: string;
+    maidens: number;
+    runs: number;
+    wickets: number;
+    economy: number;
+}
+
+export interface Innings {
+    batting: BattingEntry[];
+    bowling: BowlingEntry[];
+    totalRuns: number;
+    totalWickets: number;
+    totalOvers: string;
+    extras: number;
+}
