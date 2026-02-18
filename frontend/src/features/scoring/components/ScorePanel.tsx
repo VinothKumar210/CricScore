@@ -4,7 +4,6 @@ import { Loader2 } from 'lucide-react';
 import { useScoringStore } from '../scoringStore';
 import { StateBadge } from '../../../components/ui/StateBadge';
 import { typography } from '../../../constants/typography';
-import type { ScoreSummary } from '../../matches/types/domainTypes';
 
 export const ScorePanel = React.memo(() => {
     const matchState = useScoringStore((s) => s.matchState);

@@ -22,7 +22,7 @@ export async function getMatchState(matchId: string): Promise<{ matchState: Matc
     };
 }
 
-export async function submitScoreOperation(matchId: string, payload: any, expectedVersion: number): Promise<{ version: number }> {
+export async function submitScoreOperation(_matchId: string, _payload: any, expectedVersion: number): Promise<{ version: number }> {
     // Simulate API delay
     await new Promise(res => setTimeout(res, 400));
 
