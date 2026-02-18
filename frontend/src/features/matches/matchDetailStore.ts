@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { getMatchDetail, type MatchDetail } from "./matchDetailService";
+import { getMatchDetail } from "./matchDetailService";
+import type { MatchDetail } from "./types/domainTypes";
 
 interface MatchDetailState {
     match: MatchDetail | null;

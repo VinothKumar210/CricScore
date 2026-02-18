@@ -1,4 +1,4 @@
-import type { HomeFeedResponse, MatchFeedItem } from "./types";
+import type { HomeFeedResponse, MatchFeedItem } from "./types/domainTypes";
 
 export async function getHomeFeed(): Promise<HomeFeedResponse> {
     // Simulate API delay
@@ -12,7 +12,6 @@ export async function getHomeFeed(): Promise<HomeFeedResponse> {
             teamA: { id: "t1", name: "Cric Tigers", shortName: "CT" },
             teamB: { id: "t2", name: "Green Warriors", shortName: "GW" },
             scoreA: { runs: 142, wickets: 3, overs: "18.4" },
-            scoreB: undefined,
             startTime: new Date().toISOString(),
             tournamentName: "Weekday Blast",
             isUserInvolved: true,

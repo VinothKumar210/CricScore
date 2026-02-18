@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../../components/ui/Card';
 import { StateBadge } from '../../../components/ui/StateBadge';
-import type { MatchFeedItem, ScoreSummary } from '../types';
+import type { MatchFeedItem, ScoreSummary } from '../types/domainTypes';
 import { typography } from '../../../constants/typography';
 import { clsx } from 'clsx';
 

@@ -1,9 +1,8 @@
 import { Card } from '../../../components/ui/Card';
 import { StateBadge } from '../../../components/ui/StateBadge';
-import type { MatchDetail } from '../matchDetailService';
+import type { MatchDetail, ScoreSummary } from '../types/domainTypes';
 import { typography } from '../../../constants/typography';
 import { clsx } from 'clsx';
-import type { ScoreSummary } from '../types';
 
 interface MatchHeaderProps {
     match: MatchDetail;

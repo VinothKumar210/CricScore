@@ -15,33 +15,9 @@ export interface TeamSummary {
 export interface ScoreSummary {
     runs: number;
     wickets: number;
-    overs: string; // "14.2"
+    overs: string;
 }
 
-export interface MatchFeedItem {
-    id: string;
-    status: MatchStatus;
-
-    teamA: TeamSummary;
-    teamB: TeamSummary;
-
-    scoreA?: ScoreSummary;
-    scoreB?: ScoreSummary;
-
-    result?: string;
-    startTime: string;
-
-    tournamentName?: string;
-
-    isUserInvolved: boolean; // important for priority sorting
-}
-
-export interface HomeFeedResponse {
-    yourMatches: MatchFeedItem[];
-    liveMatches: MatchFeedItem[];
-}
-
-// Scorecard Types
 export interface BattingEntry {
     playerId: string;
     name: string;
@@ -70,4 +46,26 @@ export interface Innings {
     totalWickets: number;
     totalOvers: string;
     extras: number;
+}
+
+// Domain Model
+export interface MatchDetail {
+    id: string;
+    status: MatchStatus;
+    teamA: TeamSummary;
+    teamB: TeamSummary;
+    scoreA?: ScoreSummary;
+    scoreB?: ScoreSummary;
+    innings: Innings[];
+    startTime: string;
+    result?: string;
+    tournamentName?: string;
+    isUserInvolved: boolean;
+}
+
+export interface MatchFeedItem extends Omit<MatchDetail, 'innings'> { }
+
+export interface HomeFeedResponse {
+    yourMatches: MatchFeedItem[];
+    liveMatches: MatchFeedItem[];
 }
