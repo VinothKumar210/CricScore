@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { getMatchDetail, MatchDetail } from "./matchDetailService";
+import { getMatchDetail, type MatchDetail } from "./matchDetailService";
 
 interface MatchDetailState {
     match: MatchDetail | null;

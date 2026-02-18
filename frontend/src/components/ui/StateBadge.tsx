@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { MatchStatus } from '../../features/matches/types';
+import type { MatchStatus } from '../../features/matches/types';
 
 interface StateBadgeProps {
     status: MatchStatus;

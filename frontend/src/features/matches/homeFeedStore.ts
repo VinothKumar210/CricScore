@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { getHomeFeed } from "./homeFeedService";
-import { MatchFeedItem } from "./types";
+import type { MatchFeedItem } from "./types";
 
 interface HomeFeedState {
     yourMatches: MatchFeedItem[];

@@ -1,4 +1,4 @@
-import { HomeFeedResponse, MatchFeedItem } from "./types";
+import type { HomeFeedResponse, MatchFeedItem } from "./types";
 
 export async function getHomeFeed(): Promise<HomeFeedResponse> {
     // Simulate API delay

@@ -1,4 +1,4 @@
-import { MatchFeedItem, Innings } from "./types";
+import type { MatchFeedItem, Innings } from "./types";
 
 export interface MatchDetail extends MatchFeedItem {
     innings: Innings[];

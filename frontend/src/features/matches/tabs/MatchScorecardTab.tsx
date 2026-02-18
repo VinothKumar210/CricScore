@@ -1,7 +1,7 @@
 import { useMatchDetailStore } from "../matchDetailStore";
 import { typography } from "../../../constants/typography";
 import { clsx } from "clsx";
-import { Innings, BattingEntry, BowlingEntry } from "../types";
+import type { Innings, BattingEntry, BowlingEntry } from "../types";
 
 export const MatchScorecardTab = () => {
     const { match } = useMatchDetailStore();
