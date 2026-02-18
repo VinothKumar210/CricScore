@@ -6,9 +6,28 @@ export default {
         "./src/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
+        container: {
+            center: true,
+            screens: {
+                DEFAULT: '1200px',
+            },
+        },
         extend: {
             colors: {
-                border: "hsl(var(--border))",
+                brand: {
+                    DEFAULT: '#166534',
+                    light: '#15803d',
+                    dark: '#14532d',
+                },
+                surface: '#F8FAFC',
+                border: '#E5E7EB',
+                textPrimary: '#111827',
+                textSecondary: '#6B7280',
+                danger: '#DC2626',
+                warning: '#F59E0B',
+                success: '#16A34A',
+
+                // Keep existing shadcn-compatible tokens
                 input: "hsl(var(--input))",
                 ring: "hsl(var(--ring))",
                 background: "hsl(var(--background))",
@@ -41,6 +60,9 @@ export default {
                     DEFAULT: "hsl(var(--card))",
                     foreground: "hsl(var(--card-foreground))",
                 },
+            },
+            fontFamily: {
+                sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
             },
             borderRadius: {
                 lg: "var(--radius)",

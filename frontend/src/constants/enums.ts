@@ -1,0 +1,16 @@
+export enum UserRole {
+    GUEST = 'GUEST',
+    USER = 'USER',
+    TEAM_MEMBER = 'TEAM_MEMBER',
+    TEAM_ADMIN = 'TEAM_ADMIN',
+    SCORER = 'SCORER',
+    TOURNAMENT_ADMIN = 'TOURNAMENT_ADMIN'
+}
+
+export enum MatchStatus {
+    SCHEDULED = 'SCHEDULED',
+    LIVE = 'LIVE',
+    INNINGS_BREAK = 'INNINGS_BREAK',
+    COMPLETED = 'COMPLETED',
+    ABANDONED = 'ABANDONED'
+}
