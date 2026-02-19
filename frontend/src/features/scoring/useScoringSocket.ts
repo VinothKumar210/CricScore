@@ -1,12 +1,11 @@
 import { useEffect } from 'react';
 import { useScoringStore } from './scoringStore';
-import { connectSocket, disconnectSocket, getSocket } from '../../lib/socket';
+import { connectSocket } from '../../lib/socket';
 import type { MatchDetail } from '../matches/types/domainTypes';
 
 export const useScoringSocket = (matchId: string | null) => {
     const applySocketUpdate = useScoringStore((s) => s.applySocketUpdate);
-    const initialize = useScoringStore((s) => s.initialize);
-    const storeMatchId = useScoringStore((s) => s.matchId);
+    // initialize and storeMatchId removed as unused
 
     useEffect(() => {
         if (!matchId) return;
@@ -33,6 +32,7 @@ export const useScoringSocket = (matchId: string | null) => {
 
         const handleStatusUpdate = (payload: any) => {
             // For simple status changes
+            console.log('Status Update:', payload);
             // applySocketUpdate(payload); 
         };
 

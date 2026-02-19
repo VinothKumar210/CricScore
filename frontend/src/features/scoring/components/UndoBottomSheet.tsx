@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useEffect } from 'react';
 import { clsx } from 'clsx';
 import { AlertTriangle } from 'lucide-react';
 import { useScoringStore } from '../scoringStore';
@@ -10,7 +10,7 @@ interface UndoBottomSheetProps {
 }
 
 export const UndoBottomSheet = ({ isOpen, onClose }: UndoBottomSheetProps) => {
-    const { undo, isSubmitting, syncState, getLastBall } = useScoringStore();
+    const { undo, isSubmitting, syncState } = useScoringStore();
 
     // Get the last ball details to show what we are undoing
     // We use a selector or specific store call. 

@@ -3,12 +3,7 @@ import { clsx } from 'clsx';
 import { useScoringStore } from '../scoringStore';
 import { typography } from '../../../constants/typography';
 
-// Define the shape of a ball for display locally or rely on domain type if extracted
 // We are using the selector which returns simple objects with { label, type }
-interface BallDisplay {
-    label: string;
-    type: string; // "RUN", "WICKET", "WIDE", etc.
-}
 
 const OverTimeline = React.memo(() => {
     // Selective subscription

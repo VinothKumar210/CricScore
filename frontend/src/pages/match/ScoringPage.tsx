@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
-import { useScoringStore } from '../features/scoring/scoringStore';
-import { useScoringSocket } from '../features/scoring/useScoringSocket';
-import { ScorePanel } from '../features/scoring/components/ScorePanel';
-import { ControlPad } from '../features/scoring/components/ControlPad';
-import { OverTimeline } from '../features/scoring/components/OverTimeline';
+import { useScoringStore } from '../../features/scoring/scoringStore';
+import { useScoringSocket } from '../../features/scoring/useScoringSocket';
+import { ScorePanel } from '../../features/scoring/components/ScorePanel';
+import { ControlPad } from '../../features/scoring/components/ControlPad';
+import { OverTimeline } from '../../features/scoring/components/OverTimeline';
 import { Loader2 } from 'lucide-react';
 
 export const ScoringPage = () => {
@@ -12,7 +12,7 @@ export const ScoringPage = () => {
     const initialize = useScoringStore((s) => s.initialize);
     const matchState = useScoringStore((s) => s.matchState);
     const error = useScoringStore((s) => s.error);
-    const isSubmitting = useScoringStore((s) => s.isSubmitting);
+    // isSubmitting removed as it was unused and caused TS errors
 
     // 1. Initialize Store
     useEffect(() => {

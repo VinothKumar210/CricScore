@@ -20,7 +20,6 @@ export function mapMatchApiToDomain(api: MatchApiResponse): MatchDetail {
         startTime: api.startTime,
         result: api.result,
         tournamentName: api.tournamentName,
-        tournamentName: api.tournamentName,
         isUserInvolved: api.isUserInvolved,
         recentOvers: api.recentOvers?.map(mapOver) || [],
     };
