@@ -52,6 +52,7 @@ function mapTeam(apiTeam: any): TeamSummary {
         name: apiTeam.name,
         shortName: apiTeam.shortName || apiTeam.name.substring(0, 3).toUpperCase(),
         logoUrl: apiTeam.logoUrl,
+        players: apiTeam.players || []
     };
 }
 

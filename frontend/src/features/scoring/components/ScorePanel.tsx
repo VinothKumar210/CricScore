@@ -9,6 +9,7 @@ export const ScorePanel = React.memo(() => {
     const matchState = useScoringStore((s) => s.matchState);
     const isSubmitting = useScoringStore((s) => s.isSubmitting);
     const displayScore = useScoringStore((s) => s.getDisplayScore());
+    const chaseInfo = useScoringStore((s) => s.getChaseInfo());
 
     if (!matchState) return null;
 
@@ -59,6 +60,16 @@ export const ScorePanel = React.memo(() => {
                 </div>
             )}
 
+            {/* Match Result Banner */}
+            {chaseInfo?.isComplete && chaseInfo.result && (
+                <div className={clsx(
+                    "text-xs px-4 py-2 text-center font-bold rounded-md mb-2 border",
+                    chaseInfo.result.resultType === "WIN" ? "bg-success/10 text-success border-success/20" : "bg-gray-100 text-gray-600 border-gray-200"
+                )}>
+                    {chaseInfo.result.description}
+                </div>
+            )}
+
             {/* Sync Conflict Banner */}
             {useScoringStore(s => s.syncState) === "CONFLICT" && !useScoringStore.getState().isOffline && (
                 <div className="bg-danger/10 text-danger text-xs px-4 py-1 text-center font-medium rounded-md mb-2">
@@ -68,15 +79,40 @@ export const ScorePanel = React.memo(() => {
 
             {/* Row 2: Score & Stats */}
             <div className="flex items-end justify-between">
-                <div className="flex items-end">
-                    {scoreDisplay}
+                <div className="flex flex-col">
+                    <div className="flex items-end">
+                        {scoreDisplay}
+                    </div>
+                    {/* Chase Info */}
+                    {chaseInfo && (
+                        <div className="mt-1 text-xs font-medium tabular-nums text-textPrimary bg-surface px-2 py-0.5 rounded flex gap-3">
+                            <span>Target: {chaseInfo.target}</span>
+                            <span className={chaseInfo.requiredRuns > 0 ? "text-brand" : "text-success"}>
+                                {chaseInfo.requiredRuns > 0
+                                    ? `Need ${chaseInfo.requiredRuns} off ${chaseInfo.remainingBalls}`
+                                    : "Target Achieved"}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
-                <div className="flex flex-col items-end text-textSecondary">
-                    <span className="text-xs font-medium uppercase tracking-wide">CRR</span>
-                    <span className="tabular-nums font-bold text-textPrimary">
-                        {displayScore?.crr || "0.00"}
-                    </span>
+                <div className="flex flex-col items-end text-textSecondary h-full justify-end">
+                    {/* RRR Display if chasing */}
+                    {chaseInfo && chaseInfo.remainingBalls > 0 && chaseInfo.requiredRuns > 0 ? (
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-medium uppercase tracking-wide text-textSecondary">RRR</span>
+                            <span className="tabular-nums font-bold text-brand">
+                                {chaseInfo.requiredRunRate}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-medium uppercase tracking-wide text-textSecondary">CRR</span>
+                            <span className="tabular-nums font-bold text-textPrimary">
+                                {displayScore?.crr || "0.00"}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

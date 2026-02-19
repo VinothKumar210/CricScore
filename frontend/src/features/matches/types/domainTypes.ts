@@ -1,21 +1,16 @@
-export type MatchStatus =
-    | "SCHEDULED"
-    | "LIVE"
-    | "INNINGS_BREAK"
-    | "COMPLETED"
-    | "ABANDONED";
+export type MatchStatus = "SCHEDULED" | "LIVE" | "COMPLETED" | "ABANDONED" | "INNINGS_BREAK";
+
+export interface Player {
+    id: string;
+    name: string;
+}
 
 export interface TeamSummary {
     id: string;
     name: string;
-    shortName?: string;
+    shortName?: string; // Optional
     logoUrl?: string;
-}
-
-export interface ScoreSummary {
-    runs: number;
-    wickets: number;
-    overs: string;
+    players?: Player[]; // Optional
 }
 
 export interface BattingEntry {
@@ -27,6 +22,8 @@ export interface BattingEntry {
     sixes: number;
     strikeRate: number;
     dismissal?: string;
+    isStriker?: boolean; // Optional
+    isNonStriker?: boolean; // Optional
 }
 
 export interface BowlingEntry {
@@ -37,46 +34,32 @@ export interface BowlingEntry {
     runs: number;
     wickets: number;
     economy: number;
+    isBowling?: boolean; // Optional
+}
+
+// Domain/Legacy BallEvent for View/Mapper
+export interface BallEvent {
+    runs: number;
+    type: string;
+    label: string;
+    playerOut?: string;
+    extraType?: string;
+}
+
+export interface OverSummary {
+    overNumber: number;
+    balls: BallEvent[];
 }
 
 export interface Innings {
-    batting: BattingEntry[];
-    bowling: BowlingEntry[];
+    battingTeamId?: string; // Optional
+    bowlingTeamId?: string; // Optional
     totalRuns: number;
     totalWickets: number;
     totalOvers: string;
     extras: number;
-}
-
-// Domain Model
-export interface MatchDetail {
-    id: string;
-    status: MatchStatus;
-    teamA: TeamSummary;
-    teamB: TeamSummary;
-    scoreA?: ScoreSummary;
-    scoreB?: ScoreSummary;
-    innings: Innings[];
-    startTime: string;
-    result?: string;
-    tournamentName?: string;
-    isUserInvolved: boolean;
-    recentOvers?: Array<{
-        overNumber: number;
-        balls: Array<{
-            runs: number;
-            type: string;
-            playerOut?: string;
-            label: string; // Derived for UI (e.g., "4", "W", "wd")
-        }>;
-    }>;
-}
-
-export interface MatchFeedItem extends Omit<MatchDetail, 'innings'> { }
-
-export interface HomeFeedResponse {
-    yourMatches: MatchFeedItem[];
-    liveMatches: MatchFeedItem[];
+    batting: BattingEntry[];
+    bowling: BowlingEntry[];
 }
 
 export type DismissalType =
@@ -86,10 +69,56 @@ export type DismissalType =
     | "RUN_OUT"
     | "STUMPED"
     | "HIT_WICKET"
+    | "TIMED_OUT"
+    | "OBSTRUCTING_FIELD"
+    | "RETIRED_HURT"
     | "RETIRED_OUT";
 
 export interface WicketDraft {
     dismissalType: DismissalType | null;
     fielderId?: string;
     newBatsmanId?: string;
+}
+
+export interface ScoreSummary {
+    runs: number;
+    wickets: number;
+    overs: string;
+}
+
+export interface MatchFeedItem {
+    id: string;
+    tournamentName?: string;
+    status: MatchStatus;
+    teamA: TeamSummary;
+    teamB: TeamSummary;
+    scoreA?: ScoreSummary;
+    scoreB?: ScoreSummary;
+    result?: string;
+    startTime: string;
+    isUserInvolved?: boolean; // Added
+}
+
+export interface HomeFeedResponse {
+    yourMatches: MatchFeedItem[]; // Was live/completed/scheduled in snippet 4615 but homeFeedService (4630) returns { yourMatches, liveMatches }
+    liveMatches: MatchFeedItem[];
+    // Wait, let me check homeFeedService return type again. 
+    // Step 4630: return { yourMatches, liveMatches };
+    // Step 4615 defined: { live: ..., completed: ..., scheduled: ... }
+    // This mismatch needs fixing!
+}
+
+export interface MatchDetail {
+    id: string;
+    tournamentName?: string;
+    status: MatchStatus;
+    teamA: TeamSummary;
+    teamB: TeamSummary;
+    scoreA?: ScoreSummary;
+    scoreB?: ScoreSummary;
+    result?: string;
+    innings: Innings[];
+    startTime: string;
+    isUserInvolved: boolean;
+    recentOvers: OverSummary[];
 }
