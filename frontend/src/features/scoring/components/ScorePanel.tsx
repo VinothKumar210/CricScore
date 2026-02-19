@@ -52,20 +52,40 @@ export const ScorePanel = React.memo(() => {
                 </div>
             )}
 
-            {/* Row 2: Score & Stats */}
-            <div className="flex items-end justify-between">
-                <div className="flex items-end">
-                    {scoreDisplay}
-                </div>
-
-                <div className="flex flex-col items-end text-textSecondary">
-                    <span className="text-xs font-medium uppercase tracking-wide">CRR</span>
-                    <span className="tabular-nums font-bold text-textPrimary">
-                        {displayScore?.crr || "0.00"}
-                    </span>
-                </div>
-            </div>
         </div>
+    )
+}
+
+            {/* Offline Banner (Prioritize over Conflict) */ }
+            { useScoringStore(s => s.isOffline) && (
+    <div className="bg-warning/10 text-warning text-xs px-4 py-1 text-center font-medium rounded-md mb-2 border border-warning/20">
+        Offline Mode — Events will sync when connection is restored
+    </div>
+)}
+
+{/* Sync Conflict Banner */ }
+{
+    useScoringStore(s => s.syncState) === "CONFLICT" && !useScoringStore.getState().isOffline && (
+        <div className="bg-danger/10 text-danger text-xs px-4 py-1 text-center font-medium rounded-md mb-2">
+            State updated by another scorer. Syncing...
+        </div>
+    )
+}
+
+{/* Row 2: Score & Stats */ }
+<div className="flex items-end justify-between">
+    <div className="flex items-end">
+        {scoreDisplay}
+    </div>
+
+    <div className="flex flex-col items-end text-textSecondary">
+        <span className="text-xs font-medium uppercase tracking-wide">CRR</span>
+        <span className="tabular-nums font-bold text-textPrimary">
+            {displayScore?.crr || "0.00"}
+        </span>
+    </div>
+</div>
+        </div >
     );
 });
 
