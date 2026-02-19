@@ -48,6 +48,14 @@ export interface MatchApiResponse {
         totalOvers: string;
         extras: number;
     }>;
+    recentOvers?: Array<{
+        overNumber: number;
+        balls: Array<{
+            runs: number;
+            type: string; // "run", "wicket", "wide", "noball", etc.
+            playerOut?: string;
+        }>;
+    }>;
     result?: string;
     startTime: string;
     tournamentName?: string;

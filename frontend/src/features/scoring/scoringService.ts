@@ -13,7 +13,19 @@ export async function getMatchState(matchId: string): Promise<{ matchState: Matc
         teamB: { id: "t2", name: "Green Warriors", shortName: "GW" },
         innings: [],
         startTime: new Date().toISOString(),
-        isUserInvolved: true
+        isUserInvolved: true,
+        recentOvers: [
+            {
+                overNumber: 14,
+                balls: [
+                    { runs: 1, type: "RUN", label: "1" },
+                    { runs: 4, type: "RUN", label: "4" },
+                    { runs: 0, type: "WICKET", label: "W", playerOut: "Batsman X" },
+                    { runs: 1, type: "WIDE", label: "wd" },
+                    { runs: 6, type: "RUN", label: "6" }
+                ]
+            }
+        ]
     };
 
     return {

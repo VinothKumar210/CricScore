@@ -20,8 +20,31 @@ export function mapMatchApiToDomain(api: MatchApiResponse): MatchDetail {
         startTime: api.startTime,
         result: api.result,
         tournamentName: api.tournamentName,
+        tournamentName: api.tournamentName,
         isUserInvolved: api.isUserInvolved,
+        recentOvers: api.recentOvers?.map(mapOver) || [],
     };
+}
+
+function mapOver(apiOver: any) {
+    return {
+        overNumber: apiOver.overNumber,
+        balls: apiOver.balls.map((b: any) => ({
+            runs: b.runs,
+            type: b.type,
+            playerOut: b.playerOut,
+            label: deriveBallLabel(b)
+        }))
+    };
+}
+
+function deriveBallLabel(ball: any): string {
+    if (ball.type === "WICKET") return "W";
+    if (ball.type === "WIDE") return "wd";
+    if (ball.type === "NOBALL") return "nb";
+    if (ball.type === "LEGBYE") return "lb";
+    if (ball.type === "BYE") return "b";
+    return ball.runs.toString();
 }
 
 function mapTeam(apiTeam: any): TeamSummary {

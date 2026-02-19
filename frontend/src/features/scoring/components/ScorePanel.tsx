@@ -8,22 +8,17 @@ import { typography } from '../../../constants/typography';
 export const ScorePanel = React.memo(() => {
     const matchState = useScoringStore((s) => s.matchState);
     const isSubmitting = useScoringStore((s) => s.isSubmitting);
+    const displayScore = useScoringStore((s) => s.getDisplayScore());
 
     if (!matchState) return null;
 
-    // Helper to get current innings score (assuming last innings in array is current)
-    // In a real app, this logic might be more complex or come from backend
-    const currentInnings = matchState.innings.length > 0
-        ? matchState.innings[matchState.innings.length - 1]
-        : null;
-
-    const scoreDisplay = currentInnings ? (
+    const scoreDisplay = displayScore ? (
         <>
             <span className={clsx(typography.headingXl, "tabular-nums font-bold")}>
-                {currentInnings.totalRuns}/{currentInnings.totalWickets}
+                {displayScore.totalRuns}/{displayScore.totalWickets}
             </span>
             <span className={clsx(typography.bodyMd, "text-textSecondary ml-2 mb-1")}>
-                ({currentInnings.totalOvers})
+                ({displayScore.overs})
             </span>
         </>
     ) : (
@@ -31,14 +26,6 @@ export const ScorePanel = React.memo(() => {
             Innings Break / Start
         </span>
     );
-
-    // CRR Calculation (Basic)
-    const runs = currentInnings?.totalRuns || 0;
-    // Parse overs "14.2" -> 14.333
-    const oversStr = currentInnings?.totalOvers || "0.0";
-    const [oversMain, balls] = oversStr.split('.').map(Number);
-    const totalOversDec = oversMain + (balls || 0) / 6;
-    const crr = totalOversDec > 0 ? (runs / totalOversDec).toFixed(2) : "0.00";
 
     return (
         <div className="sticky top-0 z-40 bg-white border-b border-border px-4 py-3 shadow-sm">
@@ -55,8 +42,6 @@ export const ScorePanel = React.memo(() => {
 
                 <div className="flex items-center gap-2">
                     <StateBadge status={matchState.status} />
-                    {/* Spinner (Absolute or Flex depending on layout preference, keeping it in flow for alignment or absolute if requested strict) */}
-                    {/* Per requirement: Absolute top-right */}
                 </div>
             </div>
 
@@ -67,7 +52,6 @@ export const ScorePanel = React.memo(() => {
                 </div>
             )}
 
-
             {/* Row 2: Score & Stats */}
             <div className="flex items-end justify-between">
                 <div className="flex items-end">
@@ -76,7 +60,9 @@ export const ScorePanel = React.memo(() => {
 
                 <div className="flex flex-col items-end text-textSecondary">
                     <span className="text-xs font-medium uppercase tracking-wide">CRR</span>
-                    <span className="tabular-nums font-bold text-textPrimary">{crr}</span>
+                    <span className="tabular-nums font-bold text-textPrimary">
+                        {displayScore?.crr || "0.00"}
+                    </span>
                 </div>
             </div>
         </div>

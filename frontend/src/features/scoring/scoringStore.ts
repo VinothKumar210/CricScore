@@ -2,6 +2,13 @@ import { create } from 'zustand';
 import { getMatchState, submitScoreOperation } from './scoringService';
 import type { MatchDetail } from '../matches/types/domainTypes';
 
+export interface DisplayScoreState {
+    totalRuns: number;
+    totalWickets: number;
+    overs: string;
+    crr: string;
+}
+
 interface ScoringState {
     matchId: string | null;
     matchState: MatchDetail | null;
@@ -13,6 +20,9 @@ interface ScoringState {
     recordBall: (payload: any) => Promise<void>;
     undo: () => Promise<void>;
     refetch: () => Promise<void>;
+
+    // Computed Selectors
+    getDisplayScore: () => DisplayScoreState | null;
 }
 
 export const useScoringStore = create<ScoringState>((set, get) => ({
@@ -51,15 +61,12 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
 
         set({ isSubmitting: true, error: null });
 
-        // Optimistic Update can be applied here to matchState
-        // e.g., set(state => ({ matchState: applyOptimisticUpdate(state.matchState, payload) }))
-
         try {
             const { version } = await submitScoreOperation(matchId, payload, expectedVersion);
             set({ expectedVersion: version, isSubmitting: false });
         } catch (err: any) {
             if (err.status === 409) {
-                set({ error: "Sync conflict", isSubmitting: false }); // Will trigger UI to show reload
+                set({ error: "Sync conflict", isSubmitting: false });
                 await get().refetch();
             } else if (err.status === 429) {
                 set({ error: "Too fast", isSubmitting: false });
@@ -70,8 +77,47 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
     },
 
     undo: async () => {
-        // Re-use recordBall with UNDO type
         const undoPayload = { type: "UNDO" };
         await get().recordBall(undoPayload);
+    },
+
+    getDisplayScore: () => {
+        const { matchState } = get();
+        if (!matchState) return null;
+
+        // Get current innings (last in array)
+        const currentInnings = matchState.innings.length > 0
+            ? matchState.innings[matchState.innings.length - 1]
+            : null;
+
+        if (!currentInnings) return null;
+
+        const runs = currentInnings.totalRuns;
+        const wickets = currentInnings.totalWickets;
+        const overs = currentInnings.totalOvers;
+
+        // CRR Calculation
+        // Parse overs "14.2" -> 14.333
+        const [oversMain, balls] = overs.split('.').map(Number);
+        const totalOversDec = oversMain + (balls || 0) / 6;
+        const crr = totalOversDec > 0 ? (runs / totalOversDec).toFixed(2) : "0.00";
+
+        return {
+            totalRuns: runs,
+            totalWickets: wickets,
+            overs,
+            crr
+        };
+    },
+
+    getCurrentOverBalls: () => {
+        const { matchState } = get();
+        if (!matchState || !matchState.recentOvers || matchState.recentOvers.length === 0) {
+            return [];
+        }
+        // Return balls from the last available over in the list
+        // In a real app, ensure this matches the 'current' over being bowled
+        const currentOver = matchState.recentOvers[matchState.recentOvers.length - 1];
+        return currentOver.balls || [];
     }
 }));

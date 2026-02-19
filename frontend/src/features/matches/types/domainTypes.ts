@@ -61,6 +61,15 @@ export interface MatchDetail {
     result?: string;
     tournamentName?: string;
     isUserInvolved: boolean;
+    recentOvers?: Array<{
+        overNumber: number;
+        balls: Array<{
+            runs: number;
+            type: string;
+            playerOut?: string;
+            label: string; // Derived for UI (e.g., "4", "W", "wd")
+        }>;
+    }>;
 }
 
 export interface MatchFeedItem extends Omit<MatchDetail, 'innings'> { }
