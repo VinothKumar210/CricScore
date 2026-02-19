@@ -78,3 +78,18 @@ export interface HomeFeedResponse {
     yourMatches: MatchFeedItem[];
     liveMatches: MatchFeedItem[];
 }
+
+export type DismissalType =
+    | "BOWLED"
+    | "CAUGHT"
+    | "LBW"
+    | "RUN_OUT"
+    | "STUMPED"
+    | "HIT_WICKET"
+    | "RETIRED_OUT";
+
+export interface WicketDraft {
+    dismissalType: DismissalType | null;
+    fielderId?: string;
+    newBatsmanId?: string;
+}

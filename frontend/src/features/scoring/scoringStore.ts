@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
 import { getMatchState, submitScoreOperation } from './scoringService';
-import type { MatchDetail } from '../matches/types/domainTypes';
+import type { MatchDetail, DismissalType, WicketDraft } from '../matches/types/domainTypes';
 
 export interface DisplayScoreState {
     totalRuns: number;
@@ -12,7 +12,7 @@ export interface DisplayScoreState {
 
 export interface QueuedScoringEvent {
     id: string;
-    type: "BALL" | "UNDO";
+    type: "BALL" | "UNDO" | "WICKET";
     payload: any;
     expectedVersion: number;
     timestamp: number;
@@ -29,13 +29,25 @@ export interface ScoringState {
     unsyncedCount: number;
     error: string | null;
 
+    // Wicket Draft State
+    wicketDraft: WicketDraft | null;
+    isWicketFlowActive: boolean;
+
     initialize: (matchId: string) => Promise<void>;
     recordBall: (payload: any) => Promise<void>;
     undo: () => Promise<void>;
     refetch: () => Promise<void>;
     applySocketUpdate: (incoming: MatchDetail) => void;
     flushQueue: () => Promise<void>;
-    enqueueEvent: (type: "BALL" | "UNDO", payload: any) => void;
+    enqueueEvent: (type: "BALL" | "UNDO" | "WICKET", payload: any) => void;
+
+    // Wicket Actions
+    startWicketFlow: () => void;
+    setDismissalType: (type: DismissalType) => void;
+    setFielder: (fielderId: string) => void;
+    setNewBatsman: (playerId: string) => void;
+    cancelWicketFlow: () => void;
+    commitWicket: () => Promise<void>;
 
     // Computed Selectors
     getDisplayScore: () => DisplayScoreState | null;
@@ -60,6 +72,10 @@ const persistState = async (matchId: string, queue: QueuedScoringEvent[], versio
     }
 };
 
+function dismissalRequiresFielder(type: DismissalType): boolean {
+    return ["CAUGHT", "RUN_OUT", "STUMPED"].includes(type);
+}
+
 export const useScoringStore = create<ScoringState>((set, get) => ({
     matchId: null,
     matchState: null,
@@ -70,6 +86,9 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
     isOffline: !navigator.onLine,
     offlineQueue: [],
     unsyncedCount: 0,
+
+    wicketDraft: null,
+    isWicketFlowActive: false,
 
     initialize: async (matchId: string) => {
         set({ isSubmitting: true, error: null, matchId, syncState: "SYNCING" });
@@ -225,7 +244,7 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
         if (!matchId || (isSubmitting && !isOffline) || syncState === "CONFLICT") return;
 
         if (isOffline) {
-            get().enqueueEvent(payload.type === "UNDO" ? "UNDO" : "BALL", payload);
+            get().enqueueEvent(payload.type === "UNDO" ? "UNDO" : (payload.type === "WICKET" ? "WICKET" : "BALL"), payload);
             return;
         }
 
@@ -254,6 +273,82 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
 
     applySocketUpdate: (incoming: MatchDetail) => {
         set({ matchState: incoming });
+    },
+
+    // Wicket Draft Actions
+    startWicketFlow: () => {
+        const { matchState } = get();
+        if (matchState?.status !== "LIVE") return;
+        set({ isWicketFlowActive: true, wicketDraft: { dismissalType: null } });
+    },
+
+    setDismissalType: (type: DismissalType) => {
+        set((state) => {
+            if (!state.wicketDraft) return {};
+            const requiresFielder = dismissalRequiresFielder(type);
+            return {
+                wicketDraft: {
+                    ...state.wicketDraft,
+                    dismissalType: type,
+                    fielderId: requiresFielder ? state.wicketDraft.fielderId : undefined
+                }
+            };
+        });
+    },
+
+    setFielder: (fielderId: string) => {
+        set((state) => ({
+            wicketDraft: state.wicketDraft ? { ...state.wicketDraft, fielderId } : null
+        }));
+    },
+
+    setNewBatsman: (playerId: string) => {
+        set((state) => ({
+            wicketDraft: state.wicketDraft ? { ...state.wicketDraft, newBatsmanId: playerId } : null
+        }));
+    },
+
+    cancelWicketFlow: () => {
+        set({ isWicketFlowActive: false, wicketDraft: null });
+    },
+
+    commitWicket: async () => {
+        const { wicketDraft, matchId, isSubmitting, syncState, isOffline } = get();
+
+        // Validation
+        if (!wicketDraft || !wicketDraft.dismissalType || !matchId) return;
+
+        // Guard: Do not attempt if blocked (matches recordBall guard)
+        if ((isSubmitting && !isOffline) || syncState === "CONFLICT") {
+            return;
+        }
+
+        // Strict validation based on type
+        if (dismissalRequiresFielder(wicketDraft.dismissalType) && !wicketDraft.fielderId) {
+            set({ error: "Fielder required" });
+            return;
+        }
+        if (!wicketDraft.newBatsmanId) {
+            set({ error: "New batsman required" });
+            return;
+        }
+
+        const payload = {
+            type: "WICKET",
+            dismissalType: wicketDraft.dismissalType,
+            fielderId: wicketDraft.fielderId,
+            newBatsmanId: wicketDraft.newBatsmanId
+        };
+
+        // Use existing recordBall which handles offline/optimistic/locks
+        await get().recordBall(payload);
+
+        // Check state after submission
+        const newState = get();
+        // If successful (IDLE) or Queued (IDLE+isOffline), reset draft
+        if (newState.syncState !== "CONFLICT" && !newState.error) {
+            set({ isWicketFlowActive: false, wicketDraft: null });
+        }
     },
 
     getDisplayScore: () => {
