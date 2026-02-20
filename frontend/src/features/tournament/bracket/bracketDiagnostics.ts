@@ -2,11 +2,11 @@ import type { TeamStanding } from "../engine/types";
 import { deriveKnockoutBracket } from "./deriveKnockoutBracket";
 
 const MOCK_STANDINGS: TeamStanding[] = [
-    { teamId: "T1", played: 10, won: 8, lost: 2, tied: 0, noResult: 0, points: 16, netRunRate: +1.500, runsFor: 2000, oversFacedDecimal: 200, runsAgainst: 1800, oversBowledDecimal: 200 },
-    { teamId: "T2", played: 10, won: 7, lost: 3, tied: 0, noResult: 0, points: 14, netRunRate: +0.800, runsFor: 1950, oversFacedDecimal: 200, runsAgainst: 1850, oversBowledDecimal: 200 },
-    { teamId: "T3", played: 10, won: 6, lost: 4, tied: 0, noResult: 0, points: 12, netRunRate: +0.200, runsFor: 1900, oversFacedDecimal: 200, runsAgainst: 1880, oversBowledDecimal: 200 },
-    { teamId: "T4", played: 10, won: 5, lost: 5, tied: 0, noResult: 0, points: 10, netRunRate: -0.100, runsFor: 1800, oversFacedDecimal: 200, runsAgainst: 1850, oversBowledDecimal: 200 },
-    { teamId: "T5", played: 10, won: 4, lost: 6, tied: 0, noResult: 0, points: 8, netRunRate: -0.500, runsFor: 1750, oversFacedDecimal: 200, runsAgainst: 1900, oversBowledDecimal: 200 },
+    { teamId: "T1", played: 10, won: 8, lost: 2, tied: 0, noResult: 0, points: 16, netRunRate: +1.500, runsFor: 2000, oversFaced: 200, runsAgainst: 1800, oversBowled: 200 },
+    { teamId: "T2", played: 10, won: 7, lost: 3, tied: 0, noResult: 0, points: 14, netRunRate: +0.800, runsFor: 1950, oversFaced: 200, runsAgainst: 1850, oversBowled: 200 },
+    { teamId: "T3", played: 10, won: 6, lost: 4, tied: 0, noResult: 0, points: 12, netRunRate: +0.200, runsFor: 1900, oversFaced: 200, runsAgainst: 1880, oversBowled: 200 },
+    { teamId: "T4", played: 10, won: 5, lost: 5, tied: 0, noResult: 0, points: 10, netRunRate: -0.100, runsFor: 1800, oversFaced: 200, runsAgainst: 1850, oversBowled: 200 },
+    { teamId: "T5", played: 10, won: 4, lost: 6, tied: 0, noResult: 0, points: 8, netRunRate: -0.500, runsFor: 1750, oversFaced: 200, runsAgainst: 1900, oversBowled: 200 },
 ];
 
 export function runBracketDiagnostics(): string[] {

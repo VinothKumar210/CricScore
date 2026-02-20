@@ -140,6 +140,7 @@ function getLabel(event: BallEvent): string {
         return "ex";
     }
     if (event.type === "PHASE_CHANGE") return "P";
+    if (event.type === "INTERRUPTION") return "I";
     return event.runs.toString();
 }
 
@@ -148,5 +149,6 @@ function isLegalDelivery(event: BallEvent): boolean {
         return event.extraType === "BYE" || event.extraType === "LEG_BYE";
     }
     if (event.type === "PHASE_CHANGE") return false;
+    if (event.type === "INTERRUPTION") return false;
     return true;
 }

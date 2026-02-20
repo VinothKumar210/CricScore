@@ -7,7 +7,6 @@ import {
     generateAllOutLeague,
     generateSuperOverLeague
 } from "./leagueGenerator";
-import { assertDeepEqual } from "../../../scoring/engine/testing/deterministicAssertions";
 import { convertOversToDecimal } from "../nrrUtils";
 
 export function runLeagueDiagnostics(): string[] {
