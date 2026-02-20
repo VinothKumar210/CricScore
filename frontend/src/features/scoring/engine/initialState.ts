@@ -1,10 +1,11 @@
-import type { MatchState, InningsState } from "../types/matchStateTypes";
+import type { MatchState, InningsState, PowerplayConfig } from "../types/matchStateTypes";
 
 export interface MatchConfig {
     matchId: string;
     teamA: { id: string; name: string; players: string[] };
     teamB: { id: string; name: string; players: string[] };
     oversPerInnings?: number;
+    powerplayConfig?: PowerplayConfig;
     initialStrikerId?: string;
     initialNonStrikerId?: string;
     initialBowlerId?: string;
@@ -47,9 +48,11 @@ export function createInitialMatchState(config: MatchConfig): MatchState {
     return {
         matchId: config.matchId,
         status: "LIVE",
+        matchPhase: "REGULAR",
         version: 0,
         currentInningsIndex: 0,
         totalMatchOvers: config.oversPerInnings || 20, // Default to 20 if not set
+        powerplayConfig: config.powerplayConfig,
         innings: [firstInnings],
         teams: {
             [config.teamA.id]: config.teamA,

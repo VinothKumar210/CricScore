@@ -1,7 +1,9 @@
 import type { BallEvent } from "../../types/ballEventTypes";
 import { isLegalDelivery, getEventRuns } from "../utils/deliveryUtils";
+import { getMatchPhase, type MatchPhaseName } from "../phaseResolver";
+import type { PowerplayConfig } from "../../types/matchStateTypes";
 
-export type PhaseName = "POWERPLAY" | "MIDDLE" | "DEATH";
+export type PhaseName = MatchPhaseName;
 
 export interface PhaseStats {
     phase: PhaseName;
@@ -11,21 +13,15 @@ export interface PhaseStats {
     runRate: number; // runs per over (runs / (balls/6))
 }
 
-// Over ranges (0-indexed): Powerplay 0–5, Middle 6–14, Death 15–19
-function getPhase(overIndex: number): PhaseName {
-    if (overIndex < 6) return "POWERPLAY";
-    if (overIndex < 15) return "MIDDLE";
-    return "DEATH";
-}
-
 /**
- * Splits innings into Powerplay / Middle / Death phases.
- * Pure function — no mutation, replay-safe, undo-safe.
+ * Pure function — no mutation, replay - safe, undo - safe.
  */
 export function derivePhaseBreakdown(
     events: BallEvent[],
     targetInningsIndex: number,
-    totalMatchOvers: number = 20
+    totalMatchOvers: number = 20,
+    powerplayConfig?: PowerplayConfig,
+    isSuperOver: boolean = false
 ): PhaseStats[] {
     const phases: Record<PhaseName, { runs: number; wickets: number; balls: number }> = {
         POWERPLAY: { runs: 0, wickets: 0, balls: 0 },
@@ -41,7 +37,7 @@ export function derivePhaseBreakdown(
     for (const event of events) {
         if (currentInnings === targetInningsIndex) {
             const overIndex = Math.floor(targetBalls / 6);
-            const phase = getPhase(overIndex);
+            const phase = getMatchPhase(overIndex, powerplayConfig, totalMatchOvers, isSuperOver);
 
             phases[phase].runs += getEventRuns(event);
 

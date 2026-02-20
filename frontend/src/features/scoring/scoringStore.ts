@@ -4,7 +4,7 @@ import { getMatchState, submitScoreOperation } from './scoringService';
 import type { MatchDetail, DismissalType, WicketDraft } from '../matches/types/domainTypes';
 import type { BallEvent, BallEventInput } from './types/ballEventTypes';
 import type { MatchState } from './types/matchStateTypes'; // Engine State
-import { reconstructMatchState } from './engine/replayEngine';
+import { reconstructMatchState, filterEventsForCurrentPhase } from './engine/replayEngine';
 import type { MatchConfig } from './engine/initialState';
 import { mapEngineStateToDomain } from './engine/stateMapper';
 import { getMatchChaseInfo } from './engine/selectors/getMatchChaseInfo';
@@ -31,6 +31,8 @@ import type { PhaseStats } from './engine/analytics';
 import type { WinProbability } from './engine/analytics';
 import { deriveMilestones } from './engine/deriveMilestones';
 import type { Milestone } from './engine/types/milestoneTypes';
+import { deriveCommentary } from './engine/commentary/deriveCommentary';
+import type { CommentaryEntry } from './engine/commentary/commentaryTypes';
 
 
 export interface DisplayScoreState {
@@ -54,6 +56,9 @@ export interface ScoringState {
     derivedState: MatchState | null; // Engine State
     events: BallEvent[]; // Source of Truth
     matchConfig: MatchConfig | null; // For Replay
+
+    // Replay Timeline State
+    replayIndex: number | null;
 
     expectedVersion: number;
     isSubmitting: boolean;
@@ -83,6 +88,15 @@ export interface ScoringState {
     cancelWicketFlow: () => void;
     commitWicket: () => Promise<void>;
 
+    // Super Over
+    startSuperOver: () => Promise<void>;
+
+    // Rain Interruption
+    applyRainInterruption: (newOvers: number) => Promise<void>;
+
+    // Replay Actions
+    setReplayIndex: (index: number | null) => void;
+
     // Computed Selectors
     getDisplayScore: () => DisplayScoreState | null;
     getCurrentOverBalls: () => any[];
@@ -93,6 +107,7 @@ export interface ScoringState {
     getBowlingStats: () => BowlingStats[];
     getFallOfWickets: () => FallOfWicket[];
     getMilestones: () => Milestone[];
+    getCommentary: () => CommentaryEntry[];
 
     // Analytics Selectors
     getRunRateProgression: () => OverRunRatePoint[];
@@ -142,6 +157,9 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
 
     wicketDraft: null,
     isWicketFlowActive: false,
+
+    // Replay Timeline State
+    replayIndex: null,
 
     initialize: async (matchId: string) => {
         set({ isSubmitting: true, error: null, matchId, syncState: "SYNCING" });
@@ -518,12 +536,58 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
         }
     },
 
-    getDisplayScore: () => {
-        const { matchState } = get();
-        if (!matchState) return null;
+    startSuperOver: async () => {
+        const { derivedState, matchId, isSubmitting, syncState, isOffline } = get();
+        if (!matchId || (isSubmitting && !isOffline) || syncState === "CONFLICT") return;
 
-        const currentInnings = matchState.innings.length > 0
-            ? matchState.innings[matchState.innings.length - 1]
+        // Only allow if match is tied in REGULAR phase
+        if (derivedState?.matchResult?.resultType !== "TIE" || derivedState?.matchPhase === "SUPER_OVER") {
+            return;
+        }
+
+        const payload = {
+            type: "PHASE_CHANGE",
+            newPhase: "SUPER_OVER"
+        } as const;
+
+        await get().recordBall(payload as any);
+    },
+
+    applyRainInterruption: async (newOvers: number) => {
+        const { derivedState, matchId, isSubmitting, syncState, isOffline } = get();
+        if (!matchId || (isSubmitting && !isOffline) || syncState === "CONFLICT") return;
+
+        // Only allow in regular phase
+        if (derivedState?.matchPhase === "SUPER_OVER") return;
+
+        // Ignore if trying to increase overs
+        const currentOvers = derivedState?.interruption?.revisedOvers ?? derivedState?.totalMatchOvers ?? 20;
+        if (newOvers >= currentOvers) return;
+
+        const payload = {
+            type: "INTERRUPTION",
+            revisedOvers: newOvers
+        } as const;
+
+        await get().recordBall(payload as any);
+    },
+
+    setReplayIndex: (index) => set({ replayIndex: index }),
+
+    getDisplayScore: () => {
+        const { matchState, derivedState, events, matchConfig, replayIndex } = get();
+        if (!matchState || !derivedState || !matchConfig) return null;
+
+        let effectiveDomainState = matchState;
+
+        if (replayIndex !== null) {
+            const effectiveEvents = events.slice(0, replayIndex);
+            const replayDerivedState = reconstructMatchState(matchConfig, effectiveEvents);
+            effectiveDomainState = mapEngineStateToDomain(replayDerivedState, matchState, effectiveEvents);
+        }
+
+        const currentInnings = effectiveDomainState.innings.length > 0
+            ? effectiveDomainState.innings[effectiveDomainState.innings.length - 1]
             : null;
 
         if (!currentInnings) return null;
@@ -545,21 +609,39 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
     },
 
     getCurrentOverBalls: () => {
-        const { matchState } = get();
-        if (!matchState || !matchState.recentOvers || matchState.recentOvers.length === 0) {
+        const { matchState, derivedState, events, matchConfig, replayIndex } = get();
+        if (!matchState || !derivedState || !matchConfig) return [];
+
+        let effectiveDomainState = matchState;
+        if (replayIndex !== null) {
+            const effectiveEvents = events.slice(0, replayIndex);
+            const replayDerivedState = reconstructMatchState(matchConfig, effectiveEvents);
+            effectiveDomainState = mapEngineStateToDomain(replayDerivedState, matchState, effectiveEvents);
+        }
+
+        if (!effectiveDomainState.recentOvers || effectiveDomainState.recentOvers.length === 0) {
             return [];
         }
-        const currentOver = matchState.recentOvers[matchState.recentOvers.length - 1];
+        const currentOver = effectiveDomainState.recentOvers[effectiveDomainState.recentOvers.length - 1];
         return currentOver.balls || [];
     },
 
     getLastBall: () => {
-        const { matchState } = get();
-        if (!matchState || !matchState.recentOvers || matchState.recentOvers.length === 0) {
+        const { matchState, derivedState, events, matchConfig, replayIndex } = get();
+        if (!matchState || !derivedState || !matchConfig) return null;
+
+        let effectiveDomainState = matchState;
+        if (replayIndex !== null) {
+            const effectiveEvents = events.slice(0, replayIndex);
+            const replayDerivedState = reconstructMatchState(matchConfig, effectiveEvents);
+            effectiveDomainState = mapEngineStateToDomain(replayDerivedState, matchState, effectiveEvents);
+        }
+
+        if (!effectiveDomainState.recentOvers || effectiveDomainState.recentOvers.length === 0) {
             return null;
         }
-        for (let i = matchState.recentOvers.length - 1; i >= 0; i--) {
-            const over = matchState.recentOvers[i];
+        for (let i = effectiveDomainState.recentOvers.length - 1; i >= 0; i--) {
+            const over = effectiveDomainState.recentOvers[i];
             if (over.balls && over.balls.length > 0) {
                 const lastBall = over.balls[over.balls.length - 1];
                 return { ...lastBall, overNumber: over.overNumber };
@@ -569,74 +651,129 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
     },
 
     getChaseInfo: () => {
-        const { derivedState } = get();
-        if (!derivedState) return null;
-        return getMatchChaseInfo(derivedState);
+        const { derivedState, events, matchConfig, replayIndex } = get();
+        if (!derivedState || !matchConfig) return null;
+
+        let effectiveDerivedState = derivedState;
+        if (replayIndex !== null) {
+            const effectiveEvents = events.slice(0, replayIndex);
+            effectiveDerivedState = reconstructMatchState(matchConfig, effectiveEvents);
+        }
+
+        return getMatchChaseInfo(effectiveDerivedState);
     },
 
     getPartnershipInfo: () => {
-        const { events, derivedState } = get();
+        const { events, derivedState, replayIndex } = get();
         if (!derivedState) return null;
+        const effectiveEvents = replayIndex !== null ? events.slice(0, replayIndex) : events;
+        const phaseEvents = filterEventsForCurrentPhase(effectiveEvents, derivedState.matchPhase);
 
         const currentInnings = derivedState.currentInningsIndex;
         // Default to 20 overs if config missing, or use state.totalMatchOvers
-        const limit = derivedState.totalMatchOvers || 20;
+        // Fix: for super over, max overs is 1
+        const limit = derivedState.matchPhase === "SUPER_OVER" ? 1 : (derivedState.interruption?.revisedOvers ?? derivedState.totalMatchOvers ?? 20);
 
-        return derivePartnership(events, currentInnings, limit);
+        return derivePartnership(phaseEvents, currentInnings, limit);
     },
 
     getBatsmanStats: () => {
-        const { events, derivedState } = get();
+        const { events, derivedState, replayIndex } = get();
         if (!derivedState) return [];
-        return deriveBatsmanStats(events, derivedState.currentInningsIndex);
+        const effectiveEvents = replayIndex !== null ? events.slice(0, replayIndex) : events;
+        const phaseEvents = filterEventsForCurrentPhase(effectiveEvents, derivedState.matchPhase);
+        return deriveBatsmanStats(phaseEvents, derivedState.currentInningsIndex);
     },
 
     getBowlingStats: () => {
-        const { events, derivedState } = get();
+        const { events, derivedState, replayIndex } = get();
         if (!derivedState) return [];
-        return deriveBowlingStats(events, derivedState.currentInningsIndex);
+        const effectiveEvents = replayIndex !== null ? events.slice(0, replayIndex) : events;
+        const phaseEvents = filterEventsForCurrentPhase(effectiveEvents, derivedState.matchPhase);
+        return deriveBowlingStats(phaseEvents, derivedState.currentInningsIndex);
     },
 
     getFallOfWickets: () => {
-        const { events, derivedState } = get();
+        const { events, derivedState, replayIndex } = get();
         if (!derivedState) return [];
-        return deriveFallOfWickets(events, derivedState.currentInningsIndex);
+        const effectiveEvents = replayIndex !== null ? events.slice(0, replayIndex) : events;
+        const phaseEvents = filterEventsForCurrentPhase(effectiveEvents, derivedState.matchPhase);
+        return deriveFallOfWickets(phaseEvents, derivedState.currentInningsIndex);
     },
 
     getMilestones: () => {
-        const events = get().events;
-        return deriveMilestones(events);
+        const { events, replayIndex } = get();
+        const effectiveEvents = replayIndex !== null ? events.slice(0, replayIndex) : events;
+        return deriveMilestones(effectiveEvents);
+    },
+
+    getCommentary: () => {
+        const { events, replayIndex } = get();
+        const effectiveEvents = replayIndex !== null ? events.slice(0, replayIndex) : events;
+        return deriveCommentary(effectiveEvents);
     },
 
     // ─── Analytics Selectors ───
 
     getRunRateProgression: () => {
-        const { events, derivedState } = get();
+        const { events, derivedState, replayIndex } = get();
         if (!derivedState) return [];
-        return deriveRunRateProgression(events, derivedState.currentInningsIndex, derivedState.totalMatchOvers || 20);
+        const effectiveEvents = replayIndex !== null ? events.slice(0, replayIndex) : events;
+        const phaseEvents = filterEventsForCurrentPhase(effectiveEvents, derivedState.matchPhase);
+        const effectiveOvers = derivedState.interruption?.revisedOvers ?? derivedState.totalMatchOvers ?? 20;
+        const limit = derivedState.matchPhase === "SUPER_OVER" ? 1 : effectiveOvers;
+        return deriveRunRateProgression(phaseEvents, derivedState.currentInningsIndex, limit);
     },
 
     getMomentum: () => {
-        const { events, derivedState } = get();
+        const { events, derivedState, replayIndex } = get();
         if (!derivedState) return { impact: 0, trend: "STABLE" as const };
-        return deriveMomentum(events, derivedState.currentInningsIndex, derivedState.totalMatchOvers || 20);
+        const effectiveEvents = replayIndex !== null ? events.slice(0, replayIndex) : events;
+        const phaseEvents = filterEventsForCurrentPhase(effectiveEvents, derivedState.matchPhase);
+        const effectiveOvers = derivedState.interruption?.revisedOvers ?? derivedState.totalMatchOvers ?? 20;
+        const limit = derivedState.matchPhase === "SUPER_OVER" ? 1 : effectiveOvers;
+        return deriveMomentum(phaseEvents, derivedState.currentInningsIndex, limit);
     },
 
     getPressureIndex: () => {
-        const { derivedState } = get();
-        if (!derivedState) return null;
-        return derivePressureIndex(derivedState);
+        const { derivedState, events, matchConfig, replayIndex } = get();
+        if (!derivedState || !matchConfig) return null;
+
+        let effectiveDerivedState = derivedState;
+        if (replayIndex !== null) {
+            const effectiveEvents = events.slice(0, replayIndex);
+            effectiveDerivedState = reconstructMatchState(matchConfig, effectiveEvents);
+        }
+
+        return derivePressureIndex(effectiveDerivedState);
     },
 
     getPhaseStats: () => {
-        const { events, derivedState } = get();
+        const { events, derivedState, replayIndex } = get();
         if (!derivedState) return [];
-        return derivePhaseBreakdown(events, derivedState.currentInningsIndex, derivedState.totalMatchOvers || 20);
+        const effectiveEvents = replayIndex !== null ? events.slice(0, replayIndex) : events;
+        const phaseEvents = filterEventsForCurrentPhase(effectiveEvents, derivedState.matchPhase);
+        const effectiveOvers = derivedState.interruption?.revisedOvers ?? derivedState.totalMatchOvers ?? 20;
+        const limit = derivedState.matchPhase === "SUPER_OVER" ? 1 : effectiveOvers;
+        return derivePhaseBreakdown(
+            phaseEvents,
+            derivedState.currentInningsIndex,
+            limit,
+            derivedState.powerplayConfig,
+            derivedState.matchPhase === "SUPER_OVER"
+        );
     },
 
     getWinProbability: () => {
-        const { derivedState } = get();
-        if (!derivedState) return null;
-        return deriveWinProbability(derivedState);
+        const { derivedState, events, matchConfig, replayIndex } = get();
+        if (!derivedState || !matchConfig) return null;
+
+        let effectiveDerivedState = derivedState;
+        if (replayIndex !== null) {
+            const effectiveEvents = events.slice(0, replayIndex);
+            effectiveDerivedState = reconstructMatchState(matchConfig, effectiveEvents);
+        }
+
+        return deriveWinProbability(effectiveDerivedState);
     }
 }));

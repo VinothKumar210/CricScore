@@ -19,14 +19,15 @@ export function derivePressureIndex(state: MatchState): PressureState | null {
     const first = state.innings[0];
     const second = state.innings[1];
 
+    const effectiveOvers = state.interruption?.revisedOvers ?? state.totalMatchOvers;
     // First innings must be complete
-    if (!first.isCompleted && first.totalWickets < 10 && first.totalBalls < state.totalMatchOvers * 6) {
+    if (!first.isCompleted && first.totalWickets < 10 && first.totalBalls < effectiveOvers * 6) {
         return null;
     }
 
-    const target = first.totalRuns + 1;
+    const target = state.interruption?.revisedTarget ?? (first.totalRuns + 1);
     const requiredRuns = Math.max(target - second.totalRuns, 0);
-    const totalMatchBalls = state.totalMatchOvers * 6;
+    const totalMatchBalls = effectiveOvers * 6;
     const remainingBalls = Math.max(totalMatchBalls - second.totalBalls, 0);
 
     // Current Run Rate

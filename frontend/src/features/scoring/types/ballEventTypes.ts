@@ -1,4 +1,4 @@
-import type { DismissalType } from "../../matches/types/domainTypes";
+import type { DismissalType, MatchPhase } from "../../matches/types/domainTypes";
 
 export interface BallEventBase {
     matchId?: string;
@@ -11,9 +11,19 @@ export interface BallEventBase {
 }
 
 // Input type for UI/actions (context inferred by store)
-export type BallEventInput = (RunEvent | ExtraEvent | WicketEvent) & Partial<BallEventBase>;
+export type BallEventInput = (RunEvent | ExtraEvent | WicketEvent | PhaseChangeEvent | InterruptionEvent) & Partial<BallEventBase>;
 
-export type BallEvent = (RunEvent | ExtraEvent | WicketEvent) & BallEventBase;
+export type BallEvent = (RunEvent | ExtraEvent | WicketEvent | PhaseChangeEvent | InterruptionEvent) & BallEventBase;
+
+export interface InterruptionEvent {
+    type: "INTERRUPTION";
+    revisedOvers: number;
+}
+
+export interface PhaseChangeEvent {
+    type: "PHASE_CHANGE";
+    newPhase: MatchPhase;
+}
 
 export interface RunEvent {
     type: "RUN";

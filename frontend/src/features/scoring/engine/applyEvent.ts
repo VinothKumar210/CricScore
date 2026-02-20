@@ -11,15 +11,82 @@ export function applyEvent(originalState: MatchState, event: BallEvent): MatchSt
     const state = cloneState(originalState);
 
     // 🛑 STOP: If match is already decided (Terminal State)
-    // We ignore further events.
-    if (state.matchResult) {
+    if (state.matchResult && event.type !== "PHASE_CHANGE") {
+        if (state.matchResult.resultType === "WIN") {
+            return state;
+        }
+        if (state.matchResult.resultType === "TIE" && state.matchPhase === "SUPER_OVER") {
+            return state; // Lock after a tied super over
+        }
+    }
+
+    if (event.type === "PHASE_CHANGE") {
+        state.matchPhase = event.newPhase;
+        if (event.newPhase === "SUPER_OVER") {
+            state.matchResult = undefined;
+            if (!state.superOverInnings) {
+                const regSecond = state.innings[1] || state.innings[0];
+                state.superOverInnings = [{
+                    battingTeamId: regSecond.battingTeamId,
+                    bowlingTeamId: regSecond.bowlingTeamId,
+                    totalRuns: 0,
+                    totalWickets: 0,
+                    totalBalls: 0,
+                    isCompleted: false,
+                    extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0, penalty: 0 },
+                    batters: {},
+                    bowlers: {},
+                    strikerId: null,
+                    nonStrikerId: null,
+                    currentBowlerId: null
+                }];
+                state.currentInningsIndex = 0;
+            }
+        }
+        state.version += 1;
         return state;
     }
 
+    if (event.type === "INTERRUPTION") {
+        if (state.matchPhase === "SUPER_OVER") return state;
+        if (event.revisedOvers >= state.totalMatchOvers) return state;
+
+        state.interruption = {
+            isRainActive: true,
+            revisedOvers: event.revisedOvers
+        };
+
+        const inn1 = state.innings[0];
+        // If 1st innings is already complete, calculate target immediately
+        if (inn1 && inn1.isCompleted) {
+            state.interruption.revisedTarget = Math.floor((inn1.totalRuns / state.totalMatchOvers) * event.revisedOvers) + 1;
+        }
+
+        // We don't return here so that the new limits can trigger innings completion check below
+        state.version += 1;
+    }
+
+    const activeInningsArray = state.matchPhase === "SUPER_OVER" && state.superOverInnings
+        ? state.superOverInnings
+        : state.innings;
+
     const innIdx = state.currentInningsIndex;
-    const innings = state.innings[innIdx];
+    const innings = activeInningsArray[innIdx];
 
     if (!innings) return state; // Should not happen
+
+    // --- Boundary Enforcement ---
+    if (event.type === "RUN" || event.type === "EXTRA" || event.type === "WICKET") {
+        const effectiveOvers = state.interruption?.revisedOvers ?? state.totalMatchOvers;
+        const totalMatchBalls = state.matchPhase === "SUPER_OVER" ? 6 : effectiveOvers * 6;
+        const maxWickets = state.matchPhase === "SUPER_OVER" ? 2 : 10;
+
+        // If already at boundary, reject further balls for this innings
+        // (Wides/No-Balls don't count towards totalBalls, so we check the limit rigidly against legal deliveries)
+        if (innings.totalBalls >= totalMatchBalls || innings.totalWickets >= maxWickets) {
+            return state;
+        }
+    }
 
     // --- Process Runs & Extras ---
     let runsScored = 0;
@@ -150,9 +217,38 @@ export function applyEvent(originalState: MatchState, event: BallEvent): MatchSt
     }
 
     // --- Innings Completion Check ---
-    const totalMatchBalls = state.totalMatchOvers * 6;
-    if (innings.totalWickets >= 10 || innings.totalBalls >= totalMatchBalls) {
+    const effectiveOvers = state.interruption?.revisedOvers ?? state.totalMatchOvers;
+    const totalMatchBalls = state.matchPhase === "SUPER_OVER" ? 6 : effectiveOvers * 6;
+    const maxWickets = state.matchPhase === "SUPER_OVER" ? 2 : 10;
+
+    if (innings.totalWickets >= maxWickets || innings.totalBalls >= totalMatchBalls) {
         innings.isCompleted = true;
+
+        // Auto-transition to 2nd innings if 1st is complete
+        if (innIdx === 0) {
+            // Calculate revised target if we had an interruption during the 1st innings
+            if (state.interruption?.revisedOvers) {
+                state.interruption.revisedTarget = Math.floor((innings.totalRuns / state.totalMatchOvers) * state.interruption.revisedOvers) + 1;
+            }
+
+            state.currentInningsIndex = 1;
+            if (!activeInningsArray[1]) {
+                activeInningsArray.push({
+                    battingTeamId: innings.bowlingTeamId,
+                    bowlingTeamId: innings.battingTeamId,
+                    totalRuns: 0,
+                    totalWickets: 0,
+                    totalBalls: 0,
+                    isCompleted: false,
+                    extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0, penalty: 0 },
+                    batters: {},
+                    bowlers: {},
+                    strikerId: null,
+                    nonStrikerId: null,
+                    currentBowlerId: null
+                });
+            }
+        }
     }
 
     // --- Win Detection ---

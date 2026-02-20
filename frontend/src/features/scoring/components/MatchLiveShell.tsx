@@ -3,6 +3,10 @@ import { ScorePanel } from './ScorePanel';
 import { OverTimeline } from './OverTimeline';
 import { useScoringStore } from '../scoringStore';
 import { clsx } from 'clsx';
+import { MilestoneWatcher } from './MilestoneWatcher';
+import { CommentaryPanel } from './CommentaryPanel';
+import { EventNotifier } from '../broadcast/EventNotifier';
+import { ReplaySlider } from './ReplaySlider';
 
 /**
  * MatchLiveShell — shared visual core for Scoring and Spectator modes.
@@ -17,14 +21,25 @@ export const MatchLiveShell = React.memo(() => {
 
     return (
         <>
+            <EventNotifier />
+            <MilestoneWatcher />
             {/* Header: Score Panel */}
             <div className="flex-none">
                 <ScorePanel />
             </div>
 
             {/* Timeline */}
-            <div className="flex-none border-b border-border bg-white mt-1">
+            <div className="flex-none border-b border-border border-t bg-white pt-1">
                 <OverTimeline />
+            </div>
+
+            <div className="flex-none bg-gray-50/50">
+                <ReplaySlider />
+            </div>
+
+            {/* Commentary Toggle */}
+            <div className="flex-none bg-gray-50/50 pt-2">
+                <CommentaryPanel />
             </div>
 
             {/* Stats Section */}

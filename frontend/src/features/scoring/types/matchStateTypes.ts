@@ -1,4 +1,9 @@
-import type { DismissalType } from "../../matches/types/domainTypes";
+import type { DismissalType, MatchPhase } from "../../matches/types/domainTypes";
+
+export interface PowerplayConfig {
+    powerplayOvers: number;
+    middleOversEnd: number;
+}
 
 export interface BatterState {
     playerId: string;
@@ -46,9 +51,12 @@ export interface InningsState {
 export interface MatchState {
     matchId: string;
     status: "SCHEDULED" | "LIVE" | "COMPLETED" | "ABANDONED";
+    matchPhase?: MatchPhase;
     currentInningsIndex: number; // 0 or 1
     totalMatchOvers: number; // Added
+    powerplayConfig?: PowerplayConfig; // NEW
     innings: InningsState[];
+    superOverInnings?: InningsState[];
 
     // We might need to store team players to validate IDs but engine assumes valid IDs
     teams: {
@@ -62,6 +70,13 @@ export interface MatchState {
     version: number;
 
     matchResult?: MatchResult; // NEW
+    interruption?: MatchInterruption;
+}
+
+export interface MatchInterruption {
+    isRainActive: boolean;
+    revisedOvers?: number;
+    revisedTarget?: number;
 }
 
 export type MatchResultType = "WIN" | "TIE" | "NO_RESULT";

@@ -12,16 +12,26 @@ export function mapEngineStateToDomain(engineState: MatchState, initialDetail: M
         return mapInnings(inn, battingTeam, bowlingTeam);
     });
 
+    let mappedSuperOverInnings: Innings[] | undefined;
+    if (engineState.superOverInnings && engineState.superOverInnings.length > 0) {
+        mappedSuperOverInnings = engineState.superOverInnings.map((inn) => {
+            const battingTeam = inn.battingTeamId === initialDetail.teamA.id ? initialDetail.teamA : initialDetail.teamB;
+            const bowlingTeam = inn.bowlingTeamId === initialDetail.teamA.id ? initialDetail.teamA : initialDetail.teamB;
+            return mapInnings(inn, battingTeam, bowlingTeam);
+        });
+    }
+
     // Derive Recent Overs from events
-    // This is computationally expensive but "pure".
-    // We filter events for the current innings.
-    // For now, assume all events belong to current innings (valid for single innings match)
-    const recentOvers = deriveRecentOvers(events); // Need logic to grouping
+    // Filter out PHASE_CHANGE before grouping
+    const playableEvents = events.filter(e => e.type !== "PHASE_CHANGE");
+    const recentOvers = deriveRecentOvers(playableEvents);
 
     return {
         ...initialDetail,
         status: engineState.status,
+        phase: engineState.matchPhase,
         innings: mappedInnings,
+        superOverInnings: mappedSuperOverInnings,
         scoreA: { runs: engineState.innings[0]?.totalRuns || 0, wickets: engineState.innings[0]?.totalWickets || 0, overs: toOvers(engineState.innings[0]?.totalBalls || 0) },
         scoreB: { runs: engineState.innings[1]?.totalRuns || 0, wickets: engineState.innings[1]?.totalWickets || 0, overs: toOvers(engineState.innings[1]?.totalBalls || 0) },
         recentOvers
@@ -129,6 +139,7 @@ function getLabel(event: BallEvent): string {
         if (event.extraType === "NO_BALL") return "nb";
         return "ex";
     }
+    if (event.type === "PHASE_CHANGE") return "P";
     return event.runs.toString();
 }
 
@@ -136,5 +147,6 @@ function isLegalDelivery(event: BallEvent): boolean {
     if (event.type === "EXTRA") {
         return event.extraType === "BYE" || event.extraType === "LEG_BYE";
     }
+    if (event.type === "PHASE_CHANGE") return false;
     return true;
 }

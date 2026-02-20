@@ -1,4 +1,5 @@
 export type MatchStatus = "SCHEDULED" | "LIVE" | "COMPLETED" | "ABANDONED" | "INNINGS_BREAK";
+export type MatchPhase = "REGULAR" | "SUPER_OVER";
 
 export interface Player {
     id: string;
@@ -117,7 +118,9 @@ export interface MatchDetail {
     scoreA?: ScoreSummary;
     scoreB?: ScoreSummary;
     result?: string;
+    phase?: MatchPhase;
     innings: Innings[];
+    superOverInnings?: Innings[];
     startTime: string;
     isUserInvolved: boolean;
     recentOvers: OverSummary[];
