@@ -8,9 +8,17 @@ const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 let redis: any = null;
 
 try {
+    const isTls = redisUrl.startsWith('rediss://');
+
     // @ts-ignore
     redis = new Redis(redisUrl, {
         maxRetriesPerRequest: 3,
+        family: 0, // Force IPv4/IPv6 auto-resolution (fixes Render connection issues)
+        ...(isTls && {
+            tls: {
+                rejectUnauthorized: false
+            }
+        }),
         retryStrategy(times: number) {
             if (times > 3) return null; // stop retrying
             return Math.min(times * 50, 2000);
