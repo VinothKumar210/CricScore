@@ -2,14 +2,19 @@ import React from 'react';
 import { clsx } from 'clsx';
 import { Loader2 } from 'lucide-react';
 import { useScoringStore } from '../scoringStore';
+import { useShallow } from 'zustand/react/shallow';
 import { StateBadge } from '../../../components/ui/StateBadge';
 import { typography } from '../../../constants/typography';
 
 export const ScorePanel = React.memo(() => {
-    const matchState = useScoringStore((s) => s.matchState);
-    const isSubmitting = useScoringStore((s) => s.isSubmitting);
-    const displayScore = useScoringStore((s) => s.getDisplayScore());
-    const chaseInfo = useScoringStore((s) => s.getChaseInfo());
+    const { matchState, isSubmitting, displayScore, chaseInfo } = useScoringStore(
+        useShallow((s) => ({
+            matchState: s.matchState,
+            isSubmitting: s.isSubmitting,
+            displayScore: s.getDisplayScore(),
+            chaseInfo: s.getChaseInfo(),
+        }))
+    );
 
     if (!matchState) return null;
 

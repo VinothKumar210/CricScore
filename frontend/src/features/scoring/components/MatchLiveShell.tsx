@@ -2,6 +2,7 @@ import React from 'react';
 import { ScorePanel } from './ScorePanel';
 import { OverTimeline } from './OverTimeline';
 import { useScoringStore } from '../scoringStore';
+import { useShallow } from 'zustand/react/shallow';
 import { clsx } from 'clsx';
 import { MilestoneWatcher } from './MilestoneWatcher';
 import { CommentaryPanel } from './CommentaryPanel';
@@ -14,10 +15,14 @@ import { ReplaySlider } from './ReplaySlider';
  * No scoring actions. No mutations. Read-only derived state.
  */
 export const MatchLiveShell = React.memo(() => {
-    const partnership = useScoringStore((s) => s.getPartnershipInfo());
-    const batsmanStats = useScoringStore((s) => s.getBatsmanStats());
-    const bowlingStats = useScoringStore((s) => s.getBowlingStats());
-    const momentum = useScoringStore((s) => s.getMomentum());
+    const { partnership, batsmanStats, bowlingStats, momentum } = useScoringStore(
+        useShallow((s) => ({
+            partnership: s.getPartnershipInfo(),
+            batsmanStats: s.getBatsmanStats(),
+            bowlingStats: s.getBowlingStats(),
+            momentum: s.getMomentum(),
+        }))
+    );
 
     return (
         <>
