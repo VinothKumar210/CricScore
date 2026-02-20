@@ -1,9 +1,19 @@
 import type { DismissalType } from "../../matches/types/domainTypes";
 
-export type BallEvent =
-    | RunEvent
-    | ExtraEvent
-    | WicketEvent;
+export interface BallEventBase {
+    matchId?: string;
+    overNumber?: number;
+    ballNumber?: number;
+    batsmanId: string;
+    nonStrikerId: string;
+    bowlerId: string;
+    timestamp?: number;
+}
+
+// Input type for UI/actions (context inferred by store)
+export type BallEventInput = (RunEvent | ExtraEvent | WicketEvent) & Partial<BallEventBase>;
+
+export type BallEvent = (RunEvent | ExtraEvent | WicketEvent) & BallEventBase;
 
 export interface RunEvent {
     type: "RUN";

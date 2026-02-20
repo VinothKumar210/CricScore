@@ -1,25 +1,31 @@
 import { useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useScoringStore } from '../../features/scoring/scoringStore';
 import { useScoringSocket } from '../../features/scoring/useScoringSocket';
 import { MatchLiveShell } from '../../features/scoring/components/MatchLiveShell';
-import { ControlPad } from '../../features/scoring/components/ControlPad';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Share2, Check } from 'lucide-react';
+import { useState } from 'react';
 
-export const ScoringPage = () => {
+/**
+ * LiveMatchPage — read-only spectator view.
+ * Connects to socket for live updates, renders MatchLiveShell.
+ * NO scoring actions, NO ControlPad, NO mutations.
+ */
+export const LiveMatchPage = () => {
     const { id: matchId } = useParams<{ id: string }>();
     const initialize = useScoringStore((s) => s.initialize);
     const matchState = useScoringStore((s) => s.matchState);
     const error = useScoringStore((s) => s.error);
+    const [copied, setCopied] = useState(false);
 
-    // 1. Initialize Store
+    // Initialize store (read-only — no mutations)
     useEffect(() => {
         if (matchId) {
             initialize(matchId);
         }
     }, [matchId, initialize]);
 
-    // 2. Connect Socket
+    // Subscribe to live socket updates
     useScoringSocket(matchId || null);
 
     // Loading
@@ -46,30 +52,28 @@ export const ScoringPage = () => {
         );
     }
 
-    if (!matchId) return <Navigate to="/home" />;
+    const handleShare = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // Fallback: prompt
+        }
+    };
 
     return (
         <div className="flex flex-col h-full bg-bgPrimary max-w-md mx-auto shadow-2xl overflow-hidden relative">
-            {/* Shared Shell: ScorePanel + OverTimeline + Stats */}
             <MatchLiveShell />
 
-            {/* Footer: Scorer-only Control Pad */}
-            <div className="flex-none p-2 bg-white border-t border-border pb-safe-area">
-                <ControlPad />
-            </div>
-
-            {/* Global Error Toast */}
-            {error && (
-                <div className="absolute top-20 left-4 right-4 bg-danger text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium animate-in fade-in slide-in-from-top-2 z-50 flex justify-between items-center">
-                    <span>{error}</span>
-                    <button
-                        onClick={() => useScoringStore.getState().refetch()}
-                        className="bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-xs ml-2"
-                    >
-                        Refresh
-                    </button>
-                </div>
-            )}
+            {/* Share FAB */}
+            <button
+                onClick={handleShare}
+                className="fixed top-4 right-4 z-50 bg-brand text-white p-2.5 rounded-full shadow-lg hover:bg-brand/90 transition-all active:scale-95"
+                aria-label="Share match link"
+            >
+                {copied ? <Check className="w-5 h-5" /> : <Share2 className="w-5 h-5" />}
+            </button>
         </div>
     );
 };

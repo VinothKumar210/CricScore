@@ -7,6 +7,7 @@ export const MatchTabs = () => {
     const tabs = [
         { label: "Summary", path: `/match/${id}` },
         { label: "Scorecard", path: `/match/${id}/scorecard` },
+        { label: "Analytics", path: `/match/${id}/analytics` },
         { label: "Info", path: `/match/${id}/info` },
     ];
 

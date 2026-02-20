@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
 import { getMatchState, submitScoreOperation } from './scoringService';
 import type { MatchDetail, DismissalType, WicketDraft } from '../matches/types/domainTypes';
-import type { BallEvent } from './types/ballEventTypes';
+import type { BallEvent, BallEventInput } from './types/ballEventTypes';
 import type { MatchState } from './types/matchStateTypes'; // Engine State
 import { reconstructMatchState } from './engine/replayEngine';
 import type { MatchConfig } from './engine/initialState';
@@ -11,6 +11,26 @@ import { getMatchChaseInfo } from './engine/selectors/getMatchChaseInfo';
 import type { MatchChaseInfo } from './engine/selectors/getMatchChaseInfo';
 import { derivePartnership } from './engine/derivedStats/derivePartnership';
 import type { PartnershipSummary } from './engine/derivedStats/derivePartnership';
+import { deriveBatsmanStats } from './engine/derivedStats/deriveBatsmanStats';
+import type { BatsmanStats } from './engine/derivedStats/deriveBatsmanStats';
+import { deriveBowlingStats } from './engine/derivedStats/deriveBowlingStats';
+import type { BowlingStats } from './engine/derivedStats/deriveBowlingStats';
+import { deriveFallOfWickets } from './engine/derivedStats/deriveFallOfWickets';
+import type { FallOfWicket } from './engine/derivedStats/deriveFallOfWickets';
+import {
+    deriveRunRateProgression,
+    deriveMomentum,
+    derivePressureIndex,
+    derivePhaseBreakdown,
+    deriveWinProbability
+} from './engine/analytics';
+import type { OverRunRatePoint } from './engine/analytics';
+import type { MomentumState } from './engine/analytics';
+import type { PressureState } from './engine/analytics';
+import type { PhaseStats } from './engine/analytics';
+import type { WinProbability } from './engine/analytics';
+import { deriveMilestones } from './engine/deriveMilestones';
+import type { Milestone } from './engine/types/milestoneTypes';
 
 
 export interface DisplayScoreState {
@@ -48,7 +68,7 @@ export interface ScoringState {
     isWicketFlowActive: boolean;
 
     initialize: (matchId: string) => Promise<void>;
-    recordBall: (event: BallEvent) => Promise<void>;
+    recordBall: (event: BallEventInput) => Promise<void>;
     undo: () => Promise<void>;
     refetch: () => Promise<void>;
     applySocketUpdate: (incoming: MatchDetail | BallEvent) => void; // Updated signature
@@ -69,6 +89,17 @@ export interface ScoringState {
     getLastBall: () => any | null;
     getChaseInfo: () => MatchChaseInfo | null;
     getPartnershipInfo: () => PartnershipSummary | null;
+    getBatsmanStats: () => BatsmanStats[];
+    getBowlingStats: () => BowlingStats[];
+    getFallOfWickets: () => FallOfWicket[];
+    getMilestones: () => Milestone[];
+
+    // Analytics Selectors
+    getRunRateProgression: () => OverRunRatePoint[];
+    getMomentum: () => MomentumState;
+    getPressureIndex: () => PressureState | null;
+    getPhaseStats: () => PhaseStats[];
+    getWinProbability: () => WinProbability | null;
 }
 
 // Keep track of listener initialization to avoid duplicates
@@ -278,10 +309,26 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
         get().initialize(matchId); // Re-run initialize logic which handles replay
     },
 
-    recordBall: async (event: BallEvent) => {
-        const { matchId, expectedVersion, isSubmitting, syncState, isOffline, events, matchConfig } = get();
+    recordBall: async (eventInput: BallEventInput) => {
+        const { matchId, expectedVersion, isSubmitting, syncState, isOffline, events, matchConfig, derivedState } = get();
 
         if (!matchId || (isSubmitting && !isOffline) || syncState === "CONFLICT") return;
+
+        // enrich event with context
+        const currentInningsIndex = derivedState?.currentInningsIndex ?? 0;
+        const currentInnings = derivedState?.innings[currentInningsIndex];
+
+        const event: BallEvent = {
+            ...eventInput,
+            matchId,
+            batsmanId: eventInput.batsmanId || currentInnings?.strikerId || "unknown",
+            nonStrikerId: eventInput.nonStrikerId || currentInnings?.nonStrikerId || "unknown",
+            bowlerId: eventInput.bowlerId || currentInnings?.currentBowlerId || "unknown",
+            // Calculate over number from total balls
+            overNumber: Math.floor((currentInnings?.totalBalls || 0) / 6),
+            ballNumber: events.length + 1,
+            timestamp: Date.now()
+        } as BallEvent;
 
         // 1. Optimistic Update (Replay Engine)
         const newEvents = [...events, event];
@@ -536,5 +583,60 @@ export const useScoringStore = create<ScoringState>((set, get) => ({
         const limit = derivedState.totalMatchOvers || 20;
 
         return derivePartnership(events, currentInnings, limit);
+    },
+
+    getBatsmanStats: () => {
+        const { events, derivedState } = get();
+        if (!derivedState) return [];
+        return deriveBatsmanStats(events, derivedState.currentInningsIndex);
+    },
+
+    getBowlingStats: () => {
+        const { events, derivedState } = get();
+        if (!derivedState) return [];
+        return deriveBowlingStats(events, derivedState.currentInningsIndex);
+    },
+
+    getFallOfWickets: () => {
+        const { events, derivedState } = get();
+        if (!derivedState) return [];
+        return deriveFallOfWickets(events, derivedState.currentInningsIndex);
+    },
+
+    getMilestones: () => {
+        const events = get().events;
+        return deriveMilestones(events);
+    },
+
+    // ─── Analytics Selectors ───
+
+    getRunRateProgression: () => {
+        const { events, derivedState } = get();
+        if (!derivedState) return [];
+        return deriveRunRateProgression(events, derivedState.currentInningsIndex, derivedState.totalMatchOvers || 20);
+    },
+
+    getMomentum: () => {
+        const { events, derivedState } = get();
+        if (!derivedState) return { impact: 0, trend: "STABLE" as const };
+        return deriveMomentum(events, derivedState.currentInningsIndex, derivedState.totalMatchOvers || 20);
+    },
+
+    getPressureIndex: () => {
+        const { derivedState } = get();
+        if (!derivedState) return null;
+        return derivePressureIndex(derivedState);
+    },
+
+    getPhaseStats: () => {
+        const { events, derivedState } = get();
+        if (!derivedState) return [];
+        return derivePhaseBreakdown(events, derivedState.currentInningsIndex, derivedState.totalMatchOvers || 20);
+    },
+
+    getWinProbability: () => {
+        const { derivedState } = get();
+        if (!derivedState) return null;
+        return deriveWinProbability(derivedState);
     }
 }));

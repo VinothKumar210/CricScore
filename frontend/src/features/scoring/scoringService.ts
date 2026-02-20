@@ -5,12 +5,21 @@ import type { BallEvent } from "./types/ballEventTypes";
 
 // Helper to create mock events
 function createMockEvents(): BallEvent[] {
+    const base = {
+        batsmanId: "p1",
+        nonStrikerId: "p2",
+        bowlerId: "p5",
+        overNumber: 0,
+        ballNumber: 0,
+        matchId: "mock-match"
+    };
+
     return [
-        { type: "RUN", runs: 1 },
-        { type: "RUN", runs: 4 },
-        { type: "WICKET", dismissalType: "BOWLED" },
-        { type: "EXTRA", extraType: "WIDE", additionalRuns: 0 },
-        { type: "RUN", runs: 6 }
+        { ...base, type: "RUN", runs: 1, ballNumber: 1 },
+        { ...base, type: "RUN", runs: 4, ballNumber: 2 },
+        { ...base, type: "WICKET", dismissalType: "BOWLED", ballNumber: 3, newBatsmanId: "p3" },
+        { ...base, type: "EXTRA", extraType: "WIDE", additionalRuns: 0, ballNumber: 3 }, // Wide keeps ballNum same? Mock implies seq.
+        { ...base, type: "RUN", runs: 6, ballNumber: 4 }
     ];
 }
 
