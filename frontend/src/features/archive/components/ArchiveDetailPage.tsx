@@ -10,6 +10,7 @@ import { createDerivedBundle } from '../../scoring/derived/derivedBundle';
 import type { MatchConfig } from '../../scoring/engine/initialState';
 import type { MatchDetail } from '../../matches/types/domainTypes';
 import type { BallEvent } from '../../scoring/types/ballEventTypes';
+import { ExportButton } from '../../export/components/ExportButton';
 
 /**
  * ArchiveDetailPage — /archive/:id route.
@@ -125,9 +126,12 @@ export const ArchiveDetailPage = () => {
                     <h1 className={typography.headingLg}>
                         {activeArchive.homeTeamName} vs {activeArchive.awayTeamName}
                     </h1>
-                    <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
-                        Archived
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
+                            Archived
+                        </span>
+                        <ExportButton archiveId={archiveId || ''} archive={activeArchive} />
+                    </div>
                 </div>
 
                 {activeArchive.result && (
