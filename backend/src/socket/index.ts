@@ -6,6 +6,7 @@ import admin from 'firebase-admin';
 import { prisma } from '../utils/db.js';
 import { presenceService } from '../services/presenceService.js';
 import { registerChatHandlers } from './chatHandlers.js';
+import { initScoringBroadcast, registerScoringHandlers } from './scoringHandlers.js';
 
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 const pubClient = new Redis(redisUrl);
@@ -24,6 +25,10 @@ export const initSocket = (httpServer: any) => {
         },
         adapter: createAdapter(pubClient, subClient)
     });
+
+    // Initialize scoring broadcast (dependency injection)
+    initScoringBroadcast(io);
+    registerScoringHandlers(io);
 
     const chatNamespace = io.of('/chat');
 

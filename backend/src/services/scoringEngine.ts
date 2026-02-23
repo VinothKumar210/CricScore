@@ -1,6 +1,8 @@
 import { prisma } from '../utils/db.js';
 import { reconstructMatchState } from '../utils/stateReconstructor.js';
 import type { MatchOpType } from '../types/scoringTypes.js';
+import { broadcastScoreUpdate } from '../socket/scoringHandlers.js';
+import { cacheDel } from '../utils/redisHelpers.js';
 
 // -----------------------------------------------------------------------------
 // State Machine Validation
@@ -118,7 +120,7 @@ export const scoringEngine = {
         const { clientOpId, expectedVersion, type, payload } = operation;
 
         // Transaction to ensure atomicity
-        return prisma.$transaction(async (tx: any) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             // 1. Fetch match status
             const match = await tx.matchSummary.findUnique({
                 where: { id: matchId },
@@ -145,7 +147,7 @@ export const scoringEngine = {
                 });
 
                 if (existing) {
-                    return { status: 'IDEMPOTENT', version: existing.opIndex, op: existing };
+                    return { status: 'IDEMPOTENT' as const, version: existing.opIndex, op: existing };
                 }
 
                 throw {
@@ -162,7 +164,7 @@ export const scoringEngine = {
                 where: { matchId, clientOpId },
             });
             if (existing) {
-                return { status: 'IDEMPOTENT', version: existing.opIndex, op: existing };
+                return { status: 'IDEMPOTENT' as const, version: existing.opIndex, op: existing };
             }
 
             // 5. State Machine Enforcement
@@ -194,8 +196,25 @@ export const scoringEngine = {
                 },
             });
 
-            return { status: 'SUCCESS', version: newOp.opIndex, op: newOp };
+            return { status: 'SUCCESS' as const, version: newOp.opIndex, op: newOp };
         });
+
+        // After transaction commits — broadcast + cache invalidation
+        if (result.status === 'SUCCESS') {
+            broadcastScoreUpdate(matchId, {
+                operation: result.op,
+                newVersion: result.version
+            });
+
+            // Invalidate scorer's hub feed + shared caches
+            await cacheDel(
+                `hub:feed:${userId}`,
+                `share:summary:${matchId}`,
+                `share:meta:${matchId}`
+            );
+        }
+
+        return result;
     },
 
     /**

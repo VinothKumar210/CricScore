@@ -8,6 +8,7 @@ import { MilestoneWatcher } from './MilestoneWatcher';
 import { CommentaryPanel } from './CommentaryPanel';
 import { EventNotifier } from '../broadcast/EventNotifier';
 import { ReplaySlider } from './ReplaySlider';
+import { EngineDevPanel } from '../diagnostics/EngineDevPanel';
 
 /**
  * MatchLiveShell — shared visual core for Scoring and Spectator modes.
@@ -144,6 +145,9 @@ export const MatchLiveShell = React.memo(() => {
                     )}
                 </div>
             </div>
+
+            {/* DEV-ONLY: Engine Diagnostics Overlay */}
+            {import.meta.env.DEV && <EngineDevPanel />}
         </>
     );
 });

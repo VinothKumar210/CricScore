@@ -14,6 +14,8 @@ import { ScoringPage } from '../pages/match/ScoringPage';
 import { LiveMatchPage } from '../pages/match/LiveMatchPage';
 import { TournamentDetailPage } from '../pages/tournaments/TournamentDetailPage';
 import { MatchCreatePage } from '../pages/match/MatchCreatePage';
+import { LiveHubPage } from '../features/hub/components/LiveHubPage';
+import { SpectatorLivePage } from '../pages/hub/SpectatorLivePage';
 
 // Tab Components
 import { MatchSummaryTab } from '../features/matches/tabs/MatchSummaryTab';
@@ -24,7 +26,7 @@ import { MatchAnalyticsTab } from '../features/matches/tabs/MatchAnalyticsTab';
 export const router = createBrowserRouter([
     {
         path: '/',
-        element: <Navigate to="/home" replace />,
+        element: <Navigate to="/hub" replace />,
     },
     {
         element: <AuthLayout />,
@@ -35,6 +37,7 @@ export const router = createBrowserRouter([
     {
         element: <DashboardLayout />,
         children: [
+            { path: '/hub', element: <LiveHubPage /> },
             { path: '/home', element: <HomePage /> },
             { path: '/market', element: <MarketPage /> },
             { path: '/teams', element: <TeamsPage /> },
@@ -59,6 +62,7 @@ export const router = createBrowserRouter([
         children: [
             { path: '/match/:id/score', element: <ScoringPage /> },
             { path: '/match/:id/live', element: <LiveMatchPage /> },
+            { path: '/live/:matchId', element: <SpectatorLivePage /> },
         ],
     },
 ]);

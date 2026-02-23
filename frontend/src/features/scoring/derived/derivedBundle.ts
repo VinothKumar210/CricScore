@@ -15,6 +15,8 @@
  *   - Replay-safe, undo-safe, socket-sync-safe
  */
 
+import { engineMetrics } from '../diagnostics/engineMetrics';
+
 import type { BallEvent } from '../types/ballEventTypes';
 import type { MatchState } from '../types/matchStateTypes';
 import type { MatchConfig } from '../engine/initialState';
@@ -163,7 +165,11 @@ export function createDerivedBundle(
         ? events.slice(0, replayIndex)
         : events;
 
+    const _replayStart = performance.now();
     const derivedState = reconstructMatchState(matchConfig, effectiveEvents);
+    engineMetrics.lastReplayDurationMs = performance.now() - _replayStart;
+    engineMetrics.reconstructCalls++;
+
     const domainState = mapEngineStateToDomain(derivedState, matchState, effectiveEvents);
 
     const displayScore = computeDisplayScore(domainState);
@@ -186,6 +192,7 @@ export function createDerivedBundle(
     let _phaseEvents: BallEvent[] | null = null;
     function getPhaseEvents(): BallEvent[] {
         if (_phaseEvents) return _phaseEvents;
+        engineMetrics.filterPhaseCalls++;
         _phaseEvents = filterEventsForCurrentPhase(effectiveEvents, derivedState.matchPhase);
         return _phaseEvents;
     }
@@ -198,6 +205,7 @@ export function createDerivedBundle(
 
     function getPhase(): PhaseLayer {
         if (phaseCache) return phaseCache;
+        engineMetrics.phaseLayerCalls++;
 
         const phaseEvents = getPhaseEvents();
         const inningsIdx = derivedState.currentInningsIndex;
@@ -227,6 +235,7 @@ export function createDerivedBundle(
 
     function getAnalytics(): AnalyticsLayer {
         if (analyticsCache) return analyticsCache;
+        engineMetrics.analyticsLayerCalls++;
 
         const phaseEvents = getPhaseEvents();
         const inningsIdx = derivedState.currentInningsIndex;
@@ -249,6 +258,7 @@ export function createDerivedBundle(
 
     function getBroadcast(): BroadcastLayer {
         if (broadcastCache) return broadcastCache;
+        engineMetrics.broadcastLayerCalls++;
 
         broadcastCache = {
             milestones: deriveMilestones(effectiveEvents),

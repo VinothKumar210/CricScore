@@ -18,6 +18,9 @@ import locationRoutes from './routes/locationRoutes.js';
 import tournamentRoutes from './routes/tournamentRoutes.js';
 import apiKeyRoutes from './routes/apiKeyRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
+import hubRoutes from './routes/hubRoutes.js';
+import shareRoutes from './routes/shareRoutes.js';
+import archiveRoutes from './routes/archiveRoutes.js';
 import { errorHandler } from './middlewares/errorHandler.js';
 import { initSocket } from './socket/index.js';
 
@@ -67,6 +70,11 @@ app.use('/api/keys', apiKeyRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/keys', apiKeyRoutes);
 app.use('/public/v1', publicRoutes);
+
+// Phase 11: Productization routes
+app.use('/api', hubRoutes);
+app.use('/api/share', shareRoutes);
+app.use('/api/archive', archiveRoutes);
 
 import deviceRoutes from './routes/deviceRoutes.js';
 app.use('/api/devices', deviceRoutes);

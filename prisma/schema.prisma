@@ -292,6 +292,7 @@ model MatchSummary {
   innings           Innings[]
   highlights        MatchHighlight[]
   operations        MatchOp[]
+  archivedMatch     ArchivedMatch?
 
   // Tournament
   tournamentFixtureId String?   @db.ObjectId
@@ -442,6 +443,45 @@ model MatchOp {
 
   @@unique([matchId, opIndex])
   @@unique([matchId, clientOpId])
+}
+
+// Phase 11: Match Archive (deterministic replay persistence)
+model ArchivedMatch {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  matchSummaryId  String    @unique @db.ObjectId
+  matchSummary    MatchSummary @relation(fields: [matchSummaryId], references: [id])
+
+  // Snapshot metadata (denormalized for fast list queries)
+  homeTeamName    String
+  awayTeamName    String
+  homeTeamId      String    @db.ObjectId
+  awayTeamId      String    @db.ObjectId
+  scoreA          Json?
+  scoreB          Json?
+  result          String
+  matchDate       DateTime
+  overs           Int
+  tournamentName  String?
+
+  // Event log (source of truth for deterministic replay)
+  events          Json      // BallEvent[]
+  matchConfig     Json      // MatchConfig
+  eventCount      Int
+  engineVersion   String    @default("1.0")
+
+  // Ownership (for access control)
+  createdById     String    @db.ObjectId
+
+  // Timestamps
+  archivedAt      DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([homeTeamId])
+  @@index([awayTeamId])
+  @@index([matchDate])
+  @@index([tournamentName])
+  @@index([createdById])
 }
 
 // -----------------------------------------------------------------------------

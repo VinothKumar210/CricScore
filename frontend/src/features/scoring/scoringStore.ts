@@ -19,6 +19,7 @@ import type { CommentaryEntry } from './engine/commentary/commentaryTypes';
 // ─── Layered Lazy Bundle ───
 import { createDerivedBundle } from './derived/derivedBundle';
 import type { DerivedBundle } from './derived/derivedBundle';
+import { engineMetrics } from './diagnostics/engineMetrics';
 
 
 export type { DisplayScoreState } from './derived/derivedBundle';
@@ -581,10 +582,12 @@ export const useScoringStore = create<ScoringState>((set, get) => {
                 _bundleCache.eventsRef === events &&
                 _bundleCache.replayIndex === replayIndex
             ) {
+                engineMetrics.bundleHits++;
                 return _bundleCache.bundle;
             }
 
             // Cache miss: rebuild bundle (one replay, lazy layers)
+            engineMetrics.bundleMisses++;
             const bundle = createDerivedBundle(events, matchConfig, matchState, replayIndex);
             _bundleCache = { eventsRef: events, replayIndex, bundle };
             return bundle;
