@@ -20,6 +20,7 @@ import { PublicLayout } from '../layouts/PublicLayout';
 import { ShareMatchPage } from '../features/share/components/ShareMatchPage';
 import { ArchiveListPage } from '../features/archive/components/ArchiveListPage';
 import { ArchiveDetailPage } from '../features/archive/components/ArchiveDetailPage';
+import { TournamentListPage } from '../features/tournament/components/TournamentListPage';
 
 // Tab Components
 import { MatchSummaryTab } from '../features/matches/tabs/MatchSummaryTab';
@@ -47,6 +48,7 @@ export const router = createBrowserRouter([
             { path: '/teams', element: <TeamsPage /> },
             { path: '/teams/:id', element: <TeamDetailPage /> },
             { path: '/profile', element: <ProfilePage /> },
+            { path: '/tournaments', element: <TournamentListPage /> },
             { path: '/tournaments/:id', element: <TournamentDetailPage /> },
             { path: '/match/create', element: <MatchCreatePage /> },
             { path: '/archive', element: <ArchiveListPage /> },
