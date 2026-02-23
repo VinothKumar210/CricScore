@@ -145,7 +145,16 @@ router.get('/:matchId/events', shareRateLimit, async (req: Request, res: Respons
 
         const match = await prisma.matchSummary.findUnique({
             where: { id: matchId },
-            select: { id: true, status: true }
+            select: {
+                id: true,
+                status: true,
+                overs: true,
+                ballType: true,
+                powerplayEnabled: true,
+                matchType: true,
+                homeTeamName: true,
+                awayTeamName: true,
+            }
         });
 
         if (!match) return sendError(res, 'Match not found', 404, 'NOT_FOUND');
@@ -166,7 +175,15 @@ router.get('/:matchId/events', shareRateLimit, async (req: Request, res: Respons
             matchId,
             status: match.status,
             eventCount: ops.length,
-            events: ops
+            events: ops,
+            matchConfig: {
+                overs: match.overs,
+                ballType: match.ballType,
+                powerplayEnabled: match.powerplayEnabled,
+                matchType: match.matchType,
+                homeTeamName: match.homeTeamName,
+                awayTeamName: match.awayTeamName,
+            }
         });
     } catch (error: any) {
         return sendError(res, 'Failed to load events', 500, 'INTERNAL_ERROR');

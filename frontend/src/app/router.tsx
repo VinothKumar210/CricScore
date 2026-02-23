@@ -16,6 +16,8 @@ import { TournamentDetailPage } from '../pages/tournaments/TournamentDetailPage'
 import { MatchCreatePage } from '../pages/match/MatchCreatePage';
 import { LiveHubPage } from '../features/hub/components/LiveHubPage';
 import { SpectatorLivePage } from '../pages/hub/SpectatorLivePage';
+import { PublicLayout } from '../layouts/PublicLayout';
+import { ShareMatchPage } from '../features/share/components/ShareMatchPage';
 
 // Tab Components
 import { MatchSummaryTab } from '../features/matches/tabs/MatchSummaryTab';
@@ -63,6 +65,12 @@ export const router = createBrowserRouter([
             { path: '/match/:id/score', element: <ScoringPage /> },
             { path: '/match/:id/live', element: <LiveMatchPage /> },
             { path: '/live/:matchId', element: <SpectatorLivePage /> },
+        ],
+    },
+    {
+        element: <PublicLayout />,
+        children: [
+            { path: '/share/:matchId', element: <ShareMatchPage /> },
         ],
     },
 ]);
