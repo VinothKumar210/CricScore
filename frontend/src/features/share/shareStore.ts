@@ -21,6 +21,7 @@ interface ShareState {
     // UI
     isLoading: boolean;
     isEventsLoading: boolean;
+    isRateLimited: boolean;
     error: string | null;
     httpStatus: number | null;
 
@@ -36,6 +37,7 @@ export const useShareStore = create<ShareState>((set) => ({
     matchConfig: null,
     isLoading: false,
     isEventsLoading: false,
+    isRateLimited: false,
     error: null,
     httpStatus: null,
 
@@ -50,9 +52,11 @@ export const useShareStore = create<ShareState>((set) => ({
                 isLoading: false,
             });
         } catch (err: any) {
+            const msg = err?.message || 'Failed to load match';
             set({
-                error: err?.message || 'Failed to load match',
+                error: msg,
                 isLoading: false,
+                isRateLimited: msg.includes('Rate limited'),
             });
         }
     },
@@ -75,9 +79,11 @@ export const useShareStore = create<ShareState>((set) => ({
                 isEventsLoading: false,
             });
         } catch (err: any) {
+            const msg = err?.message || 'Failed to load events';
             set({
-                error: err?.message || 'Failed to load events',
+                error: msg,
                 isEventsLoading: false,
+                isRateLimited: msg.includes('Rate limited'),
             });
         }
     },
@@ -89,6 +95,7 @@ export const useShareStore = create<ShareState>((set) => ({
             matchConfig: null,
             isLoading: false,
             isEventsLoading: false,
+            isRateLimited: false,
             error: null,
             httpStatus: null,
         });

@@ -18,6 +18,8 @@ import { LiveHubPage } from '../features/hub/components/LiveHubPage';
 import { SpectatorLivePage } from '../pages/hub/SpectatorLivePage';
 import { PublicLayout } from '../layouts/PublicLayout';
 import { ShareMatchPage } from '../features/share/components/ShareMatchPage';
+import { ArchiveListPage } from '../features/archive/components/ArchiveListPage';
+import { ArchiveDetailPage } from '../features/archive/components/ArchiveDetailPage';
 
 // Tab Components
 import { MatchSummaryTab } from '../features/matches/tabs/MatchSummaryTab';
@@ -47,6 +49,8 @@ export const router = createBrowserRouter([
             { path: '/profile', element: <ProfilePage /> },
             { path: '/tournaments/:id', element: <TournamentDetailPage /> },
             { path: '/match/create', element: <MatchCreatePage /> },
+            { path: '/archive', element: <ArchiveListPage /> },
+            { path: '/archive/:id', element: <ArchiveDetailPage /> },
             {
                 path: '/match/:id',
                 element: <MatchDetailPage />,

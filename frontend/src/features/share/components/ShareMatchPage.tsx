@@ -1,9 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useShareStore } from '../shareStore';
 import { ShareScoreCard } from './ShareScoreCard';
 import { ShareReplayViewer } from './ShareReplayViewer';
-import { Loader2, ShieldX, SearchX } from 'lucide-react';
+import { Loader2, ShieldX, SearchX, Clock } from 'lucide-react';
 
 /**
  * ShareMatchPage — Public route component at /share/:matchId
@@ -35,7 +35,9 @@ export const ShareMatchPage = () => {
     const httpStatus = useShareStore(s => s.httpStatus);
     const fetchMatch = useShareStore(s => s.fetchMatch);
     const fetchEvents = useShareStore(s => s.fetchEvents);
+    const isRateLimited = useShareStore(s => s.isRateLimited);
     const reset = useShareStore(s => s.reset);
+    const prevTitle = useRef(document.title);
 
     // Fetch match on mount
     useEffect(() => {
@@ -43,11 +45,19 @@ export const ShareMatchPage = () => {
             fetchMatch(matchId);
         }
 
-        // ⚠️ CRITICAL: reset store on unmount to prevent memory leak
+        // ⚠️ CRITICAL: reset store + restore title on unmount
         return () => {
             reset();
+            document.title = prevTitle.current;
         };
     }, [matchId, fetchMatch, reset]);
+
+    // Set document.title when match data loads
+    useEffect(() => {
+        if (matchData) {
+            document.title = `${matchData.homeTeamName} vs ${matchData.awayTeamName} — CricScore`;
+        }
+    }, [matchData]);
 
     // Auto-fetch events when match is COMPLETED or ABANDONED
     useEffect(() => {
@@ -66,7 +76,27 @@ export const ShareMatchPage = () => {
         );
     }
 
-    // Error
+    // Error — rate limited
+    if (isRateLimited) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 gap-3 text-center">
+                <Clock className="w-12 h-12 text-amber-500" />
+                <h2 className="text-lg font-semibold text-textPrimary">Too Many Requests</h2>
+                <p className="text-sm text-textSecondary max-w-sm">
+                    You're loading pages too quickly. Please wait a moment and try again.
+                </p>
+                <button
+                    onClick={() => matchId && fetchMatch(matchId)}
+                    className="mt-2 px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium
+                               hover:bg-brand/90 transition-colors"
+                >
+                    Try Again
+                </button>
+            </div>
+        );
+    }
+
+    // Error — generic
     if (error && !matchData) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 gap-3">
