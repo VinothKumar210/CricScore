@@ -67,4 +67,51 @@ router.get('/stats/leaderboard', requireAuth, async (req: Request, res: Response
     }
 });
 
+/**
+ * GET /api/stats/player/:id/competitive
+ * Returns impact rating, global rank, prestige tier, role, best performance.
+ * ALL competitive logic is server-computed.
+ */
+router.get('/stats/player/:id/competitive', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const competitive = await statsService.getCompetitiveProfile(req.params.id as string);
+        return sendSuccess(res, competitive);
+    } catch (error: any) {
+        return sendError(res, 'Failed to fetch competitive profile', 500, 'INTERNAL_ERROR');
+    }
+});
+
+/**
+ * GET /api/stats/leaderboard/impact
+ * Paginated impact leaderboard. Players with >= 5 matches only.
+ * ?page=1&limit=20
+ */
+router.get('/stats/leaderboard/impact', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const page = Math.max(parseInt(req.query.page as string) || 1, 1);
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+        const leaderboard = await statsService.getImpactLeaderboard(page, limit);
+        return sendSuccess(res, leaderboard);
+    } catch (error: any) {
+        return sendError(res, 'Failed to fetch impact leaderboard', 500, 'INTERNAL_ERROR');
+    }
+});
+
+/**
+ * GET /api/profile/public/:username
+ * Public profile — scrubbed (no email, no Firebase UID).
+ * Returns stats + competitive + limited form.
+ */
+router.get('/profile/public/:username', async (req: Request, res: Response) => {
+    try {
+        const result = await statsService.getPublicProfile(req.params.username as string);
+        if (!result) {
+            return sendError(res, 'Profile not found', 404, 'NOT_FOUND');
+        }
+        return sendSuccess(res, result);
+    } catch (error: any) {
+        return sendError(res, 'Failed to fetch public profile', 500, 'INTERNAL_ERROR');
+    }
+});
+
 export default router;

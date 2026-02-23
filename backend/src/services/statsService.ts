@@ -260,8 +260,337 @@ export const statsService = {
         // For Scale: This is bad. But for now acceptable.
         // Implement Runs/Wickets first.
         return [];
-    }
+    },
+
+    // ─────────────────────────────────────────────────────────────
+    // PHASE 12A+ — Competitive Profile
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Get competitive profile for a player.
+     * Returns impact rating, global rank, prestige tier, role, best performance.
+     * ALL computation happens here — frontend only displays.
+     */
+    getCompetitiveProfile: async (userId: string) => {
+        const stats = await statsService.getPlayerStats(userId);
+
+        // Player of Match count (approximate — count as PotM if top scorer + took wickets)
+        // For MVP, we approximate PotM count = hundreds + fiveWicketHauls
+        const potmCount = (stats.hundreds || 0) + (stats.fiveWicketHauls || 0);
+
+        // Impact Rating
+        const impactScore = computeImpactScore(stats.totalRuns, stats.totalWickets, potmCount);
+        const matchesPlayed = stats.innings || 0;
+        const impactRating = computeImpactRating(impactScore, matchesPlayed);
+
+        // Prestige Tier
+        const prestigeScore = computePrestigeScore(matchesPlayed, stats.totalRuns, stats.totalWickets, potmCount);
+        const { tier: prestigeTier, progressPercent: prestigeProgressPercent } = computePrestigeTier(prestigeScore);
+
+        // Role Auto-Detection
+        const primaryRole = detectPrimaryRole(
+            stats.totalRuns, stats.totalWickets, stats.battingAverage, stats.strikeRate
+        );
+
+        // Best Performance
+        const bestPerformance = await getBestPerformance(userId);
+
+        // Global Rank (among players with >= 5 matches)
+        const { rank: globalRank, total: totalRankedPlayers } = await getGlobalRank(userId, impactRating, matchesPlayed);
+
+        return {
+            impactRating,
+            impactScore,
+            globalRank: matchesPlayed >= 5 ? globalRank : null,
+            totalRankedPlayers,
+            prestigeTier,
+            prestigeProgressPercent,
+            primaryRole,
+            bestPerformance,
+            matchesPlayed,
+            potmCount,
+        };
+    },
+
+    /**
+     * Impact Leaderboard — paginated, sorted by impactRating DESC.
+     * Only players with >= 5 matches.
+     */
+    getImpactLeaderboard: async (page: number = 1, limit: number = 20) => {
+        // Get all users with enough data
+        const allBatting = await prisma.battingPerformance.groupBy({
+            by: ['userId'],
+            _sum: { runs: true },
+            _count: { id: true },
+            where: { userId: { not: null } },
+        });
+
+        const allBowling = await prisma.bowlingPerformance.groupBy({
+            by: ['userId'],
+            _sum: { wickets: true },
+            where: { userId: { not: null } },
+        });
+
+        const bowlingMap = new Map(allBowling.map((b: any) => [b.userId, b._sum.wickets || 0]));
+
+        // Build entries with impact
+        type LeaderboardEntry = {
+            userId: string;
+            runs: number;
+            wickets: number;
+            matches: number;
+            impactRating: number;
+        };
+
+        const entries: LeaderboardEntry[] = allBatting
+            .filter((b: any) => b._count.id >= 5) // >= 5 matches
+            .map((b: any) => {
+                const runs = b._sum.runs || 0;
+                const wickets = bowlingMap.get(b.userId) || 0;
+                const matches = b._count.id || 0;
+                const score = computeImpactScore(runs, wickets, 0);
+                const rating = computeImpactRating(score, matches);
+                return { userId: b.userId, runs, wickets, matches, impactRating: rating };
+            });
+
+        // Sort: impactRating DESC, then matches DESC, then join date (approximated via userId)
+        entries.sort((a, b) => {
+            if (b.impactRating !== a.impactRating) return b.impactRating - a.impactRating;
+            if (b.matches !== a.matches) return b.matches - a.matches;
+            return a.userId.localeCompare(b.userId); // Earlier ID as tie-breaker
+        });
+
+        // Paginate
+        const total = entries.length;
+        const start = (page - 1) * limit;
+        const paged = entries.slice(start, start + limit);
+
+        // Enrich with user info
+        const userIds = paged.map(e => e.userId);
+        const users = await prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, fullName: true, username: true, profilePictureUrl: true, role: true, createdAt: true },
+        });
+        const userMap = new Map(users.map((u: any) => [u.id, u]));
+
+        const rankedEntries = paged.map((entry, i) => {
+            const user = userMap.get(entry.userId);
+            const prestigeScore = computePrestigeScore(entry.matches, entry.runs, entry.wickets, 0);
+            const { tier } = computePrestigeTier(prestigeScore);
+            return {
+                rank: start + i + 1,
+                userId: entry.userId,
+                name: user?.fullName || 'Unknown',
+                username: user?.username || null,
+                profilePictureUrl: user?.profilePictureUrl || null,
+                impactRating: entry.impactRating,
+                matches: entry.matches,
+                runs: entry.runs,
+                wickets: entry.wickets,
+                prestigeTier: tier,
+            };
+        });
+
+        return { entries: rankedEntries, total, page, limit };
+    },
+
+    /**
+     * Get public profile by username.
+     * Returns scrubbed data — no email, no Firebase UID, no internal IDs.
+     */
+    getPublicProfile: async (username: string) => {
+        const user = await prisma.user.findFirst({
+            where: {
+                username: {
+                    equals: username,
+                    mode: 'insensitive',
+                },
+            },
+            select: {
+                id: true,
+                fullName: true,
+                username: true,
+                profilePictureUrl: true,
+                role: true,
+                battingHand: true,
+                bowlingStyle: true,
+                jerseyNumber: true,
+                city: true,
+                state: true,
+                country: true,
+                description: true,
+                createdAt: true,
+                // SECURITY: No email, no firebaseUid, no phone
+            },
+        });
+
+        if (!user) return null;
+
+        // Get stats and competitive profile
+        const stats = await statsService.getPlayerStats(user.id);
+        const competitive = await statsService.getCompetitiveProfile(user.id);
+        const form = await statsService.getPlayerForm(user.id);
+
+        return {
+            profile: user,
+            stats,
+            competitive,
+            form: form.slice(0, 5), // Limited to 5 for public
+        };
+    },
 };
+
+// ─────────────────────────────────────────────────────────────
+// Pure helper functions (deterministic, no side effects)
+// ─────────────────────────────────────────────────────────────
+
+function computeImpactScore(totalRuns: number, totalWickets: number, potmCount: number): number {
+    return (totalRuns * 1) + (totalWickets * 20) + (potmCount * 50);
+}
+
+function computeImpactRating(impactScore: number, matchesPlayed: number): number {
+    const rating = Math.round(impactScore / Math.max(matchesPlayed, 1));
+    return Number.isFinite(rating) ? rating : 0; // Guard NaN/Infinity
+}
+
+function computePrestigeScore(
+    matchesPlayed: number, totalRuns: number, totalWickets: number, potmCount: number
+): number {
+    return (matchesPlayed * 1) + (totalRuns / 50) + (totalWickets * 2) + (potmCount * 10);
+}
+
+function computePrestigeTier(prestigeScore: number): { tier: string; progressPercent: number } {
+    const tiers = [
+        { name: 'Rookie', min: 0, max: 20 },
+        { name: 'Rising', min: 20, max: 100 },
+        { name: 'Veteran', min: 100, max: 250 },
+        { name: 'Elite', min: 250, max: 500 },
+        { name: 'Legend', min: 500, max: Infinity },
+    ];
+
+    for (const tier of tiers) {
+        if (prestigeScore < tier.max) {
+            const range = tier.max === Infinity ? 500 : tier.max - tier.min;
+            const progress = ((prestigeScore - tier.min) / range) * 100;
+            return {
+                tier: tier.name,
+                progressPercent: Math.max(0, Math.min(Math.round(progress), 100)), // Bounded 0-100
+            };
+        }
+    }
+
+    return { tier: 'Legend', progressPercent: 100 };
+}
+
+/**
+ * Role auto-detection.
+ * PRIORITY ORDER (first match wins):
+ *   1. All-Rounder (both bat + bowl dominant)
+ *   2. Finisher (SR > 160 && avg > 30)
+ *   3. Anchor (avg > 40 && SR < 120)
+ *   4. Bowler (bowl dominant)
+ *   5. Batsman (bat dominant)
+ *   6. All-Rounder (fallback for new/zero-stat players)
+ */
+function detectPrimaryRole(
+    totalRuns: number, totalWickets: number, battingAvg: number, strikeRate: number
+): string {
+    // Zero-stats guard: new players without data
+    if (totalRuns === 0 && totalWickets === 0) return 'All-Rounder';
+
+    const isBatDominant = totalRuns > totalWickets * 25;
+    const isBowlDominant = totalWickets > totalRuns / 30;
+
+    if (isBatDominant && isBowlDominant) return 'All-Rounder';
+    if (strikeRate > 160 && battingAvg > 30) return 'Finisher';
+    if (battingAvg > 40 && strikeRate < 120) return 'Anchor';
+    if (isBowlDominant) return 'Bowler';
+    if (isBatDominant) return 'Batsman';
+    return 'All-Rounder';
+}
+
+async function getBestPerformance(userId: string): Promise<{
+    type: 'batting' | 'bowling' | 'allround';
+    description: string;
+    matchId: string | null;
+}> {
+    // Highest batting score
+    const bestBat = await prisma.battingPerformance.findFirst({
+        where: { userId },
+        orderBy: { runs: 'desc' },
+        include: { innings: { select: { matchSummaryId: true } } },
+    });
+
+    // Best bowling figures
+    const bestBowl = await prisma.bowlingPerformance.findFirst({
+        where: { userId },
+        orderBy: [{ wickets: 'desc' }, { runs: 'asc' }],
+        include: { innings: { select: { matchSummaryId: true } } },
+    });
+
+    const batScore = bestBat ? bestBat.runs : 0;
+    const bowlImpact = bestBowl ? (bestBowl.wickets * 30 - bestBowl.runs) : -999;
+    const batImpact = batScore;
+
+    if (batImpact >= bowlImpact && bestBat) {
+        return {
+            type: 'batting',
+            description: `${bestBat.runs}${bestBat.isOut ? '' : '*'} runs`,
+            matchId: (bestBat as any).innings?.matchSummaryId || null,
+        };
+    } else if (bestBowl) {
+        return {
+            type: 'bowling',
+            description: `${bestBowl.wickets}/${bestBowl.runs}`,
+            matchId: (bestBowl as any).innings?.matchSummaryId || null,
+        };
+    }
+
+    return { type: 'batting', description: 'N/A', matchId: null };
+}
+
+async function getGlobalRank(
+    userId: string, userImpactRating: number, userMatches: number
+): Promise<{ rank: number; total: number }> {
+    // Count players with >= 5 matches and higher impact rating
+    const allBatting = await prisma.battingPerformance.groupBy({
+        by: ['userId'],
+        _sum: { runs: true },
+        _count: { id: true },
+        where: { userId: { not: null } },
+    });
+
+    const allBowling = await prisma.bowlingPerformance.groupBy({
+        by: ['userId'],
+        _sum: { wickets: true },
+        where: { userId: { not: null } },
+    });
+
+    const bowlingMap = new Map(allBowling.map((b: any) => [b.userId, b._sum.wickets || 0]));
+
+    const qualified = allBatting
+        .filter((b: any) => b._count.id >= 5)
+        .map((b: any) => {
+            const runs = b._sum.runs || 0;
+            const wickets = bowlingMap.get(b.userId) || 0;
+            const matches = b._count.id || 0;
+            const score = computeImpactScore(runs, wickets, 0);
+            const rating = computeImpactRating(score, matches);
+            return { userId: b.userId, impactRating: rating, matches };
+        })
+        .sort((a, b) => {
+            if (b.impactRating !== a.impactRating) return b.impactRating - a.impactRating;
+            if (b.matches !== a.matches) return b.matches - a.matches;
+            return a.userId.localeCompare(b.userId);
+        });
+
+    const rank = qualified.findIndex(q => q.userId === userId) + 1;
+
+    return {
+        rank: rank || qualified.length + 1,
+        total: qualified.length,
+    };
+}
 
 async function enrichWithNames(data: any[]) {
     const userIds = data.map((d: any) => d.userId).filter((id: any) => id);

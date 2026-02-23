@@ -21,6 +21,8 @@ import { ShareMatchPage } from '../features/share/components/ShareMatchPage';
 import { ArchiveListPage } from '../features/archive/components/ArchiveListPage';
 import { ArchiveDetailPage } from '../features/archive/components/ArchiveDetailPage';
 import { TournamentListPage } from '../features/tournament/components/TournamentListPage';
+import { PublicProfilePage } from '../features/profile/components/PublicProfilePage';
+import { LeaderboardPage } from '../features/profile/components/LeaderboardPage';
 
 // Tab Components
 import { MatchSummaryTab } from '../features/matches/tabs/MatchSummaryTab';
@@ -53,6 +55,8 @@ export const router = createBrowserRouter([
             { path: '/match/create', element: <MatchCreatePage /> },
             { path: '/archive', element: <ArchiveListPage /> },
             { path: '/archive/:id', element: <ArchiveDetailPage /> },
+            { path: '/leaderboard', element: <LeaderboardPage /> },
+            { path: '/u/:username', element: <PublicProfilePage /> },
             {
                 path: '/match/:id',
                 element: <MatchDetailPage />,
