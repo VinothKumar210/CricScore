@@ -86,4 +86,21 @@ router.post('/:id/fixtures/generate', requireAuth, async (req: any, res) => {
     }
 });
 
+// POST /api/tournaments/:id/complete - Complete tournament manually
+router.post('/:id/complete', requireAuth, async (req: any, res) => {
+    try {
+        const tournamentId = req.params.id as string;
+        const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
+
+        if (!tournament || tournament.createdById !== req.user.id) {
+            return res.status(403).json({ error: 'Forbidden: Only the tournament creator can complete it' });
+        }
+
+        const result = await tournamentService.completeTournament(tournamentId);
+        res.json(result);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 export default router;

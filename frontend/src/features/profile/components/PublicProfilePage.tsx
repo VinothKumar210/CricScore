@@ -66,6 +66,8 @@ export const PublicProfilePage = () => {
                 profile={profile as any}
                 matchCount={competitive.matchesPlayed}
                 rank={competitive.globalRank ?? undefined}
+                prestigeTier={competitive.prestigeTier}
+                tournamentWins={competitive.tournamentWins}
             />
 
             {/* Impact Rating */}

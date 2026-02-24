@@ -615,16 +615,17 @@ model Notification {
   type      NotificationType
   title     String
   body      String
-  data      Json?
-  dedupeKey String?
-  isRead    Boolean          @default(false)
+  link      String?
+  metadata  Json?
+  readAt    DateTime?
   createdAt DateTime         @default(now())
-  
+
   user      User             @relation(fields: [userId], references: [id])
 
-  @@index([userId, isRead])
+  @@index([userId])
+  @@index([userId, readAt])
   @@index([createdAt])
-  @@unique([userId, dedupeKey])
+  @@index([userId, type, link])
 }
 
 model Device {
@@ -875,15 +876,17 @@ enum MessageType {
 }
 
 enum NotificationType {
-  TEAM_INVITE
-  MATCH_INVITE
-  MATCH_REMINDER
-  MESSAGE
+  MATCH_MILESTONE
+  MATCH_RESULT
+  TOURNAMENT_WIN
+  TOURNAMENT_QUALIFIED
+  TOURNAMENT_ELIMINATED
   MENTION
-  PROXIMITY_ALERT
-  TOURNAMENT_UPDATE
-  ACHIEVEMENT
-  SYSTEM
+  REACTION
+  POLL_CREATED
+  POLL_RESULT
+  INVITE_RECEIVED
+  ACHIEVEMENT_UNLOCKED
 }
 
 enum TournamentFormat {

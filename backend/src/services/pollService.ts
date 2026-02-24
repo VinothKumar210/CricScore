@@ -52,6 +52,25 @@ export const pollService = {
                 }
             });
 
+            // Notify other members
+            tx.conversationMember.findMany({
+                where: { conversationId, userId: { not: senderId } },
+                select: { userId: true }
+            }).then((members: { userId: string }[]) => {
+                import('./notificationService.js').then(({ notificationService }) => {
+                    members.forEach(m => {
+                        notificationService.createNotification({
+                            userId: m.userId,
+                            type: 'POLL_CREATED',
+                            title: 'New Poll',
+                            body: `A new poll "${question}" was created in your group.`,
+                            link: `/chat/${conversationId}`,
+                            metadata: { pollId: poll.id, conversationId }
+                        });
+                    });
+                }).catch(console.error);
+            }).catch(console.error);
+
             return { message, poll };
         });
     },

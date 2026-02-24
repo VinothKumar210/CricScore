@@ -266,12 +266,12 @@ export const respondToInvite = async (
 
         await notificationService.createNotification({
             userId: invite.team.ownerId,
-            type: 'MATCH_INVITE',
+            type: 'INVITE_RECEIVED',
             title: 'New Counter Proposal',
             body: 'A team has proposed changes to your invite.',
-            data: { inviteId, responderTeamId, proposal } as any,
-            dedupeKey: `counter:${inviteId}:${responderTeamId}`,
-        } as any);
+            metadata: { inviteId, responderTeamId, proposal },
+            link: `/invite/${inviteId}`
+        });
 
         return { status: 'PROPOSAL_SENT' };
     }

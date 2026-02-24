@@ -62,6 +62,20 @@ export const reactionService = {
                         emoji
                     }
                 });
+
+                if (message.senderId !== userId) {
+                    import('./notificationService.js').then(({ notificationService }) => {
+                        notificationService.createNotification({
+                            userId: message.senderId,
+                            type: 'REACTION',
+                            title: 'New Reaction',
+                            body: `Someone reacted with ${emoji} to your message.`,
+                            link: `/chat/${message.conversationId}`,
+                            metadata: { messageId, reactorId: userId, emoji }
+                        });
+                    }).catch(console.error);
+                }
+
                 return { action: 'CREATED', reaction: newReaction };
             }
         });

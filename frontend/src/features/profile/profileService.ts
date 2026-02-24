@@ -94,6 +94,8 @@ export interface CompetitiveProfile {
     };
     matchesPlayed: number;
     potmCount: number;
+    consistencyScore: number;
+    tournamentWins: number;
 }
 
 export interface RankedPlayer {

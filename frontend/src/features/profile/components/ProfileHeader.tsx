@@ -7,13 +7,14 @@ interface ProfileHeaderProps {
     matchCount: number;
     rank?: number;
     prestigeTier?: string;
+    tournamentWins?: number;
 }
 
 /**
  * ProfileHeader — Hero section with avatar, name, rank badge, location, role.
  * Premium glassmorphism aesthetic.
  */
-export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile, matchCount, rank, prestigeTier }) => {
+export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile, matchCount, rank, prestigeTier, tournamentWins }) => {
     const roleLabel: Record<string, string> = {
         BATSMAN: '🏏 Batsman',
         BOWLER: '🎳 Bowler',
@@ -109,6 +110,14 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
 
                     {/* Badges row */}
                     <div className="flex flex-wrap items-center gap-2 mb-2">
+                        {/* Tournament Champion Title Badge */}
+                        {tournamentWins ? (
+                            <span className="flex items-center gap-1 px-2.5 py-0.5 bg-amber-500/20 text-amber-500
+                                             rounded-full text-[10px] font-bold border border-amber-500/30 shadow-sm">
+                                🏆 {tournamentWins}× Champion
+                            </span>
+                        ) : null}
+
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${tier.color}
                                          bg-current/10 border border-current/20`}
                             style={{ background: 'rgba(0,0,0,0.04)' }}>

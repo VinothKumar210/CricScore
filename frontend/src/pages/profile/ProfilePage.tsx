@@ -81,6 +81,7 @@ export const ProfilePage = () => {
                 matchCount={competitive?.matchesPlayed ?? stats?.innings ?? 0}
                 rank={competitive?.globalRank ?? undefined}
                 prestigeTier={competitive?.prestigeTier}
+                tournamentWins={competitive?.tournamentWins}
             />
 
             {/* Impact Rating (Phase 12A+) */}

@@ -368,7 +368,7 @@ export async function advanceKnockoutBracket(tx: any, currentFixture: any, winne
             nextRound = `Round ${num + 1}`;
         } else if (round === 'Quarter-Final') nextRound = 'Semi-Final';
         else if (round === 'Semi-Final') nextRound = 'Final';
-        else return; // Champion?
+        else return;
     }
 
     const nextMatchNumber = Math.ceil(matchNumber / 2);
@@ -413,3 +413,71 @@ export async function advanceKnockoutBracket(tx: any, currentFixture: any, winne
         }
     }
 }
+
+// -----------------------------------------------------------------------------
+// Tournament Completion
+// -----------------------------------------------------------------------------
+
+export const completeTournament = async (tournamentId: string) => {
+    const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
+    if (!tournament) throw new Error('Tournament not found');
+    if (tournament.status === 'COMPLETED') throw new Error('Already completed');
+
+    let winnerId: string | null = null;
+
+    if (tournament.format === 'KNOCKOUT') {
+        const finalFixture = await prisma.tournamentFixture.findFirst({
+            where: { tournamentId, round: 'Final' }
+        });
+        if (!finalFixture || finalFixture.status !== 'COMPLETED') throw new Error('Knockout final is not completed yet');
+        winnerId = finalFixture.winnerId;
+    } else {
+        const standings = await getStandings(tournamentId);
+        if (standings.length > 0) {
+            winnerId = standings[0].teamId;
+        }
+    }
+
+    // Update tournament status
+    await prisma.tournament.update({
+        where: { id: tournamentId },
+        data: { status: 'COMPLETED' as any }
+    });
+
+    if (winnerId) {
+        // Trigger TOURNAMENT_WIN notification
+        import('./notificationService.js').then(({ notificationService }) => {
+            prisma.team.findUnique({
+                where: { id: winnerId },
+                select: { ownerId: true, name: true }
+            }).then((team: any) => {
+                if (team) {
+                    notificationService.createNotification({
+                        userId: team.ownerId,
+                        type: 'TOURNAMENT_WIN',
+                        title: 'Tournament Champions!',
+                        body: `Congratulations! ${team.name} has won the tournament!`,
+                        link: `/tournament/${tournamentId}`,
+                        metadata: { tournamentId }
+                    });
+                }
+            }).catch(console.error);
+        });
+
+        // Award achievement 
+        import('./achievementService.js').then(({ achievementService }) => {
+            prisma.team.findUnique({
+                where: { id: winnerId },
+                select: { ownerId: true }
+            }).then(team => {
+                if (team) {
+                    const achievementType = tournament.format === 'KNOCKOUT' ? 'TOURNAMENT_WINNER' : 'LEAGUE_CHAMPION';
+                    // Using 'as any' since LEAGUE_CHAMPION might not exist in enum yet, fallback to TOURNAMENT_WINNER if not
+                    achievementService.awardAchievement(team.ownerId, 'TOURNAMENT_WINNER' as any);
+                }
+            }).catch(console.error);
+        });
+    }
+
+    return { message: 'Tournament completed successfully', winnerId };
+};

@@ -1,15 +1,20 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTournamentAdminStore } from '../../features/tournament/tournamentAdminStore';
+import { useTournamentStore, getBracket, getResolvedBracket } from '../../features/tournament/tournamentStore';
 import { TournamentHeader } from '../../features/tournament/components/TournamentHeader';
 import { StandingsTable } from '../../features/tournament/components/StandingsTable';
 import { FixtureList } from '../../features/tournament/components/FixtureList';
 import { TeamRegistration } from '../../features/tournament/components/TeamRegistration';
+import { BracketView } from '../../features/tournament/bracket/BracketView';
 import { Container } from '../../components/ui/Container';
 import { clsx } from 'clsx';
 import { Loader2, ArrowLeft } from 'lucide-react';
+import { shallow } from 'zustand/shallow';
+import type { BracketFormat } from '../../features/tournament/bracket/types';
+import type { PlayoffMatchResult } from '../../features/tournament/progression/types';
 
-type Tab = 'standings' | 'fixtures' | 'teams';
+type Tab = 'standings' | 'fixtures' | 'teams' | 'bracket';
 
 /**
  * TournamentDetailPage — /tournaments/:id route.
@@ -95,6 +100,7 @@ export const TournamentDetailPage = () => {
     const tabs: { key: Tab; label: string }[] = [
         { key: 'standings', label: 'Standings' },
         { key: 'fixtures', label: 'Fixtures' },
+        { key: 'bracket', label: 'Bracket' },
         { key: 'teams', label: 'Teams' },
     ];
 
@@ -155,6 +161,60 @@ export const TournamentDetailPage = () => {
                     onRegisterTeam={registerTeam}
                 />
             )}
+
+            {/* BRACKET TAB — LAZY: only computes when active */}
+            {activeTab === 'bracket' && (
+                <BracketTabContent
+                    teamNameMap={teamNameMap}
+                    tournamentStatus={activeTournament.status}
+                    format={(activeTournament as any).bracketFormat || 'STANDARD_TOP4'}
+                    playoffResults={(activeTournament as any).playoffResults || []}
+                    isCreator={isCreator}
+                />
+            )}
         </Container>
+    );
+};
+
+/**
+ * BracketTabContent — Isolated component to enforce LAZY bracket computation.
+ * Engine selectors only fire when this component mounts (bracket tab active).
+ * Uses shallow equality to prevent unnecessary re-renders.
+ */
+const BracketTabContent: React.FC<{
+    teamNameMap: Record<string, string>;
+    tournamentStatus: string;
+    format: BracketFormat;
+    playoffResults: PlayoffMatchResult[];
+    isCreator: boolean;
+}> = ({ teamNameMap, tournamentStatus, format, playoffResults, isCreator }) => {
+    // Select ONLY raw dependency, avoid re-running engine on unconnected store changes
+    const completedMatches = useTournamentStore(s => s.completedMatches);
+
+    // Compute bracket natively with stable dependencies
+    const bracket = useMemo(() => {
+        try {
+            return getBracket({ completedMatches } as any, format);
+        } catch {
+            return { matches: [] };
+        }
+    }, [completedMatches, format]);
+
+    const resolvedBracket = useMemo(() => {
+        try {
+            return getResolvedBracket({ completedMatches } as any, format, playoffResults);
+        } catch {
+            return bracket;
+        }
+    }, [completedMatches, format, playoffResults, bracket]);
+
+    return (
+        <BracketView
+            bracket={resolvedBracket}
+            results={playoffResults}
+            teamNames={teamNameMap}
+            tournamentStatus={tournamentStatus}
+            isCreator={isCreator}
+        />
     );
 };

@@ -298,6 +298,23 @@ export const statsService = {
         // Global Rank (among players with >= 5 matches)
         const { rank: globalRank, total: totalRankedPlayers } = await getGlobalRank(userId, impactRating, matchesPlayed);
 
+        // Consistency Score
+        // (matchesWith50Plus + matchesWith2PlusWickets) / matchesPlayed
+        const matchesWith50Plus = await prisma.battingPerformance.count({
+            where: { userId, runs: { gte: 50 } },
+        });
+        const matchesWith2PlusWickets = await prisma.bowlingPerformance.count({
+            where: { userId, wickets: { gte: 2 } },
+        });
+        const consistencyScore = matchesPlayed > 0
+            ? Math.round(((matchesWith50Plus + matchesWith2PlusWickets) / matchesPlayed) * 100)
+            : 0;
+
+        // Tournament Wins (via Achievements)
+        const tournamentWins = await prisma.achievement.count({
+            where: { userId, type: 'TOURNAMENT_WINNER' },
+        });
+
         return {
             impactRating,
             impactScore,
@@ -309,6 +326,8 @@ export const statsService = {
             bestPerformance,
             matchesPlayed,
             potmCount,
+            consistencyScore: Math.min(consistencyScore, 100),
+            tournamentWins,
         };
     },
 

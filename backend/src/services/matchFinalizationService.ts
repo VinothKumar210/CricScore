@@ -1,6 +1,7 @@
 import { prisma } from '../utils/db.js';
 import type { MatchState, MatchOpPayload } from '../types/scoringTypes.js';
 import type { MatchOp } from '@prisma/client';
+import { notificationService } from './notificationService.js';
 
 export const matchFinalizationService = {
     /**
@@ -139,7 +140,14 @@ export const matchFinalizationService = {
                 }
             }
 
-            return { message: 'Match finalized successfully', tournamentIdToInvalidate };
+            return {
+                message: 'Match finalized successfully',
+                tournamentIdToInvalidate,
+                playerIds: Array.from(playerIds),
+                winnerId,
+                winningTeamName,
+                matchName: `${match.homeTeamName} vs ${match.awayTeamName}`
+            };
         });
 
         // 7. Post-Transaction: Cache Invalidation
@@ -155,6 +163,23 @@ export const matchFinalizationService = {
         // Remove old hook call
         // const { handleMatchCompletion } = await import('./tournamentService.js');
         // handleMatchCompletion(matchId).catch(console.error);
+
+        // 8. Notifications
+        if ((txResult as any).playerIds) {
+            const { playerIds, winnerId, winningTeamName, matchName } = txResult as any;
+            const resultBody = winningTeamName ? `${winningTeamName} won the match.` : 'The match ended in a tie.';
+
+            Promise.all(playerIds.map((pid: string) =>
+                notificationService.createNotification({
+                    userId: pid,
+                    type: 'MATCH_RESULT',
+                    title: `Match Completed: ${matchName}`,
+                    body: resultBody,
+                    link: `/match/${matchId}/summary`,
+                    metadata: { matchId, winnerId }
+                })
+            )).catch(err => console.error('[MatchFinalization] Failed to send notifications', err));
+        }
 
         return { message: 'Match finalized successfully' };
     }

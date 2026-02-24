@@ -38,8 +38,8 @@ router.get('/', requireAuth, async (req: any, res) => {
                 type: true,
                 title: true,
                 body: true,
-                data: true,
-                isRead: true,
+                metadata: true,
+                readAt: true,
                 createdAt: true
                 // userId and dedupeKey excluded appropriately
             }
@@ -65,7 +65,7 @@ router.get('/unread-count', requireAuth, async (req: any, res) => {
         const count = await prisma.notification.count({
             where: {
                 userId: userId,
-                isRead: false
+                readAt: null
             }
         });
         return sendSuccess(res, { unread: count });
@@ -90,7 +90,7 @@ router.patch('/:id/read', requireAuth, async (req: any, res) => {
                 userId: userId
             },
             data: {
-                isRead: true
+                readAt: new Date()
             }
         });
 
@@ -116,10 +116,10 @@ router.patch('/read-all', requireAuth, async (req: any, res) => {
         const result = await prisma.notification.updateMany({
             where: {
                 userId: userId,
-                isRead: false
+                readAt: null
             },
             data: {
-                isRead: true
+                readAt: new Date()
             }
         });
 

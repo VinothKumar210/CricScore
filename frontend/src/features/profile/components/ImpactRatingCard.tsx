@@ -66,11 +66,16 @@ export const ImpactRatingCard: React.FC<ImpactRatingCardProps> = React.memo(({ c
                 </div>
             </div>
 
-            {/* Role + PotM */}
-            <div className="relative flex items-center gap-3 mt-4 pt-3 border-t border-gray-700/50">
+            {/* Role + Consistency + PotM */}
+            <div className="relative flex items-center gap-2 mt-4 pt-3 border-t border-gray-700/50 flex-wrap">
                 <span className="px-2 py-0.5 bg-brand/20 text-brand rounded-full text-[10px] font-bold">
                     {competitive.primaryRole}
                 </span>
+                {competitive.consistencyScore > 0 && (
+                    <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-bold">
+                        📊 {competitive.consistencyScore}% Consistent
+                    </span>
+                )}
                 {competitive.potmCount > 0 && (
                     <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-full text-[10px] font-bold">
                         🏅 {competitive.potmCount} PotM
