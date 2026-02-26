@@ -5,7 +5,7 @@ import { Redis } from 'ioredis';
 import admin from 'firebase-admin';
 import { prisma } from '../utils/db.js';
 import { presenceService } from '../services/presenceService.js';
-import { registerChatHandlers } from './chatHandlers.js';
+import { registerMessageHandlers } from './messageHandlers.js';
 import { initScoringBroadcast, registerScoringHandlers } from './scoringHandlers.js';
 
 const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -71,8 +71,7 @@ export const initSocket = (httpServer: any) => {
             }
         }, HEARTBEAT_INTERVAL_MS);
 
-        // Register Handlers
-        registerChatHandlers(io, socket, user);
+        // (Obsolete chatHandlers removed)
 
         socket.on('disconnect', async () => {
             console.log(`User disconnected: ${user.id}`);
@@ -81,6 +80,47 @@ export const initSocket = (httpServer: any) => {
             clearInterval(heartbeatTimer);
 
             // Immediate cleanup
+            await presenceService.setUserOffline(user.id);
+        });
+    });
+
+    // ---------------------------------------------------------
+    // New Authoritative Messaging Namespace (/messages)
+    // ---------------------------------------------------------
+    const messageNamespace = io.of('/messages');
+
+    messageNamespace.use(async (socket, next) => {
+        const token = socket.handshake.auth.token;
+        if (!token) return next(new Error('Authentication error'));
+        try {
+            const decodedToken = await admin.auth().verifyIdToken(token);
+            const user = await prisma.user.findUnique({ where: { firebaseUid: decodedToken.uid } });
+            if (!user) return next(new Error('User not found'));
+            (socket as any).user = user;
+            next();
+        } catch (err) {
+            next(new Error('Authentication error'));
+        }
+    });
+
+    messageNamespace.on('connection', async (socket) => {
+        const user = (socket as any).user;
+        console.log(`[Messages Namespace] User connected: ${user.id}`);
+
+        socket.join(`user:${user.id}`);
+        await presenceService.setUserOnline(user.id, socket.id);
+
+        const heartbeatTimer = setInterval(async () => {
+            try {
+                await presenceService.refreshPresence(user.id);
+            } catch (e) { }
+        }, HEARTBEAT_INTERVAL_MS);
+
+        registerMessageHandlers(io, socket, user);
+
+        socket.on('disconnect', async () => {
+            console.log(`[Messages Namespace] User disconnected: ${user.id}`);
+            clearInterval(heartbeatTimer);
             await presenceService.setUserOffline(user.id);
         });
     });

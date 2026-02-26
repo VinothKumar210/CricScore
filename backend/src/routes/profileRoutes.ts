@@ -1,57 +1,126 @@
-import type { Request, Response } from 'express';
+// =============================================================================
+// Profile Routes — Edit Profile + Avatar Upload
+// =============================================================================
+//
+// PATCH  /api/profile          → Update text fields (name, bio, role, etc.)
+// POST   /api/profile/avatar   → Upload avatar image (multipart form)
+// DELETE /api/profile/avatar   → Remove avatar
+// GET    /api/profile/username-available?username=xyz
+//
+// =============================================================================
+
+import type { Request, Response, NextFunction } from 'express';
 import { Router } from 'express';
 import { requireAuth } from '../middlewares/auth.js';
+import { uploadSingle } from '../middlewares/upload.js';
 import { userService } from '../services/userService.js';
-import { sendSuccess, sendError } from '../utils/response.js';
+import { uploadAvatar, deleteAvatar } from '../services/uploadService.js';
+import { sendSuccess } from '../utils/response.js';
+import { AppError } from '../utils/AppError.js';
+import { prisma } from '../utils/db.js';
 
 const router = Router();
 
-/**
- * PATCH /api/profile
- * Update the authenticated user's profile.
- */
-router.patch('/profile', requireAuth, async (req: Request, res: Response) => {
+// ---------------------------------------------------------------------------
+// PATCH /api/profile — Update text fields
+// ---------------------------------------------------------------------------
+router.patch('/profile', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const user = req.user;
-        if (!user) {
-            return sendError(res, 'User not found', 401, 'UNAUTHORIZED');
-        }
+        if (!user) throw new AppError('UNAUTHORIZED');
 
         const updatedUser = await userService.updateProfile(user.id, req.body);
         return sendSuccess(res, { user: updatedUser });
-    } catch (error: any) {
-        if (error.statusCode) {
-            return sendError(res, error.message, error.statusCode, error.code);
-        }
-
-        // Handle Prisma unique constraint violations
-        if (error.code === 'P2002') {
-            const field = error.meta?.target?.[0] || 'field';
-            return sendError(res, `${field} already exists`, 409, 'UNIQUE_CONSTRAINT');
-        }
-
-        console.error('[ProfileRoutes] Update error:', error);
-        return sendError(res, 'Failed to update profile', 500, 'INTERNAL_ERROR');
+    } catch (err) {
+        next(err);
     }
 });
 
-/**
- * GET /api/profile/username-available?username=xyz
- * Check if a username is available.
- */
-router.get('/profile/username-available', requireAuth, async (req: Request, res: Response) => {
+// ---------------------------------------------------------------------------
+// POST /api/profile/avatar — Upload avatar (multipart/form-data)
+// ---------------------------------------------------------------------------
+router.post(
+    '/profile/avatar',
+    requireAuth,
+    uploadSingle('avatar', 5), // max 5 MB
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const user = req.user;
+            if (!user) throw new AppError('UNAUTHORIZED');
+            if (!req.file) throw new AppError('MISSING_FIELD', 'No image file provided');
+
+            // Upload to Cloudinary (compressed)
+            const result = await uploadAvatar(req.file.buffer, user.id);
+
+            // Update user record
+            const updatedUser = await prisma.user.update({
+                where: { id: user.id },
+                data: { profilePictureUrl: result.url },
+                select: {
+                    id: true,
+                    fullName: true,
+                    username: true,
+                    profilePictureUrl: true,
+                },
+            });
+
+            return sendSuccess(res, {
+                user: updatedUser,
+                upload: {
+                    url: result.url,
+                    width: result.width,
+                    height: result.height,
+                    format: result.format,
+                    bytes: result.bytes,
+                },
+            });
+        } catch (err) {
+            next(err);
+        }
+    },
+);
+
+// ---------------------------------------------------------------------------
+// DELETE /api/profile/avatar — Remove avatar
+// ---------------------------------------------------------------------------
+router.delete('/profile/avatar', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = req.user;
+        if (!user) throw new AppError('UNAUTHORIZED');
+
+        // Delete from Cloudinary (non-blocking, best-effort)
+        await deleteAvatar(`cricscore/avatars/avatar_${user.id}`);
+
+        // Clear URL in database
+        const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: { profilePictureUrl: null },
+            select: {
+                id: true,
+                fullName: true,
+                username: true,
+                profilePictureUrl: true,
+            },
+        });
+
+        return sendSuccess(res, { user: updatedUser });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ---------------------------------------------------------------------------
+// GET /api/profile/username-available?username=xyz
+// ---------------------------------------------------------------------------
+router.get('/profile/username-available', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const username = req.query.username as string;
-
-        if (!username) {
-            return sendError(res, 'username query parameter is required', 400, 'MISSING_PARAM');
-        }
+        if (!username) throw new AppError('MISSING_FIELD', 'username query parameter is required');
 
         const available = await userService.checkUsernameAvailable(username);
         return sendSuccess(res, { username, available });
-    } catch (error) {
-        console.error('[ProfileRoutes] Username check error:', error);
-        return sendError(res, 'Failed to check username', 500, 'INTERNAL_ERROR');
+    } catch (err) {
+        next(err);
     }
 });
 
