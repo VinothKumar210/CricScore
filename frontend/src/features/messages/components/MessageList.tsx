@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useLayoutEffect, useState } from 'react';
+import React, { useRef, useLayoutEffect, useState } from 'react';
 import type { Message } from '../messageService';
 import { MessageBubble } from './MessageBubble';
 import { MessageSkeleton } from './MessageSkeleton';

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Notification } from '../notificationService';
-import { toast, Toast } from 'react-hot-toast';
+import type { Notification } from '../notificationService';
+import { toast } from 'react-hot-toast';
+import type { Toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { BellIcon, TrophyIcon, StarIcon, ChatBubbleLeftIcon, ChartBarIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 

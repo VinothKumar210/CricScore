@@ -296,7 +296,7 @@ const SelectRow = <T extends string>({
     </div>
 );
 
-const StatusBar = ({ saving, error, success }: { saving: boolean; error: string | null; success: string | null }) => (
+const StatusBar = ({ saving: _saving, error, success }: { saving: boolean; error: string | null; success: string | null }) => (
     <div style={{
         padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500,
         background: error ? 'rgba(217,96,85,0.1)' : success ? 'rgba(83,138,106,0.1)' : 'rgba(215,166,91,0.1)',

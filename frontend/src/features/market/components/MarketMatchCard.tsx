@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MarketMatch } from '../marketService';
+import type { MarketMatch } from '../marketService';
 import { useMarketStore } from '../marketStore';
 import { CalendarIcon, MapPinIcon, ClockIcon } from '@heroicons/react/24/outline';
 
