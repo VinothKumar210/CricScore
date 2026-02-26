@@ -28,6 +28,8 @@ import NotificationCenterPage from '../features/notifications/NotificationCenter
 import { InviteInboxPage } from '../features/invites/InviteInboxPage';
 import { MessageRoomPage } from '../features/messages/pages/MessageRoomPage';
 import { SettingsPage } from '../features/settings/SettingsPage';
+import { InboxPage } from '../features/messages/InboxPage';
+import { SearchPage } from '../features/search/SearchPage';
 
 // Tab Components
 import { MatchSummaryTab } from '../features/matches/tabs/MatchSummaryTab';
@@ -63,6 +65,8 @@ export const router = createBrowserRouter([
             { path: '/archive/:id', element: <ArchiveDetailPage /> },
             { path: '/leaderboard', element: <LeaderboardPage /> },
             { path: '/settings', element: <SettingsPage /> },
+            { path: '/inbox', element: <InboxPage /> },
+            { path: '/search', element: <SearchPage /> },
             { path: '/notifications', element: <NotificationCenterPage /> },
             { path: '/invites', element: <InviteInboxPage /> },
             { path: '/messages/:roomType/:roomId', element: <MessageRoomPage /> },
