@@ -13,7 +13,7 @@ export const FielderSelectStep = ({ players, onSelect, onBack }: FielderSelectSt
             <div className="flex items-center mb-4">
                 <button
                     onClick={onBack}
-                    className="text-sm text-textSecondary hover:text-textPrimary px-2 py-1 -ml-2"
+                    className="text-sm text-muted-foreground hover:text-foreground px-2 py-1 -ml-2"
                 >
                     ← Back
                 </button>
@@ -26,18 +26,18 @@ export const FielderSelectStep = ({ players, onSelect, onBack }: FielderSelectSt
                         <button
                             key={player.id}
                             onClick={() => onSelect(player.id)}
-                            className="flex items-center p-3 rounded-lg hover:bg-surface border border-transparent hover:border-border transition-colors text-left"
+                            className="flex items-center p-3 rounded-lg hover:bg-card border border-transparent hover:border-border transition-colors text-left"
                         >
-                            <div className="w-8 h-8 rounded-full bg-brand/10 flex items-center justify-center text-brand font-bold text-xs mr-3">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs mr-3">
                                 {player.name.charAt(0)}
                             </div>
-                            <span className={clsx(typography.bodyMd, "font-medium text-textPrimary")}>
+                            <span className={clsx(typography.bodyMd, "font-medium text-foreground")}>
                                 {player.name}
                             </span>
                         </button>
                     ))}
                     {players.length === 0 && (
-                        <div className="text-center py-8 text-textSecondary text-sm">
+                        <div className="text-center py-8 text-muted-foreground text-sm">
                             No players available in lineup
                         </div>
                     )}

@@ -42,15 +42,15 @@ export const MilestoneWatcher: React.FC = () => {
 
     return (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-full max-w-sm px-4">
-            <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-border overflow-hidden animate-in slide-in-from-top-4 fade-in duration-500">
+            <div className="bg-card rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-border overflow-hidden animate-in slide-in-from-top-4 fade-in duration-500">
                 <div className="bg-gradient-to-r from-brand to-brand/80 p-1" />
-                <div className="p-4 flex items-center gap-4 bg-surface">
+                <div className="p-4 flex items-center gap-4 bg-card">
                     <MilestoneIcon type={activeMilestone.type} />
                     <div className="flex flex-col">
-                        <span className="text-sm font-bold text-textPrimary uppercase tracking-wide">
+                        <span className="text-sm font-bold text-foreground uppercase tracking-wide">
                             {getMilestoneTitle(activeMilestone.type)}
                         </span>
-                        <span className="text-xs text-textSecondary font-medium">
+                        <span className="text-xs text-muted-foreground font-medium">
                             {getMilestoneSubtitle(activeMilestone)}
                         </span>
                     </div>
@@ -87,8 +87,8 @@ function getMilestoneSubtitle(m: Milestone): string {
 
 const MilestoneIcon: React.FC<{ type: MilestoneType }> = ({ type }) => {
     let Icon = Star;
-    let bgColor = "bg-brand/10";
-    let iconColor = "text-brand";
+    let bgColor = "bg-primary/10";
+    let iconColor = "text-primary";
 
     if (type.startsWith("BATTER_")) {
         Icon = Trophy;
@@ -96,12 +96,12 @@ const MilestoneIcon: React.FC<{ type: MilestoneType }> = ({ type }) => {
         iconColor = "text-warning";
     } else if (type === "HATTRICK") {
         Icon = Flame;
-        bgColor = "bg-orange-500/10";
+        bgColor = "bg-orange-500/100/10";
         iconColor = "text-orange-500";
     } else if (type.startsWith("BOWLER_")) {
         Icon = Target;
-        bgColor = "bg-danger/10";
-        iconColor = "text-danger";
+        bgColor = "bg-destructive/10";
+        iconColor = "text-destructive";
     }
 
     return (

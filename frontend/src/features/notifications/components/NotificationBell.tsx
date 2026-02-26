@@ -52,7 +52,7 @@ const NotificationBell: React.FC = () => {
             <button
                 ref={anchorRef}
                 onClick={toggleDropdown}
-                className="relative p-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-full transition-colors"
+                className="relative p-2 text-gray-400 hover:text-muted-foreground dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-full transition-colors"
                 aria-label="Notifications"
                 aria-expanded={isOpen}
             >
@@ -60,7 +60,7 @@ const NotificationBell: React.FC = () => {
                 {unreadCount > 0 && (
                     <span
                         key={unreadCount} // strictly forces re-render pulse once on increment
-                        className="absolute top-1.5 right-1.5 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-900 animate-pulse-once"
+                        className="absolute top-1.5 right-1.5 block h-2.5 w-2.5 rounded-full bg-destructive/100 ring-2 ring-white dark:ring-gray-900 animate-pulse-once"
                     />
                 )}
             </button>

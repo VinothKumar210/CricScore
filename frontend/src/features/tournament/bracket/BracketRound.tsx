@@ -26,7 +26,7 @@ export const BracketRound: React.FC<BracketRoundProps> = React.memo(({
         <div className="flex flex-col gap-4 min-w-[220px]">
             {/* Round header */}
             <div className="text-center">
-                <h3 className="text-[10px] text-textSecondary font-black uppercase tracking-widest">
+                <h3 className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">
                     {roundName}
                 </h3>
             </div>

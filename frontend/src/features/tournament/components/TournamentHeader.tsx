@@ -13,12 +13,12 @@ interface TournamentHeaderProps {
  */
 export const TournamentHeader: React.FC<TournamentHeaderProps> = React.memo(({ tournament }) => {
     const statusColor: Record<string, string> = {
-        UPCOMING: 'bg-blue-100 text-blue-700',
+        UPCOMING: 'bg-blue-100 text-chart-1',
         IN_PROGRESS: 'bg-amber-100 text-amber-700',
-        COMPLETED: 'bg-green-100 text-green-700',
+        COMPLETED: 'bg-primary/15 text-primary',
     };
 
-    const badge = statusColor[tournament.status] || 'bg-gray-100 text-gray-700';
+    const badge = statusColor[tournament.status] || 'bg-secondary text-foreground';
 
     return (
         <Card padding="lg">
@@ -30,10 +30,10 @@ export const TournamentHeader: React.FC<TournamentHeaderProps> = React.memo(({ t
             </div>
 
             {tournament.description && (
-                <p className="text-sm text-textSecondary mb-3">{tournament.description}</p>
+                <p className="text-sm text-muted-foreground mb-3">{tournament.description}</p>
             )}
 
-            <div className="flex items-center gap-3 text-xs text-textSecondary flex-wrap">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                 <span>{tournament.format?.replace('_', ' ')}</span>
                 <span>·</span>
                 <span>{tournament.overs} overs</span>

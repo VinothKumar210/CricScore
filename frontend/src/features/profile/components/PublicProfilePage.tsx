@@ -37,8 +37,8 @@ export const PublicProfilePage = () => {
     if (isPublicLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-8 h-8 text-brand animate-spin" />
-                <p className="text-sm text-textSecondary">Loading profile...</p>
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <p className="text-sm text-muted-foreground">Loading profile...</p>
             </div>
         );
     }
@@ -49,7 +49,7 @@ export const PublicProfilePage = () => {
             <Container className="py-8">
                 <div className="flex flex-col items-center py-12 gap-3">
                     <ShieldX className="w-12 h-12 text-gray-300" />
-                    <p className="text-textSecondary text-sm font-medium">{publicError}</p>
+                    <p className="text-muted-foreground text-sm font-medium">{publicError}</p>
                 </div>
             </Container>
         );
@@ -91,7 +91,7 @@ export const PublicProfilePage = () => {
             {/* Member Since */}
             {profile.createdAt && (
                 <div className="text-center py-4 border-t border-border/30">
-                    <p className="text-[10px] text-textSecondary">
+                    <p className="text-[10px] text-muted-foreground">
                         Member since {new Date(profile.createdAt).toLocaleDateString(undefined, {
                             month: 'long', year: 'numeric',
                         })}

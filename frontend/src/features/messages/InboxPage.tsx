@@ -141,7 +141,7 @@ export const InboxPage = () => {
                     disabled={loadingMore}
                     style={{
                         marginTop: 16, padding: '12px', borderRadius: 10,
-                        background: 'var(--bg-surface, #24262D)',
+                        background: 'var(--bg-card, #24262D)',
                         border: '1px solid var(--border, #2A2D35)',
                         color: 'var(--text-secondary, #888)',
                         fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
@@ -187,7 +187,7 @@ const ConversationRow = ({
             {/* Avatar / Icon */}
             <div style={{
                 width: 44, height: 44, borderRadius: '50%',
-                background: 'var(--bg-surface, #24262D)',
+                background: 'var(--bg-card, #24262D)',
                 border: '1px solid var(--border, #2A2D35)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 18, flexShrink: 0, position: 'relative',

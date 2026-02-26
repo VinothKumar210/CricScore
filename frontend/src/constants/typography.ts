@@ -1,7 +1,7 @@
 export const typography = {
-    headingLg: 'text-xl font-semibold text-textPrimary',
-    headingXl: 'text-3xl font-bold text-textPrimary',
-    headingMd: 'text-lg font-semibold text-textPrimary',
-    bodyMd: 'text-sm text-textPrimary',
-    caption: 'text-xs text-textSecondary',
+    headingLg: 'text-xl font-semibold text-foreground',
+    headingXl: 'text-3xl font-bold text-foreground',
+    headingMd: 'text-lg font-semibold text-foreground',
+    bodyMd: 'text-sm text-foreground',
+    caption: 'text-xs text-muted-foreground',
 } as const;

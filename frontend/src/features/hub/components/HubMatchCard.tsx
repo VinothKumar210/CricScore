@@ -38,10 +38,10 @@ export const HubMatchCard: React.FC<HubMatchCardProps> = React.memo(({ match }) 
         if (!score) return null;
         return (
             <div className="flex flex-col items-end">
-                <span className="font-bold text-textPrimary tabular-nums">
+                <span className="font-bold text-foreground tabular-nums">
                     {score.runs}/{score.wickets}
                 </span>
-                <span className="text-xs text-textSecondary tabular-nums">
+                <span className="text-xs text-muted-foreground tabular-nums">
                     ({score.overs})
                 </span>
             </div>
@@ -49,10 +49,10 @@ export const HubMatchCard: React.FC<HubMatchCardProps> = React.memo(({ match }) 
     };
 
     const statusColor: Record<string, string> = {
-        LIVE: 'bg-red-500',
-        SCHEDULED: 'bg-blue-500',
+        LIVE: 'bg-destructive/100',
+        SCHEDULED: 'bg-chart-1/100',
         COMPLETED: 'bg-green-600',
-        ABANDONED: 'bg-gray-500',
+        ABANDONED: 'bg-background0',
         INNINGS_BREAK: 'bg-amber-500',
     };
 
@@ -74,7 +74,7 @@ export const HubMatchCard: React.FC<HubMatchCardProps> = React.memo(({ match }) 
                 )}>
                     {match.status === 'INNINGS_BREAK' ? 'Break' : match.status}
                     {match.status === 'LIVE' && (
-                        <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-card animate-pulse" />
                     )}
                 </span>
             </div>
@@ -82,7 +82,7 @@ export const HubMatchCard: React.FC<HubMatchCardProps> = React.memo(({ match }) 
             {/* Team A */}
             <div className="flex justify-between items-center mb-1.5">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-surface flex items-center justify-center text-xs font-bold text-textSecondary">
+                    <div className="w-8 h-8 rounded-full bg-card flex items-center justify-center text-xs font-bold text-muted-foreground">
                         {teamInitial(match.homeTeamName, match.homeTeam?.shortName)}
                     </div>
                     <span className={clsx(typography.bodyMd, 'font-medium')}>
@@ -95,7 +95,7 @@ export const HubMatchCard: React.FC<HubMatchCardProps> = React.memo(({ match }) 
             {/* Team B */}
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-surface flex items-center justify-center text-xs font-bold text-textSecondary">
+                    <div className="w-8 h-8 rounded-full bg-card flex items-center justify-center text-xs font-bold text-muted-foreground">
                         {teamInitial(match.awayTeamName, match.awayTeam?.shortName)}
                     </div>
                     <span className={clsx(typography.bodyMd, 'font-medium')}>

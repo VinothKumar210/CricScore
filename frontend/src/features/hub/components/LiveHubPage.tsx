@@ -42,12 +42,12 @@ export const LiveHubPage = () => {
     if (error && !isLoading && yourMatches.length === 0 && liveMatches.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] p-4 text-center">
-                <p className="text-danger mb-2 font-medium">Something went wrong</p>
-                <p className="text-textSecondary text-sm mb-4">{error}</p>
+                <p className="text-destructive mb-2 font-medium">Something went wrong</p>
+                <p className="text-muted-foreground text-sm mb-4">{error}</p>
                 <button
                     onClick={() => fetchFeed()}
-                    className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium
-                               hover:bg-brand/90 transition-colors active:scale-95"
+                    className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium
+                               hover:bg-primary/90 transition-colors active:scale-95"
                 >
                     Retry
                 </button>
@@ -61,9 +61,9 @@ export const LiveHubPage = () => {
         <Container className="py-4 space-y-8">
             {/* Live Indicator Banner */}
             {hasAnyLive && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-                    <span className="text-sm font-semibold text-red-700">
+                <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-2.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-destructive/100 animate-pulse" />
+                    <span className="text-sm font-semibold text-destructive">
                         {liveCount} {liveCount === 1 ? 'match' : 'matches'} live now
                     </span>
                 </div>
@@ -73,7 +73,7 @@ export const LiveHubPage = () => {
             <section>
                 <div className="flex items-center justify-between mb-4">
                     <h2 className={typography.headingMd}>Your Matches</h2>
-                    <Link to="/match/create" className="text-brand text-sm font-medium hover:underline">
+                    <Link to="/match/create" className="text-primary text-sm font-medium hover:underline">
                         Create New
                     </Link>
                 </div>
@@ -103,7 +103,7 @@ export const LiveHubPage = () => {
                 <section>
                     <div className="flex items-center gap-2 mb-4">
                         <h2 className={typography.headingMd}>Live Now</h2>
-                        <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-bold">
+                        <span className="px-2 py-0.5 bg-destructive/15 text-destructive rounded-full text-xs font-bold">
                             {liveMatches.length}
                         </span>
                     </div>
@@ -135,17 +135,17 @@ export const LiveHubPage = () => {
                     to="/archive"
                     className={clsx(
                         'flex items-center justify-between',
-                        'bg-surface border border-border rounded-xl p-4',
+                        'bg-card border border-border rounded-xl p-4',
                         'hover:shadow-sm transition-shadow group'
                     )}
                 >
                     <div>
-                        <h3 className="text-sm font-semibold text-textPrimary">Match Archive</h3>
-                        <p className="text-xs text-textSecondary mt-0.5">
+                        <h3 className="text-sm font-semibold text-foreground">Match Archive</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
                             Browse your completed matches with full replay
                         </p>
                     </div>
-                    <span className="text-textSecondary group-hover:text-brand transition-colors text-lg">
+                    <span className="text-muted-foreground group-hover:text-primary transition-colors text-lg">
                         →
                     </span>
                 </Link>
@@ -157,7 +157,7 @@ export const LiveHubPage = () => {
 // ─── Helper Components ───
 
 const SkeletonCard = () => (
-    <div className="h-36 bg-surface rounded-xl animate-pulse" />
+    <div className="h-36 bg-card rounded-xl animate-pulse" />
 );
 
 const EmptyState = ({ message, actionLabel, actionLink }: {
@@ -165,10 +165,10 @@ const EmptyState = ({ message, actionLabel, actionLink }: {
     actionLabel?: string;
     actionLink?: string;
 }) => (
-    <div className="bg-surface rounded-xl p-8 text-center border border-dashed border-border">
-        <p className="text-textSecondary text-sm mb-3">{message}</p>
+    <div className="bg-card rounded-xl p-8 text-center border border-dashed border-border">
+        <p className="text-muted-foreground text-sm mb-3">{message}</p>
         {actionLabel && actionLink && (
-            <Link to={actionLink} className="text-brand font-medium text-sm hover:underline">
+            <Link to={actionLink} className="text-primary font-medium text-sm hover:underline">
                 {actionLabel}
             </Link>
         )}

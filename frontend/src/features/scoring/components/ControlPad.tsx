@@ -31,10 +31,10 @@ export const ControlPad = () => {
     };
 
     return (
-        <div className="relative p-3 bg-surface rounded-xl border border-border shadow-sm">
+        <div className="relative p-3 bg-card rounded-xl border border-border shadow-sm">
             {/* Spinner Overlay Indicator */}
             {isSubmitting && (
-                <div className="absolute top-2 right-2 text-brand animate-spin z-10 pointer-events-none">
+                <div className="absolute top-2 right-2 text-primary animate-spin z-10 pointer-events-none">
                     <Loader2 size={16} />
                 </div>
             )}
@@ -61,7 +61,7 @@ export const ControlPad = () => {
                         disabled={isDisabled}
                         className={clsx(
                             "h-14 rounded-xl font-bold text-lg transition-all active:scale-95 flex items-center justify-center shadow-sm select-none",
-                            "bg-red-500 border border-red-600 text-white hover:bg-red-600 active:bg-red-700",
+                            "bg-destructive/100 border border-red-600 text-white hover:bg-red-600 active:bg-red-700",
                             isDisabled && "opacity-50 cursor-not-allowed"
                         )}
                     >
@@ -79,7 +79,7 @@ export const ControlPad = () => {
                         disabled={isDisabled}
                         className={clsx(
                             "h-14 rounded-xl font-bold text-lg transition-all active:scale-95 flex items-center justify-center shadow-sm select-none",
-                            "bg-gray-200 border border-gray-300 text-textSecondary hover:bg-gray-300 active:bg-gray-400",
+                            "bg-gray-200 border border-border text-muted-foreground hover:bg-gray-300 active:bg-gray-400",
                             isDisabled && "opacity-50 cursor-not-allowed"
                         )}
                     >
@@ -103,13 +103,13 @@ export const ControlPad = () => {
 const getBtnClass = (disabled: boolean, isSecondary = false) => clsx(
     "h-14 rounded-xl font-bold text-lg transition-all active:scale-95 flex items-center justify-center shadow-sm select-none",
     isSecondary
-        ? "bg-surface border border-border text-textSecondary hover:bg-gray-100 active:bg-gray-200"
-        : "bg-white border border-border text-textPrimary hover:bg-gray-50 active:bg-gray-100",
+        ? "bg-card border border-border text-muted-foreground hover:bg-secondary active:bg-gray-200"
+        : "bg-card border border-border text-foreground hover:bg-background active:bg-secondary",
     disabled && "opacity-50 cursor-not-allowed"
 );
 
 const getGhostClass = (disabled: boolean) => clsx(
     "h-14 rounded-xl font-bold text-lg transition-all active:scale-95 flex items-center justify-center shadow-sm select-none",
-    "bg-transparent border border-border text-textSecondary border-dashed hover:bg-surface text-xs",
+    "bg-transparent border border-border text-muted-foreground border-dashed hover:bg-card text-xs",
     disabled && "opacity-50 cursor-not-allowed"
 );

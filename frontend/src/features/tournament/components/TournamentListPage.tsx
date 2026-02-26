@@ -37,8 +37,8 @@ export const TournamentListPage = () => {
                 <h1 className={typography.headingLg}>🏆 Tournaments</h1>
                 <button
                     onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-brand text-white rounded-lg
-                               text-sm font-medium hover:bg-brand/90 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg
+                               text-sm font-medium hover:bg-primary/90 transition-colors"
                 >
                     <Plus className="w-4 h-4" />
                     Create
@@ -48,10 +48,10 @@ export const TournamentListPage = () => {
             {/* Error */}
             {listError && (
                 <div className="flex flex-col items-center py-8 gap-3">
-                    <p className="text-danger font-medium">{listError}</p>
+                    <p className="text-destructive font-medium">{listError}</p>
                     <button
                         onClick={fetchList}
-                        className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium"
+                        className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium"
                     >
                         Retry
                     </button>
@@ -61,9 +61,9 @@ export const TournamentListPage = () => {
             {/* Loading */}
             {isListLoading && tournaments.length === 0 && !listError && (
                 <div className="space-y-3">
-                    <div className="h-24 bg-surface rounded-xl animate-pulse" />
-                    <div className="h-24 bg-surface rounded-xl animate-pulse" />
-                    <div className="h-24 bg-surface rounded-xl animate-pulse" />
+                    <div className="h-24 bg-card rounded-xl animate-pulse" />
+                    <div className="h-24 bg-card rounded-xl animate-pulse" />
+                    <div className="h-24 bg-card rounded-xl animate-pulse" />
                 </div>
             )}
 
@@ -78,8 +78,8 @@ export const TournamentListPage = () => {
 
             {/* Empty */}
             {!isListLoading && !listError && tournaments.length === 0 && (
-                <div className="bg-surface rounded-xl p-8 text-center border border-dashed border-border">
-                    <p className="text-textSecondary text-sm">No tournaments yet. Create one to get started.</p>
+                <div className="bg-card rounded-xl p-8 text-center border border-dashed border-border">
+                    <p className="text-muted-foreground text-sm">No tournaments yet. Create one to get started.</p>
                 </div>
             )}
 

@@ -42,8 +42,8 @@ export const LeaderboardPage = () => {
             {/* Loading */}
             {isLeaderboardLoading && !leaderboard && (
                 <div className="flex flex-col items-center py-12 gap-3">
-                    <Loader2 className="w-8 h-8 text-brand animate-spin" />
-                    <p className="text-sm text-textSecondary">Loading rankings...</p>
+                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                    <p className="text-sm text-muted-foreground">Loading rankings...</p>
                 </div>
             )}
 
@@ -51,7 +51,7 @@ export const LeaderboardPage = () => {
             {leaderboard && leaderboard.entries.length === 0 && (
                 <Card padding="lg">
                     <div className="text-center py-8">
-                        <p className="text-sm text-textSecondary">
+                        <p className="text-sm text-muted-foreground">
                             No ranked players yet. Play 5+ matches to qualify.
                         </p>
                     </div>
@@ -65,7 +65,7 @@ export const LeaderboardPage = () => {
                         const tierCfg = TIER_CONFIG[entry.prestigeTier] || TIER_CONFIG.Rookie;
                         const isTop3 = entry.rank <= 3;
                         const medalColor = entry.rank === 1 ? 'from-amber-100 to-yellow-50 border-amber-300'
-                            : entry.rank === 2 ? 'from-gray-100 to-gray-50 border-gray-300'
+                            : entry.rank === 2 ? 'from-gray-100 to-gray-50 border-border'
                                 : entry.rank === 3 ? 'from-orange-50 to-amber-50 border-orange-200'
                                     : '';
 
@@ -77,7 +77,7 @@ export const LeaderboardPage = () => {
                                     'flex items-center gap-3 px-4 py-3 rounded-xl border transition-all',
                                     isTop3
                                         ? `bg-gradient-to-r ${medalColor} cursor-pointer`
-                                        : 'bg-surface border-border/50 hover:border-brand/30 cursor-pointer',
+                                        : 'bg-card border-border/50 hover:border-brand/30 cursor-pointer',
                                 )}
                             >
                                 {/* Rank */}
@@ -86,7 +86,7 @@ export const LeaderboardPage = () => {
                                     entry.rank === 1 ? 'text-amber-500 text-lg'
                                         : entry.rank === 2 ? 'text-gray-400 text-lg'
                                             : entry.rank === 3 ? 'text-orange-400 text-lg'
-                                                : 'text-textSecondary text-sm',
+                                                : 'text-muted-foreground text-sm',
                                 )}>
                                     {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : `#${entry.rank}`}
                                 </span>
@@ -103,8 +103,8 @@ export const LeaderboardPage = () => {
 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-textPrimary truncate">{entry.name}</p>
-                                    <div className="flex items-center gap-2 text-[10px] text-textSecondary">
+                                    <p className="text-sm font-bold text-foreground truncate">{entry.name}</p>
+                                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                                         <span className={tierCfg.color}>{tierCfg.icon} {entry.prestigeTier}</span>
                                         <span>·</span>
                                         <span>{entry.matches} matches</span>
@@ -113,10 +113,10 @@ export const LeaderboardPage = () => {
 
                                 {/* Stats */}
                                 <div className="text-right flex-shrink-0">
-                                    <p className="text-lg font-black text-brand tabular-nums">
+                                    <p className="text-lg font-black text-primary tabular-nums">
                                         {entry.impactRating}
                                     </p>
-                                    <p className="text-[9px] text-textSecondary">
+                                    <p className="text-[9px] text-muted-foreground">
                                         {entry.runs}r / {entry.wickets}w
                                     </p>
                                 </div>
@@ -128,7 +128,7 @@ export const LeaderboardPage = () => {
 
             {/* Footer */}
             {leaderboard && (
-                <p className="text-center text-[10px] text-textSecondary">
+                <p className="text-center text-[10px] text-muted-foreground">
                     Showing {leaderboard.entries.length} of {leaderboard.total} ranked players
                 </p>
             )}

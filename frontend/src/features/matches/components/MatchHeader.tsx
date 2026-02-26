@@ -11,13 +11,13 @@ interface MatchHeaderProps {
 export const MatchHeader: React.FC<MatchHeaderProps> = ({ match }) => {
 
     const formatScore = (score?: ScoreSummary) => {
-        if (!score) return <span className="text-textSecondary">-</span>;
+        if (!score) return <span className="text-muted-foreground">-</span>;
         return (
             <div className="flex flex-col">
                 <span className={clsx(typography.headingLg, "font-bold tabular-nums")}>
                     {score.runs}/{score.wickets}
                 </span>
-                <span className={clsx(typography.caption, "text-textSecondary")}>
+                <span className={clsx(typography.caption, "text-muted-foreground")}>
                     ({score.overs})
                 </span>
             </div>
@@ -37,7 +37,7 @@ export const MatchHeader: React.FC<MatchHeaderProps> = ({ match }) => {
     };
 
     return (
-        <Card padding="lg" className="bg-white">
+        <Card padding="lg" className="bg-card">
             {/* Header Row */}
             <div className="flex justify-between items-center mb-6">
                 <span className={clsx(typography.caption, "uppercase tracking-wider font-semibold")}>
@@ -57,7 +57,7 @@ export const MatchHeader: React.FC<MatchHeaderProps> = ({ match }) => {
                 </div>
 
                 {/* VS / Divider */}
-                <div className="mx-4 text-textSecondary text-xs font-bold bg-surface rounded-full w-8 h-8 flex items-center justify-center">
+                <div className="mx-4 text-muted-foreground text-xs font-bold bg-card rounded-full w-8 h-8 flex items-center justify-center">
                     VS
                 </div>
 
@@ -72,7 +72,7 @@ export const MatchHeader: React.FC<MatchHeaderProps> = ({ match }) => {
 
             {/* Footer / Status Text */}
             <div className="mt-6 pt-4 border-t border-border text-center">
-                <p className={clsx(typography.bodyMd, "font-medium text-textSecondary")}>
+                <p className={clsx(typography.bodyMd, "font-medium text-muted-foreground")}>
                     {getStatusText()}
                 </p>
             </div>

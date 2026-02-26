@@ -24,7 +24,7 @@ export const MatchDetailPage = () => {
     if (isLoading) {
         return (
             <Container className="py-4">
-                <div className="h-48 bg-surface rounded-xl animate-pulse" />
+                <div className="h-48 bg-card rounded-xl animate-pulse" />
             </Container>
         );
     }
@@ -32,9 +32,9 @@ export const MatchDetailPage = () => {
     if (error || !match) {
         return (
             <Container className="py-4 text-center">
-                <div className="bg-surface rounded-xl p-8 border border-dashed border-border">
-                    <p className="text-danger mb-2 font-medium">Error loading match</p>
-                    <p className="text-textSecondary text-sm mb-4">{error || "Match not found"}</p>
+                <div className="bg-card rounded-xl p-8 border border-dashed border-border">
+                    <p className="text-destructive mb-2 font-medium">Error loading match</p>
+                    <p className="text-muted-foreground text-sm mb-4">{error || "Match not found"}</p>
                 </div>
             </Container>
         );

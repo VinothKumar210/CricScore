@@ -63,8 +63,8 @@ export const TournamentDetailPage = () => {
     if (isDetailLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-8 h-8 text-brand animate-spin" />
-                <p className="text-sm text-textSecondary">Loading tournament...</p>
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <p className="text-sm text-muted-foreground">Loading tournament...</p>
             </div>
         );
     }
@@ -74,17 +74,17 @@ export const TournamentDetailPage = () => {
         return (
             <Container className="py-8">
                 <div className="flex flex-col items-center py-8 gap-3">
-                    <p className="text-danger font-semibold">{detailError}</p>
+                    <p className="text-destructive font-semibold">{detailError}</p>
                     <div className="flex gap-3">
                         <button
                             onClick={() => navigate('/tournaments')}
-                            className="px-4 py-2 bg-surface border border-border rounded-lg text-sm font-medium"
+                            className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium"
                         >
                             Back to Tournaments
                         </button>
                         <button
                             onClick={() => tournamentId && fetchDetail(tournamentId)}
-                            className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium"
+                            className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium"
                         >
                             Retry
                         </button>
@@ -108,7 +108,7 @@ export const TournamentDetailPage = () => {
             {/* Back Button */}
             <button
                 onClick={() => navigate('/tournaments')}
-                className="flex items-center gap-1.5 text-textSecondary hover:text-textPrimary
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground
                            transition-colors text-sm"
             >
                 <ArrowLeft className="w-4 h-4" />
@@ -127,13 +127,13 @@ export const TournamentDetailPage = () => {
                         className={clsx(
                             'px-4 py-2.5 text-sm font-medium transition-colors relative',
                             activeTab === tab.key
-                                ? 'text-brand'
-                                : 'text-textSecondary hover:text-textPrimary',
+                                ? 'text-primary'
+                                : 'text-muted-foreground hover:text-foreground',
                         )}
                     >
                         {tab.label}
                         {activeTab === tab.key && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand rounded-full" />
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
                         )}
                     </button>
                 ))}

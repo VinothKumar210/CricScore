@@ -51,11 +51,11 @@ export const FixtureList: React.FC<FixtureListProps> = React.memo(({
 
     const statusBadge = (status: string) => {
         const map: Record<string, string> = {
-            SCHEDULED: 'bg-blue-100 text-blue-700',
+            SCHEDULED: 'bg-blue-100 text-chart-1',
             IN_PROGRESS: 'bg-amber-100 text-amber-700',
-            COMPLETED: 'bg-green-100 text-green-700',
+            COMPLETED: 'bg-primary/15 text-primary',
         };
-        return map[status] || 'bg-gray-100 text-gray-700';
+        return map[status] || 'bg-secondary text-foreground';
     };
 
     return (
@@ -66,8 +66,8 @@ export const FixtureList: React.FC<FixtureListProps> = React.memo(({
                     <button
                         onClick={handleGenerate}
                         disabled={isGenerating}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white rounded-lg
-                                   text-xs font-medium hover:bg-brand/90 transition-colors
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg
+                                   text-xs font-medium hover:bg-primary/90 transition-colors
                                    disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         {isGenerating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
@@ -76,11 +76,11 @@ export const FixtureList: React.FC<FixtureListProps> = React.memo(({
                 )}
             </div>
 
-            {genError && <p className="text-xs text-danger mb-3">{genError}</p>}
+            {genError && <p className="text-xs text-destructive mb-3">{genError}</p>}
 
             {fixtures.length === 0 && (
                 <div className="text-center py-6">
-                    <p className="text-sm text-textSecondary">
+                    <p className="text-sm text-muted-foreground">
                         {isCreator
                             ? 'No fixtures yet. Click "Generate Fixtures" to create the schedule.'
                             : 'Fixtures have not been generated yet.'
@@ -94,23 +94,23 @@ export const FixtureList: React.FC<FixtureListProps> = React.memo(({
                     {fixtures.map(f => (
                         <div
                             key={f.id}
-                            className="flex items-center justify-between px-3 py-2.5 bg-surface rounded-lg
+                            className="flex items-center justify-between px-3 py-2.5 bg-card rounded-lg
                                        border border-border/50"
                         >
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-textSecondary font-mono w-6">
+                                <span className="text-[10px] text-muted-foreground font-mono w-6">
                                     #{f.matchNumber}
                                 </span>
-                                <span className="text-sm font-medium text-textPrimary">
+                                <span className="text-sm font-medium text-foreground">
                                     {getTeamName(f.homeTeamId)}
                                 </span>
-                                <span className="text-xs text-textSecondary">vs</span>
-                                <span className="text-sm font-medium text-textPrimary">
+                                <span className="text-xs text-muted-foreground">vs</span>
+                                <span className="text-sm font-medium text-foreground">
                                     {getTeamName(f.awayTeamId)}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-textSecondary">R{f.round}</span>
+                                <span className="text-[10px] text-muted-foreground">R{f.round}</span>
                                 <span className={clsx(
                                     'px-1.5 py-0.5 rounded text-[9px] font-bold uppercase',
                                     statusBadge(f.status),

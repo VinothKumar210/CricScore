@@ -53,8 +53,8 @@ export const ProfilePage = () => {
     if (isStatsLoading && !stats) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-8 h-8 text-brand animate-spin" />
-                <p className="text-sm text-textSecondary">Loading your profile...</p>
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <p className="text-sm text-muted-foreground">Loading your profile...</p>
             </div>
         );
     }
@@ -65,7 +65,7 @@ export const ProfilePage = () => {
             <Container className="py-8">
                 <div className="flex flex-col items-center py-12 gap-3">
                     <span className="text-4xl">🏏</span>
-                    <p className="text-textSecondary text-sm">
+                    <p className="text-muted-foreground text-sm">
                         Profile not available. Please log in again.
                     </p>
                 </div>
@@ -95,11 +95,11 @@ export const ProfilePage = () => {
 
             {/* Error */}
             {statsError && (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
+                <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 text-center">
                     <p className="text-xs text-red-600">{statsError}</p>
                     <button
                         onClick={() => profile.id && fetchStats(profile.id)}
-                        className="mt-2 text-xs text-brand font-medium underline"
+                        className="mt-2 text-xs text-primary font-medium underline"
                     >
                         Retry
                     </button>
@@ -118,7 +118,7 @@ export const ProfilePage = () => {
             {/* Member Since */}
             {profile.createdAt && (
                 <div className="text-center py-4 border-t border-border/30">
-                    <p className="text-[10px] text-textSecondary">
+                    <p className="text-[10px] text-muted-foreground">
                         Member since {new Date(profile.createdAt).toLocaleDateString(undefined, {
                             month: 'long', year: 'numeric',
                         })}

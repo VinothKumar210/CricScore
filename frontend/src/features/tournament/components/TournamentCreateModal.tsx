@@ -61,17 +61,17 @@ export const TournamentCreateModal: React.FC<TournamentCreateModalProps> = React
                 <Card padding="lg" className="w-full max-w-md max-h-[90vh] overflow-y-auto relative">
                     <button
                         onClick={onClose}
-                        className="absolute top-3 right-3 p-1 text-textSecondary hover:text-textPrimary"
+                        className="absolute top-3 right-3 p-1 text-muted-foreground hover:text-foreground"
                     >
                         <X className="w-5 h-5" />
                     </button>
 
-                    <h2 className="text-lg font-bold text-textPrimary mb-4">Create Tournament</h2>
+                    <h2 className="text-lg font-bold text-foreground mb-4">Create Tournament</h2>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Name */}
                         <div>
-                            <label className="block text-xs font-medium text-textSecondary mb-1">
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">
                                 Tournament Name *
                             </label>
                             <input
@@ -80,18 +80,18 @@ export const TournamentCreateModal: React.FC<TournamentCreateModalProps> = React
                                 onChange={e => setName(e.target.value)}
                                 placeholder="e.g. T20 Premier League"
                                 maxLength={50}
-                                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm
+                                className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm
                                            focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
                             />
                         </div>
 
                         {/* Format */}
                         <div>
-                            <label className="block text-xs font-medium text-textSecondary mb-1">Format *</label>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">Format *</label>
                             <select
                                 value={format}
                                 onChange={e => setFormat(e.target.value)}
-                                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm
+                                className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm
                                            focus:outline-none focus:ring-2 focus:ring-brand/30"
                             >
                                 <option value="ROUND_ROBIN">Round Robin</option>
@@ -102,24 +102,24 @@ export const TournamentCreateModal: React.FC<TournamentCreateModalProps> = React
                         {/* Overs + Max Teams */}
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="block text-xs font-medium text-textSecondary mb-1">Overs *</label>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">Overs *</label>
                                 <input
                                     type="number"
                                     value={overs}
                                     onChange={e => setOvers(Number(e.target.value))}
                                     min={1} max={50}
-                                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm
+                                    className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm
                                                focus:outline-none focus:ring-2 focus:ring-brand/30"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-textSecondary mb-1">Max Teams *</label>
+                                <label className="block text-xs font-medium text-muted-foreground mb-1">Max Teams *</label>
                                 <input
                                     type="number"
                                     value={maxTeams}
                                     onChange={e => setMaxTeams(Number(e.target.value))}
                                     min={2} max={32}
-                                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm
+                                    className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm
                                                focus:outline-none focus:ring-2 focus:ring-brand/30"
                                 />
                             </div>
@@ -127,23 +127,23 @@ export const TournamentCreateModal: React.FC<TournamentCreateModalProps> = React
 
                         {/* Start Date */}
                         <div>
-                            <label className="block text-xs font-medium text-textSecondary mb-1">Start Date *</label>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">Start Date *</label>
                             <input
                                 type="date"
                                 value={startDate}
                                 onChange={e => setStartDate(e.target.value)}
-                                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm
+                                className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm
                                            focus:outline-none focus:ring-2 focus:ring-brand/30"
                             />
                         </div>
 
                         {/* Ball Type */}
                         <div>
-                            <label className="block text-xs font-medium text-textSecondary mb-1">Ball Type</label>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">Ball Type</label>
                             <select
                                 value={ballType}
                                 onChange={e => setBallType(e.target.value)}
-                                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm
+                                className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm
                                            focus:outline-none focus:ring-2 focus:ring-brand/30"
                             >
                                 <option value="">Not specified</option>
@@ -155,27 +155,27 @@ export const TournamentCreateModal: React.FC<TournamentCreateModalProps> = React
 
                         {/* Description */}
                         <div>
-                            <label className="block text-xs font-medium text-textSecondary mb-1">Description</label>
+                            <label className="block text-xs font-medium text-muted-foreground mb-1">Description</label>
                             <textarea
                                 value={description}
                                 onChange={e => setDescription(e.target.value)}
                                 maxLength={200}
                                 rows={2}
                                 placeholder="Optional description..."
-                                className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-sm
+                                className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm
                                            resize-none focus:outline-none focus:ring-2 focus:ring-brand/30"
                             />
                         </div>
 
                         {/* Error */}
-                        {error && <p className="text-xs text-danger font-medium">{error}</p>}
+                        {error && <p className="text-xs text-destructive font-medium">{error}</p>}
 
                         {/* Submit */}
                         <button
                             type="submit"
                             disabled={!isValid || isSubmitting}
-                            className="w-full py-2.5 bg-brand text-white rounded-lg text-sm font-semibold
-                                       hover:bg-brand/90 transition-colors
+                            className="w-full py-2.5 bg-primary text-white rounded-lg text-sm font-semibold
+                                       hover:bg-primary/90 transition-colors
                                        disabled:opacity-40 disabled:cursor-not-allowed
                                        flex items-center justify-center gap-2"
                         >

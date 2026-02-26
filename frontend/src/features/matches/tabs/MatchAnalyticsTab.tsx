@@ -18,18 +18,18 @@ const RunRateGraph: React.FC = () => {
             <div className="flex items-end gap-1 h-32">
                 {data.map((point) => (
                     <div key={point.over} className="flex-1 flex flex-col items-center gap-1">
-                        <span className="text-[10px] text-textSecondary tabular-nums">
+                        <span className="text-[10px] text-muted-foreground tabular-nums">
                             {point.runRate}
                         </span>
                         <div
-                            className="w-full bg-brand/80 rounded-t-sm transition-all duration-300"
+                            className="w-full bg-primary/80 rounded-t-sm transition-all duration-300"
                             style={{ height: `${(point.runRate / maxRR) * 100}%`, minHeight: 4 }}
                         />
-                        <span className="text-[10px] text-textSecondary">{point.over}</span>
+                        <span className="text-[10px] text-muted-foreground">{point.over}</span>
                     </div>
                 ))}
             </div>
-            <div className="flex justify-between mt-2 text-[10px] text-textSecondary">
+            <div className="flex justify-between mt-2 text-[10px] text-muted-foreground">
                 <span>Over →</span>
                 <span>CRR: {data[data.length - 1]?.runRate ?? "—"}</span>
             </div>
@@ -42,7 +42,7 @@ const MomentumBar: React.FC = () => {
 
     const trendColors = {
         UP: "bg-success text-success",
-        DOWN: "bg-danger text-danger",
+        DOWN: "bg-destructive text-destructive",
         STABLE: "bg-warning text-warning",
     };
 
@@ -52,7 +52,7 @@ const MomentumBar: React.FC = () => {
     return (
         <AnalyticsCard title="🔥 Momentum">
             <div className="flex items-center gap-3">
-                <div className="flex-1 h-6 bg-surfaceAlt rounded-full overflow-hidden relative">
+                <div className="flex-1 h-6 bg-cardAlt rounded-full overflow-hidden relative">
                     <div
                         className={clsx(
                             "h-full rounded-full transition-all duration-500",
@@ -71,7 +71,7 @@ const MomentumBar: React.FC = () => {
                     {trendEmoji[momentum.trend]} {momentum.impact > 0 ? "+" : ""}{momentum.impact}
                 </span>
             </div>
-            <div className="flex justify-between mt-1 text-[10px] text-textSecondary">
+            <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
                 <span>← Bowling</span>
                 <span className="uppercase font-medium">{momentum.trend}</span>
                 <span>Batting →</span>
@@ -89,21 +89,21 @@ const PressureMeter: React.FC = () => {
         LOW: "text-success",
         MEDIUM: "text-warning",
         HIGH: "text-orange-500",
-        EXTREME: "text-danger",
+        EXTREME: "text-destructive",
     };
 
     const levelBg: Record<string, string> = {
         LOW: "bg-success/20",
         MEDIUM: "bg-warning/20",
-        HIGH: "bg-orange-500/20",
-        EXTREME: "bg-danger/20",
+        HIGH: "bg-orange-500/100/20",
+        EXTREME: "bg-destructive/20",
     };
 
     return (
         <AnalyticsCard title="🎯 Pressure Index">
             <div className="flex items-center justify-between">
                 <div className="flex flex-col">
-                    <span className="text-xs text-textSecondary">CRR</span>
+                    <span className="text-xs text-muted-foreground">CRR</span>
                     <span className="text-xl font-bold tabular-nums">{pressure.currentRate}</span>
                 </div>
                 <div className={clsx("px-4 py-2 rounded-lg", levelBg[pressure.pressureLevel])}>
@@ -112,17 +112,17 @@ const PressureMeter: React.FC = () => {
                     </span>
                 </div>
                 <div className="flex flex-col items-end">
-                    <span className="text-xs text-textSecondary">RRR</span>
+                    <span className="text-xs text-muted-foreground">RRR</span>
                     <span className="text-xl font-bold tabular-nums">{pressure.requiredRate}</span>
                 </div>
             </div>
-            <div className="mt-2 h-2 bg-surfaceAlt rounded-full overflow-hidden">
+            <div className="mt-2 h-2 bg-cardAlt rounded-full overflow-hidden">
                 <div
                     className={clsx("h-full rounded-full transition-all duration-500", {
                         "bg-success": pressure.pressureLevel === "LOW",
                         "bg-warning": pressure.pressureLevel === "MEDIUM",
-                        "bg-orange-500": pressure.pressureLevel === "HIGH",
-                        "bg-danger": pressure.pressureLevel === "EXTREME",
+                        "bg-orange-500/100": pressure.pressureLevel === "HIGH",
+                        "bg-destructive": pressure.pressureLevel === "EXTREME",
                     })}
                     style={{ width: `${Math.min(Math.max(pressure.pressureGap, 0) * 25, 100)}%` }}
                 />
@@ -146,7 +146,7 @@ const PhaseTable: React.FC = () => {
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="text-textSecondary text-xs border-b border-border">
+                        <tr className="text-muted-foreground text-xs border-b border-border">
                             <th className="text-left py-1 font-medium">Phase</th>
                             <th className="text-right py-1 font-medium">Runs</th>
                             <th className="text-right py-1 font-medium">Wkts</th>
@@ -180,19 +180,19 @@ const WinProbabilityBar: React.FC = () => {
         <AnalyticsCard title="📊 Win Probability">
             <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs font-medium w-8 text-right">{wp.battingTeam}%</span>
-                <div className="flex-1 h-5 bg-surfaceAlt rounded-full overflow-hidden flex">
+                <div className="flex-1 h-5 bg-cardAlt rounded-full overflow-hidden flex">
                     <div
-                        className="h-full bg-brand transition-all duration-500 rounded-l-full"
+                        className="h-full bg-primary transition-all duration-500 rounded-l-full"
                         style={{ width: `${wp.battingTeam}%` }}
                     />
                     <div
-                        className="h-full bg-danger/70 transition-all duration-500 rounded-r-full"
+                        className="h-full bg-destructive/70 transition-all duration-500 rounded-r-full"
                         style={{ width: `${wp.bowlingTeam}%` }}
                     />
                 </div>
                 <span className="text-xs font-medium w-8">{wp.bowlingTeam}%</span>
             </div>
-            <div className="flex justify-between text-[10px] text-textSecondary">
+            <div className="flex justify-between text-[10px] text-muted-foreground">
                 <span>🏏 Batting</span>
                 <span>🎳 Bowling</span>
             </div>
@@ -203,15 +203,15 @@ const WinProbabilityBar: React.FC = () => {
 // ─── Shared Components ───
 
 const AnalyticsCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-    <div className="bg-surface rounded-xl border border-border p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-textPrimary">{title}</h3>
+    <div className="bg-card rounded-xl border border-border p-4 space-y-3">
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
         {children}
     </div>
 );
 
 const EmptySection: React.FC<{ label: string }> = ({ label }) => (
-    <div className="bg-surface rounded-xl border border-border/50 p-6 text-center">
-        <p className="text-textSecondary text-sm">{label} — No data yet</p>
+    <div className="bg-card rounded-xl border border-border/50 p-6 text-center">
+        <p className="text-muted-foreground text-sm">{label} — No data yet</p>
     </div>
 );
 

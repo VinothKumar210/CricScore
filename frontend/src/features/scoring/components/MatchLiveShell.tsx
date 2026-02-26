@@ -35,21 +35,21 @@ export const MatchLiveShell = React.memo(() => {
             </div>
 
             {/* Timeline */}
-            <div className="flex-none border-b border-border border-t bg-white pt-1">
+            <div className="flex-none border-b border-border border-t bg-card pt-1">
                 <OverTimeline />
             </div>
 
-            <div className="flex-none bg-gray-50/50">
+            <div className="flex-none bg-background/50">
                 <ReplaySlider />
             </div>
 
             {/* Commentary Toggle */}
-            <div className="flex-none bg-gray-50/50 pt-2">
+            <div className="flex-none bg-background/50 pt-2">
                 <CommentaryPanel />
             </div>
 
             {/* Stats Section */}
-            <div className="flex-1 overflow-y-auto bg-gray-50/50">
+            <div className="flex-1 overflow-y-auto bg-background/50">
                 <div className="p-3 space-y-3">
 
                     {/* Partnership Card */}
@@ -59,7 +59,7 @@ export const MatchLiveShell = React.memo(() => {
                                 <span className="tabular-nums font-semibold">
                                     {partnership.current.runs} ({partnership.current.balls})
                                 </span>
-                                <span className="text-textSecondary text-xs">
+                                <span className="text-muted-foreground text-xs">
                                     Best: {partnership.highest.runs} ({partnership.highest.balls})
                                 </span>
                             </div>
@@ -72,13 +72,13 @@ export const MatchLiveShell = React.memo(() => {
                             <span className={clsx(
                                 "text-sm font-bold",
                                 momentum.trend === "UP" && "text-success",
-                                momentum.trend === "DOWN" && "text-danger",
+                                momentum.trend === "DOWN" && "text-destructive",
                                 momentum.trend === "STABLE" && "text-warning"
                             )}>
                                 {momentum.trend === "UP" ? "▲" : momentum.trend === "DOWN" ? "▼" : "■"}{" "}
                                 {momentum.impact > 0 ? "+" : ""}{momentum.impact}
                             </span>
-                            <span className="text-xs text-textSecondary uppercase">{momentum.trend}</span>
+                            <span className="text-xs text-muted-foreground uppercase">{momentum.trend}</span>
                         </div>
                     </StatsCard>
 
@@ -87,7 +87,7 @@ export const MatchLiveShell = React.memo(() => {
                         <StatsCard title="🏏 Batting">
                             <table className="w-full text-xs">
                                 <thead>
-                                    <tr className="text-textSecondary border-b border-border">
+                                    <tr className="text-muted-foreground border-b border-border">
                                         <th className="text-left py-1 font-medium">Batter</th>
                                         <th className="text-right py-1 font-medium">R</th>
                                         <th className="text-right py-1 font-medium">B</th>
@@ -99,7 +99,7 @@ export const MatchLiveShell = React.memo(() => {
                                 <tbody>
                                     {batsmanStats.map((b) => (
                                         <tr key={b.playerId} className="border-b border-border/30">
-                                            <td className={clsx("py-1.5", b.isOut && "text-textSecondary line-through")}>
+                                            <td className={clsx("py-1.5", b.isOut && "text-muted-foreground line-through")}>
                                                 {b.playerId}
                                             </td>
                                             <td className="text-right py-1.5 tabular-nums font-medium">{b.runs}</td>
@@ -119,7 +119,7 @@ export const MatchLiveShell = React.memo(() => {
                         <StatsCard title="🎳 Bowling">
                             <table className="w-full text-xs">
                                 <thead>
-                                    <tr className="text-textSecondary border-b border-border">
+                                    <tr className="text-muted-foreground border-b border-border">
                                         <th className="text-left py-1 font-medium">Bowler</th>
                                         <th className="text-right py-1 font-medium">O</th>
                                         <th className="text-right py-1 font-medium">M</th>
@@ -156,8 +156,8 @@ MatchLiveShell.displayName = "MatchLiveShell";
 
 // ─── Shared Card ───
 const StatsCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-    <div className="bg-white rounded-xl border border-border p-3 space-y-2 shadow-sm">
-        <h4 className="text-xs font-semibold text-textSecondary uppercase tracking-wider">{title}</h4>
+    <div className="bg-card rounded-xl border border-border p-3 space-y-2 shadow-sm">
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</h4>
         {children}
     </div>
 );

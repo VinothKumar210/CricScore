@@ -47,39 +47,39 @@ export const UndoBottomSheet = ({ isOpen, onClose }: UndoBottomSheetProps) => {
             />
 
             {/* Sheet */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl p-4 shadow-xl animate-in slide-in-from-bottom duration-200">
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-card rounded-t-2xl p-4 shadow-xl animate-in slide-in-from-bottom duration-200">
                 {/* Handle / Drag Indicator (Visual only) */}
                 <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4" />
 
                 <div className="text-center mb-6">
-                    <div className="flex items-center justify-center gap-2 mb-2 text-textPrimary">
+                    <div className="flex items-center justify-center gap-2 mb-2 text-foreground">
                         <AlertTriangle size={20} className="text-warning" />
                         <h3 className={clsx(typography.headingMd)}>Undo Last Ball?</h3>
                     </div>
 
                     {lastBall ? (
-                        <div className="bg-surface rounded-lg p-3 inline-block min-w-[200px]">
-                            <div className="text-xs text-textSecondary uppercase tracking-wide mb-1">
+                        <div className="bg-card rounded-lg p-3 inline-block min-w-[200px]">
+                            <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
                                 Over {lastBall.overNumber}
                             </div>
                             <div className="flex items-center justify-center gap-2">
                                 <span className={clsx(typography.headingXl, "font-bold tabular-nums")}>
                                     {lastBall.label}
                                 </span>
-                                <span className="text-sm text-textSecondary font-medium">
+                                <span className="text-sm text-muted-foreground font-medium">
                                     ({lastBall.type})
                                 </span>
                             </div>
                         </div>
                     ) : (
-                        <p className="text-textSecondary">No ball available to undo.</p>
+                        <p className="text-muted-foreground">No ball available to undo.</p>
                     )}
                 </div>
 
                 <div className="flex gap-3">
                     <button
                         onClick={onClose}
-                        className="flex-1 h-11 rounded-xl border border-border font-semibold text-textPrimary hover:bg-surface active:scale-[0.98] transition-all"
+                        className="flex-1 h-11 rounded-xl border border-border font-semibold text-foreground hover:bg-card active:scale-[0.98] transition-all"
                     >
                         Cancel
                     </button>
@@ -88,7 +88,7 @@ export const UndoBottomSheet = ({ isOpen, onClose }: UndoBottomSheetProps) => {
                         disabled={!canUndo}
                         className={clsx(
                             "flex-1 h-11 rounded-xl font-semibold text-white shadow-sm active:scale-[0.98] transition-all",
-                            !canUndo ? "bg-danger/50 cursor-not-allowed" : "bg-danger hover:bg-danger/90"
+                            !canUndo ? "bg-destructive/50 cursor-not-allowed" : "bg-destructive hover:bg-destructive/90"
                         )}
                     >
                         Confirm Undo

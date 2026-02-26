@@ -22,8 +22,8 @@ export const MatchTabs = () => {
                         clsx(
                             "flex-1 text-center py-3 text-sm font-medium transition-colors",
                             isActive
-                                ? "text-brand border-b-2 border-brand"
-                                : "text-textSecondary hover:text-textPrimary"
+                                ? "text-primary border-b-2 border-brand"
+                                : "text-muted-foreground hover:text-foreground"
                         )
                     }
                 >

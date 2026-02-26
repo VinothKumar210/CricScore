@@ -42,34 +42,34 @@ export const ReplaySlider: React.FC = () => {
     return (
         <div className={clsx(
             "mx-3 mt-3 p-3 rounded-xl border transition-all duration-300 shadow-sm",
-            isReplaying ? "bg-brand/5 border-brand/20" : "bg-white border-border"
+            isReplaying ? "bg-primary/5 border-brand/20" : "bg-card border-border"
         )}>
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                    <History className={clsx("w-4 h-4", isReplaying ? "text-brand animate-pulse" : "text-textSecondary")} />
-                    <span className="text-sm font-semibold text-textPrimary uppercase tracking-wider">
+                    <History className={clsx("w-4 h-4", isReplaying ? "text-primary animate-pulse" : "text-muted-foreground")} />
+                    <span className="text-sm font-semibold text-foreground uppercase tracking-wider">
                         Timeline Replay
                     </span>
                 </div>
                 {isReplaying && (
                     <button
                         onClick={handleBackToLive}
-                        className="flex items-center gap-1.5 px-3 py-1 bg-brand text-white text-xs font-bold rounded-full shadow-sm hover:bg-brand/90 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1 bg-primary text-white text-xs font-bold rounded-full shadow-sm hover:bg-primary/90 transition-colors"
                     >
                         <Play className="w-3 h-3 fill-current" />
                         BACK TO LIVE
                     </button>
                 )}
                 {!isReplaying && matchState?.status === "LIVE" && (
-                    <span className="flex items-center gap-1.5 px-2 py-0.5 bg-danger/10 text-danger text-[10px] font-bold rounded uppercase tracking-wider">
-                        <span className="w-1.5 h-1.5 rounded-full bg-danger animate-pulse" />
+                    <span className="flex items-center gap-1.5 px-2 py-0.5 bg-destructive/10 text-destructive text-[10px] font-bold rounded uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
                         LIVE
                     </span>
                 )}
             </div>
 
             <div className="flex items-center gap-3">
-                <SkipBack className="w-4 h-4 text-textSecondary flex-shrink-0" />
+                <SkipBack className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <div className="relative flex-1 group">
                     <input
                         type="range"
@@ -80,15 +80,15 @@ export const ReplaySlider: React.FC = () => {
                         className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-brand focus:outline-none focus:ring-2 focus:ring-brand/30 transition-all"
                     />
                     <div className="absolute -bottom-5 w-full flex justify-between px-1 pointer-events-none">
-                        <span className="text-[10px] font-medium text-textSecondary uppercase tracking-wider">Start</span>
-                        <span className="text-[10px] font-medium text-textSecondary uppercase tracking-wider">{maxIndex} balls</span>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Start</span>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{maxIndex} balls</span>
                     </div>
                 </div>
             </div>
             {isReplaying && (
                 <div className="mt-4 text-center">
-                    <span className="text-xs font-medium text-textSecondary">
-                        Viewing ball <span className="text-brand font-bold">{currentIndex}</span> of {maxIndex}
+                    <span className="text-xs font-medium text-muted-foreground">
+                        Viewing ball <span className="text-primary font-bold">{currentIndex}</span> of {maxIndex}
                     </span>
                 </div>
             )}

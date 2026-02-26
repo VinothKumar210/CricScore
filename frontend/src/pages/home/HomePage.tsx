@@ -15,8 +15,8 @@ export const HomePage = () => {
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh] p-4 text-center">
-                <p className="text-danger mb-2 font-medium">Something went wrong</p>
-                <p className="text-textSecondary text-sm mb-4">{error}</p>
+                <p className="text-destructive mb-2 font-medium">Something went wrong</p>
+                <p className="text-muted-foreground text-sm mb-4">{error}</p>
                 <button
                     onClick={() => fetchHomeFeed()}
                     className="px-4 py-2 bg-textPrimary text-white rounded-lg text-sm"
@@ -33,7 +33,7 @@ export const HomePage = () => {
             <section>
                 <div className="flex items-center justify-between mb-4">
                     <h2 className={typography.headingMd}>Your Matches</h2>
-                    <Link to="/match/create" className="text-brand text-sm font-medium">
+                    <Link to="/match/create" className="text-primary text-sm font-medium">
                         Create New
                     </Link>
                 </div>
@@ -62,7 +62,7 @@ export const HomePage = () => {
             <section>
                 <div className="flex items-center justify-between mb-4">
                     <h2 className={typography.headingMd}>Live Now</h2>
-                    <Link to="/market" className="text-brand text-sm font-medium">
+                    <Link to="/market" className="text-primary text-sm font-medium">
                         View All
                     </Link>
                 </div>
@@ -91,14 +91,14 @@ export const HomePage = () => {
 
 // Helper Components
 const SkeletonCard = () => (
-    <div className="h-40 bg-surface rounded-xl animate-pulse" />
+    <div className="h-40 bg-card rounded-xl animate-pulse" />
 );
 
 const EmptyState = ({ message, actionLabel, actionLink }: { message: string, actionLabel?: string, actionLink?: string }) => (
-    <div className="bg-surface rounded-xl p-8 text-center border border-dashed border-border">
-        <p className="text-textSecondary text-sm mb-3">{message}</p>
+    <div className="bg-card rounded-xl p-8 text-center border border-dashed border-border">
+        <p className="text-muted-foreground text-sm mb-3">{message}</p>
         {actionLabel && actionLink && (
-            <Link to={actionLink} className="text-brand font-medium text-sm hover:underline">
+            <Link to={actionLink} className="text-primary font-medium text-sm hover:underline">
                 {actionLabel}
             </Link>
         )}

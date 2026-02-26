@@ -15,8 +15,8 @@ export const RecentMatchHistory: React.FC<RecentMatchHistoryProps> = React.memo(
     if (form.length === 0) {
         return (
             <Card padding="md">
-                <h3 className="text-sm font-bold text-textPrimary mb-2">Recent Form</h3>
-                <p className="text-xs text-textSecondary text-center py-4">No recent matches yet.</p>
+                <h3 className="text-sm font-bold text-foreground mb-2">Recent Form</h3>
+                <p className="text-xs text-muted-foreground text-center py-4">No recent matches yet.</p>
             </Card>
         );
     }
@@ -27,8 +27,8 @@ export const RecentMatchHistory: React.FC<RecentMatchHistoryProps> = React.memo(
         <Card padding="md">
             <div className="flex items-center gap-2 mb-3">
                 <span className="text-base">📈</span>
-                <h3 className="text-sm font-bold text-textPrimary">Recent Form</h3>
-                <span className="text-[10px] text-textSecondary ml-auto">Last {form.length}</span>
+                <h3 className="text-sm font-bold text-foreground">Recent Form</h3>
+                <span className="text-[10px] text-muted-foreground ml-auto">Last {form.length}</span>
             </div>
 
             {/* Visual form bar chart */}
@@ -43,7 +43,7 @@ export const RecentMatchHistory: React.FC<RecentMatchHistoryProps> = React.memo(
                             className="flex-1 flex flex-col items-center gap-0.5"
                             title={`${entry.runs} vs ${entry.opponent}`}
                         >
-                            <span className="text-[8px] text-textSecondary tabular-nums font-bold">
+                            <span className="text-[8px] text-muted-foreground tabular-nums font-bold">
                                 {entry.runs}
                             </span>
                             <div
@@ -65,28 +65,28 @@ export const RecentMatchHistory: React.FC<RecentMatchHistoryProps> = React.memo(
                 {form.map((entry, i) => (
                     <div
                         key={i}
-                        className="flex items-center justify-between px-2 py-1.5 bg-surface rounded-lg
+                        className="flex items-center justify-between px-2 py-1.5 bg-card rounded-lg
                                    text-xs"
                     >
                         <div className="flex items-center gap-2">
                             <span className={clsx(
                                 'w-1.5 h-1.5 rounded-full',
-                                entry.result === 'WIN' ? 'bg-green-500'
+                                entry.result === 'WIN' ? 'bg-primary/100'
                                     : entry.result === 'TIE' ? 'bg-amber-500'
                                         : 'bg-red-400',
                             )} />
-                            <span className="text-textSecondary truncate max-w-[100px]">
+                            <span className="text-muted-foreground truncate max-w-[100px]">
                                 vs {entry.opponent}
                             </span>
                         </div>
                         <div className="flex items-center gap-2">
                             <span className={clsx(
                                 'font-bold tabular-nums',
-                                entry.runs >= 50 ? 'text-amber-600' : 'text-textPrimary',
+                                entry.runs >= 50 ? 'text-amber-600' : 'text-foreground',
                             )}>
                                 {entry.runs}{!entry.isOut ? '*' : ''}
                             </span>
-                            <span className="text-[9px] text-textSecondary">
+                            <span className="text-[9px] text-muted-foreground">
                                 {new Date(entry.date).toLocaleDateString(undefined, {
                                     month: 'short', day: 'numeric',
                                 })}

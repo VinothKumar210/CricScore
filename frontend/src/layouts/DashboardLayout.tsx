@@ -4,7 +4,7 @@ import { BottomNav } from '../components/navigation/BottomNav';
 
 export const DashboardLayout = () => {
     return (
-        <div className="min-h-screen bg-surface flex flex-col">
+        <div className="min-h-screen bg-background flex flex-col">
             <TopBar />
 
             <main className="flex-1 pt-14 pb-16 overflow-y-auto">

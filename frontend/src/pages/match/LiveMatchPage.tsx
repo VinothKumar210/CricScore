@@ -32,7 +32,7 @@ export const LiveMatchPage = () => {
     if (!matchState && !error) {
         return (
             <div className="flex items-center justify-center h-screen bg-bgPrimary">
-                <Loader2 className="w-8 h-8 text-brand animate-spin" />
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
         );
     }
@@ -41,10 +41,10 @@ export const LiveMatchPage = () => {
     if (error && !matchState) {
         return (
             <div className="flex flex-col items-center justify-center h-screen bg-bgPrimary p-4">
-                <p className="text-danger font-semibold mb-2">Failed to load match</p>
+                <p className="text-destructive font-semibold mb-2">Failed to load match</p>
                 <button
                     onClick={() => matchId && initialize(matchId)}
-                    className="px-4 py-2 bg-brand text-white rounded-lg"
+                    className="px-4 py-2 bg-primary text-white rounded-lg"
                 >
                     Retry
                 </button>
@@ -69,7 +69,7 @@ export const LiveMatchPage = () => {
             {/* Share FAB */}
             <button
                 onClick={handleShare}
-                className="fixed top-4 right-4 z-50 bg-brand text-white p-2.5 rounded-full shadow-lg hover:bg-brand/90 transition-all active:scale-95"
+                className="fixed top-4 right-4 z-50 bg-primary text-white p-2.5 rounded-full shadow-lg hover:bg-primary/90 transition-all active:scale-95"
                 aria-label="Share match link"
             >
                 {copied ? <Check className="w-5 h-5" /> : <Share2 className="w-5 h-5" />}

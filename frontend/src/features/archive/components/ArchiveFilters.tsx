@@ -56,8 +56,8 @@ export const ArchiveFilters: React.FC = React.memo(() => {
                 value={teamInput}
                 onChange={e => handleTeamChange(e.target.value)}
                 placeholder="Filter by team..."
-                className="px-3 py-1.5 bg-surface border border-border rounded-lg text-sm
-                           text-textPrimary placeholder:text-textSecondary
+                className="px-3 py-1.5 bg-card border border-border rounded-lg text-sm
+                           text-foreground placeholder:text-muted-foreground
                            focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand
                            w-40"
             />
@@ -66,16 +66,16 @@ export const ArchiveFilters: React.FC = React.memo(() => {
                 value={tournamentInput}
                 onChange={e => handleTournamentChange(e.target.value)}
                 placeholder="Tournament..."
-                className="px-3 py-1.5 bg-surface border border-border rounded-lg text-sm
-                           text-textPrimary placeholder:text-textSecondary
+                className="px-3 py-1.5 bg-card border border-border rounded-lg text-sm
+                           text-foreground placeholder:text-muted-foreground
                            focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand
                            w-40"
             />
             {hasFilters && (
                 <button
                     onClick={handleClear}
-                    className="px-3 py-1.5 text-xs font-medium text-textSecondary bg-surface
-                               border border-border rounded-lg hover:bg-gray-100 transition-colors"
+                    className="px-3 py-1.5 text-xs font-medium text-muted-foreground bg-card
+                               border border-border rounded-lg hover:bg-secondary transition-colors"
                 >
                     Clear
                 </button>

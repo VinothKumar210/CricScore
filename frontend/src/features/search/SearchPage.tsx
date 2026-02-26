@@ -119,7 +119,7 @@ export const SearchPage = () => {
                         <button
                             onClick={() => { setQuery(''); setResults(null); inputRef.current?.focus(); }}
                             style={{
-                                background: 'var(--bg-surface, #24262D)', border: 'none',
+                                background: 'var(--bg-card, #24262D)', border: 'none',
                                 borderRadius: '50%', width: 24, height: 24, cursor: 'pointer',
                                 color: 'var(--text-secondary, #888)', fontSize: 12,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -246,7 +246,7 @@ const ResultRow = ({
                 width: 42, height: 42, borderRadius: r.type === 'USER' ? '50%' : 10,
                 background: r.imageUrl
                     ? `url(${r.imageUrl}) center/cover`
-                    : 'var(--bg-surface, #24262D)',
+                    : 'var(--bg-card, #24262D)',
                 border: '1px solid var(--border, #2A2D35)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 18, flexShrink: 0, overflow: 'hidden',

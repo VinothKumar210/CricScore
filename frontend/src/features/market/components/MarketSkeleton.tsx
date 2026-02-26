@@ -4,7 +4,7 @@ export const MarketSkeleton: React.FC = () => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map(key => (
-                <div key={key} className="bg-white dark:bg-card-900 rounded-xl p-5 border border-gray-100 dark:border-gray-800">
+                <div key={key} className="bg-card dark:bg-card-900 rounded-xl p-5 border border-gray-100 dark:border-gray-800">
                     <div className="flex justify-between items-start mb-4">
                         <div className="flex items-center gap-3">
                             <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-800 animate-shimmer"></div>

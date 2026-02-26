@@ -237,7 +237,7 @@ const PlayerPicker = ({
         {hits.length > 0 && (
             <div style={{
                 position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
-                background: 'var(--bg-surface, #24262D)', border: '1px solid var(--border, #2A2D35)',
+                background: 'var(--bg-card, #24262D)', border: '1px solid var(--border, #2A2D35)',
                 borderRadius: 10, marginTop: 4, overflow: 'hidden',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
             }}>

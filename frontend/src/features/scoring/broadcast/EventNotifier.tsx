@@ -35,8 +35,8 @@ export const EventNotifier: React.FC = () => {
                     key={toast.id}
                     className="bg-gray-900 text-white rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 w-full animate-in slide-in-from-bottom-4 fade-in duration-300 pointer-events-auto"
                 >
-                    <div className="bg-brand/20 p-1.5 rounded-full flex-shrink-0">
-                        <Bell className="w-4 h-4 text-brand max-h-full" />
+                    <div className="bg-primary/20 p-1.5 rounded-full flex-shrink-0">
+                        <Bell className="w-4 h-4 text-primary max-h-full" />
                     </div>
                     <span className="text-sm font-medium w-full break-words">
                         {toast.message}

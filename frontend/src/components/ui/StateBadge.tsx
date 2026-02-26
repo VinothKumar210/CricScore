@@ -7,10 +7,10 @@ interface StateBadgeProps {
 }
 
 const statusStyles: Record<MatchStatus, string> = {
-    LIVE: 'bg-danger/10 text-danger',
+    LIVE: 'bg-destructive/10 text-destructive',
     COMPLETED: 'bg-success/10 text-success',
     SCHEDULED: 'bg-warning/10 text-warning',
-    ABANDONED: 'bg-textSecondary/20 text-textSecondary',
+    ABANDONED: 'bg-textSecondary/20 text-muted-foreground',
     INNINGS_BREAK: 'bg-warning/10 text-warning',
 };
 
@@ -32,7 +32,7 @@ export const StateBadge: React.FC<StateBadgeProps> = ({ status, className }) => 
             )}
         >
             {status === 'LIVE' && (
-                <span className="w-1.5 h-1.5 rounded-full bg-danger mr-1.5 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-destructive mr-1.5 animate-pulse" />
             )}
             {statusLabels[status]}
         </span>

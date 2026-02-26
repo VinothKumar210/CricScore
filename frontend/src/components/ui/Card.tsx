@@ -2,7 +2,7 @@ import { clsx } from 'clsx';
 
 type CardPadding = 'sm' | 'md' | 'lg';
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> { // Extend HTMLAttributes to allow onClick
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
     padding?: CardPadding;
     hover?: boolean;
@@ -19,14 +19,14 @@ export const Card: React.FC<CardProps> = ({
     padding = 'md',
     hover = false,
     className,
-    ...props // Spread remaining props like onClick
+    ...props
 }) => {
     return (
         <div
             className={clsx(
-                'bg-white border border-border rounded-xl',
+                'bg-card border border-border rounded-xl text-card-foreground',
                 paddingStyles[padding],
-                hover && 'hover:shadow-sm transition-shadow',
+                hover && 'hover:border-primary/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.06)] transition-all duration-200',
                 className
             )}
             {...props}

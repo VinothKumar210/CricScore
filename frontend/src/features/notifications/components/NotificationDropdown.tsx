@@ -85,15 +85,15 @@ const NotificationDropdown: React.FC<Props> = ({ anchorRect, onClose, anchorRef 
             tabIndex={-1}
             role="dialog"
             aria-label="Notifications"
-            className="bg-white dark:bg-card-900 rounded-lg shadow-xl ring-1 ring-black/5 dark:ring-white/10 overflow-hidden flex flex-col max-h-[85vh] outline-none animate-dropdown"
+            className="bg-card dark:bg-card-900 rounded-lg shadow-xl ring-1 ring-black/5 dark:ring-white/10 overflow-hidden flex flex-col max-h-[85vh] outline-none animate-dropdown"
         >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">Notifications</h3>
+                <h3 className="font-semibold text-foreground dark:text-gray-100">Notifications</h3>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={handleMarkAllRead}
-                        className="text-xs text-brand-600 hover:text-brand-500 font-medium flex items-center gap-1"
+                        className="text-xs text-primary-600 hover:text-primary-500 font-medium flex items-center gap-1"
                         title="Mark all as read"
                     >
                         <CheckIcon className="h-4 w-4" />
@@ -102,7 +102,7 @@ const NotificationDropdown: React.FC<Props> = ({ anchorRect, onClose, anchorRef 
                     <Link
                         to="/notifications"
                         onClick={onClose}
-                        className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        className="text-xs text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white"
                     >
                         View All
                     </Link>
@@ -120,7 +120,7 @@ const NotificationDropdown: React.FC<Props> = ({ anchorRect, onClose, anchorRef 
                         <NotificationItem key={n.id} notification={n} onCloseDropdown={onClose} />
                     ))
                 ) : (
-                    <div className="py-8 px-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <div className="py-8 px-4 text-center text-sm text-muted-foreground dark:text-gray-400">
                         No notifications yet.
                     </div>
                 )}
@@ -128,11 +128,11 @@ const NotificationDropdown: React.FC<Props> = ({ anchorRect, onClose, anchorRef 
 
             {/* Footer */}
             {notifications.length > 0 && (
-                <div className="border-t border-gray-100 dark:border-gray-800 p-2 shrink-0 bg-gray-50 dark:bg-card-950">
+                <div className="border-t border-gray-100 dark:border-gray-800 p-2 shrink-0 bg-background dark:bg-card-950">
                     <Link
                         to="/notifications"
                         onClick={onClose}
-                        className="block w-full text-center py-2 text-sm font-medium text-brand-600 hover:text-brand-700 bg-white dark:bg-card-900 rounded-md border border-gray-200 dark:border-gray-700"
+                        className="block w-full text-center py-2 text-sm font-medium text-primary-600 hover:text-primary-700 bg-card dark:bg-card-900 rounded-md border border-border dark:border-gray-700"
                     >
                         See all activity
                     </Link>

@@ -19,7 +19,7 @@ export const StatCard: React.FC<StatCardProps> = React.memo(({
             relative rounded-xl p-3 text-center overflow-hidden transition-all
             ${highlight
                 ? 'bg-gradient-to-br from-brand/10 to-brand/5 border border-brand/20 ring-1 ring-brand/10'
-                : 'bg-surface border border-border/50'
+                : 'bg-card border border-border/50'
             }
         `}>
             {highlight && (
@@ -28,14 +28,14 @@ export const StatCard: React.FC<StatCardProps> = React.memo(({
             )}
             <div className="relative">
                 {icon && <span className="text-base mb-1 block">{icon}</span>}
-                <p className={`text-lg font-black tabular-nums ${highlight ? 'text-brand' : 'text-textPrimary'}`}>
+                <p className={`text-lg font-black tabular-nums ${highlight ? 'text-primary' : 'text-foreground'}`}>
                     {value}
                 </p>
-                <p className="text-[10px] text-textSecondary font-medium mt-0.5 uppercase tracking-wider">
+                <p className="text-[10px] text-muted-foreground font-medium mt-0.5 uppercase tracking-wider">
                     {label}
                 </p>
                 {subtext && (
-                    <p className="text-[9px] text-textSecondary mt-0.5">{subtext}</p>
+                    <p className="text-[9px] text-muted-foreground mt-0.5">{subtext}</p>
                 )}
             </div>
         </div>

@@ -32,7 +32,7 @@ export const PrestigeProgress: React.FC<PrestigeProgressProps> = React.memo(({ c
                 <span className="text-lg">{config.icon}</span>
                 <div>
                     <h3 className={`text-sm font-black ${config.color}`}>{competitive.prestigeTier}</h3>
-                    <p className="text-[10px] text-textSecondary">Prestige Tier</p>
+                    <p className="text-[10px] text-muted-foreground">Prestige Tier</p>
                 </div>
             </div>
 
@@ -41,12 +41,12 @@ export const PrestigeProgress: React.FC<PrestigeProgressProps> = React.memo(({ c
                 <div className="space-y-1">
                     <div className="flex justify-between items-center text-[9px]">
                         <span className={config.color}>{competitive.prestigeTier}</span>
-                        <span className="text-textSecondary">{competitive.prestigeProgressPercent}%</span>
+                        <span className="text-muted-foreground">{competitive.prestigeProgressPercent}%</span>
                         <span className={nextConfig?.color || 'text-gray-400'}>
                             {nextConfig?.icon} {nextTier}
                         </span>
                     </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
                         <div
                             className={`h-full rounded-full bg-gradient-to-r ${config.gradient}
                                         transition-all duration-500`}

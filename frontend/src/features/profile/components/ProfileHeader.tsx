@@ -100,12 +100,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                        <h1 className="text-xl font-black text-textPrimary truncate">{profile.fullName}</h1>
+                        <h1 className="text-xl font-black text-foreground truncate">{profile.fullName}</h1>
                         <span className={`text-base ${tier.color}`}>{tier.icon}</span>
                     </div>
 
                     {profile.username && (
-                        <p className="text-xs text-textSecondary mb-2">@{profile.username}</p>
+                        <p className="text-xs text-muted-foreground mb-2">@{profile.username}</p>
                     )}
 
                     {/* Badges row */}
@@ -123,12 +123,12 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
                             style={{ background: 'rgba(0,0,0,0.04)' }}>
                             {tier.label}
                         </span>
-                        <span className="px-2 py-0.5 bg-brand/10 text-brand rounded-full text-[10px] font-bold">
+                        <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold">
                             {roleLabel[profile.role] || profile.role}
                         </span>
                         {profile.jerseyNumber !== null && profile.jerseyNumber !== undefined && (
-                            <span className="flex items-center gap-0.5 px-2 py-0.5 bg-surface
-                                             rounded-full text-[10px] font-bold text-textSecondary
+                            <span className="flex items-center gap-0.5 px-2 py-0.5 bg-card
+                                             rounded-full text-[10px] font-bold text-muted-foreground
                                              border border-border/50">
                                 <Hash className="w-2.5 h-2.5" />
                                 {profile.jerseyNumber}
@@ -137,7 +137,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
                     </div>
 
                     {/* Meta */}
-                    <div className="flex items-center gap-3 text-[10px] text-textSecondary">
+                    <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                         {profile.battingHand && (
                             <span className="flex items-center gap-0.5">
                                 <Shield className="w-2.5 h-2.5" />
@@ -156,7 +156,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
 
             {/* Description + Share */}
             {profile.description && (
-                <p className="mt-4 text-xs text-textSecondary leading-relaxed italic border-t
+                <p className="mt-4 text-xs text-muted-foreground leading-relaxed italic border-t
                               border-border/30 pt-3">
                     "{profile.description}"
                 </p>
@@ -165,8 +165,8 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = React.memo(({ profile
             {/* Share button */}
             <button
                 onClick={handleShare}
-                className="mt-3 flex items-center gap-1.5 px-3 py-1.5 bg-brand/10 text-brand
-                           rounded-full text-[11px] font-bold hover:bg-brand/20 transition-colors"
+                className="mt-3 flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary
+                           rounded-full text-[11px] font-bold hover:bg-primary/20 transition-colors"
             >
                 <Share2 className="w-3 h-3" />
                 Share Profile

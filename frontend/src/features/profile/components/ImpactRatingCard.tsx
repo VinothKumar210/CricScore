@@ -33,7 +33,7 @@ export const ImpactRatingCard: React.FC<ImpactRatingCardProps> = React.memo(({ c
                                    bg-clip-text text-transparent`}>
                         {competitive.impactRating}
                     </p>
-                    <p className="text-[10px] text-gray-500 mt-1">
+                    <p className="text-[10px] text-muted-foreground mt-1">
                         Score: {competitive.impactScore.toLocaleString()}
                     </p>
                 </div>
@@ -46,10 +46,10 @@ export const ImpactRatingCard: React.FC<ImpactRatingCardProps> = React.memo(({ c
                                 Global Rank
                             </p>
                             <p className="text-3xl font-black">
-                                <span className="text-gray-500">#</span>
+                                <span className="text-muted-foreground">#</span>
                                 {competitive.globalRank}
                             </p>
-                            <p className="text-[10px] text-gray-500 mt-1">
+                            <p className="text-[10px] text-muted-foreground mt-1">
                                 of {competitive.totalRankedPlayers} players
                             </p>
                         </>
@@ -58,7 +58,7 @@ export const ImpactRatingCard: React.FC<ImpactRatingCardProps> = React.memo(({ c
                             <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1">
                                 Rank
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                                 Play 5+ matches<br />to qualify
                             </p>
                         </>
@@ -68,7 +68,7 @@ export const ImpactRatingCard: React.FC<ImpactRatingCardProps> = React.memo(({ c
 
             {/* Role + Consistency + PotM */}
             <div className="relative flex items-center gap-2 mt-4 pt-3 border-t border-gray-700/50 flex-wrap">
-                <span className="px-2 py-0.5 bg-brand/20 text-brand rounded-full text-[10px] font-bold">
+                <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full text-[10px] font-bold">
                     {competitive.primaryRole}
                 </span>
                 {competitive.consistencyScore > 0 && (
@@ -81,7 +81,7 @@ export const ImpactRatingCard: React.FC<ImpactRatingCardProps> = React.memo(({ c
                         🏅 {competitive.potmCount} PotM
                     </span>
                 )}
-                <span className="text-[10px] text-gray-500 ml-auto">
+                <span className="text-[10px] text-muted-foreground ml-auto">
                     {competitive.matchesPlayed} matches
                 </span>
             </div>

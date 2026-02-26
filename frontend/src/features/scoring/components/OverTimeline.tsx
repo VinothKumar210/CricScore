@@ -11,7 +11,7 @@ const OverTimeline = React.memo(() => {
 
     if (!balls || balls.length === 0) {
         return (
-            <div className="flex items-center justify-center py-4 text-textSecondary text-sm">
+            <div className="flex items-center justify-center py-4 text-muted-foreground text-sm">
                 Start of Over
             </div>
         );
@@ -19,12 +19,12 @@ const OverTimeline = React.memo(() => {
 
     const getBallStyles = (type: string) => {
         switch (type) {
-            case 'WICKET': return "bg-danger text-white border-danger";
+            case 'WICKET': return "bg-destructive text-white border-danger";
             case 'WIDE':
             case 'NOBALL': return "bg-warning text-white border-warning";
             case 'LEGBYE':
-            case 'BYE': return "bg-surface text-textSecondary border-textSecondary"; // Or specific color
-            default: return "bg-surface text-textPrimary border-border"; // Normal run
+            case 'BYE': return "bg-card text-muted-foreground border-textSecondary"; // Or specific color
+            default: return "bg-card text-foreground border-border"; // Normal run
         }
     };
 

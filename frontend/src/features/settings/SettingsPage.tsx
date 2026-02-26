@@ -286,7 +286,7 @@ const SelectRow = <T extends string>({
             onChange={e => onChange(e.target.value as T)}
             style={{
                 padding: '6px 12px', borderRadius: 8,
-                background: 'var(--bg-surface, #24262D)', border: '1px solid var(--border, #2A2D35)',
+                background: 'var(--bg-card, #24262D)', border: '1px solid var(--border, #2A2D35)',
                 color: 'var(--text-primary, #EBECEF)', fontSize: 13, fontFamily: 'inherit',
                 cursor: 'pointer', outline: 'none',
             }}

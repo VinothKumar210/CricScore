@@ -64,16 +64,16 @@ export const BracketView: React.FC<BracketViewProps> = React.memo(({
 
     if (bracket.matches.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center p-12 bg-surface border border-dashed border-border/60 rounded-xl text-center">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+            <div className="flex flex-col items-center justify-center p-12 bg-card border border-dashed border-border/60 rounded-xl text-center">
+                <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mb-4">
                     <span className="text-2xl opacity-50">🏆</span>
                 </div>
-                <h3 className="text-sm font-bold text-textPrimary mb-2">Bracket Not Generated Yet</h3>
-                <p className="text-xs text-textSecondary max-w-sm mb-6">
+                <h3 className="text-sm font-bold text-foreground mb-2">Bracket Not Generated Yet</h3>
+                <p className="text-xs text-muted-foreground max-w-sm mb-6">
                     The knockout bracket will appear here once the league stage is completed and playoff spots are finalized.
                 </p>
                 {isCreator && (
-                    <button className="px-5 py-2.5 bg-brand text-white text-xs font-bold rounded-lg shadow-sm">
+                    <button className="px-5 py-2.5 bg-primary text-white text-xs font-bold rounded-lg shadow-sm">
                         Manage Playoffs
                     </button>
                 )}
@@ -104,15 +104,15 @@ export const BracketView: React.FC<BracketViewProps> = React.memo(({
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-4 text-[9px] text-textSecondary border-t border-border/30 pt-3">
+            <div className="flex items-center gap-4 text-[9px] text-muted-foreground border-t border-border/30 pt-3">
                 <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 bg-brand/30 rounded-sm" /> Winner
+                    <span className="w-2 h-2 bg-primary/30 rounded-sm" /> Winner
                 </span>
                 <span className="flex items-center gap-1">
                     <span className="w-2 h-2 bg-gray-200 rounded-sm" /> Eliminated
                 </span>
                 <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 bg-surface border border-border/50 rounded-sm" /> TBD
+                    <span className="w-2 h-2 bg-card border border-border/50 rounded-sm" /> TBD
                 </span>
             </div>
         </div>

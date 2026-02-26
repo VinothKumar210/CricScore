@@ -18,7 +18,7 @@ export const CareerStatsGrid: React.FC<CareerStatsGridProps> = React.memo(({ sta
             <Card padding="md">
                 <div className="flex items-center gap-2 mb-3">
                     <span className="text-base">🏏</span>
-                    <h3 className="text-sm font-bold text-textPrimary">Batting</h3>
+                    <h3 className="text-sm font-bold text-foreground">Batting</h3>
                     <div className="flex-1 h-px bg-gradient-to-r from-brand/20 to-transparent ml-2" />
                 </div>
                 <div className="grid grid-cols-3 gap-2">
@@ -35,7 +35,7 @@ export const CareerStatsGrid: React.FC<CareerStatsGridProps> = React.memo(({ sta
             <Card padding="md">
                 <div className="flex items-center gap-2 mb-3">
                     <span className="text-base">🎳</span>
-                    <h3 className="text-sm font-bold text-textPrimary">Bowling</h3>
+                    <h3 className="text-sm font-bold text-foreground">Bowling</h3>
                     <div className="flex-1 h-px bg-gradient-to-r from-purple-400/20 to-transparent ml-2" />
                 </div>
                 <div className="grid grid-cols-3 gap-2">

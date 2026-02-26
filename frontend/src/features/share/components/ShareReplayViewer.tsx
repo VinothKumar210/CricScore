@@ -65,7 +65,7 @@ export const ShareReplayViewer: React.FC<ShareReplayViewerProps> = React.memo(({
     if (!bundle) {
         return (
             <Card padding="md" className="text-center">
-                <p className="text-textSecondary text-sm">No replay data available</p>
+                <p className="text-muted-foreground text-sm">No replay data available</p>
             </Card>
         );
     }
@@ -89,7 +89,7 @@ export const ShareReplayViewer: React.FC<ShareReplayViewerProps> = React.memo(({
                     <h3 className={clsx(typography.headingMd, 'mb-3')}>🏏 Batting</h3>
                     <table className="w-full text-xs">
                         <thead>
-                            <tr className="text-textSecondary border-b border-border">
+                            <tr className="text-muted-foreground border-b border-border">
                                 <th className="text-left py-1 font-medium">Batter</th>
                                 <th className="text-right py-1 font-medium">R</th>
                                 <th className="text-right py-1 font-medium">B</th>
@@ -101,7 +101,7 @@ export const ShareReplayViewer: React.FC<ShareReplayViewerProps> = React.memo(({
                         <tbody>
                             {phase.batsmanStats.map((b) => (
                                 <tr key={b.playerId} className="border-b border-border/30">
-                                    <td className="py-1.5 font-medium text-textPrimary">{b.playerId}</td>
+                                    <td className="py-1.5 font-medium text-foreground">{b.playerId}</td>
                                     <td className="text-right py-1.5 tabular-nums font-semibold">{b.runs}</td>
                                     <td className="text-right py-1.5 tabular-nums">{b.balls}</td>
                                     <td className="text-right py-1.5 tabular-nums">{b.fours}</td>
@@ -120,7 +120,7 @@ export const ShareReplayViewer: React.FC<ShareReplayViewerProps> = React.memo(({
                     <h3 className={clsx(typography.headingMd, 'mb-3')}>🎳 Bowling</h3>
                     <table className="w-full text-xs">
                         <thead>
-                            <tr className="text-textSecondary border-b border-border">
+                            <tr className="text-muted-foreground border-b border-border">
                                 <th className="text-left py-1 font-medium">Bowler</th>
                                 <th className="text-right py-1 font-medium">O</th>
                                 <th className="text-right py-1 font-medium">R</th>
@@ -131,7 +131,7 @@ export const ShareReplayViewer: React.FC<ShareReplayViewerProps> = React.memo(({
                         <tbody>
                             {phase.bowlingStats.map((b) => (
                                 <tr key={b.bowlerId} className="border-b border-border/30">
-                                    <td className="py-1.5 font-medium text-textPrimary">{b.bowlerId}</td>
+                                    <td className="py-1.5 font-medium text-foreground">{b.bowlerId}</td>
                                     <td className="text-right py-1.5 tabular-nums">{b.overs}</td>
                                     <td className="text-right py-1.5 tabular-nums">{b.runsConceded}</td>
                                     <td className="text-right py-1.5 tabular-nums font-semibold">{b.wickets}</td>
@@ -151,7 +151,7 @@ export const ShareReplayViewer: React.FC<ShareReplayViewerProps> = React.memo(({
                         {phase.fallOfWickets.map((fow, i) => (
                             <span
                                 key={i}
-                                className="px-2.5 py-1 bg-red-50 text-red-700 rounded-full text-xs font-medium"
+                                className="px-2.5 py-1 bg-destructive/10 text-destructive rounded-full text-xs font-medium"
                             >
                                 {fow.score} ({fow.over})
                             </span>
@@ -168,8 +168,8 @@ ShareReplayViewer.displayName = 'ShareReplayViewer';
 // ─── Helper ───
 
 const StatBox: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-    <div className="bg-surface rounded-lg p-3 text-center">
-        <p className="text-lg font-bold text-textPrimary tabular-nums">{value}</p>
-        <p className="text-xs text-textSecondary mt-0.5">{label}</p>
+    <div className="bg-card rounded-lg p-3 text-center">
+        <p className="text-lg font-bold text-foreground tabular-nums">{value}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
     </div>
 );

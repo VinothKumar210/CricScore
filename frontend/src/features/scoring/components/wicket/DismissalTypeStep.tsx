@@ -24,11 +24,11 @@ export const DismissalTypeStep = ({ onSelect }: DismissalTypeStepProps) => {
                     key={type}
                     onClick={() => onSelect(type)}
                     className={clsx(
-                        "p-4 rounded-xl border border-border bg-surface hover:bg-gray-50 active:scale-[0.98] transition-all",
+                        "p-4 rounded-xl border border-border bg-card hover:bg-background active:scale-[0.98] transition-all",
                         "text-left flex flex-col justify-center h-20"
                     )}
                 >
-                    <span className={clsx(typography.bodyMd, "font-semibold text-textPrimary")}>{label}</span>
+                    <span className={clsx(typography.bodyMd, "font-semibold text-foreground")}>{label}</span>
                 </button>
             ))}
         </div>

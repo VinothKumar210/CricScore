@@ -26,7 +26,7 @@ export const ScoringPage = () => {
     if (!matchState && !error) {
         return (
             <div className="flex items-center justify-center h-screen bg-bgPrimary">
-                <Loader2 className="w-8 h-8 text-brand animate-spin" />
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
         );
     }
@@ -35,10 +35,10 @@ export const ScoringPage = () => {
     if (error && !matchState) {
         return (
             <div className="flex flex-col items-center justify-center h-screen bg-bgPrimary p-4">
-                <p className="text-danger font-semibold mb-2">Failed to load match</p>
+                <p className="text-destructive font-semibold mb-2">Failed to load match</p>
                 <button
                     onClick={() => matchId && initialize(matchId)}
-                    className="px-4 py-2 bg-brand text-white rounded-lg"
+                    className="px-4 py-2 bg-primary text-white rounded-lg"
                 >
                     Retry
                 </button>
@@ -54,17 +54,17 @@ export const ScoringPage = () => {
             <MatchLiveShell />
 
             {/* Footer: Scorer-only Control Pad */}
-            <div className="flex-none p-2 bg-white border-t border-border pb-safe-area">
+            <div className="flex-none p-2 bg-card border-t border-border pb-safe-area">
                 <ControlPad />
             </div>
 
             {/* Global Error Toast */}
             {error && (
-                <div className="absolute top-20 left-4 right-4 bg-danger text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium animate-in fade-in slide-in-from-top-2 z-50 flex justify-between items-center">
+                <div className="absolute top-20 left-4 right-4 bg-destructive text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium animate-in fade-in slide-in-from-top-2 z-50 flex justify-between items-center">
                     <span>{error}</span>
                     <button
                         onClick={() => useScoringStore.getState().refetch()}
-                        className="bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-xs ml-2"
+                        className="bg-card/20 hover:bg-card/30 px-2 py-1 rounded text-xs ml-2"
                     >
                         Refresh
                     </button>

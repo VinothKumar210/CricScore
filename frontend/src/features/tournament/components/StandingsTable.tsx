@@ -28,7 +28,7 @@ export const StandingsTable: React.FC<StandingsTableProps> = React.memo(({ stand
         return (
             <Card padding="md">
                 <div className="text-center py-6">
-                    <p className="text-sm text-textSecondary">
+                    <p className="text-sm text-muted-foreground">
                         No standings data yet. Complete some matches first.
                     </p>
                 </div>
@@ -48,7 +48,7 @@ export const StandingsTable: React.FC<StandingsTableProps> = React.memo(({ stand
             <div className="overflow-x-auto">
                 <table className="w-full text-xs">
                     <thead>
-                        <tr className="text-textSecondary border-b border-border">
+                        <tr className="text-muted-foreground border-b border-border">
                             <th className="text-left py-2 font-medium w-8">#</th>
                             <th className="text-left py-2 font-medium">Team</th>
                             <th className="text-center py-2 font-medium">P</th>
@@ -66,11 +66,11 @@ export const StandingsTable: React.FC<StandingsTableProps> = React.memo(({ stand
                                 key={s.id}
                                 className={clsx(
                                     'border-b border-border/30',
-                                    i < 2 && 'bg-green-50/50', // Qualification zone
+                                    i < 2 && 'bg-primary/10/50', // Qualification zone
                                 )}
                             >
-                                <td className="py-2 text-textSecondary">{i + 1}</td>
-                                <td className="py-2 font-medium text-textPrimary">{s.team.name}</td>
+                                <td className="py-2 text-muted-foreground">{i + 1}</td>
+                                <td className="py-2 font-medium text-foreground">{s.team.name}</td>
                                 <td className="py-2 text-center tabular-nums">{s.played}</td>
                                 <td className="py-2 text-center tabular-nums font-semibold">{s.won}</td>
                                 <td className="py-2 text-center tabular-nums">{s.lost}</td>

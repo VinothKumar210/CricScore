@@ -42,11 +42,11 @@ export const ArchiveListPage = () => {
             {/* Error */}
             {listError && (
                 <div className="flex flex-col items-center py-8 gap-3">
-                    <p className="text-danger font-medium">{listError}</p>
+                    <p className="text-destructive font-medium">{listError}</p>
                     <button
                         onClick={() => fetchList(1)}
-                        className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium
-                                   hover:bg-brand/90 transition-colors"
+                        className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium
+                                   hover:bg-primary/90 transition-colors"
                     >
                         Retry
                     </button>
@@ -73,8 +73,8 @@ export const ArchiveListPage = () => {
 
             {/* Empty State */}
             {!isListLoading && !listError && archives.length === 0 && (
-                <div className="bg-surface rounded-xl p-8 text-center border border-dashed border-border">
-                    <p className="text-textSecondary text-sm">
+                <div className="bg-card rounded-xl p-8 text-center border border-dashed border-border">
+                    <p className="text-muted-foreground text-sm">
                         No archived matches found.
                     </p>
                 </div>
@@ -86,21 +86,21 @@ export const ArchiveListPage = () => {
                     <button
                         onClick={() => fetchList(pagination.page - 1)}
                         disabled={pagination.page <= 1 || isListLoading}
-                        className="px-4 py-2 bg-surface border border-border rounded-lg text-sm font-medium
+                        className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium
                                    disabled:opacity-40 disabled:cursor-not-allowed
-                                   hover:bg-gray-50 transition-colors"
+                                   hover:bg-background transition-colors"
                     >
                         ← Previous
                     </button>
-                    <span className="text-sm text-textSecondary tabular-nums">
+                    <span className="text-sm text-muted-foreground tabular-nums">
                         Page {pagination.page} of {pagination.totalPages}
                     </span>
                     <button
                         onClick={() => fetchList(pagination.page + 1)}
                         disabled={pagination.page >= pagination.totalPages || isListLoading}
-                        className="px-4 py-2 bg-surface border border-border rounded-lg text-sm font-medium
+                        className="px-4 py-2 bg-card border border-border rounded-lg text-sm font-medium
                                    disabled:opacity-40 disabled:cursor-not-allowed
-                                   hover:bg-gray-50 transition-colors"
+                                   hover:bg-background transition-colors"
                     >
                         Next →
                     </button>
@@ -111,5 +111,5 @@ export const ArchiveListPage = () => {
 };
 
 const SkeletonCard = () => (
-    <div className="h-28 bg-surface rounded-xl animate-pulse" />
+    <div className="h-28 bg-card rounded-xl animate-pulse" />
 );

@@ -22,12 +22,12 @@ export const TournamentCard: React.FC<TournamentCardProps> = React.memo(({ tourn
     const navigate = useNavigate();
 
     const statusColor: Record<string, string> = {
-        UPCOMING: 'bg-blue-100 text-blue-700',
+        UPCOMING: 'bg-blue-100 text-chart-1',
         IN_PROGRESS: 'bg-amber-100 text-amber-700',
-        COMPLETED: 'bg-green-100 text-green-700',
+        COMPLETED: 'bg-primary/15 text-primary',
     };
 
-    const badge = statusColor[tournament.status] || 'bg-gray-100 text-gray-700';
+    const badge = statusColor[tournament.status] || 'bg-secondary text-foreground';
 
     return (
         <Card
@@ -43,7 +43,7 @@ export const TournamentCard: React.FC<TournamentCardProps> = React.memo(({ tourn
                 </span>
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-textSecondary">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span>{tournament.format?.replace('_', ' ')}</span>
                 <span>·</span>
                 <span>{tournament.overs} overs</span>
@@ -52,7 +52,7 @@ export const TournamentCard: React.FC<TournamentCardProps> = React.memo(({ tourn
             </div>
 
             <div className="mt-2 pt-2 border-t border-border/50">
-                <span className="text-[10px] text-textSecondary">
+                <span className="text-[10px] text-muted-foreground">
                     Starts {new Date(tournament.startDate).toLocaleDateString(undefined, {
                         month: 'short', day: 'numeric', year: 'numeric',
                     })}

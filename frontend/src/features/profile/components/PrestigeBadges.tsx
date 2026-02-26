@@ -94,8 +94,8 @@ export const PrestigeBadges: React.FC<PrestigeBadgesProps> = React.memo(({ stats
         <Card padding="md">
             <div className="flex items-center gap-2 mb-3">
                 <span className="text-base">🏅</span>
-                <h3 className="text-sm font-bold text-textPrimary">Prestige Badges</h3>
-                <span className="text-[10px] text-textSecondary ml-auto">
+                <h3 className="text-sm font-bold text-foreground">Prestige Badges</h3>
+                <span className="text-[10px] text-muted-foreground ml-auto">
                     {earned.length}/{badges.length} earned
                 </span>
             </div>
@@ -112,7 +112,7 @@ export const PrestigeBadges: React.FC<PrestigeBadgesProps> = React.memo(({ stats
                             title={b.description}
                         >
                             <span className="text-2xl mb-0.5">{b.icon}</span>
-                            <span className="text-[8px] font-bold text-textPrimary text-center leading-tight">
+                            <span className="text-[8px] font-bold text-foreground text-center leading-tight">
                                 {b.label}
                             </span>
                         </div>
@@ -126,12 +126,12 @@ export const PrestigeBadges: React.FC<PrestigeBadgesProps> = React.memo(({ stats
                     {locked.map(b => (
                         <div
                             key={b.id}
-                            className="flex flex-col items-center p-2 rounded-xl bg-gray-100/50
-                                        border border-gray-200/50 opacity-40"
+                            className="flex flex-col items-center p-2 rounded-xl bg-secondary/50
+                                        border border-border/50 opacity-40"
                             title={`${b.label}: ${b.description}`}
                         >
                             <span className="text-2xl mb-0.5 grayscale">{b.icon}</span>
-                            <span className="text-[8px] font-medium text-textSecondary text-center leading-tight">
+                            <span className="text-[8px] font-medium text-muted-foreground text-center leading-tight">
                                 {b.label}
                             </span>
                         </div>

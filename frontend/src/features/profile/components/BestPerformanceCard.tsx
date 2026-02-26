@@ -33,16 +33,16 @@ export const BestPerformanceCard: React.FC<BestPerformanceCardProps> = React.mem
                         {typeIcon}
                     </div>
                     <div>
-                        <p className="text-[10px] text-textSecondary uppercase tracking-wider font-medium">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
                             {typeLabel}
                         </p>
-                        <p className="text-lg font-black text-textPrimary">{bestPerformance.description}</p>
+                        <p className="text-lg font-black text-foreground">{bestPerformance.description}</p>
                     </div>
                 </div>
                 {bestPerformance.matchId && (
                     <button
                         onClick={() => navigate(`/match/${bestPerformance.matchId}`)}
-                        className="text-[10px] text-brand font-bold underline"
+                        className="text-[10px] text-primary font-bold underline"
                     >
                         View Match →
                     </button>

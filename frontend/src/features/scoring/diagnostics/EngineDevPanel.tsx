@@ -56,7 +56,7 @@ export const EngineDevPanel: React.FC = () => {
             <div className="px-3 py-2.5 space-y-2">
                 {/* Event State */}
                 <div className="space-y-0.5">
-                    <div className="text-green-600 font-bold text-[10px] uppercase tracking-wider mb-0.5">Event State</div>
+                    <div className="text-primary font-bold text-[10px] uppercase tracking-wider mb-0.5">Event State</div>
                     <Row label="Total Events" value={events.length} />
                     <Row label="Replay Index" value={replayIndex !== null ? replayIndex : 'LIVE'} highlight={replayIndex !== null} />
                     <Row label="Effective Events" value={replayIndex !== null ? replayIndex : events.length} />
@@ -64,7 +64,7 @@ export const EngineDevPanel: React.FC = () => {
 
                 {/* Bundle Cache */}
                 <div className="space-y-0.5">
-                    <div className="text-green-600 font-bold text-[10px] uppercase tracking-wider mb-0.5">Bundle Cache</div>
+                    <div className="text-primary font-bold text-[10px] uppercase tracking-wider mb-0.5">Bundle Cache</div>
                     <Row label="Hits" value={engineMetrics.bundleHits} good />
                     <Row label="Misses" value={engineMetrics.bundleMisses} warn={engineMetrics.bundleMisses > 50} />
                     <Row label="Hit Ratio" value={`${hitRatio}%`} good={Number(hitRatio) > 90} />
@@ -73,7 +73,7 @@ export const EngineDevPanel: React.FC = () => {
 
                 {/* Lazy Layers */}
                 <div className="space-y-0.5">
-                    <div className="text-green-600 font-bold text-[10px] uppercase tracking-wider mb-0.5">Lazy Layers</div>
+                    <div className="text-primary font-bold text-[10px] uppercase tracking-wider mb-0.5">Lazy Layers</div>
                     <Row label="reconstruct()" value={engineMetrics.reconstructCalls} />
                     <Row label="Phase Layer" value={engineMetrics.phaseLayerCalls} />
                     <Row label="Analytics Layer" value={engineMetrics.analyticsLayerCalls} />
@@ -97,7 +97,7 @@ interface RowProps {
 
 const Row: React.FC<RowProps> = ({ label, value, good, warn, highlight }) => (
     <div className="flex justify-between">
-        <span className="text-green-600">{label}</span>
+        <span className="text-primary">{label}</span>
         <span className={
             warn ? 'text-yellow-400 font-bold' :
                 good ? 'text-emerald-300' :

@@ -96,20 +96,20 @@ export const MessageRoomPage: React.FC = () => {
     if (!roomType || !roomId) return null;
 
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] sm:h-[calc(100vh-80px)] bg-gray-50 dark:bg-card-950">
+        <div className="flex flex-col h-[calc(100vh-64px)] sm:h-[calc(100vh-80px)] bg-background dark:bg-card-950">
             {/* Header */}
-            <header className="bg-white dark:bg-card-900 border-b border-gray-200 dark:border-gray-800 px-4 py-3 shrink-0 flex items-center">
+            <header className="bg-card dark:bg-card-900 border-b border-border dark:border-gray-800 px-4 py-3 shrink-0 flex items-center">
                 <button
                     onClick={() => navigate(-1)}
-                    className="mr-3 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-card-800 transition-colors text-gray-500"
+                    className="mr-3 p-2 rounded-full hover:bg-secondary dark:hover:bg-card-800 transition-colors text-muted-foreground"
                 >
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div>
-                    <h1 className="text-lg font-bold text-gray-900 dark:text-white capitalize">
+                    <h1 className="text-lg font-bold text-foreground dark:text-white capitalize">
                         {roomType} Chat
                     </h1>
-                    <p className="text-xs text-brand-600 dark:text-brand-400 font-medium">
+                    <p className="text-xs text-primary-600 dark:text-primary-400 font-medium">
                         ID: {roomId}
                     </p>
                 </div>

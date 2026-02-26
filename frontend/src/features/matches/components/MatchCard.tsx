@@ -20,10 +20,10 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
         if (!score) return null;
         return (
             <div className="flex flex-col items-end">
-                <span className="font-bold text-textPrimary">
+                <span className="font-bold text-foreground">
                     {score.runs}/{score.wickets}
                 </span>
-                <span className="text-xs text-textSecondary">
+                <span className="text-xs text-muted-foreground">
                     ({score.overs})
                 </span>
             </div>
@@ -52,7 +52,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             {/* Placeholder Logo */}
-                            <div className="w-8 h-8 rounded-full bg-surface flex items-center justify-center text-xs font-bold text-textSecondary">
+                            <div className="w-8 h-8 rounded-full bg-card flex items-center justify-center text-xs font-bold text-muted-foreground">
                                 {match.teamA.shortName?.[0] || match.teamA.name[0]}
                             </div>
                             <span className={clsx(typography.bodyMd, "font-medium")}>
@@ -66,7 +66,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             {/* Placeholder Logo */}
-                            <div className="w-8 h-8 rounded-full bg-surface flex items-center justify-center text-xs font-bold text-textSecondary">
+                            <div className="w-8 h-8 rounded-full bg-card flex items-center justify-center text-xs font-bold text-muted-foreground">
                                 {match.teamB.shortName?.[0] || match.teamB.name[0]}
                             </div>
                             <span className={clsx(typography.bodyMd, "font-medium")}>

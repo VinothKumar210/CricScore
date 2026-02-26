@@ -5,7 +5,7 @@ export const TeamDetailPage = () => {
     return (
         <div className="p-4">
             <h1 className="text-xl font-bold mb-2">Team Details</h1>
-            <p className="text-gray-500">Viewing Team ID: {id}</p>
+            <p className="text-muted-foreground">Viewing Team ID: {id}</p>
         </div>
     );
 };

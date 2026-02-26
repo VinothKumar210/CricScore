@@ -127,13 +127,13 @@ export const WicketFlowSheet = () => {
             />
 
             {/* Sheet */}
-            <div className="w-full max-w-md bg-white rounded-t-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col max-h-[90vh] min-h-[50vh] animate-in slide-in-from-bottom duration-300">
+            <div className="w-full max-w-md bg-card rounded-t-2xl shadow-2xl overflow-hidden pointer-events-auto flex flex-col max-h-[90vh] min-h-[50vh] animate-in slide-in-from-bottom duration-300">
                 {/* Header */}
-                <div className="p-4 border-b border-border flex justify-between items-center bg-gray-50/50">
+                <div className="p-4 border-b border-border flex justify-between items-center bg-background/50">
                     <h2 className={clsx("font-bold", "text-lg")}>
                         {step === 'TYPE' ? 'Wicket: Dismissal Method' : step === 'FIELDER' ? 'Wicket: Fielder' : 'Wicket: New Batsman'}
                     </h2>
-                    <button onClick={handleClose} className="p-2 -mr-2 text-textSecondary hover:text-textPrimary">
+                    <button onClick={handleClose} className="p-2 -mr-2 text-muted-foreground hover:text-foreground">
                         ✕
                     </button>
                 </div>
@@ -145,8 +145,8 @@ export const WicketFlowSheet = () => {
 
                 {/* Footer / Loading Overlay */}
                 {(isSubmitting || syncState === 'CONFLICT') && (
-                    <div className="absolute inset-0 bg-white/50 z-50 flex items-center justify-center">
-                        <Loader2 className="animate-spin text-brand" />
+                    <div className="absolute inset-0 bg-card/50 z-50 flex items-center justify-center">
+                        <Loader2 className="animate-spin text-primary" />
                     </div>
                 )}
             </div>

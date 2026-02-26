@@ -23,22 +23,22 @@ export const ScorePanel = React.memo(() => {
             <span className={clsx(typography.headingXl, "tabular-nums font-bold")}>
                 {displayScore.totalRuns}/{displayScore.totalWickets}
             </span>
-            <span className={clsx(typography.bodyMd, "text-textSecondary ml-2 mb-1")}>
+            <span className={clsx(typography.bodyMd, "text-muted-foreground ml-2 mb-1")}>
                 ({displayScore.overs})
             </span>
         </>
     ) : (
-        <span className={clsx(typography.headingLg, "text-textSecondary")}>
+        <span className={clsx(typography.headingLg, "text-muted-foreground")}>
             Innings Break / Start
         </span>
     );
 
     return (
-        <div className="sticky top-0 z-40 bg-white border-b border-border px-4 py-3 shadow-sm">
+        <div className="sticky top-0 z-40 bg-card border-b border-border px-4 py-3 shadow-sm">
             {/* Row 1: Header / Teams / Status */}
             <div className="flex justify-between items-start mb-2 relative">
                 <div className="flex flex-col">
-                    <span className={clsx(typography.caption, "text-textSecondary uppercase tracking-wider")}>
+                    <span className={clsx(typography.caption, "text-muted-foreground uppercase tracking-wider")}>
                         {matchState.tournamentName || "Friendly Match"}
                     </span>
                     <h2 className={clsx(typography.bodyMd, "font-semibold")}>
@@ -53,7 +53,7 @@ export const ScorePanel = React.memo(() => {
 
             {/* Spinner Absolute Position per requirement */}
             {isSubmitting && (
-                <div className="absolute top-3 right-3 text-brand animate-spin pointer-events-none">
+                <div className="absolute top-3 right-3 text-primary animate-spin pointer-events-none">
                     <Loader2 size={16} />
                 </div>
             )}
@@ -69,7 +69,7 @@ export const ScorePanel = React.memo(() => {
             {chaseInfo?.isComplete && chaseInfo.result && (
                 <div className={clsx(
                     "text-xs px-4 py-2 text-center font-bold rounded-md mb-2 border",
-                    chaseInfo.result.resultType === "WIN" ? "bg-success/10 text-success border-success/20" : "bg-gray-100 text-gray-600 border-gray-200"
+                    chaseInfo.result.resultType === "WIN" ? "bg-success/10 text-success border-success/20" : "bg-secondary text-muted-foreground border-border"
                 )}>
                     {chaseInfo.result.description}
                 </div>
@@ -77,7 +77,7 @@ export const ScorePanel = React.memo(() => {
 
             {/* Sync Conflict Banner */}
             {useScoringStore(s => s.syncState) === "CONFLICT" && !useScoringStore.getState().isOffline && (
-                <div className="bg-danger/10 text-danger text-xs px-4 py-1 text-center font-medium rounded-md mb-2">
+                <div className="bg-destructive/10 text-destructive text-xs px-4 py-1 text-center font-medium rounded-md mb-2">
                     State updated by another scorer. Syncing...
                 </div>
             )}
@@ -90,9 +90,9 @@ export const ScorePanel = React.memo(() => {
                     </div>
                     {/* Chase Info */}
                     {chaseInfo && (
-                        <div className="mt-1 text-xs font-medium tabular-nums text-textPrimary bg-surface px-2 py-0.5 rounded flex gap-3">
+                        <div className="mt-1 text-xs font-medium tabular-nums text-foreground bg-card px-2 py-0.5 rounded flex gap-3">
                             <span>Target: {chaseInfo.target}</span>
-                            <span className={chaseInfo.requiredRuns > 0 ? "text-brand" : "text-success"}>
+                            <span className={chaseInfo.requiredRuns > 0 ? "text-primary" : "text-success"}>
                                 {chaseInfo.requiredRuns > 0
                                     ? `Need ${chaseInfo.requiredRuns} off ${chaseInfo.remainingBalls}`
                                     : "Target Achieved"}
@@ -101,19 +101,19 @@ export const ScorePanel = React.memo(() => {
                     )}
                 </div>
 
-                <div className="flex flex-col items-end text-textSecondary h-full justify-end">
+                <div className="flex flex-col items-end text-muted-foreground h-full justify-end">
                     {/* RRR Display if chasing */}
                     {chaseInfo && chaseInfo.remainingBalls > 0 && chaseInfo.requiredRuns > 0 ? (
                         <div className="flex flex-col items-end">
-                            <span className="text-[10px] font-medium uppercase tracking-wide text-textSecondary">RRR</span>
-                            <span className="tabular-nums font-bold text-brand">
+                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">RRR</span>
+                            <span className="tabular-nums font-bold text-primary">
                                 {chaseInfo.requiredRunRate}
                             </span>
                         </div>
                     ) : (
                         <div className="flex flex-col items-end">
-                            <span className="text-[10px] font-medium uppercase tracking-wide text-textSecondary">CRR</span>
-                            <span className="tabular-nums font-bold text-textPrimary">
+                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">CRR</span>
+                            <span className="tabular-nums font-bold text-foreground">
                                 {displayScore?.crr || "0.00"}
                             </span>
                         </div>

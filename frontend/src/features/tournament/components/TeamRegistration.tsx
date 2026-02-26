@@ -61,14 +61,14 @@ export const TeamRegistration: React.FC<TeamRegistrationProps> = React.memo(({
                         value={teamId}
                         onChange={e => setTeamId(e.target.value)}
                         placeholder="Team ID"
-                        className="flex-1 px-3 py-1.5 bg-surface border border-border rounded-lg text-sm
+                        className="flex-1 px-3 py-1.5 bg-card border border-border rounded-lg text-sm
                                    focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand"
                     />
                     <button
                         type="submit"
                         disabled={!teamId.trim() || isRegistering}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-brand text-white rounded-lg
-                                   text-sm font-medium hover:bg-brand/90 transition-colors
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg
+                                   text-sm font-medium hover:bg-primary/90 transition-colors
                                    disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         {isRegistering ? (
@@ -87,8 +87,8 @@ export const TeamRegistration: React.FC<TeamRegistrationProps> = React.memo(({
                 </p>
             )}
 
-            {error && <p className="text-xs text-danger mb-3">{error}</p>}
-            {success && <p className="text-xs text-green-600 mb-3">Team registered successfully.</p>}
+            {error && <p className="text-xs text-destructive mb-3">{error}</p>}
+            {success && <p className="text-xs text-primary mb-3">Team registered successfully.</p>}
 
             {/* Team list */}
             {tournament.teams && tournament.teams.length > 0 ? (
@@ -96,16 +96,16 @@ export const TeamRegistration: React.FC<TeamRegistrationProps> = React.memo(({
                     {tournament.teams.map((t, i) => (
                         <div
                             key={t.id}
-                            className="flex items-center gap-3 px-3 py-2 bg-surface rounded-lg border border-border/50"
+                            className="flex items-center gap-3 px-3 py-2 bg-card rounded-lg border border-border/50"
                         >
-                            <span className="text-xs text-textSecondary w-5 tabular-nums">{i + 1}</span>
-                            <span className="text-sm font-medium text-textPrimary">{t.team.name}</span>
+                            <span className="text-xs text-muted-foreground w-5 tabular-nums">{i + 1}</span>
+                            <span className="text-sm font-medium text-foreground">{t.team.name}</span>
                         </div>
                     ))}
                 </div>
             ) : (
                 <div className="text-center py-4">
-                    <p className="text-sm text-textSecondary">No teams registered yet.</p>
+                    <p className="text-sm text-muted-foreground">No teams registered yet.</p>
                 </div>
             )}
         </Card>

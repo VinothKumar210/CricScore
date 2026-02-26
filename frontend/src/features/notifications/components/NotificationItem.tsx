@@ -10,7 +10,7 @@ const getIconForType = (type: Notification['type']) => {
         case 'TOURNAMENT_WIN':
         case 'TOURNAMENT_QUALIFIED':
         case 'TOURNAMENT_ELIMINATED':
-            return <Trophy className="h-6 w-6 text-brand-500" />;
+            return <Trophy className="h-6 w-6 text-primary-500" />;
         case 'MATCH_MILESTONE':
         case 'ACHIEVEMENT_UNLOCKED':
             return <Star className="h-6 w-6 text-yellow-500" />;
@@ -23,7 +23,7 @@ const getIconForType = (type: Notification['type']) => {
         case 'INVITE_RECEIVED':
             return <Mail className="h-6 w-6 text-green-500" />;
         default:
-            return <Bell className="h-6 w-6 text-gray-500" />;
+            return <Bell className="h-6 w-6 text-muted-foreground" />;
     }
 };
 
@@ -57,7 +57,7 @@ const NotificationItem: React.FC<Props> = React.memo(({ notification, onCloseDro
     return (
         <Wrapper
             {...wrapperProps as any}
-            className={`block px-4 py-3 hover:bg-gray-50 dark:hover:bg-card-900 transition-colors cursor-pointer border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${isUnread ? 'bg-brand-50 dark:bg-brand-900/10' : ''
+            className={`block px-4 py-3 hover:bg-background dark:hover:bg-card-900 transition-colors cursor-pointer border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${isUnread ? 'bg-primary-50 dark:bg-primary-900/10' : ''
                 } ${isNew ? 'animate-fade-in' : ''}`}
         >
             <div className="flex gap-3">
@@ -65,19 +65,19 @@ const NotificationItem: React.FC<Props> = React.memo(({ notification, onCloseDro
                     {getIconForType(notification.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className={`text-sm ${isUnread ? 'font-semibold text-gray-900 dark:text-gray-100' : 'font-medium text-gray-700 dark:text-gray-300'}`}>
+                    <p className={`text-sm ${isUnread ? 'font-semibold text-foreground dark:text-gray-100' : 'font-medium text-foreground dark:text-gray-300'}`}>
                         {notification.title}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                    <p className="text-sm text-muted-foreground dark:text-gray-400 mt-0.5 line-clamp-2">
                         {notification.body}
                     </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    <p className="text-xs text-gray-400 dark:text-muted-foreground mt-1">
                         {formatRelativeTime(notification.createdAt)}
                     </p>
                 </div>
                 {isUnread && (
                     <div className="flex-shrink-0 flex items-center">
-                        <span className="h-2 w-2 bg-brand-500 rounded-full" />
+                        <span className="h-2 w-2 bg-primary-500 rounded-full" />
                     </div>
                 )}
             </div>

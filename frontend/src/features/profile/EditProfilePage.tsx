@@ -143,7 +143,7 @@ export const EditProfilePage = () => {
                         width: 88, height: 88, borderRadius: '50%', cursor: 'pointer',
                         background: profile.profilePictureUrl
                             ? `url(${profile.profilePictureUrl}) center/cover`
-                            : 'var(--bg-surface, #24262D)',
+                            : 'var(--bg-card, #24262D)',
                         border: '3px solid var(--border, #2A2D35)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 28, fontWeight: 700, color: 'var(--text-secondary, #888)',
@@ -167,7 +167,7 @@ export const EditProfilePage = () => {
                         disabled={uploading}
                         style={{
                             padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                            background: 'var(--bg-surface, #24262D)', border: '1px solid var(--border, #2A2D35)',
+                            background: 'var(--bg-card, #24262D)', border: '1px solid var(--border, #2A2D35)',
                             color: 'var(--text-primary, #eee)', cursor: 'pointer', fontFamily: 'inherit',
                             marginRight: 8,
                         }}

@@ -70,8 +70,8 @@ export const ShareMatchPage = () => {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-                <Loader2 className="w-8 h-8 text-brand animate-spin" />
-                <p className="text-sm text-textSecondary">Loading match...</p>
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <p className="text-sm text-muted-foreground">Loading match...</p>
             </div>
         );
     }
@@ -81,14 +81,14 @@ export const ShareMatchPage = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 gap-3 text-center">
                 <Clock className="w-12 h-12 text-amber-500" />
-                <h2 className="text-lg font-semibold text-textPrimary">Too Many Requests</h2>
-                <p className="text-sm text-textSecondary max-w-sm">
+                <h2 className="text-lg font-semibold text-foreground">Too Many Requests</h2>
+                <p className="text-sm text-muted-foreground max-w-sm">
                     You're loading pages too quickly. Please wait a moment and try again.
                 </p>
                 <button
                     onClick={() => matchId && fetchMatch(matchId)}
-                    className="mt-2 px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium
-                               hover:bg-brand/90 transition-colors"
+                    className="mt-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium
+                               hover:bg-primary/90 transition-colors"
                 >
                     Try Again
                 </button>
@@ -100,11 +100,11 @@ export const ShareMatchPage = () => {
     if (error && !matchData) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 gap-3">
-                <p className="text-danger font-semibold">{error}</p>
+                <p className="text-destructive font-semibold">{error}</p>
                 <button
                     onClick={() => matchId && fetchMatch(matchId)}
-                    className="px-4 py-2 bg-brand text-white rounded-lg text-sm font-medium
-                               hover:bg-brand/90 transition-colors"
+                    className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium
+                               hover:bg-primary/90 transition-colors"
                 >
                     Retry
                 </button>
@@ -116,9 +116,9 @@ export const ShareMatchPage = () => {
     if (httpStatus === 404) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 gap-3 text-center">
-                <SearchX className="w-12 h-12 text-textSecondary" />
-                <h2 className="text-lg font-semibold text-textPrimary">Match Not Found</h2>
-                <p className="text-sm text-textSecondary max-w-sm">
+                <SearchX className="w-12 h-12 text-muted-foreground" />
+                <h2 className="text-lg font-semibold text-foreground">Match Not Found</h2>
+                <p className="text-sm text-muted-foreground max-w-sm">
                     This match doesn't exist or the link may have expired.
                 </p>
             </div>
@@ -130,8 +130,8 @@ export const ShareMatchPage = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 gap-3 text-center">
                 <ShieldX className="w-12 h-12 text-amber-500" />
-                <h2 className="text-lg font-semibold text-textPrimary">Private Match</h2>
-                <p className="text-sm text-textSecondary max-w-sm">
+                <h2 className="text-lg font-semibold text-foreground">Private Match</h2>
+                <p className="text-sm text-muted-foreground max-w-sm">
                     This match is private and cannot be shared publicly.
                 </p>
             </div>
@@ -152,8 +152,8 @@ export const ShareMatchPage = () => {
                 <>
                     {isEventsLoading ? (
                         <div className="flex items-center justify-center py-8 gap-2">
-                            <Loader2 className="w-5 h-5 text-brand animate-spin" />
-                            <span className="text-sm text-textSecondary">Loading replay data...</span>
+                            <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                            <span className="text-sm text-muted-foreground">Loading replay data...</span>
                         </div>
                     ) : events && matchConfig ? (
                         <ShareReplayViewer
@@ -179,8 +179,8 @@ export const ShareMatchPage = () => {
 
             {/* Footer */}
             <div className="text-center py-4 border-t border-border">
-                <p className="text-xs text-textSecondary">
-                    Powered by <span className="font-semibold text-brand">CricScore</span>
+                <p className="text-xs text-muted-foreground">
+                    Powered by <span className="font-semibold text-primary">CricScore</span>
                 </p>
             </div>
         </div>
