@@ -2,9 +2,21 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { requireAuth } from '../middlewares/auth.js';
 import { statsService } from '../services/statsService.js';
+import type { SeasonFilter } from '../services/statsService.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 
 const router = Router();
+
+// Parse season filter from query params
+function parseSeasonFilter(query: any): SeasonFilter | undefined {
+    const filter: SeasonFilter = {};
+    if (query.year) filter.year = parseInt(query.year);
+    if (query.from) filter.from = query.from;
+    if (query.to) filter.to = query.to;
+    if (query.tournamentId) filter.tournamentId = query.tournamentId;
+    if (query.teamId) filter.teamId = query.teamId;
+    return Object.keys(filter).length > 0 ? filter : undefined;
+}
 
 // --- Stats Routes ---
 
@@ -14,7 +26,8 @@ const router = Router();
  */
 router.get('/stats/player/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-        const stats = await statsService.getPlayerStats(req.params.id as string);
+        const filter = parseSeasonFilter(req.query);
+        const stats = await statsService.getPlayerStats(req.params.id as string, filter);
         return sendSuccess(res, stats);
     } catch (error: any) {
         return sendError(res, 'Failed to fetch player stats', 500, 'INTERNAL_ERROR');
@@ -27,7 +40,8 @@ router.get('/stats/player/:id', requireAuth, async (req: Request, res: Response)
  */
 router.get('/stats/player/:id/form', requireAuth, async (req: Request, res: Response) => {
     try {
-        const form = await statsService.getPlayerForm(req.params.id as string);
+        const filter = parseSeasonFilter(req.query);
+        const form = await statsService.getPlayerForm(req.params.id as string, filter);
         return sendSuccess(res, form);
     } catch (error: any) {
         return sendError(res, 'Failed to fetch player form', 500, 'INTERNAL_ERROR');
@@ -40,7 +54,8 @@ router.get('/stats/player/:id/form', requireAuth, async (req: Request, res: Resp
  */
 router.get('/stats/team/:id', requireAuth, async (req: Request, res: Response) => {
     try {
-        const stats = await statsService.getTeamStats(req.params.id as string);
+        const filter = parseSeasonFilter(req.query);
+        const stats = await statsService.getTeamStats(req.params.id as string, filter);
         return sendSuccess(res, stats);
     } catch (error: any) {
         return sendError(res, 'Failed to fetch team stats', 500, 'INTERNAL_ERROR');

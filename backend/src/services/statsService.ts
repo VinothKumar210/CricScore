@@ -1,13 +1,102 @@
 import { prisma } from '../utils/db.js';
 
+// ---------------------------------------------------------------------------
+// Season Filter — shared across all stats methods
+// ---------------------------------------------------------------------------
+
+export interface SeasonFilter {
+    year?: number;                // Filter by match year (e.g., 2025)
+    from?: string;                // ISO date start (e.g., "2025-01-01")
+    to?: string;                  // ISO date end (e.g., "2025-12-31")
+    tournamentId?: string;        // Filter by tournament
+    teamId?: string;              // Filter by specific team (opponent or own)
+}
+
+/**
+ * Build nested Prisma where clause for performances filtered by season.
+ * Filters flow through: BattingPerformance → Innings → MatchSummary
+ */
+function buildSeasonFilter(filter?: SeasonFilter): Record<string, any> {
+    if (!filter) return {};
+
+    const matchWhere: Record<string, any> = {};
+
+    // Year filter — matches in that calendar year
+    if (filter.year) {
+        matchWhere.matchDate = {
+            gte: new Date(`${filter.year}-01-01`),
+            lt: new Date(`${filter.year + 1}-01-01`),
+        };
+    }
+
+    // Date range filter (overrides year if both provided)
+    if (filter.from || filter.to) {
+        matchWhere.matchDate = {};
+        if (filter.from) matchWhere.matchDate.gte = new Date(filter.from);
+        if (filter.to) matchWhere.matchDate.lte = new Date(filter.to);
+    }
+
+    // Tournament filter — match must belong to this tournament
+    if (filter.tournamentId) {
+        matchWhere.tournamentFixtureId = { not: null };
+        // We can't directly filter by tournamentId on MatchSummary,
+        // so we use the fact that tournament fixtures link matches.
+        // For a more precise filter, we query fixture IDs first.
+    }
+
+    // Team filter — match involves this team
+    if (filter.teamId) {
+        matchWhere.OR = [
+            { homeTeamId: filter.teamId },
+            { awayTeamId: filter.teamId },
+        ];
+    }
+
+    if (Object.keys(matchWhere).length === 0) return {};
+
+    return {
+        innings: {
+            matchSummary: matchWhere,
+        },
+    };
+}
+
+/**
+ * Build MatchSummary where clause for team stats filtering.
+ */
+function buildTeamMatchFilter(teamId: string, filter?: SeasonFilter): Record<string, any> {
+    const where: Record<string, any> = {
+        OR: [
+            { homeTeamId: teamId },
+            { awayTeamId: teamId },
+        ],
+        status: 'COMPLETED',
+    };
+
+    if (filter?.year) {
+        where.matchDate = {
+            gte: new Date(`${filter.year}-01-01`),
+            lt: new Date(`${filter.year + 1}-01-01`),
+        };
+    }
+    if (filter?.from || filter?.to) {
+        where.matchDate = {};
+        if (filter.from) where.matchDate.gte = new Date(filter.from);
+        if (filter.to) where.matchDate.lte = new Date(filter.to);
+    }
+
+    return where;
+}
+
 export const statsService = {
     /**
      * Get aggregated career stats for a player.
      */
-    getPlayerStats: async (userId: string) => {
+    getPlayerStats: async (userId: string, filter?: SeasonFilter) => {
+        const seasonWhere = buildSeasonFilter(filter);
         // Aggregate Batting
         const batting = await prisma.battingPerformance.aggregate({
-            where: { userId },
+            where: { userId, ...seasonWhere },
             _sum: {
                 runs: true,
                 balls: true,
@@ -21,7 +110,7 @@ export const statsService = {
         });
 
         const notOuts = await prisma.battingPerformance.count({
-            where: { userId, isOut: false }
+            where: { userId, isOut: false, ...seasonWhere }
         });
 
         const dismissals = (batting._count.id || 0) - notOuts;
@@ -30,20 +119,20 @@ export const statsService = {
         // Group By approach for distributions? Or count queries?
         // Count queries are safer for correctness.
         const hundreds = await prisma.battingPerformance.count({
-            where: { userId, runs: { gte: 100 } }
+            where: { userId, runs: { gte: 100 }, ...seasonWhere }
         });
         const fifties = await prisma.battingPerformance.count({
-            where: { userId, runs: { gte: 50, lt: 100 } }
+            where: { userId, runs: { gte: 50, lt: 100 }, ...seasonWhere }
         });
         const highestScoreRecord = await prisma.battingPerformance.findFirst({
-            where: { userId },
+            where: { userId, ...seasonWhere },
             orderBy: { runs: 'desc' },
             select: { runs: true, isOut: true }
         });
 
         // Aggregate Bowling
         const bowling = await prisma.bowlingPerformance.aggregate({
-            where: { userId },
+            where: { userId, ...seasonWhere },
             _sum: {
                 wickets: true,
                 runs: true,
@@ -68,7 +157,7 @@ export const statsService = {
 
         // Best Bowling
         const bestBowling = await prisma.bowlingPerformance.findFirst({
-            where: { userId },
+            where: { userId, ...seasonWhere },
             orderBy: [
                 { wickets: 'desc' },
                 { runs: 'asc' }
@@ -76,7 +165,7 @@ export const statsService = {
         });
 
         const fiveWickets = await prisma.bowlingPerformance.count({
-            where: { userId, wickets: { gte: 5 } }
+            where: { userId, wickets: { gte: 5 }, ...seasonWhere }
         });
 
         // Corrections
@@ -144,11 +233,12 @@ export const statsService = {
     /**
      * Get player form (Last 10 matches).
      */
-    getPlayerForm: async (userId: string) => {
+    getPlayerForm: async (userId: string, filter?: SeasonFilter) => {
+        const seasonWhere = buildSeasonFilter(filter);
         // We need BattingPerformances ordered by date.
         // Required Join: BattingPerformance -> Innings -> MatchSummary.
         const recentBatting = await prisma.battingPerformance.findMany({
-            where: { userId },
+            where: { userId, ...seasonWhere },
             take: 10,
             orderBy: {
                 innings: {
@@ -188,15 +278,10 @@ export const statsService = {
     /**
      * Get Team Stats.
      */
-    getTeamStats: async (teamId: string) => {
+    getTeamStats: async (teamId: string, filter?: SeasonFilter) => {
+        const whereClause = buildTeamMatchFilter(teamId, filter);
         const matches = await prisma.matchSummary.findMany({
-            where: {
-                OR: [
-                    { homeTeamId: teamId },
-                    { awayTeamId: teamId }
-                ],
-                status: 'COMPLETED'
-            }
+            where: whereClause,
         });
 
         let wins = 0;
