@@ -5,10 +5,11 @@ import { FullscreenScoringLayout } from '../layouts/FullscreenScoringLayout';
 
 import { LoginPage } from '../pages/auth/LoginPage';
 import { HomePage } from '../pages/home/HomePage';
-import { MarketPage } from '../pages/marketplace/MarketPage';
+import { MarketPage } from '../features/market/MarketPage';
 import { TeamsPage } from '../pages/teams/TeamsPage';
 import { TeamDetailPage } from '../pages/teams/TeamDetailPage';
 import { ProfilePage } from '../pages/profile/ProfilePage';
+import { EditProfilePage } from '../features/profile/EditProfilePage';
 import { MatchDetailPage } from '../pages/match/MatchDetailPage';
 import { ScoringPage } from '../pages/match/ScoringPage';
 import { LiveMatchPage } from '../pages/match/LiveMatchPage';
@@ -23,6 +24,10 @@ import { ArchiveDetailPage } from '../features/archive/components/ArchiveDetailP
 import { TournamentListPage } from '../features/tournament/components/TournamentListPage';
 import { PublicProfilePage } from '../features/profile/components/PublicProfilePage';
 import { LeaderboardPage } from '../features/profile/components/LeaderboardPage';
+import NotificationCenterPage from '../features/notifications/NotificationCenterPage';
+import { InviteInboxPage } from '../features/invites/InviteInboxPage';
+import { MessageRoomPage } from '../features/messages/pages/MessageRoomPage';
+import { SettingsPage } from '../features/settings/SettingsPage';
 
 // Tab Components
 import { MatchSummaryTab } from '../features/matches/tabs/MatchSummaryTab';
@@ -50,12 +55,17 @@ export const router = createBrowserRouter([
             { path: '/teams', element: <TeamsPage /> },
             { path: '/teams/:id', element: <TeamDetailPage /> },
             { path: '/profile', element: <ProfilePage /> },
+            { path: '/profile/edit', element: <EditProfilePage /> },
             { path: '/tournaments', element: <TournamentListPage /> },
             { path: '/tournaments/:id', element: <TournamentDetailPage /> },
             { path: '/match/create', element: <MatchCreatePage /> },
             { path: '/archive', element: <ArchiveListPage /> },
             { path: '/archive/:id', element: <ArchiveDetailPage /> },
             { path: '/leaderboard', element: <LeaderboardPage /> },
+            { path: '/settings', element: <SettingsPage /> },
+            { path: '/notifications', element: <NotificationCenterPage /> },
+            { path: '/invites', element: <InviteInboxPage /> },
+            { path: '/messages/:roomType/:roomId', element: <MessageRoomPage /> },
             { path: '/u/:username', element: <PublicProfilePage /> },
             {
                 path: '/match/:id',

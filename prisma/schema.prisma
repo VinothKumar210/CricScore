@@ -53,6 +53,7 @@ model User {
   achievements       Achievement[]
   notifications      Notification[]
   devices            Device[]
+  settings           UserSettings?
   
   // Dynamic Relations (Reverse lookups for specific roles in matches)
   manOfTheMatchAwards MatchSummary[]     @relation("ManOfTheMatch")
@@ -61,11 +62,53 @@ model User {
   // Messaging
   sentMessages        Message[]          @relation("Sender")
   conversationMembers ConversationMember[]
-  starredMessages     StarredMessage[]
-  reactions           MessageReaction[]
   chatPollVotes       ChatPollVote[]
+}
 
+// -----------------------------------------------------------------------------
+// 1b. User Settings & Preferences
+// -----------------------------------------------------------------------------
 
+model UserSettings {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String @unique @db.ObjectId
+  user      User   @relation(fields: [userId], references: [id])
+
+  // --- Notification Preferences ---
+  notifyMatchMilestones    Boolean @default(true)  // 50s, 100s, hat-tricks
+  notifyMatchResults       Boolean @default(true)  // Win/loss/tie
+  notifyTournamentUpdates  Boolean @default(true)  // Bracket, standings
+  notifyInvites            Boolean @default(true)  // Match/team invites
+  notifyMessages           Boolean @default(true)  // Chat messages
+  notifyAchievements       Boolean @default(true)  // Badges, unlocks
+  notifyMatchReminders     Boolean @default(true)  // Upcoming match alerts
+  pushEnabled              Boolean @default(true)  // Master push toggle
+
+  // --- Privacy Controls ---
+  profileVisibility        Visibility @default(PUBLIC)   // Who can see profile
+  statsVisibility          Visibility @default(PUBLIC)   // Who can see career stats
+  activityVisibility       Visibility @default(FRIENDS)  // Who can see recent activity
+
+  // --- Appearance ---
+  theme                    Theme    @default(SYSTEM)
+  language                 String   @default("en")
+  timezone                 String   @default("Asia/Kolkata")
+
+  // --- Timestamps ---
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+enum Visibility {
+  PUBLIC     // Anyone
+  FRIENDS    // Team members only
+  PRIVATE    // Only me
+}
+
+enum Theme {
+  LIGHT
+  DARK
+  SYSTEM
 }
 
 model UserLocation {
@@ -501,7 +544,6 @@ model Conversation {
   updatedAt          DateTime  @updatedAt
   
   members            ConversationMember[]
-  messages           Message[]
   polls              ChatPoll[]
 }
 
@@ -525,49 +567,17 @@ model ConversationMember {
 }
 
 model Message {
-  id              String      @id @default(auto()) @map("_id") @db.ObjectId
-  conversationId  String      @db.ObjectId
-  senderId        String      @db.ObjectId
-  type            MessageType @default(TEXT)
-  content         String?
-  mediaUrl        String?
-  
-  // Features
-  replyToId       String?     @db.ObjectId
-  forwardedFrom   String?
-  mentions        String[] // User IDs
-  linkPreview     Json?
-  scheduledAt     DateTime?
-  
-  // Status
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  sentAt          DateTime?   // For scheduled messages
-  deliveredAt     DateTime?
-  readAt          DateTime?
-  
-  conversation    Conversation @relation(fields: [conversationId], references: [id])
-  sender          User         @relation("Sender", fields: [senderId], references: [id])
-  
-  starredBy       StarredMessage[]
-  reactions       MessageReaction[]
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  roomType      RoomType
+  roomId        String
+  senderId      String   @db.ObjectId
+  content       String
+  clientNonce   String?
+  createdAt     DateTime @default(now())
 
-  @@index([conversationId, createdAt])
-  @@index([scheduledAt, sentAt]) // For scheduler
-}
+  sender        User     @relation("Sender", fields: [senderId], references: [id])
 
-model MessageReaction {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  messageId String   @db.ObjectId
-  userId    String   @db.ObjectId
-  emoji     String
-  createdAt DateTime @default(now())
-
-  message   Message  @relation(fields: [messageId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@unique([messageId, userId])
-  @@index([messageId])
+  @@index([roomType, roomId, createdAt])
 }
 
 model ChatPoll {
@@ -596,19 +606,6 @@ model ChatPollVote {
   
   @@unique([pollId, userId])
 }
-
-model StarredMessage {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  messageId String   @db.ObjectId
-  createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id])
-  message   Message  @relation(fields: [messageId], references: [id])
-  
-  @@unique([userId, messageId])
-}
-
 model Notification {
   id        String           @id @default(auto()) @map("_id") @db.ObjectId
   userId    String           @db.ObjectId
@@ -925,4 +922,9 @@ enum AchievementType {
   GOLDEN_DUCK
   CAPTAIN
   TOURNAMENT_WINNER
+}
+
+enum RoomType {
+  TEAM
+  MATCH
 }

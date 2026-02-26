@@ -10,7 +10,6 @@ import { BracketView } from '../../features/tournament/bracket/BracketView';
 import { Container } from '../../components/ui/Container';
 import { clsx } from 'clsx';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import { shallow } from 'zustand/shallow';
 import type { BracketFormat } from '../../features/tournament/bracket/types';
 import type { PlayoffMatchResult } from '../../features/tournament/progression/types';
 

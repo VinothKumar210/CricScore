@@ -1,5 +1,9 @@
 import { create } from 'zustand';
 import { UserRole } from '../constants/enums';
+import { useNotificationStore } from '../features/notifications/notificationStore';
+import { useInviteStore } from '../features/invites/inviteStore';
+import { useMarketStore } from '../features/market/marketStore';
+import { useMessageStore } from '../features/messages/messageStore';
 
 interface User {
     id: string;
@@ -21,5 +25,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     role: UserRole.GUEST,
     isAuthenticated: false,
     login: (user, role) => set({ user, role, isAuthenticated: true }),
-    logout: () => set({ user: null, role: UserRole.GUEST, isAuthenticated: false }),
+    logout: () => {
+        useNotificationStore.getState().reset();
+        useInviteStore.getState().reset();
+        useMarketStore.getState().reset();
+        useMessageStore.getState().reset();
+        set({ user: null, role: UserRole.GUEST, isAuthenticated: false });
+    },
 }));

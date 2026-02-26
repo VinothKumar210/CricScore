@@ -18,3 +18,98 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 }
+
+/* Unified Animations */
+@layer utilities {
+  .animate-dropdown {
+    animation: dropdown 150ms ease-out forwards;
+  }
+
+  .animate-slide-in {
+    animation: slide-in 150ms ease-out forwards;
+  }
+
+  .animate-pulse-once {
+    animation: pulse-once 1.2s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 150ms ease-out forwards;
+  }
+
+  /* Override default pulse to unified shimmer */
+  .animate-shimmer {
+    animation: shimmer 1.5s infinite linear;
+    background: linear-gradient(90deg,
+        rgba(209, 213, 219, 0.2) 25%,
+        rgba(209, 213, 219, 0.4) 50%,
+        rgba(209, 213, 219, 0.2) 75%);
+    background-size: 200% 100%;
+  }
+
+  .dark .animate-shimmer {
+    background: linear-gradient(90deg,
+        rgba(31, 41, 55, 0.4) 25%,
+        rgba(55, 65, 81, 0.6) 50%,
+        rgba(31, 41, 55, 0.4) 75%);
+    background-size: 200% 100%;
+  }
+}
+
+@keyframes dropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-once {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}

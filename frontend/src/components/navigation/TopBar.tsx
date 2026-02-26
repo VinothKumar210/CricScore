@@ -1,5 +1,6 @@
-import { Bell, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { useUiStore } from '../../store/uiStore';
+import NotificationBell from '../../features/notifications/components/NotificationBell';
 import { useLocation } from 'react-router-dom';
 
 const ROUTE_TITLES: Record<string, string> = {
@@ -19,7 +20,7 @@ const getPageTitle = (pathname: string): string => {
 };
 
 export const TopBar = () => {
-    const { unreadNotifications, unreadMessages } = useUiStore();
+    const { unreadMessages } = useUiStore();
     const location = useLocation();
     const title = getPageTitle(location.pathname);
 
@@ -39,14 +40,7 @@ export const TopBar = () => {
                     )}
                 </button>
 
-                <button className="relative p-1">
-                    <Bell className="w-5 h-5 text-textSecondary" />
-                    {unreadNotifications > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 bg-danger text-white text-[10px] min-w-4 h-4 flex items-center justify-center rounded-full px-1">
-                            {unreadNotifications}
-                        </span>
-                    )}
-                </button>
+                <NotificationBell />
             </div>
         </header>
     );

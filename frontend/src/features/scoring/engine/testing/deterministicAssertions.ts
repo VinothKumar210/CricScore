@@ -1,8 +1,3 @@
-/**
- * deterministicAssertions.ts
- * Pure TS equality checkers without external deps.
- */
-
 export function assertDeepEqual(a: unknown, b: unknown, path: string = "root"): boolean {
     if (a === b) return true;
 
