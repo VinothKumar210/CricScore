@@ -43,6 +43,7 @@ import searchRoutes from './routes/searchRoutes.js';
 import comparisonRoutes from './routes/comparisonRoutes.js';
 import exportRoutes from './routes/exportRoutes.js';
 import batchSyncRoutes from './routes/batchSyncRoutes.js';
+import wagonWheelRoutes from './routes/wagonWheelRoutes.js';
 
 // ---------------------------------------------------------------------------
 // Infrastructure Imports
@@ -117,6 +118,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/compare', comparisonRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api', batchSyncRoutes);
+app.use('/api/wagon-wheel', wagonWheelRoutes);
 app.use('/api/share', shareRoutes);
 app.use('/api/archive', archiveRoutes);
 

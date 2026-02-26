@@ -63,6 +63,9 @@ model User {
   sentMessages        Message[]          @relation("Sender")
   conversationMembers ConversationMember[]
   chatPollVotes       ChatPollVote[]
+  
+  // Wagon Wheel
+  batsmanBalls        BallRecord[]       @relation("BatsmanBalls")
 }
 
 // -----------------------------------------------------------------------------
@@ -436,29 +439,51 @@ model Partnership {
   innings         Innings  @relation(fields: [inningsId], references: [id])
 }
 
+// Phase 14: Wagon Wheel — Shot placement visualization
+enum ShotZone {
+  FINE_LEG
+  SQUARE_LEG
+  MID_WICKET
+  LONG_ON
+  STRAIGHT
+  LONG_OFF
+  COVER
+  POINT
+  THIRD_MAN
+}
+
 model BallRecord {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  inningsId       String   @db.ObjectId
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  inningsId       String    @db.ObjectId
   overNumber      Int
   ballNumber      Int
   
   batsmanName     String
   bowlerName      String
+  batsmanId       String?   @db.ObjectId   // Optional — links to User for indexed queries
   
-  runs            Int      @default(0)
+  runs            Int       @default(0)
   extraType       String?
-  extraRuns       Int      @default(0)
+  extraRuns       Int       @default(0)
   
-  isWicket        Boolean  @default(false)
+  isWicket        Boolean   @default(false)
   wicketType      String?
-  isBoundary      Boolean  @default(false)
-  isSix           Boolean  @default(false)
+  isBoundary      Boolean   @default(false)
+  isSix           Boolean   @default(false)
   
   commentary      String?
   
-  innings         Innings  @relation(fields: [inningsId], references: [id])
+  // Wagon Wheel fields (all optional for backward compatibility)
+  shotZone        ShotZone? // Which zone the ball was hit to
+  shotAngle       Float?    // 0–360 degrees clockwise from fine leg
+  shotDistance    Float?    // 0–1 normalized (0 = dead bat, 1 = boundary)
+  
+  innings         Innings   @relation(fields: [inningsId], references: [id])
+  batsman         User?     @relation("BatsmanBalls", fields: [batsmanId], references: [id])
 
   @@index([inningsId])
+  @@index([inningsId, batsmanId])
+  @@index([inningsId, overNumber, ballNumber])
 }
 
 model MatchHighlight {

@@ -40,9 +40,9 @@ router.get('/', requireAuth, async (req: Request, res: Response, next: NextFunct
     }
 });
 
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------------------
 // GET /api/inbox/unread-count — Badge count
-// ---------------------------------------------------------------------------
+// -------------------------------------------------------------------------
 router.get('/unread-count', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = req.user?.id;
