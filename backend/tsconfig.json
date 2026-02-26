@@ -39,6 +39,7 @@
   "exclude": [
     "scripts",
     "node_modules",
-    "dist"
+    "dist",
+    "jest.config.ts"
   ]
 }
