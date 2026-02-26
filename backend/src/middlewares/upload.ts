@@ -2,8 +2,7 @@
 // Upload Middleware — Multer + Validation
 // =============================================================================
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const multer = require('multer');
+import multer from 'multer';
 import { AppError } from '../utils/AppError.js';
 
 // ---------------------------------------------------------------------------
