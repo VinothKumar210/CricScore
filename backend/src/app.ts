@@ -40,6 +40,7 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import inboxRoutes from './routes/inboxRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
+import comparisonRoutes from './routes/comparisonRoutes.js';
 
 // ---------------------------------------------------------------------------
 // Infrastructure Imports
@@ -111,6 +112,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/inbox', inboxRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/compare', comparisonRoutes);
 app.use('/api/share', shareRoutes);
 app.use('/api/archive', archiveRoutes);
 

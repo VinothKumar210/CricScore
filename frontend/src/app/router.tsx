@@ -30,6 +30,7 @@ import { MessageRoomPage } from '../features/messages/pages/MessageRoomPage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { InboxPage } from '../features/messages/InboxPage';
 import { SearchPage } from '../features/search/SearchPage';
+import { ComparePage } from '../features/compare/ComparePage';
 
 // Tab Components
 import { MatchSummaryTab } from '../features/matches/tabs/MatchSummaryTab';
@@ -67,6 +68,7 @@ export const router = createBrowserRouter([
             { path: '/settings', element: <SettingsPage /> },
             { path: '/inbox', element: <InboxPage /> },
             { path: '/search', element: <SearchPage /> },
+            { path: '/compare', element: <ComparePage /> },
             { path: '/notifications', element: <NotificationCenterPage /> },
             { path: '/invites', element: <InviteInboxPage /> },
             { path: '/messages/:roomType/:roomId', element: <MessageRoomPage /> },
