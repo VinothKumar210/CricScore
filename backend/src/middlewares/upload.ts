@@ -1,17 +1,9 @@
 // =============================================================================
 // Upload Middleware — Multer + Validation
 // =============================================================================
-//
-// Uses multer memory storage (no disk writes).
-// Files are validated for type and size, then passed as req.file buffer.
-//
-// Usage in routes:
-//   router.post('/avatar', uploadSingle('avatar', 5), handler);
-//
-// =============================================================================
 
-import multer, { type FileFilterCallback } from 'multer';
-import type { Request } from 'express';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const multer = require('multer');
 import { AppError } from '../utils/AppError.js';
 
 // ---------------------------------------------------------------------------
@@ -32,14 +24,14 @@ const IMAGE_TYPES = new Set([
 const storage = multer.memoryStorage();
 
 function createFileFilter(allowedTypes: Set<string>) {
-    return (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
+    return (_req: any, file: any, cb: any) => {
         if (allowedTypes.has(file.mimetype)) {
             cb(null, true);
         } else {
             cb(new AppError(
                 'INVALID_FORMAT',
                 `Unsupported file type: ${file.mimetype}. Allowed: ${[...allowedTypes].join(', ')}`,
-            ) as any);
+            ));
         }
     };
 }
