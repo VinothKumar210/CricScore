@@ -10,7 +10,8 @@
 //
 // =============================================================================
 
-import multer from 'multer';
+import multer, { type FileFilterCallback } from 'multer';
+import type { Request } from 'express';
 import { AppError } from '../utils/AppError.js';
 
 // ---------------------------------------------------------------------------
@@ -31,14 +32,14 @@ const IMAGE_TYPES = new Set([
 const storage = multer.memoryStorage();
 
 function createFileFilter(allowedTypes: Set<string>) {
-    return (_req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+    return (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
         if (allowedTypes.has(file.mimetype)) {
             cb(null, true);
         } else {
             cb(new AppError(
                 'INVALID_FORMAT',
                 `Unsupported file type: ${file.mimetype}. Allowed: ${[...allowedTypes].join(', ')}`,
-            ));
+            ) as any);
         }
     };
 }

@@ -71,7 +71,7 @@ export type ErrorCode = keyof typeof ERROR_CODES;
 export class AppError extends Error {
     public readonly statusCode: number;
     public readonly code: ErrorCode;
-    public readonly details?: Record<string, unknown>;
+    public readonly details: Record<string, unknown> | undefined;
     public readonly isOperational: boolean;
 
     /**

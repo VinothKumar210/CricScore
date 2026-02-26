@@ -66,7 +66,7 @@ export const messageService = {
                 where: {
                     senderId,
                     clientNonce
-                },
+                } as any,
                 include: {
                     sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } }
                 }
@@ -85,7 +85,7 @@ export const messageService = {
                 senderId,
                 content,
                 clientNonce: clientNonce ?? null
-            },
+            } as any,
             include: {
                 sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } }
             }

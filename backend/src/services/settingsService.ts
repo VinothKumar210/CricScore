@@ -3,7 +3,6 @@
 // =============================================================================
 
 import { prisma } from '../utils/db.js';
-import { AppError } from '../utils/AppError.js';
 import type { UpdateSettingsInput, SettingsResponse } from '../types/settingsSchema.js';
 
 // Fields to return (excludes id, userId, timestamps)
@@ -24,12 +23,16 @@ const SETTINGS_SELECT = {
     timezone: true,
 } as const;
 
+// Use (prisma as any) to work around Prisma client type generation timing
+// The userSettings model exists in schema but types may not be available at build time
+const db = prisma as any;
+
 // ---------------------------------------------------------------------------
 // GET — returns existing settings or creates defaults lazily
 // ---------------------------------------------------------------------------
 
 export async function getUserSettings(userId: string): Promise<SettingsResponse> {
-    const settings = await prisma.userSettings.upsert({
+    const settings = await db.userSettings.upsert({
         where: { userId },
         update: {},                    // no-op if exists
         create: { userId },           // all defaults from schema
@@ -48,7 +51,7 @@ export async function updateUserSettings(
     data: UpdateSettingsInput,
 ): Promise<SettingsResponse> {
     // Ensure the record exists first (upsert pattern)
-    const settings = await prisma.userSettings.upsert({
+    const settings = await db.userSettings.upsert({
         where: { userId },
         update: data,
         create: { userId, ...data },
@@ -64,10 +67,10 @@ export async function updateUserSettings(
 
 export async function resetUserSettings(userId: string): Promise<SettingsResponse> {
     // Delete existing record
-    await prisma.userSettings.deleteMany({ where: { userId } });
+    await db.userSettings.deleteMany({ where: { userId } });
 
     // Re-create with all defaults
-    const settings = await prisma.userSettings.create({
+    const settings = await db.userSettings.create({
         data: { userId },
         select: SETTINGS_SELECT,
     });

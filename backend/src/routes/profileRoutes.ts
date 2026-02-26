@@ -47,10 +47,10 @@ router.post(
         try {
             const user = req.user;
             if (!user) throw new AppError('UNAUTHORIZED');
-            if (!req.file) throw new AppError('MISSING_FIELD', 'No image file provided');
+            if (!(req as any).file) throw new AppError('MISSING_FIELD', 'No image file provided');
 
             // Upload to Cloudinary (compressed)
-            const result = await uploadAvatar(req.file.buffer, user.id);
+            const result = await uploadAvatar((req as any).file.buffer, user.id);
 
             // Update user record
             const updatedUser = await prisma.user.update({

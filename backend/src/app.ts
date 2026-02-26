@@ -2,7 +2,8 @@
 // CricScore — Express Application Entry Point
 // =============================================================================
 
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
+import type { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';

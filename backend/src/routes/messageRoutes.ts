@@ -44,7 +44,7 @@ router.get('/:roomType/:roomId', requireAuth, async (req: Request, res: Response
         const cursor = req.query.cursor as string | undefined;
         const after = req.query.after as string | undefined; // RULE 4: Dual Pagination
 
-        const messages = await messageService.getRoomHistory(roomType as 'TEAM' | 'MATCH', roomId, limit, cursor, after);
+        const messages = await messageService.getRoomHistory(roomType as 'TEAM' | 'MATCH', roomId as string, limit, cursor, after);
         return sendSuccess(res, messages);
     } catch (error: any) {
         return sendError(res, 'Failed to fetch messages', 500, 'INTERNAL_ERROR');
