@@ -41,6 +41,7 @@ import settingsRoutes from './routes/settingsRoutes.js';
 import inboxRoutes from './routes/inboxRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import comparisonRoutes from './routes/comparisonRoutes.js';
+import exportRoutes from './routes/exportRoutes.js';
 
 // ---------------------------------------------------------------------------
 // Infrastructure Imports
@@ -113,6 +114,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/inbox', inboxRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/compare', comparisonRoutes);
+app.use('/api/export', exportRoutes);
 app.use('/api/share', shareRoutes);
 app.use('/api/archive', archiveRoutes);
 
