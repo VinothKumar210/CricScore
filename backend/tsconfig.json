@@ -40,6 +40,7 @@
     "scripts",
     "node_modules",
     "dist",
-    "jest.config.ts"
+    "jest.config.ts",
+    "src/__tests__"
   ]
 }

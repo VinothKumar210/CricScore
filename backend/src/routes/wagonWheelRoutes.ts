@@ -26,13 +26,14 @@ router.get(
     requireAuth,
     async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { matchId, batsmanId } = req.params;
+            const matchId = req.params.matchId as string;
+            const batsmanId = req.params.batsmanId as string;
 
             if (!matchId || !batsmanId) {
                 return sendError(res, 'matchId and batsmanId are required', 400, 'MISSING_PARAM');
             }
 
-            const data = await getWagonWheel(matchId!, batsmanId!);
+            const data = await getWagonWheel(matchId, batsmanId);
 
             if (!data) {
                 return res.status(204).end(); // No content — batsman has no balls

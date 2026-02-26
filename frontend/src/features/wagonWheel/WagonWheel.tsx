@@ -10,7 +10,7 @@
 //
 // =============================================================================
 
-import React, { useState, useCallback, useMemo, useEffect, memo } from 'react';
+import { useState, useCallback, useMemo, useEffect, memo } from 'react';
 import { fetchWagonWheel, type WagonWheelData, type WagonWheelShot } from './wagonWheelService';
 import './WagonWheel.css';
 
