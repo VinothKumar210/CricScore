@@ -1,24 +1,22 @@
 import React from 'react';
-import { Card } from '../../../components/ui/Card';
 import type { CompetitiveProfile } from '../profileService';
 
 interface PrestigeProgressProps {
     competitive: CompetitiveProfile;
 }
 
-const TIER_CONFIG: Record<string, { icon: string; color: string; gradient: string }> = {
-    Rookie: { icon: '🏷️', color: 'text-gray-400', gradient: 'from-gray-300 to-gray-400' },
-    Rising: { icon: '🌱', color: 'text-green-500', gradient: 'from-green-400 to-emerald-500' },
-    Veteran: { icon: '⭐', color: 'text-blue-500', gradient: 'from-blue-400 to-blue-600' },
-    Elite: { icon: '💎', color: 'text-purple-500', gradient: 'from-purple-400 to-purple-600' },
-    Legend: { icon: '👑', color: 'text-amber-500', gradient: 'from-amber-400 to-yellow-500' },
+const TIER_CONFIG: Record<string, { color: string; barColor: string }> = {
+    Rookie: { color: 'text-muted-foreground', barColor: 'bg-muted-foreground' },
+    Rising: { color: 'text-emerald-400', barColor: 'bg-emerald-500' },
+    Veteran: { color: 'text-chart-1', barColor: 'bg-chart-1' },
+    Elite: { color: 'text-primary', barColor: 'bg-primary' },
+    Legend: { color: 'text-amber-400', barColor: 'bg-amber-500' },
 };
 
 const TIER_ORDER = ['Rookie', 'Rising', 'Veteran', 'Elite', 'Legend'];
 
 /**
- * PrestigeProgress — Shows tier badge + next-tier progress bar.
- * ALL values from backend. Zero frontend computation.
+ * PrestigeProgress — Shows tier + progress bar in bordered card style.
  */
 export const PrestigeProgress: React.FC<PrestigeProgressProps> = React.memo(({ competitive }) => {
     const config = TIER_CONFIG[competitive.prestigeTier] || TIER_CONFIG.Rookie;
@@ -27,29 +25,32 @@ export const PrestigeProgress: React.FC<PrestigeProgressProps> = React.memo(({ c
     const nextConfig = nextTier ? TIER_CONFIG[nextTier] : null;
 
     return (
-        <Card padding="md">
-            <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">{config.icon}</span>
+        <div className="rounded-xl border border-border bg-card text-card-foreground shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
                 <div>
-                    <h3 className={`text-sm font-black ${config.color}`}>{competitive.prestigeTier}</h3>
-                    <p className="text-[10px] text-muted-foreground">Prestige Tier</p>
+                    <h3 className="font-semibold leading-none tracking-tight">Prestige Tier</h3>
+                    <p className="text-sm text-muted-foreground mt-1.5">Your competitive standing</p>
                 </div>
+                <span className={`text-2xl font-bold ${config.color}`}>
+                    {competitive.prestigeTier}
+                </span>
             </div>
 
             {/* Progress bar */}
             {nextTier && (
-                <div className="space-y-1">
-                    <div className="flex justify-between items-center text-[9px]">
-                        <span className={config.color}>{competitive.prestigeTier}</span>
-                        <span className="text-muted-foreground">{competitive.prestigeProgressPercent}%</span>
-                        <span className={nextConfig?.color || 'text-gray-400'}>
-                            {nextConfig?.icon} {nextTier}
+                <div className="space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                        <span className={`font-semibold ${config.color}`}>{competitive.prestigeTier}</span>
+                        <span className="text-muted-foreground tabular-nums">
+                            {competitive.prestigeProgressPercent}%
+                        </span>
+                        <span className={`font-semibold ${nextConfig?.color || 'text-muted-foreground'}`}>
+                            {nextTier}
                         </span>
                     </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
                         <div
-                            className={`h-full rounded-full bg-gradient-to-r ${config.gradient}
-                                        transition-all duration-500`}
+                            className={`h-full rounded-full ${config.barColor} transition-all duration-700`}
                             style={{ width: `${competitive.prestigeProgressPercent}%` }}
                         />
                     </div>
@@ -58,13 +59,11 @@ export const PrestigeProgress: React.FC<PrestigeProgressProps> = React.memo(({ c
 
             {/* Legend — max tier */}
             {!nextTier && (
-                <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50
-                                rounded-lg p-2 border border-amber-200/50">
-                    <span className="text-lg">👑</span>
-                    <span className="text-xs font-bold text-amber-700">Maximum tier reached!</span>
+                <div className="flex items-center justify-center gap-2 bg-amber-500/10 rounded-lg p-3 border border-amber-500/20">
+                    <span className="text-sm font-bold text-amber-400">Maximum tier reached!</span>
                 </div>
             )}
-        </Card>
+        </div>
     );
 });
 

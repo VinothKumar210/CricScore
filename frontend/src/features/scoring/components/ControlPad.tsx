@@ -1,8 +1,22 @@
 import { clsx } from 'clsx';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RotateCcw, ArrowLeftRight, UserMinus } from 'lucide-react';
 import { useScoringStore } from '../scoringStore';
 import { WicketFlowSheet } from './wicket/WicketFlowSheet';
 
+/**
+ * ControlPad — Premium cricket scoring pad.
+ *
+ * Layout optimized for UX:
+ * - Row 1: Run buttons (0–6) — large, main actions, easy thumb reach
+ * - Row 2: Extras (WD, NB, B, LB) + OUT — secondary actions
+ * - Row 3: Operations (Undo, Swap, Retire) — tertiary
+ *
+ * Design:
+ * - Run buttons: large 56px, numbers prominent, 4 and 6 highlighted
+ * - OUT: full-width destructive red with glow
+ * - Extras: compact, outlined style
+ * - Ops: ghost style, bottom row
+ */
 export const ControlPad = () => {
     const recordBall = useScoringStore((state) => state.recordBall);
     const undo = useScoringStore((state) => state.undo);
@@ -11,7 +25,6 @@ export const ControlPad = () => {
     const startWicketFlow = useScoringStore((state) => state.startWicketFlow);
     const derivedState = useScoringStore((state) => state.derivedState);
 
-    // Disable if submitting or match is not live or match is complete
     const isMatchLive = matchState?.status === 'LIVE';
     const isComplete = !!derivedState?.matchResult;
     const isDisabled = isSubmitting || !isMatchLive || isComplete;
@@ -21,7 +34,6 @@ export const ControlPad = () => {
     };
 
     const handleExtra = (extraType: "WIDE" | "NO_BALL" | "BYE" | "LEG_BYE") => {
-        // Simple extra event with defaults
         recordBall({
             type: "EXTRA",
             extraType,
@@ -32,84 +44,105 @@ export const ControlPad = () => {
 
     return (
         <div className="relative p-3 bg-card rounded-xl border border-border shadow-sm">
-            {/* Spinner Overlay Indicator */}
+            {/* Spinner Overlay */}
             {isSubmitting && (
                 <div className="absolute top-2 right-2 text-primary animate-spin z-10 pointer-events-none">
                     <Loader2 size={16} />
                 </div>
             )}
 
-            <div className="flex flex-col gap-4">
-                <div
-                    className={clsx(
-                        "grid grid-cols-3 gap-3",
-                        isDisabled && "opacity-50 pointer-events-none cursor-not-allowed"
-                    )}
-                >
-                    {/* Row 1: Runs (0, 1, 2, 3, 4, 6) */}
-                    {/* Note: 0 is dot ball, maps to RUN type with 0 runs */}
-                    <button onClick={() => handleRun(0)} disabled={isDisabled} className={getBtnClass(isDisabled)}>0</button>
-                    <button onClick={() => handleRun(1)} disabled={isDisabled} className={getBtnClass(isDisabled)}>1</button>
-                    <button onClick={() => handleRun(2)} disabled={isDisabled} className={getBtnClass(isDisabled)}>2</button>
-                    <button onClick={() => handleRun(3)} disabled={isDisabled} className={getBtnClass(isDisabled)}>3</button>
-                    <button onClick={() => handleRun(4)} disabled={isDisabled} className={getBtnClass(isDisabled)}>4</button>
-                    <button onClick={() => handleRun(6)} disabled={isDisabled} className={getBtnClass(isDisabled)}>6</button>
+            <div className={clsx(
+                "flex flex-col gap-2.5 transition-opacity",
+                isDisabled && "opacity-40 pointer-events-none"
+            )}>
+                {/* ─── Row 1: Run Buttons ─── */}
+                <div className="grid grid-cols-6 gap-2">
+                    {([0, 1, 2, 3, 4, 6] as const).map(runs => (
+                        <button
+                            key={runs}
+                            onClick={() => handleRun(runs)}
+                            disabled={isDisabled}
+                            className={clsx(
+                                "h-14 rounded-xl font-bold text-xl transition-all active:scale-[0.93] flex items-center justify-center select-none",
+                                runs === 4
+                                    ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/25 active:bg-emerald-500/30"
+                                    : runs === 6
+                                        ? "bg-primary/15 border border-primary/30 text-primary hover:bg-primary/25 active:bg-primary/30"
+                                        : runs === 0
+                                            ? "bg-secondary border border-border text-muted-foreground hover:bg-secondary/80 text-base"
+                                            : "bg-card border border-border text-foreground hover:bg-secondary active:bg-secondary/80"
+                            )}
+                        >
+                            {runs === 0 ? '•' : runs}
+                        </button>
+                    ))}
+                </div>
 
-                    {/* Wicket Button - Triggers Flow */}
+                {/* ─── Row 2: OUT + Extras ─── */}
+                <div className="grid grid-cols-5 gap-2">
+                    {/* OUT — Wider, prominent */}
                     <button
                         onClick={startWicketFlow}
                         disabled={isDisabled}
-                        className={clsx(
-                            "h-14 rounded-xl font-bold text-lg transition-all active:scale-95 flex items-center justify-center shadow-sm select-none",
-                            "bg-destructive/100 border border-red-600 text-white hover:bg-red-600 active:bg-red-700",
-                            isDisabled && "opacity-50 cursor-not-allowed"
-                        )}
+                        className="col-span-1 h-12 rounded-xl font-bold text-sm transition-all active:scale-[0.93] flex items-center justify-center select-none
+                                   bg-destructive text-destructive-foreground border border-destructive/50 shadow-sm shadow-destructive/20
+                                   hover:bg-destructive/90 active:bg-destructive/80"
                     >
                         OUT
                     </button>
 
-                    {/* Other Buttons */}
-                    <button onClick={() => handleExtra("WIDE")} disabled={isDisabled} className={getBtnClass(isDisabled, true)}>WD</button>
-                    <button onClick={() => handleExtra("NO_BALL")} disabled={isDisabled} className={getBtnClass(isDisabled, true)}>NB</button>
-                    <button onClick={() => handleExtra("BYE")} disabled={isDisabled} className={getBtnClass(isDisabled, true)}>B</button>
-                    <button onClick={() => handleExtra("LEG_BYE")} disabled={isDisabled} className={getBtnClass(isDisabled, true)}>LB</button>
+                    {/* Extras */}
+                    <button onClick={() => handleExtra("WIDE")} disabled={isDisabled} className={extraBtnClass}>
+                        WD
+                    </button>
+                    <button onClick={() => handleExtra("NO_BALL")} disabled={isDisabled} className={extraBtnClass}>
+                        NB
+                    </button>
+                    <button onClick={() => handleExtra("BYE")} disabled={isDisabled} className={extraBtnClass}>
+                        B
+                    </button>
+                    <button onClick={() => handleExtra("LEG_BYE")} disabled={isDisabled} className={extraBtnClass}>
+                        LB
+                    </button>
+                </div>
 
+                {/* ─── Row 3: Operations ─── */}
+                <div className="grid grid-cols-3 gap-2">
                     <button
                         onClick={undo}
                         disabled={isDisabled}
-                        className={clsx(
-                            "h-14 rounded-xl font-bold text-lg transition-all active:scale-95 flex items-center justify-center shadow-sm select-none",
-                            "bg-gray-200 border border-border text-muted-foreground hover:bg-gray-300 active:bg-gray-400",
-                            isDisabled && "opacity-50 cursor-not-allowed"
-                        )}
+                        className="h-10 rounded-lg text-xs font-semibold transition-all active:scale-[0.95] flex items-center justify-center gap-1.5 select-none
+                                   bg-secondary border border-border text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
                     >
-                        UNDO
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        Undo
                     </button>
-
-                    {/* Row 4: Ops (Swap, Retire) */}
-                    <button disabled={isDisabled} className={getGhostClass(isDisabled)}>Swap</button>
-                    <button disabled={isDisabled} className={getGhostClass(isDisabled)}>Retire</button>
-                    <div />
+                    <button
+                        disabled={isDisabled}
+                        className="h-10 rounded-lg text-xs font-semibold transition-all active:scale-[0.95] flex items-center justify-center gap-1.5 select-none
+                                   bg-transparent border border-dashed border-border text-muted-foreground hover:bg-card hover:text-foreground"
+                    >
+                        <ArrowLeftRight className="w-3.5 h-3.5" />
+                        Swap
+                    </button>
+                    <button
+                        disabled={isDisabled}
+                        className="h-10 rounded-lg text-xs font-semibold transition-all active:scale-[0.95] flex items-center justify-center gap-1.5 select-none
+                                   bg-transparent border border-dashed border-border text-muted-foreground hover:bg-card hover:text-foreground"
+                    >
+                        <UserMinus className="w-3.5 h-3.5" />
+                        Retire
+                    </button>
                 </div>
             </div>
 
-            {/* Wicket Flow Logic is handled by the Sheet component which observes the store */}
+            {/* Wicket Flow Sheet */}
             <WicketFlowSheet />
         </div>
     );
 };
 
-// Helper for classes to keep JSX clean
-const getBtnClass = (disabled: boolean, isSecondary = false) => clsx(
-    "h-14 rounded-xl font-bold text-lg transition-all active:scale-95 flex items-center justify-center shadow-sm select-none",
-    isSecondary
-        ? "bg-card border border-border text-muted-foreground hover:bg-secondary active:bg-gray-200"
-        : "bg-card border border-border text-foreground hover:bg-background active:bg-secondary",
-    disabled && "opacity-50 cursor-not-allowed"
-);
-
-const getGhostClass = (disabled: boolean) => clsx(
-    "h-14 rounded-xl font-bold text-lg transition-all active:scale-95 flex items-center justify-center shadow-sm select-none",
-    "bg-transparent border border-border text-muted-foreground border-dashed hover:bg-card text-xs",
-    disabled && "opacity-50 cursor-not-allowed"
+const extraBtnClass = clsx(
+    "h-12 rounded-xl font-bold text-xs transition-all active:scale-[0.93] flex items-center justify-center select-none",
+    "bg-card border border-border text-muted-foreground hover:bg-secondary hover:text-foreground"
 );

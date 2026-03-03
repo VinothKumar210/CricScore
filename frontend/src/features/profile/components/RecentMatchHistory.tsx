@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card } from '../../../components/ui/Card';
 import { clsx } from 'clsx';
 import type { FormEntry } from '../profileService';
 
@@ -8,94 +7,101 @@ interface RecentMatchHistoryProps {
 }
 
 /**
- * RecentMatchHistory — Last 10 performances with form line.
- * Visual run bars + result indicators.
+ * RecentMatchHistory — Purple bar chart with hover reveal.
+ * Matches shadcn reference "Recent Form" card style.
  */
 export const RecentMatchHistory: React.FC<RecentMatchHistoryProps> = React.memo(({ form }) => {
     if (form.length === 0) {
         return (
-            <Card padding="md">
-                <h3 className="text-sm font-bold text-foreground mb-2">Recent Form</h3>
+            <div className="rounded-xl border border-border bg-card shadow-sm p-6">
+                <h3 className="font-semibold leading-none tracking-tight mb-4">Recent Form</h3>
                 <p className="text-xs text-muted-foreground text-center py-4">No recent matches yet.</p>
-            </Card>
+            </div>
         );
     }
 
     const maxRuns = Math.max(...form.map(f => f.runs), 1);
+    const displayForm = form.slice(0, 5); // Show max 5 bars like the reference
 
     return (
-        <Card padding="md">
-            <div className="flex items-center gap-2 mb-3">
-                <span className="text-base">📈</span>
-                <h3 className="text-sm font-bold text-foreground">Recent Form</h3>
-                <span className="text-[10px] text-muted-foreground ml-auto">Last {form.length}</span>
+        <div className="rounded-xl border border-border bg-card text-card-foreground shadow-sm">
+            <div className="p-6">
+                {/* Header with dot indicators */}
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-semibold leading-none tracking-tight">Recent Form</h3>
+                    <div className="flex gap-2">
+                        <div className="h-2 w-2 rounded-full bg-primary" />
+                        <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
+                        <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
+                    </div>
+                </div>
+
+                {/* Bar chart  */}
+                <div className="flex items-end justify-between h-32 gap-3">
+                    {displayForm.map((entry, i) => {
+                        const heightPct = Math.max((entry.runs / maxRuns) * 100, 8);
+                        return (
+                            <div key={i} className="w-full flex flex-col items-center gap-2 group">
+                                <span className="text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">
+                                    {entry.runs}{!entry.isOut ? '*' : ''}
+                                </span>
+                                <div className="w-full bg-primary/20 rounded-t-md hover:bg-primary/40 transition-colors relative h-24">
+                                    <div
+                                        className="absolute bottom-0 w-full bg-primary rounded-t-md transition-all"
+                                        style={{ height: `${heightPct}%` }}
+                                    />
+                                </div>
+                                <span className="text-xs text-muted-foreground font-mono uppercase truncate max-w-full text-center">
+                                    {entry.opponent?.length > 6
+                                        ? `VS ${entry.opponent.slice(0, 4)}`
+                                        : `VS ${entry.opponent}`}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
-            {/* Visual form bar chart */}
-            <div className="flex items-end gap-1 h-16 mb-3">
-                {form.map((entry, i) => {
-                    const heightPct = Math.max((entry.runs / maxRuns) * 100, 4);
-                    const isGood = entry.runs >= 30;
-                    const isGreat = entry.runs >= 50;
-                    return (
+            {/* Match details below chart */}
+            {form.length > 0 && (
+                <div className="border-t border-border">
+                    {form.slice(0, 5).map((entry, i) => (
                         <div
                             key={i}
-                            className="flex-1 flex flex-col items-center gap-0.5"
-                            title={`${entry.runs} vs ${entry.opponent}`}
+                            className={clsx(
+                                'flex items-center justify-between px-6 py-2.5 text-xs',
+                                i < form.length - 1 && 'border-b border-border/50'
+                            )}
                         >
-                            <span className="text-[8px] text-muted-foreground tabular-nums font-bold">
-                                {entry.runs}
-                            </span>
-                            <div
-                                className={clsx(
-                                    'w-full rounded-t-sm transition-all',
-                                    isGreat ? 'bg-gradient-to-t from-amber-500 to-amber-400'
-                                        : isGood ? 'bg-gradient-to-t from-brand to-brand/80'
-                                            : 'bg-gradient-to-t from-gray-300 to-gray-200',
-                                )}
-                                style={{ height: `${heightPct}%`, minHeight: '2px' }}
-                            />
+                            <div className="flex items-center gap-2">
+                                <span className={clsx(
+                                    'w-1.5 h-1.5 rounded-full',
+                                    entry.result === 'WIN' ? 'bg-emerald-500'
+                                        : entry.result === 'TIE' ? 'bg-amber-500'
+                                            : 'bg-destructive',
+                                )} />
+                                <span className="text-muted-foreground truncate max-w-[120px]">
+                                    vs {entry.opponent}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className={clsx(
+                                    'font-bold tabular-nums',
+                                    entry.runs >= 50 ? 'text-amber-400' : 'text-foreground',
+                                )}>
+                                    {entry.runs}{!entry.isOut ? '*' : ''}
+                                </span>
+                                <span className="text-[9px] text-muted-foreground tabular-nums">
+                                    {new Date(entry.date).toLocaleDateString(undefined, {
+                                        month: 'short', day: 'numeric',
+                                    })}
+                                </span>
+                            </div>
                         </div>
-                    );
-                })}
-            </div>
-
-            {/* Detailed list */}
-            <div className="space-y-1">
-                {form.map((entry, i) => (
-                    <div
-                        key={i}
-                        className="flex items-center justify-between px-2 py-1.5 bg-card rounded-lg
-                                   text-xs"
-                    >
-                        <div className="flex items-center gap-2">
-                            <span className={clsx(
-                                'w-1.5 h-1.5 rounded-full',
-                                entry.result === 'WIN' ? 'bg-primary/100'
-                                    : entry.result === 'TIE' ? 'bg-amber-500'
-                                        : 'bg-red-400',
-                            )} />
-                            <span className="text-muted-foreground truncate max-w-[100px]">
-                                vs {entry.opponent}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className={clsx(
-                                'font-bold tabular-nums',
-                                entry.runs >= 50 ? 'text-amber-600' : 'text-foreground',
-                            )}>
-                                {entry.runs}{!entry.isOut ? '*' : ''}
-                            </span>
-                            <span className="text-[9px] text-muted-foreground">
-                                {new Date(entry.date).toLocaleDateString(undefined, {
-                                    month: 'short', day: 'numeric',
-                                })}
-                            </span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </Card>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 });
 

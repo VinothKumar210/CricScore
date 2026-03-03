@@ -2,9 +2,8 @@ import { useEffect } from 'react';
 import { useLiveHubStore } from '../liveHubStore';
 import { HubMatchCard } from './HubMatchCard';
 import { Container } from '../../../components/ui/Container';
-import { typography } from '../../../constants/typography';
 import { Link } from 'react-router-dom';
-import { clsx } from 'clsx';
+import { ArrowRight, Plus, Radio } from 'lucide-react';
 
 /**
  * LiveHubPage — The main landing page (/).
@@ -46,7 +45,7 @@ export const LiveHubPage = () => {
                 <p className="text-muted-foreground text-sm mb-4">{error}</p>
                 <button
                     onClick={() => fetchFeed()}
-                    className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium
                                hover:bg-primary/90 transition-colors active:scale-95"
                 >
                     Retry
@@ -58,11 +57,11 @@ export const LiveHubPage = () => {
     const hasAnyLive = yourMatches.some(m => m.status === 'LIVE') || liveMatches.length > 0;
 
     return (
-        <Container className="py-4 space-y-8">
+        <Container className="py-4 space-y-6 pb-24">
             {/* Live Indicator Banner */}
             {hasAnyLive && (
                 <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-destructive/100 animate-pulse" />
+                    <Radio className="w-4 h-4 text-destructive animate-pulse" />
                     <span className="text-sm font-semibold text-destructive">
                         {liveCount} {liveCount === 1 ? 'match' : 'matches'} live now
                     </span>
@@ -72,8 +71,12 @@ export const LiveHubPage = () => {
             {/* Section 1: Your Matches */}
             <section>
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className={typography.headingMd}>Your Matches</h2>
-                    <Link to="/match/create" className="text-primary text-sm font-medium hover:underline">
+                    <h2 className="text-lg font-semibold text-foreground tracking-tight">Your Matches</h2>
+                    <Link
+                        to="/match/create"
+                        className="inline-flex items-center gap-1 text-primary text-sm font-medium hover:text-primary/80 transition-colors"
+                    >
+                        <Plus className="w-4 h-4" />
                         Create New
                     </Link>
                 </div>
@@ -102,7 +105,7 @@ export const LiveHubPage = () => {
             {liveMatches.length > 0 && (
                 <section>
                     <div className="flex items-center gap-2 mb-4">
-                        <h2 className={typography.headingMd}>Live Now</h2>
+                        <h2 className="text-lg font-semibold text-foreground tracking-tight">Live Now</h2>
                         <span className="px-2 py-0.5 bg-destructive/15 text-destructive rounded-full text-xs font-bold">
                             {liveMatches.length}
                         </span>
@@ -119,7 +122,7 @@ export const LiveHubPage = () => {
             {recentCompleted.length > 0 && (
                 <section>
                     <div className="flex items-center justify-between mb-4">
-                        <h2 className={typography.headingMd}>Recently Completed</h2>
+                        <h2 className="text-lg font-semibold text-foreground tracking-tight">Recently Completed</h2>
                     </div>
                     <div className="space-y-3">
                         {recentCompleted.map(match => (
@@ -133,11 +136,8 @@ export const LiveHubPage = () => {
             <section>
                 <Link
                     to="/archive"
-                    className={clsx(
-                        'flex items-center justify-between',
-                        'bg-card border border-border rounded-xl p-4',
-                        'hover:shadow-sm transition-shadow group'
-                    )}
+                    className="flex items-center justify-between rounded-xl border border-border bg-card p-4
+                               hover:border-primary/30 transition-all group shadow-sm"
                 >
                     <div>
                         <h3 className="text-sm font-semibold text-foreground">Match Archive</h3>
@@ -145,9 +145,7 @@ export const LiveHubPage = () => {
                             Browse your completed matches with full replay
                         </p>
                     </div>
-                    <span className="text-muted-foreground group-hover:text-primary transition-colors text-lg">
-                        →
-                    </span>
+                    <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </Link>
             </section>
         </Container>
@@ -157,7 +155,7 @@ export const LiveHubPage = () => {
 // ─── Helper Components ───
 
 const SkeletonCard = () => (
-    <div className="h-36 bg-card rounded-xl animate-pulse" />
+    <div className="h-36 bg-card border border-border rounded-xl animate-shimmer" />
 );
 
 const EmptyState = ({ message, actionLabel, actionLink }: {

@@ -3,20 +3,16 @@ import { useScoringStore } from '../scoringStore';
 import { clsx } from 'clsx';
 import { SkipBack, Play, History } from 'lucide-react';
 
+/**
+ * ReplaySlider — Timeline scrubber for spectator mode.
+ * Only visible on /live routes.
+ */
 export const ReplaySlider: React.FC = () => {
     const replayIndex = useScoringStore((s) => s.replayIndex);
     const setReplayIndex = useScoringStore((s) => s.setReplayIndex);
     const events = useScoringStore((s) => s.events);
     const matchState = useScoringStore((s) => s.matchState);
 
-    // Only visible in spectator mode (not scorer mode).
-    // We can infer spectator mode by absence of wicket flow/ability to edit?
-    // Based on requirements, "Only visible in spectator mode."
-    // In our app, spectator mode is `/live` not `/score`. The `MatchLiveShell` is shared.
-    // We can use a prop or infer it from the router/store.
-    // Since `ControlPad` has disabled states, we can check if `matchState?.status === 'LIVE'` and user has scorer access.
-    // The requirement says "Inside MatchLiveShell. Only visible in spectator mode." 
-    // To cleanly handle this, we can check if window.location.pathname includes '/live'
     const isSpectatorMode = typeof window !== 'undefined' && window.location.pathname.includes('/live');
 
     if (!isSpectatorMode) return null;
@@ -29,7 +25,7 @@ export const ReplaySlider: React.FC = () => {
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = parseInt(e.target.value, 10);
         if (val === maxIndex) {
-            setReplayIndex(null); // Back to live
+            setReplayIndex(null);
         } else {
             setReplayIndex(val);
         }
@@ -42,7 +38,7 @@ export const ReplaySlider: React.FC = () => {
     return (
         <div className={clsx(
             "mx-3 mt-3 p-3 rounded-xl border transition-all duration-300 shadow-sm",
-            isReplaying ? "bg-primary/5 border-brand/20" : "bg-card border-border"
+            isReplaying ? "bg-primary/5 border-primary/20" : "bg-card border-border"
         )}>
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -54,7 +50,7 @@ export const ReplaySlider: React.FC = () => {
                 {isReplaying && (
                     <button
                         onClick={handleBackToLive}
-                        className="flex items-center gap-1.5 px-3 py-1 bg-primary text-white text-xs font-bold rounded-full shadow-sm hover:bg-primary/90 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full shadow-sm shadow-primary/20 hover:bg-primary/90 transition-colors"
                     >
                         <Play className="w-3 h-3 fill-current" />
                         BACK TO LIVE
@@ -77,18 +73,18 @@ export const ReplaySlider: React.FC = () => {
                         max={maxIndex}
                         value={currentIndex}
                         onChange={handleSliderChange}
-                        className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-brand focus:outline-none focus:ring-2 focus:ring-brand/30 transition-all"
+                        className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                     />
                     <div className="absolute -bottom-5 w-full flex justify-between px-1 pointer-events-none">
                         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Start</span>
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{maxIndex} balls</span>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider tabular-nums">{maxIndex} balls</span>
                     </div>
                 </div>
             </div>
             {isReplaying && (
                 <div className="mt-4 text-center">
                     <span className="text-xs font-medium text-muted-foreground">
-                        Viewing ball <span className="text-primary font-bold">{currentIndex}</span> of {maxIndex}
+                        Viewing ball <span className="text-primary font-bold tabular-nums">{currentIndex}</span> of {maxIndex}
                     </span>
                 </div>
             )}

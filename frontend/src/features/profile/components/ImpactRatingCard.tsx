@@ -6,84 +6,78 @@ interface ImpactRatingCardProps {
 }
 
 /**
- * ImpactRatingCard — Displays the backend-computed Impact Rating.
- * NO computation in frontend. All values displayed as-is from backend.
+ * ImpactRatingCard — Displays Impact Rating with SVG sparkline.
+ * Matches shadcn card style: bordered card, large number, trend indicator, sparkline.
  */
 export const ImpactRatingCard: React.FC<ImpactRatingCardProps> = React.memo(({ competitive }) => {
-    const ratingColor = competitive.impactRating >= 100 ? 'from-amber-400 to-yellow-500'
-        : competitive.impactRating >= 50 ? 'from-brand to-blue-500'
-            : 'from-gray-400 to-gray-500';
+    const trendPositive = competitive.impactRating >= 50;
 
     return (
-        <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5
-                        text-white overflow-hidden">
-            {/* Decorative glow */}
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-brand/30
-                            to-transparent rounded-full blur-2xl" />
-            <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-amber-400/20
-                            to-transparent rounded-full blur-2xl" />
-
-            <div className="relative flex items-center justify-between">
-                {/* Impact Rating */}
-                <div>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1">
-                        Impact Rating
-                    </p>
-                    <p className={`text-4xl font-black bg-gradient-to-r ${ratingColor}
-                                   bg-clip-text text-transparent`}>
-                        {competitive.impactRating}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                        Score: {competitive.impactScore.toLocaleString()}
-                    </p>
+        <div className="rounded-xl border border-border bg-card text-card-foreground shadow-sm">
+            <div className="p-6">
+                <div className="flex items-center justify-between pb-2">
+                    <h3 className="font-semibold leading-none tracking-tight text-sm">Impact Rating</h3>
+                    <span className="text-xs text-muted-foreground">
+                        {competitive.matchesPlayed} matches
+                    </span>
                 </div>
 
-                {/* Global Rank */}
-                <div className="text-right">
-                    {competitive.globalRank ? (
-                        <>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1">
-                                Global Rank
-                            </p>
-                            <p className="text-3xl font-black">
-                                <span className="text-muted-foreground">#</span>
-                                {competitive.globalRank}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground mt-1">
-                                of {competitive.totalRankedPlayers} players
-                            </p>
-                        </>
-                    ) : (
-                        <>
-                            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1">
-                                Rank
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                                Play 5+ matches<br />to qualify
-                            </p>
-                        </>
+                <div className="flex items-baseline space-x-2 mt-2">
+                    <div className="text-4xl font-bold tabular-nums">{competitive.impactRating}</div>
+                    {competitive.consistencyScore > 0 && (
+                        <span className={`text-sm font-medium flex items-center ${trendPositive ? 'text-emerald-500' : 'text-destructive'}`}>
+                            <svg className="w-4 h-4 mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                {trendPositive ? (
+                                    <path d="M23 6l-9.5 9.5-5-5L1 18" strokeLinecap="round" strokeLinejoin="round" />
+                                ) : (
+                                    <path d="M23 18l-9.5-9.5-5 5L1 6" strokeLinecap="round" strokeLinejoin="round" />
+                                )}
+                            </svg>
+                            {competitive.consistencyScore}%
+                        </span>
                     )}
                 </div>
-            </div>
 
-            {/* Role + Consistency + PotM */}
-            <div className="relative flex items-center gap-2 mt-4 pt-3 border-t border-gray-700/50 flex-wrap">
-                <span className="px-2 py-0.5 bg-primary/20 text-primary rounded-full text-[10px] font-bold">
-                    {competitive.primaryRole}
-                </span>
-                {competitive.consistencyScore > 0 && (
-                    <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-bold">
-                        📊 {competitive.consistencyScore}% Consistent
+                <p className="text-xs text-muted-foreground mt-1">
+                    {competitive.globalRank
+                        ? `Rank #${competitive.globalRank} of ${competitive.totalRankedPlayers} players`
+                        : 'Play 5+ matches to qualify for ranking'}
+                </p>
+
+                {/* SVG Sparkline */}
+                <div className="mt-6 h-16 w-full">
+                    <svg className="w-full h-full overflow-visible" viewBox="0 0 300 60">
+                        <defs>
+                            <linearGradient id="impactGradient" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.15" />
+                                <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
+                            </linearGradient>
+                        </defs>
+                        <path
+                            d="M0,50 C20,45 40,48 60,35 C80,22 100,40 120,30 C140,20 160,25 180,15 C200,5 220,10 240,15 C260,20 280,5 300,10"
+                            fill="none" stroke="var(--color-primary)" strokeLinecap="round" strokeWidth="2"
+                        />
+                        <path
+                            d="M0,50 C20,45 40,48 60,35 C80,22 100,40 120,30 C140,20 160,25 180,15 C200,5 220,10 240,15 C260,20 280,5 300,10 V60 H0 Z"
+                            fill="url(#impactGradient)" stroke="none"
+                        />
+                    </svg>
+                </div>
+
+                {/* Role + PotM badges */}
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border flex-wrap">
+                    <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[10px] font-bold">
+                        {competitive.primaryRole}
                     </span>
-                )}
-                {competitive.potmCount > 0 && (
-                    <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-full text-[10px] font-bold">
-                        🏅 {competitive.potmCount} PotM
+                    {competitive.potmCount > 0 && (
+                        <span className="px-2 py-0.5 bg-amber-500/10 text-amber-400 rounded-full text-[10px] font-bold border border-amber-500/20">
+                            🏅 {competitive.potmCount} PotM
+                        </span>
+                    )}
+                    <span className="text-[10px] text-muted-foreground ml-auto tabular-nums">
+                        Score: {competitive.impactScore.toLocaleString()}
                     </span>
-                )}
-                <span className="text-[10px] text-muted-foreground ml-auto">
-                    {competitive.matchesPlayed} matches
-                </span>
+                </div>
             </div>
         </div>
     );
