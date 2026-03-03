@@ -1,14 +1,11 @@
-// =============================================================================
-// Inbox Page — Conversation list with last message + unread counts
-// =============================================================================
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
+import { Container } from '../../components/ui/Container';
+import { MessageSquare, Users, Swords, VolumeX, Loader2 } from 'lucide-react';
+import { clsx } from 'clsx';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+// ─── Types ───
 
 interface ConversationPreview {
     id: string;
@@ -30,9 +27,7 @@ interface ConversationPreview {
     updatedAt: string;
 }
 
-// ---------------------------------------------------------------------------
-// Inbox Page Component
-// ---------------------------------------------------------------------------
+// ─── Inbox Page ───
 
 export const InboxPage = () => {
     const [conversations, setConversations] = useState<ConversationPreview[]>([]);
@@ -46,13 +41,10 @@ export const InboxPage = () => {
         try {
             const isLoadMore = !!cursor;
             if (isLoadMore) setLoadingMore(true); else setLoading(true);
-
             const params: Record<string, string> = {};
             if (cursor) params.cursor = cursor;
-
             const { data } = await api.get('/api/inbox', { params } as any);
             const result = data.data || data;
-
             if (isLoadMore) {
                 setConversations(prev => [...prev, ...result.conversations]);
             } else {
@@ -60,7 +52,7 @@ export const InboxPage = () => {
             }
             setNextCursor(result.nextCursor);
         } catch {
-            // silent fail
+            // silent
         } finally {
             setLoading(false);
             setLoadingMore(false);
@@ -80,16 +72,13 @@ export const InboxPage = () => {
     }, [fetchInbox, fetchUnreadCount]);
 
     const handleConversationClick = async (conv: ConversationPreview) => {
-        // Mark as read optimistically
         if (conv.unreadCount > 0) {
             setConversations(prev =>
                 prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c),
             );
             setTotalUnread(prev => Math.max(0, prev - conv.unreadCount));
-            api.patch(`/api/inbox/${conv.id}/read`).catch(() => { /* rollback if needed */ });
+            api.patch(`/api/inbox/${conv.id}/read`).catch(() => { });
         }
-
-        // Navigate to message room
         const roomType = conv.type.toLowerCase();
         const roomId = conv.entityId || conv.id;
         navigate(`/messages/${roomType}/${roomId}`);
@@ -98,31 +87,27 @@ export const InboxPage = () => {
     if (loading) return <InboxSkeleton />;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        <Container className="py-6 pb-24 space-y-4">
             {/* Header */}
-            <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '0 0 16px 0',
-            }}>
+            <div className="flex items-center justify-between">
                 <div>
-                    <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Messages</h1>
+                    <div className="flex items-center gap-2">
+                        <MessageSquare className="w-6 h-6 text-primary" />
+                        <h1 className="text-2xl font-bold tracking-tight">Messages</h1>
+                    </div>
                     {totalUnread > 0 && (
-                        <p style={{ fontSize: 12, color: 'var(--accent, #D7A65B)', marginTop: 2, fontWeight: 600 }}>
+                        <p className="text-xs text-primary font-semibold mt-0.5 pl-8">
                             {totalUnread} unread
                         </p>
                     )}
                 </div>
             </div>
 
-            {/* Conversation List */}
+            {/* List */}
             {conversations.length === 0 ? (
                 <EmptyState />
             ) : (
-                <div style={{
-                    background: 'var(--bg-card, #191B20)',
-                    border: '1px solid var(--border, #2A2D35)',
-                    borderRadius: 14, overflow: 'hidden',
-                }}>
+                <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
                     {conversations.map((conv, idx) => (
                         <ConversationRow
                             key={conv.id}
@@ -139,24 +124,24 @@ export const InboxPage = () => {
                 <button
                     onClick={() => fetchInbox(nextCursor)}
                     disabled={loadingMore}
-                    style={{
-                        marginTop: 16, padding: '12px', borderRadius: 10,
-                        background: 'var(--bg-card, #24262D)',
-                        border: '1px solid var(--border, #2A2D35)',
-                        color: 'var(--text-secondary, #888)',
-                        fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                    }}
+                    className="w-full py-3 rounded-xl bg-secondary border border-border text-sm font-medium text-muted-foreground hover:bg-card transition-colors flex items-center justify-center gap-2"
                 >
+                    {loadingMore ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                     {loadingMore ? 'Loading...' : 'Load More'}
                 </button>
             )}
-        </div>
+        </Container>
     );
 };
 
-// ---------------------------------------------------------------------------
-// Conversation Row Component
-// ---------------------------------------------------------------------------
+// ─── Conversation Row ───
+
+const TYPE_ICONS: Record<string, React.ReactNode> = {
+    TEAM: <Users className="w-5 h-5 text-primary" />,
+    MATCH: <Swords className="w-5 h-5 text-amber-400" />,
+    DIRECT: <MessageSquare className="w-5 h-5 text-emerald-400" />,
+    GROUP: <Users className="w-5 h-5 text-purple-400" />,
+};
 
 const ConversationRow = ({
     conversation: conv,
@@ -171,106 +156,69 @@ const ConversationRow = ({
         ? formatRelativeTime(conv.lastMessage.createdAt)
         : formatRelativeTime(conv.updatedAt);
 
-    const typeIcon = getTypeIcon(conv.type);
-
     return (
         <div
             onClick={onClick}
-            style={{
-                display: 'flex', alignItems: 'center', gap: 14,
-                padding: '14px 18px', cursor: 'pointer',
-                borderBottom: isLast ? 'none' : '1px solid var(--border, #2A2D35)',
-                background: conv.unreadCount > 0 ? 'rgba(215,166,91,0.04)' : 'transparent',
-                transition: 'background 0.15s',
-            }}
+            className={clsx(
+                "flex items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-secondary/50 transition-colors",
+                !isLast && "border-b border-border",
+                conv.unreadCount > 0 && "bg-primary/5"
+            )}
         >
-            {/* Avatar / Icon */}
-            <div style={{
-                width: 44, height: 44, borderRadius: '50%',
-                background: 'var(--bg-card, #24262D)',
-                border: '1px solid var(--border, #2A2D35)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 18, flexShrink: 0, position: 'relative',
-            }}>
+            {/* Avatar */}
+            <div className="w-11 h-11 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 relative">
                 {conv.lastMessage?.senderAvatar ? (
-                    <img
-                        src={conv.lastMessage.senderAvatar}
-                        alt=""
-                        style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }}
-                    />
+                    <img src={conv.lastMessage.senderAvatar} alt="" className="w-full h-full rounded-full object-cover" />
                 ) : (
-                    <span>{typeIcon}</span>
+                    TYPE_ICONS[conv.type] || <MessageSquare className="w-5 h-5 text-muted-foreground" />
                 )}
                 {conv.unreadCount > 0 && (
-                    <div style={{
-                        position: 'absolute', top: -2, right: -2,
-                        width: 18, height: 18, borderRadius: '50%',
-                        background: 'var(--accent, #D7A65B)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 10, fontWeight: 800, color: '#0a0e1a',
-                    }}>
-                        {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                    <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-primary flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-primary-foreground">
+                            {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                        </span>
                     </div>
                 )}
             </div>
 
             {/* Content */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                    <span style={{
-                        fontSize: 14, fontWeight: conv.unreadCount > 0 ? 700 : 500,
-                        color: 'var(--text-primary, #EBECEF)',
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        maxWidth: '65%',
-                    }}>
+            <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-baseline">
+                    <span className={clsx(
+                        "text-sm truncate max-w-[65%]",
+                        conv.unreadCount > 0 ? "font-bold text-foreground" : "font-medium text-foreground"
+                    )}>
                         {conv.name || conv.type}
                     </span>
-                    <span style={{
-                        fontSize: 11, color: conv.unreadCount > 0
-                            ? 'var(--accent, #D7A65B)'
-                            : 'var(--text-secondary, #888)',
-                        fontWeight: conv.unreadCount > 0 ? 600 : 400,
-                        flexShrink: 0,
-                    }}>
+                    <span className={clsx(
+                        "text-[10px] shrink-0",
+                        conv.unreadCount > 0 ? "text-primary font-semibold" : "text-muted-foreground"
+                    )}>
                         {timeLabel}
                     </span>
                 </div>
 
                 {conv.lastMessage && (
-                    <p style={{
-                        fontSize: 12, margin: '3px 0 0',
-                        color: conv.unreadCount > 0
-                            ? 'var(--text-primary, #EBECEF)'
-                            : 'var(--text-secondary, #888)',
-                        fontWeight: conv.unreadCount > 0 ? 500 : 400,
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                    }}>
-                        <span style={{ fontWeight: 500 }}>{conv.lastMessage.senderName}:</span>{' '}
+                    <p className={clsx(
+                        "text-xs mt-0.5 truncate",
+                        conv.unreadCount > 0 ? "text-foreground/80" : "text-muted-foreground"
+                    )}>
+                        <span className="font-medium">{conv.lastMessage.senderName}:</span>{' '}
                         {conv.lastMessage.content}
                     </p>
                 )}
 
                 {conv.isMuted && (
-                    <span style={{ fontSize: 10, color: 'var(--text-muted, #555)' }}>🔇 Muted</span>
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground mt-0.5">
+                        <VolumeX className="w-3 h-3" /> Muted
+                    </span>
                 )}
             </div>
         </div>
     );
 };
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function getTypeIcon(type: string): string {
-    switch (type) {
-        case 'TEAM': return '🏏';
-        case 'MATCH': return '⚔️';
-        case 'DIRECT': return '💬';
-        case 'GROUP': return '👥';
-        default: return '💬';
-    }
-}
+// ─── Helpers ───
 
 function formatRelativeTime(dateStr: string): string {
     const now = new Date();
@@ -279,7 +227,6 @@ function formatRelativeTime(dateStr: string): string {
     const diffMin = Math.floor(diffMs / 60000);
     const diffHr = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
-
     if (diffMin < 1) return 'now';
     if (diffMin < 60) return `${diffMin}m`;
     if (diffHr < 24) return `${diffHr}h`;
@@ -287,45 +234,35 @@ function formatRelativeTime(dateStr: string): string {
     return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
+// ─── Sub-components ───
 
 const EmptyState = () => (
-    <div style={{
-        textAlign: 'center', padding: '60px 20px',
-        color: 'var(--text-secondary, #888)',
-    }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>💬</div>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4, color: 'var(--text-primary, #EBECEF)' }}>
-            No conversations yet
-        </h3>
-        <p style={{ fontSize: 13 }}>
-            Messages from your teams and matches will appear here
-        </p>
+    <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+            <MessageSquare className="w-9 h-9 text-primary" />
+        </div>
+        <div className="text-center">
+            <h3 className="text-lg font-semibold text-foreground">No Conversations</h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                Messages from your teams and matches will appear here
+            </p>
+        </div>
     </div>
 );
 
 const InboxSkeleton = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '20px 0' }}>
-        {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-            }}>
-                <div style={{
-                    width: 44, height: 44, borderRadius: '50%', background: '#191B20',
-                }} />
-                <div style={{ flex: 1 }}>
-                    <div style={{
-                        height: 14, width: `${50 + i * 8}%`, borderRadius: 4,
-                        background: '#191B20', marginBottom: 6,
-                    }} />
-                    <div style={{
-                        height: 10, width: '80%', borderRadius: 4,
-                        background: '#191B20', opacity: 0.6,
-                    }} />
+    <Container className="py-6 space-y-4">
+        <div className="h-8 w-32 bg-secondary rounded-lg animate-pulse" />
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+            {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-border last:border-b-0">
+                    <div className="w-11 h-11 rounded-full bg-secondary animate-pulse shrink-0" />
+                    <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-secondary rounded-lg animate-pulse" style={{ width: `${50 + i * 8}%` }} />
+                        <div className="h-3 w-4/5 bg-secondary rounded-lg animate-pulse" />
+                    </div>
                 </div>
-            </div>
-        ))}
-    </div>
+            ))}
+        </div>
+    </Container>
 );

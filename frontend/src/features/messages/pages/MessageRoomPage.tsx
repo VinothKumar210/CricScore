@@ -23,7 +23,6 @@ export const MessageRoomPage: React.FC = () => {
         markMessageFailed,
     } = useMessageStore();
 
-    // Hook to initialize socket connection automatically
     useMessageSocket();
 
     const fullRoomId = `${roomType}:${roomId}`;
@@ -31,16 +30,12 @@ export const MessageRoomPage: React.FC = () => {
 
     useEffect(() => {
         if (!roomType || !roomId) return;
-
         setActiveRoom(fullRoomId);
-
-        // Initial Fetch
         if (currentRoom.messages.length === 0) {
             fetchMessages(roomType as RoomType, roomId);
         }
-
         return () => {
-            setActiveRoom(''); // Clear active room on unmount
+            setActiveRoom('');
         };
     }, [fullRoomId, roomType, roomId, setActiveRoom, fetchMessages]);
 
@@ -71,11 +66,6 @@ export const MessageRoomPage: React.FC = () => {
                     avatarUrl: currentUser.avatarUrl
                 }
             });
-        } else {
-            // If it's a retry, we just re-flag it sending (reconcile to itself basically to reset status)
-            // But we actually only have reconcileMessage to swap it with server. 
-            // We can just keep it failed until server comes back, or we might need a `markMessageSending` action.
-            // For simplicity, we just leave it failed while we retry, or dispatch reconcile early if needed.
         }
 
         try {
@@ -96,21 +86,21 @@ export const MessageRoomPage: React.FC = () => {
     if (!roomType || !roomId) return null;
 
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] sm:h-[calc(100vh-80px)] bg-background dark:bg-card-950">
+        <div className="flex flex-col h-[calc(100vh-64px)] bg-background">
             {/* Header */}
-            <header className="bg-card dark:bg-card-900 border-b border-border dark:border-gray-800 px-4 py-3 shrink-0 flex items-center">
+            <header className="bg-card border-b border-border px-4 py-3 shrink-0 flex items-center">
                 <button
                     onClick={() => navigate(-1)}
-                    className="mr-3 p-2 rounded-full hover:bg-secondary dark:hover:bg-card-800 transition-colors text-muted-foreground"
+                    className="mr-3 p-2 rounded-lg bg-secondary border border-border hover:bg-card transition-colors"
                 >
                     <ArrowLeft className="h-5 w-5" />
                 </button>
                 <div>
-                    <h1 className="text-lg font-bold text-foreground dark:text-white capitalize">
+                    <h1 className="text-lg font-bold text-foreground capitalize">
                         {roomType} Chat
                     </h1>
-                    <p className="text-xs text-primary-600 dark:text-primary-400 font-medium">
-                        ID: {roomId}
+                    <p className="text-[10px] text-muted-foreground font-mono">
+                        {roomId}
                     </p>
                 </div>
             </header>
