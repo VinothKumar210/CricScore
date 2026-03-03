@@ -7,6 +7,7 @@ import { HomePage } from '../pages/home/HomePage';
 import { MarketPage } from '../features/market/MarketPage';
 import { TeamsPage } from '../pages/teams/TeamsPage';
 import { TeamDetailPage } from '../pages/teams/TeamDetailPage';
+import { TeamCreatePage } from '../pages/teams/TeamCreatePage';
 import { ProfilePage } from '../pages/profile/ProfilePage';
 import { EditProfilePage } from '../features/profile/EditProfilePage';
 import { MatchDetailPage } from '../pages/match/MatchDetailPage';
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
             { path: '/home', element: <HomePage /> },
             { path: '/market', element: <MarketPage /> },
             { path: '/teams', element: <TeamsPage /> },
+            { path: '/teams/create', element: <TeamCreatePage /> },
             { path: '/teams/:id', element: <TeamDetailPage /> },
             { path: '/profile', element: <ProfilePage /> },
             { path: '/profile/edit', element: <EditProfilePage /> },
