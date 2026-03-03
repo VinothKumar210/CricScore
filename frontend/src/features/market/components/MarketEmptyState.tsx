@@ -1,17 +1,16 @@
-import React from 'react';
-import { SparklesIcon } from '@heroicons/react/24/outline';
+import { Compass } from 'lucide-react';
 
-export const MarketEmptyState: React.FC = () => {
+export const MarketEmptyState = () => {
     return (
-        <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-            <div className="h-16 w-16 bg-primary-50 dark:bg-card-800 rounded-full flex items-center justify-center mb-4">
-                <SparklesIcon className="h-8 w-8 text-primary-500" />
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Compass className="w-8 h-8 text-primary" />
             </div>
-            <h3 className="text-lg font-medium text-foreground dark:text-white mb-2">
-                No matches found in this area.
+            <h3 className="text-lg font-semibold text-foreground mb-1">
+                No matches nearby
             </h3>
-            <p className="text-muted-foreground dark:text-gray-400 max-w-sm mb-6">
-                Try increasing radius or resetting your search formats to discover more teams nearby.
+            <p className="text-sm text-muted-foreground max-w-xs">
+                Try increasing your search radius or adjusting filters to discover more teams.
             </p>
         </div>
     );

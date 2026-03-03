@@ -1,19 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { MarketMatch } from '../marketService';
 import { useMarketStore } from '../marketStore';
-import { CalendarIcon, MapPinIcon, ClockIcon } from '@heroicons/react/24/outline';
-
+import { Calendar, MapPin, Clock, Loader2, Send, CheckCircle } from 'lucide-react';
+import { clsx } from 'clsx';
 
 interface Props {
     match: MarketMatch;
-    currentTeamId?: string; // Passed down from context/selector in the future
+    currentTeamId?: string;
 }
 
 export const MarketMatchCard: React.FC<Props> = ({ match, currentTeamId = 'temp-team-id' }) => {
     const { sendMatchInvite } = useMarketStore();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Derived strictly visually from Server State
     const myResponse = match.responses?.find(r => r.responderTeamId === currentTeamId);
 
     let buttonState: 'INVITE' | 'SENT' | 'JOINED' | 'FULL' = 'INVITE';
@@ -21,12 +20,11 @@ export const MarketMatchCard: React.FC<Props> = ({ match, currentTeamId = 'temp-
         if (myResponse.status === 'ACCEPTED') buttonState = 'JOINED';
         else if (myResponse.status === 'PENDING') buttonState = 'SENT';
     } else if (match.status === 'CLOSED') {
-        buttonState = 'FULL'; // Closed effectively implies fullness in a bilateral challenge
+        buttonState = 'FULL';
     }
 
     const handleInvite = async () => {
         if (buttonState !== 'INVITE' || isSubmitting) return;
-
         setIsSubmitting(true);
         try {
             await sendMatchInvite(match, currentTeamId);
@@ -35,61 +33,83 @@ export const MarketMatchCard: React.FC<Props> = ({ match, currentTeamId = 'temp-
         }
     };
 
+    const getInitial = (name: string) => name.charAt(0).toUpperCase();
+
+    const getButtonConfig = () => {
+        switch (buttonState) {
+            case 'SENT':
+                return { label: 'Invite Sent', icon: <CheckCircle className="w-4 h-4" />, style: 'bg-secondary text-muted-foreground cursor-not-allowed' };
+            case 'JOINED':
+                return { label: 'Joined', icon: <CheckCircle className="w-4 h-4 text-emerald-400" />, style: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 cursor-not-allowed' };
+            case 'FULL':
+                return { label: 'Match Full', icon: null, style: 'bg-secondary text-muted-foreground cursor-not-allowed' };
+            default:
+                return { label: 'Send Invite', icon: <Send className="w-4 h-4" />, style: 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-primary/20 active:scale-[0.98]' };
+        }
+    };
+
+    const btn = getButtonConfig();
+
     return (
-        <div className="bg-card dark:bg-card-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 p-5 transition-shadow hover:shadow-md">
-            <div className="flex justify-between items-start mb-4">
+        <div className="bg-card rounded-xl border border-border p-4 shadow-sm hover:border-primary/20 hover:shadow-md hover:shadow-primary/5 transition-all">
+            {/* Header: Team + Ball Type */}
+            <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-primary-100 dark:bg-card-800 flex items-center justify-center shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
                         {match.team.logoUrl ? (
-                            <img src={match.team.logoUrl} alt="Team" className="h-full w-full rounded-full object-cover" />
+                            <img src={match.team.logoUrl} alt="" className="w-full h-full rounded-xl object-cover" />
                         ) : (
-                            <span className="text-primary-600 font-bold text-lg">{match.team.name.charAt(0)}</span>
+                            <span className="text-primary font-bold text-lg">{getInitial(match.team.name)}</span>
                         )}
                     </div>
                     <div>
-                        <h4 className="font-semibold text-foreground dark:text-white text-lg">
-                            {match.team.name}
-                        </h4>
-                        <span className="text-xs text-muted-foreground dark:text-gray-400">
-                            {match.team.reliability !== undefined ? `Reliability: ${match.team.reliability}%` : 'New Team'}
+                        <h4 className="font-semibold text-foreground">{match.team.name}</h4>
+                        <span className="text-xs text-muted-foreground">
+                            {match.team.reliability !== undefined ? `${match.team.reliability}% reliable` : 'New Team'}
                         </span>
                     </div>
                 </div>
 
-                <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-card-800 dark:text-blue-400">
-                    {match.ballType ? match.ballType.charAt(0) + match.ballType.slice(1).toLowerCase() : 'Any'} Ball
+                <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase bg-secondary border border-border text-muted-foreground tracking-wider">
+                    {match.ballType ? match.ballType.charAt(0) + match.ballType.slice(1).toLowerCase() : 'Any'}
                 </span>
             </div>
 
-            <p className="text-sm text-muted-foreground dark:text-gray-300 mb-4 line-clamp-2">
+            {/* Message */}
+            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                 {match.message || "Looking for a competitive match this weekend."}
             </p>
 
-            <div className="grid grid-cols-2 gap-y-2 gap-x-4 mb-5 text-sm">
-                <div className="flex items-center text-muted-foreground dark:text-gray-400">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    {match.preferredDate ? new Date(match.preferredDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Any Date'}
-                </div>
-                <div className="flex items-center text-muted-foreground dark:text-gray-400">
-                    <ClockIcon className="h-4 w-4 mr-2" />
-                    {match.overs ? `${match.overs} Overs` : 'Any Overs'}
-                </div>
-                <div className="flex items-center text-muted-foreground dark:text-gray-400 col-span-2">
-                    <MapPinIcon className="h-4 w-4 mr-2 shrink-0" />
-                    <span>~{Math.round(match.radius || 0)}km away</span>
-                </div>
+            {/* Details Grid */}
+            <div className="flex flex-wrap gap-3 mb-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5 bg-secondary rounded-lg px-2.5 py-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-primary" />
+                    {match.preferredDate
+                        ? new Date(match.preferredDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        : 'Any Date'}
+                </span>
+                <span className="flex items-center gap-1.5 bg-secondary rounded-lg px-2.5 py-1.5">
+                    <Clock className="w-3.5 h-3.5 text-primary" />
+                    {match.overs ? `${match.overs} Overs` : 'Any'}
+                </span>
+                <span className="flex items-center gap-1.5 bg-secondary rounded-lg px-2.5 py-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-primary" />
+                    ~{Math.round(match.radius || 0)}km
+                </span>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+            {/* Footer: Invite Button */}
+            <div className="pt-3 border-t border-border flex justify-end">
                 <button
                     onClick={handleInvite}
                     disabled={buttonState !== 'INVITE' || isSubmitting}
-                    className={`font-medium py-2 px-6 rounded-lg transition-all duration-150 focus:ring-2 focus:ring-offset-2 ${buttonState === 'INVITE'
-                        ? 'bg-primary-600 hover:bg-primary-700 active:scale-[0.98] hover:scale-[1.02] disabled:hover:scale-100 disabled:opacity-50 text-white focus:ring-brand-500'
-                        : 'bg-secondary text-muted-foreground dark:bg-card-800 dark:text-gray-400 cursor-not-allowed'
-                        }`}
+                    className={clsx(
+                        "font-semibold text-sm py-2 px-5 rounded-xl transition-all flex items-center gap-2",
+                        btn.style
+                    )}
                 >
-                    {isSubmitting ? 'Sending...' : buttonState === 'SENT' ? 'Invite Sent' : buttonState === 'JOINED' ? 'Joined' : buttonState === 'FULL' ? 'Match Full' : 'Invite'}
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : btn.icon}
+                    {isSubmitting ? 'Sending...' : btn.label}
                 </button>
             </div>
         </div>

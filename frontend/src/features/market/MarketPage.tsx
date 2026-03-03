@@ -1,54 +1,54 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useMarketStore } from './marketStore';
 import { MarketFilters } from './components/MarketFilters';
 import { MarketMatchCard } from './components/MarketMatchCard';
 import { MarketSkeleton } from './components/MarketSkeleton';
 import { MarketEmptyState } from './components/MarketEmptyState';
-import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { Loader2, Store } from 'lucide-react';
 
-export const MarketPage: React.FC = () => {
+export const MarketPage = () => {
     const { matches, isLoading, error, fetchFeed } = useMarketStore();
 
     useEffect(() => {
-        // Initial fetch on mount
         fetchFeed();
     }, [fetchFeed]);
 
     return (
-        <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-foreground dark:text-white mb-2">Marketplace</h1>
-                    <p className="text-muted-foreground dark:text-gray-400">
-                        Discover nearby teams looking exactly for your kind of challenge.
-                    </p>
+        <div className="max-w-2xl mx-auto py-6 px-4">
+            {/* Header */}
+            <div className="mb-6">
+                <div className="flex items-center gap-2 mb-1">
+                    <Store className="w-6 h-6 text-primary" />
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Marketplace</h1>
                 </div>
-                {/* We can add a "Create Challenge" CTA here if needed later */}
+                <p className="text-sm text-muted-foreground">
+                    Discover nearby teams looking for your kind of challenge.
+                </p>
             </div>
 
-            {/* Debounced Filter Inputs */}
+            {/* Filters */}
             <MarketFilters />
 
-            {/* Error Fallback */}
+            {/* Error */}
             {error && (
-                <div className="p-4 mb-6 rounded-lg bg-destructive/10 dark:bg-red-900/30 text-destructive dark:text-red-400 border border-destructive/20 dark:border-red-800 text-sm">
+                <div className="p-4 mb-4 rounded-xl bg-destructive/10 text-destructive border border-destructive/20 text-sm font-medium">
                     {error}
                 </div>
             )}
 
-            {/* Main Content Grid */}
+            {/* Content */}
             <div className="relative">
-                {/* Re-fetching overlay block. Doesn't destroy layout, just fades lightly. */}
+                {/* Refetching overlay */}
                 {isLoading && matches.length > 0 && (
-                    <div className="absolute inset-0 bg-card/50 dark:bg-card-950/50 backdrop-blur-[2px] z-10 rounded-xl flex items-center justify-center touch-none">
-                        <ArrowPathIcon className="h-8 w-8 text-primary-500 animate-spin absolute top-20" />
+                    <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10 rounded-xl flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-primary animate-spin" />
                     </div>
                 )}
 
                 {isLoading && matches.length === 0 ? (
                     <MarketSkeleton />
                 ) : matches.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-3">
                         {matches.map(match => (
                             <MarketMatchCard key={match.id} match={match} />
                         ))}
