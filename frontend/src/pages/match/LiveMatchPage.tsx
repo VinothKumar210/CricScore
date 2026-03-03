@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useScoringStore } from '../../features/scoring/scoringStore';
 import { useScoringSocket } from '../../features/scoring/useScoringSocket';
 import { MatchLiveShell } from '../../features/scoring/components/MatchLiveShell';
-import { Loader2, Share2, Check } from 'lucide-react';
+import { Loader2, Share2, Check, Users } from 'lucide-react';
 import { useState } from 'react';
 
 /**
@@ -18,21 +18,20 @@ export const LiveMatchPage = () => {
     const error = useScoringStore((s) => s.error);
     const [copied, setCopied] = useState(false);
 
-    // Initialize store (read-only — no mutations)
     useEffect(() => {
         if (matchId) {
             initialize(matchId);
         }
     }, [matchId, initialize]);
 
-    // Subscribe to live socket updates
     useScoringSocket(matchId || null);
 
     // Loading
     if (!matchState && !error) {
         return (
-            <div className="flex items-center justify-center h-screen bg-bgPrimary">
+            <div className="flex flex-col items-center justify-center h-screen bg-background gap-3">
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                <span className="text-sm text-muted-foreground font-medium">Joining live match...</span>
             </div>
         );
     }
@@ -40,11 +39,18 @@ export const LiveMatchPage = () => {
     // Error
     if (error && !matchState) {
         return (
-            <div className="flex flex-col items-center justify-center h-screen bg-bgPrimary p-4">
-                <p className="text-destructive font-semibold mb-2">Failed to load match</p>
+            <div className="flex flex-col items-center justify-center h-screen bg-background p-4 gap-4">
+                <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+                    <Users className="w-7 h-7 text-destructive" />
+                </div>
+                <div className="text-center">
+                    <p className="text-foreground font-semibold mb-1">Failed to load match</p>
+                    <p className="text-muted-foreground text-sm max-w-xs">{error}</p>
+                </div>
                 <button
                     onClick={() => matchId && initialize(matchId)}
-                    className="px-4 py-2 bg-primary text-white rounded-lg"
+                    className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold
+                               hover:bg-primary/90 transition-colors active:scale-[0.98] shadow-sm shadow-primary/20"
                 >
                     Retry
                 </button>
@@ -58,18 +64,18 @@ export const LiveMatchPage = () => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch {
-            // Fallback: prompt
+            // Fallback
         }
     };
 
     return (
-        <div className="flex flex-col h-full bg-bgPrimary max-w-md mx-auto shadow-2xl overflow-hidden relative">
+        <div className="flex flex-col h-full bg-background max-w-md mx-auto shadow-2xl overflow-hidden relative">
             <MatchLiveShell />
 
             {/* Share FAB */}
             <button
                 onClick={handleShare}
-                className="fixed top-4 right-4 z-50 bg-primary text-white p-2.5 rounded-full shadow-lg hover:bg-primary/90 transition-all active:scale-95"
+                className="fixed top-4 right-4 z-50 bg-primary text-primary-foreground p-2.5 rounded-full shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-95"
                 aria-label="Share match link"
             >
                 {copied ? <Check className="w-5 h-5" /> : <Share2 className="w-5 h-5" />}

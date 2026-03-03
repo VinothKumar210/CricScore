@@ -1,6 +1,7 @@
 import React from "react";
 import { useScoringStore } from "../../scoring/scoringStore";
 import { clsx } from "clsx";
+import { TrendingUp, Flame, Target, BarChart3, Percent } from 'lucide-react';
 
 // ─── Sections ───
 
@@ -14,7 +15,7 @@ const RunRateGraph: React.FC = () => {
     const maxRR = Math.max(...data.map((d) => d.runRate), 1);
 
     return (
-        <AnalyticsCard title="📈 Run Rate Progression">
+        <AnalyticsCard icon={<TrendingUp className="w-4 h-4 text-primary" />} title="Run Rate Progression">
             <div className="flex items-end gap-1 h-32">
                 {data.map((point) => (
                     <div key={point.over} className="flex-1 flex flex-col items-center gap-1">
@@ -22,7 +23,7 @@ const RunRateGraph: React.FC = () => {
                             {point.runRate}
                         </span>
                         <div
-                            className="w-full bg-primary/80 rounded-t-sm transition-all duration-300"
+                            className="w-full bg-primary/70 rounded-t-md transition-all duration-300 hover:bg-primary"
                             style={{ height: `${(point.runRate / maxRR) * 100}%`, minHeight: 4 }}
                         />
                         <span className="text-[10px] text-muted-foreground">{point.over}</span>
@@ -41,18 +42,18 @@ const MomentumBar: React.FC = () => {
     const momentum = useScoringStore((s) => s.getMomentum());
 
     const trendColors = {
-        UP: "bg-success text-success",
+        UP: "bg-emerald-500 text-emerald-400",
         DOWN: "bg-destructive text-destructive",
-        STABLE: "bg-warning text-warning",
+        STABLE: "bg-amber-500 text-amber-400",
     };
 
-    const trendEmoji = { UP: "🔥", DOWN: "❄️", STABLE: "⚖️" };
+    const trendIcons = { UP: "▲", DOWN: "▼", STABLE: "■" };
     const clampedWidth = Math.min(Math.abs(momentum.impact) * 5, 100);
 
     return (
-        <AnalyticsCard title="🔥 Momentum">
+        <AnalyticsCard icon={<Flame className="w-4 h-4 text-primary" />} title="Momentum">
             <div className="flex items-center gap-3">
-                <div className="flex-1 h-6 bg-cardAlt rounded-full overflow-hidden relative">
+                <div className="flex-1 h-6 bg-secondary rounded-full overflow-hidden relative">
                     <div
                         className={clsx(
                             "h-full rounded-full transition-all duration-500",
@@ -67,8 +68,8 @@ const MomentumBar: React.FC = () => {
                         <div className="w-px h-full bg-border" />
                     </div>
                 </div>
-                <span className={clsx("text-lg font-bold", trendColors[momentum.trend].split(" ")[1])}>
-                    {trendEmoji[momentum.trend]} {momentum.impact > 0 ? "+" : ""}{momentum.impact}
+                <span className={clsx("text-lg font-bold tabular-nums", trendColors[momentum.trend].split(" ")[1])}>
+                    {trendIcons[momentum.trend]} {momentum.impact > 0 ? "+" : ""}{momentum.impact}
                 </span>
             </div>
             <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
@@ -83,24 +84,24 @@ const MomentumBar: React.FC = () => {
 const PressureMeter: React.FC = () => {
     const pressure = useScoringStore((s) => s.getPressureIndex());
 
-    if (!pressure) return null; // Not in chase
+    if (!pressure) return null;
 
     const levelColors: Record<string, string> = {
-        LOW: "text-success",
-        MEDIUM: "text-warning",
-        HIGH: "text-orange-500",
+        LOW: "text-emerald-400",
+        MEDIUM: "text-amber-400",
+        HIGH: "text-orange-400",
         EXTREME: "text-destructive",
     };
 
     const levelBg: Record<string, string> = {
-        LOW: "bg-success/20",
-        MEDIUM: "bg-warning/20",
-        HIGH: "bg-orange-500/100/20",
-        EXTREME: "bg-destructive/20",
+        LOW: "bg-emerald-500/15",
+        MEDIUM: "bg-amber-500/15",
+        HIGH: "bg-orange-500/15",
+        EXTREME: "bg-destructive/15",
     };
 
     return (
-        <AnalyticsCard title="🎯 Pressure Index">
+        <AnalyticsCard icon={<Target className="w-4 h-4 text-primary" />} title="Pressure Index">
             <div className="flex items-center justify-between">
                 <div className="flex flex-col">
                     <span className="text-xs text-muted-foreground">CRR</span>
@@ -116,12 +117,12 @@ const PressureMeter: React.FC = () => {
                     <span className="text-xl font-bold tabular-nums">{pressure.requiredRate}</span>
                 </div>
             </div>
-            <div className="mt-2 h-2 bg-cardAlt rounded-full overflow-hidden">
+            <div className="mt-2 h-2 bg-secondary rounded-full overflow-hidden">
                 <div
                     className={clsx("h-full rounded-full transition-all duration-500", {
-                        "bg-success": pressure.pressureLevel === "LOW",
-                        "bg-warning": pressure.pressureLevel === "MEDIUM",
-                        "bg-orange-500/100": pressure.pressureLevel === "HIGH",
+                        "bg-emerald-500": pressure.pressureLevel === "LOW",
+                        "bg-amber-500": pressure.pressureLevel === "MEDIUM",
+                        "bg-orange-500": pressure.pressureLevel === "HIGH",
                         "bg-destructive": pressure.pressureLevel === "EXTREME",
                     })}
                     style={{ width: `${Math.min(Math.max(pressure.pressureGap, 0) * 25, 100)}%` }}
@@ -139,25 +140,25 @@ const PhaseTable: React.FC = () => {
     }
 
     const phaseLabels = { POWERPLAY: "Powerplay", MIDDLE: "Middle", DEATH: "Death" };
-    const phaseEmoji = { POWERPLAY: "⚡", MIDDLE: "🏏", DEATH: "💀" };
+    const phaseIcons = { POWERPLAY: "⚡", MIDDLE: "🏏", DEATH: "💀" };
 
     return (
-        <AnalyticsCard title="🏏 Phase Breakdown">
+        <AnalyticsCard icon={<BarChart3 className="w-4 h-4 text-primary" />} title="Phase Breakdown">
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="text-muted-foreground text-xs border-b border-border">
-                            <th className="text-left py-1 font-medium">Phase</th>
-                            <th className="text-right py-1 font-medium">Runs</th>
-                            <th className="text-right py-1 font-medium">Wkts</th>
-                            <th className="text-right py-1 font-medium">RR</th>
+                            <th className="text-left py-1.5 font-medium">Phase</th>
+                            <th className="text-right py-1.5 font-medium">Runs</th>
+                            <th className="text-right py-1.5 font-medium">Wkts</th>
+                            <th className="text-right py-1.5 font-medium">RR</th>
                         </tr>
                     </thead>
                     <tbody>
                         {phases.filter((p) => p.balls > 0).map((p) => (
-                            <tr key={p.phase} className="border-b border-border/50">
+                            <tr key={p.phase} className="border-b border-border/30 hover:bg-secondary/30 transition-colors">
                                 <td className="py-2 font-medium">
-                                    {phaseEmoji[p.phase]} {phaseLabels[p.phase]}
+                                    {phaseIcons[p.phase]} {phaseLabels[p.phase]}
                                 </td>
                                 <td className="text-right py-2 tabular-nums">{p.runs}</td>
                                 <td className="text-right py-2 tabular-nums">{p.wickets}</td>
@@ -174,13 +175,13 @@ const PhaseTable: React.FC = () => {
 const WinProbabilityBar: React.FC = () => {
     const wp = useScoringStore((s) => s.getWinProbability());
 
-    if (!wp) return null; // Not in chase or match complete
+    if (!wp) return null;
 
     return (
-        <AnalyticsCard title="📊 Win Probability">
+        <AnalyticsCard icon={<Percent className="w-4 h-4 text-primary" />} title="Win Probability">
             <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-medium w-8 text-right">{wp.battingTeam}%</span>
-                <div className="flex-1 h-5 bg-cardAlt rounded-full overflow-hidden flex">
+                <span className="text-xs font-medium w-8 text-right tabular-nums">{wp.battingTeam}%</span>
+                <div className="flex-1 h-5 bg-secondary rounded-full overflow-hidden flex">
                     <div
                         className="h-full bg-primary transition-all duration-500 rounded-l-full"
                         style={{ width: `${wp.battingTeam}%` }}
@@ -190,7 +191,7 @@ const WinProbabilityBar: React.FC = () => {
                         style={{ width: `${wp.bowlingTeam}%` }}
                     />
                 </div>
-                <span className="text-xs font-medium w-8">{wp.bowlingTeam}%</span>
+                <span className="text-xs font-medium w-8 tabular-nums">{wp.bowlingTeam}%</span>
             </div>
             <div className="flex justify-between text-[10px] text-muted-foreground">
                 <span>🏏 Batting</span>
@@ -202,15 +203,18 @@ const WinProbabilityBar: React.FC = () => {
 
 // ─── Shared Components ───
 
-const AnalyticsCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-    <div className="bg-card rounded-xl border border-border p-4 space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+const AnalyticsCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
+    <div className="bg-card rounded-xl border border-border p-4 space-y-3 shadow-sm">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            {icon}
+            {title}
+        </h3>
         {children}
     </div>
 );
 
 const EmptySection: React.FC<{ label: string }> = ({ label }) => (
-    <div className="bg-card rounded-xl border border-border/50 p-6 text-center">
+    <div className="bg-card rounded-xl border border-dashed border-border/50 p-6 text-center">
         <p className="text-muted-foreground text-sm">{label} — No data yet</p>
     </div>
 );
