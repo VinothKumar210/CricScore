@@ -1,7 +1,3 @@
-// =============================================================================
-// Settings Page — Full-featured settings UI
-// =============================================================================
-
 import { useState, useEffect, useCallback } from 'react';
 import {
     fetchSettings,
@@ -9,10 +5,12 @@ import {
     resetSettings,
 } from './settingsService';
 import type { UserSettings, Visibility, Theme } from './settingsService';
+import {
+    Bell, Eye, Palette, RotateCcw, Loader2, Settings, Check, Shield
+} from 'lucide-react';
+import { clsx } from 'clsx';
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+// ─── Main Component ───
 
 export const SettingsPage = () => {
     const [settings, setSettings] = useState<UserSettings | null>(null);
@@ -21,7 +19,6 @@ export const SettingsPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-    // Load settings on mount
     useEffect(() => {
         fetchSettings()
             .then(setSettings)
@@ -29,28 +26,24 @@ export const SettingsPage = () => {
             .finally(() => setLoading(false));
     }, []);
 
-    // Persist a single field change
     const handleChange = useCallback(async (key: keyof UserSettings, value: unknown) => {
         if (!settings) return;
-
         const prev = { ...settings };
-        setSettings({ ...settings, [key]: value }); // optimistic
+        setSettings({ ...settings, [key]: value });
         setSaving(true);
         setError(null);
-
         try {
             const updated = await updateSettings({ [key]: value });
             setSettings(updated);
             flashSuccess('Saved');
         } catch {
-            setSettings(prev); // rollback
+            setSettings(prev);
             setError('Failed to save');
         } finally {
             setSaving(false);
         }
     }, [settings]);
 
-    // Reset all
     const handleReset = useCallback(async () => {
         if (!confirm('Reset all settings to defaults?')) return;
         setSaving(true);
@@ -71,25 +64,44 @@ export const SettingsPage = () => {
     };
 
     if (loading) return <SettingsSkeleton />;
-    if (!settings) return <div className="p-6 text-center text-red-400">{error || 'Something went wrong'}</div>;
+    if (!settings) return (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <Shield className="w-8 h-8 text-destructive" />
+            <p className="text-destructive text-sm font-medium">{error || 'Something went wrong'}</p>
+        </div>
+    );
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 28, paddingBottom: 40 }}>
-            {/* Page Header */}
+        <div className="max-w-2xl mx-auto py-6 px-4 pb-24 space-y-6">
+            {/* Header */}
             <div>
-                <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>Settings</h1>
-                <p style={{ fontSize: 13, color: 'var(--text-secondary, #888)' }}>
-                    Manage your notifications, privacy, and appearance
+                <div className="flex items-center gap-2 mb-1">
+                    <Settings className="w-6 h-6 text-primary" />
+                    <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                    Manage notifications, privacy, and appearance
                 </p>
             </div>
 
-            {/* Status Bar */}
+            {/* Status */}
             {(saving || error || successMsg) && (
-                <StatusBar saving={saving} error={error} success={successMsg} />
+                <div className={clsx(
+                    "px-4 py-3 rounded-xl text-sm font-medium border flex items-center gap-2",
+                    error ? "bg-destructive/10 text-destructive border-destructive/20"
+                        : successMsg ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            : "bg-primary/10 text-primary border-primary/20"
+                )}>
+                    {error ? error : successMsg ? (
+                        <><Check className="w-4 h-4" />{successMsg}</>
+                    ) : (
+                        <><Loader2 className="w-4 h-4 animate-spin" />Saving...</>
+                    )}
+                </div>
             )}
 
-            {/* ─── SECTION: Push Notifications ─── */}
-            <Section title="Notifications">
+            {/* ─── Notifications ─── */}
+            <Section icon={<Bell className="w-4 h-4 text-primary" />} title="Notifications">
                 <ToggleRow
                     label="Push Notifications"
                     description="Master toggle for all push notifications"
@@ -97,137 +109,62 @@ export const SettingsPage = () => {
                     onChange={v => handleChange('pushEnabled', v)}
                     primary
                 />
-
                 {settings.pushEnabled && (
                     <>
-                        <ToggleRow
-                            label="Match Milestones"
-                            description="50s, 100s, hat-tricks, 5-wicket hauls"
-                            checked={settings.notifyMatchMilestones}
-                            onChange={v => handleChange('notifyMatchMilestones', v)}
-                        />
-                        <ToggleRow
-                            label="Match Results"
-                            description="Win, loss, tie notifications"
-                            checked={settings.notifyMatchResults}
-                            onChange={v => handleChange('notifyMatchResults', v)}
-                        />
-                        <ToggleRow
-                            label="Tournament Updates"
-                            description="Bracket changes, standings, qualifications"
-                            checked={settings.notifyTournamentUpdates}
-                            onChange={v => handleChange('notifyTournamentUpdates', v)}
-                        />
-                        <ToggleRow
-                            label="Invites"
-                            description="Team and match invite requests"
-                            checked={settings.notifyInvites}
-                            onChange={v => handleChange('notifyInvites', v)}
-                        />
-                        <ToggleRow
-                            label="Messages"
-                            description="New messages in team and match chats"
-                            checked={settings.notifyMessages}
-                            onChange={v => handleChange('notifyMessages', v)}
-                        />
-                        <ToggleRow
-                            label="Achievements"
-                            description="Badge unlocks and milestone completions"
-                            checked={settings.notifyAchievements}
-                            onChange={v => handleChange('notifyAchievements', v)}
-                        />
-                        <ToggleRow
-                            label="Match Reminders"
-                            description="Alerts before scheduled matches"
-                            checked={settings.notifyMatchReminders}
-                            onChange={v => handleChange('notifyMatchReminders', v)}
-                        />
+                        <ToggleRow label="Match Milestones" description="50s, 100s, hat-tricks, 5-wicket hauls" checked={settings.notifyMatchMilestones} onChange={v => handleChange('notifyMatchMilestones', v)} />
+                        <ToggleRow label="Match Results" description="Win, loss, tie notifications" checked={settings.notifyMatchResults} onChange={v => handleChange('notifyMatchResults', v)} />
+                        <ToggleRow label="Tournament Updates" description="Bracket changes, standings" checked={settings.notifyTournamentUpdates} onChange={v => handleChange('notifyTournamentUpdates', v)} />
+                        <ToggleRow label="Invites" description="Team and match invite requests" checked={settings.notifyInvites} onChange={v => handleChange('notifyInvites', v)} />
+                        <ToggleRow label="Messages" description="New messages in chats" checked={settings.notifyMessages} onChange={v => handleChange('notifyMessages', v)} />
+                        <ToggleRow label="Achievements" description="Badge unlocks and milestones" checked={settings.notifyAchievements} onChange={v => handleChange('notifyAchievements', v)} />
+                        <ToggleRow label="Match Reminders" description="Alerts before scheduled matches" checked={settings.notifyMatchReminders} onChange={v => handleChange('notifyMatchReminders', v)} />
                     </>
                 )}
             </Section>
 
-            {/* ─── SECTION: Privacy ─── */}
-            <Section title="Privacy">
-                <SelectRow
-                    label="Profile Visibility"
-                    description="Who can view your profile page"
-                    value={settings.profileVisibility}
-                    options={VISIBILITY_OPTIONS}
-                    onChange={v => handleChange('profileVisibility', v)}
-                />
-                <SelectRow
-                    label="Stats Visibility"
-                    description="Who can see your career statistics"
-                    value={settings.statsVisibility}
-                    options={VISIBILITY_OPTIONS}
-                    onChange={v => handleChange('statsVisibility', v)}
-                />
-                <SelectRow
-                    label="Activity Visibility"
-                    description="Who can see your recent match activity"
-                    value={settings.activityVisibility}
-                    options={VISIBILITY_OPTIONS}
-                    onChange={v => handleChange('activityVisibility', v)}
-                />
+            {/* ─── Privacy ─── */}
+            <Section icon={<Eye className="w-4 h-4 text-primary" />} title="Privacy">
+                <SelectRow label="Profile Visibility" description="Who can view your profile" value={settings.profileVisibility} options={VISIBILITY_OPTIONS} onChange={v => handleChange('profileVisibility', v)} />
+                <SelectRow label="Stats Visibility" description="Who can see your statistics" value={settings.statsVisibility} options={VISIBILITY_OPTIONS} onChange={v => handleChange('statsVisibility', v)} />
+                <SelectRow label="Activity Visibility" description="Who can see match activity" value={settings.activityVisibility} options={VISIBILITY_OPTIONS} onChange={v => handleChange('activityVisibility', v)} />
             </Section>
 
-            {/* ─── SECTION: Appearance ─── */}
-            <Section title="Appearance">
-                <SelectRow
-                    label="Theme"
-                    description="Choose your preferred color scheme"
-                    value={settings.theme}
-                    options={THEME_OPTIONS}
-                    onChange={v => handleChange('theme', v)}
-                />
-                <SelectRow
-                    label="Language"
-                    description="Display language"
-                    value={settings.language}
-                    options={LANGUAGE_OPTIONS}
-                    onChange={v => handleChange('language', v)}
-                />
+            {/* ─── Appearance ─── */}
+            <Section icon={<Palette className="w-4 h-4 text-primary" />} title="Appearance">
+                <SelectRow label="Theme" description="Color scheme" value={settings.theme} options={THEME_OPTIONS} onChange={v => handleChange('theme', v)} />
+                <SelectRow label="Language" description="Display language" value={settings.language} options={LANGUAGE_OPTIONS} onChange={v => handleChange('language', v)} />
             </Section>
 
-            {/* ─── SECTION: Danger Zone ─── */}
-            <Section title="Reset">
-                <div style={{ padding: '16px 0' }}>
-                    <p style={{ fontSize: 13, color: 'var(--text-secondary, #888)', marginBottom: 12 }}>
-                        Reset all settings to their default values. This cannot be undone.
-                    </p>
-                    <button
-                        onClick={handleReset}
-                        style={{
-                            padding: '10px 20px', borderRadius: 8,
-                            background: 'rgba(217, 96, 85, 0.12)', border: '1px solid rgba(217, 96, 85, 0.3)',
-                            color: '#D96055', fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                            fontFamily: 'inherit',
-                        }}
-                    >
-                        Reset All Settings
-                    </button>
-                </div>
-            </Section>
+            {/* ─── Danger Zone ─── */}
+            <div className="bg-card rounded-xl border border-destructive/20 p-4">
+                <h3 className="text-sm font-semibold text-destructive flex items-center gap-2 mb-2">
+                    <RotateCcw className="w-4 h-4" />
+                    Reset
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                    Reset all settings to defaults. This cannot be undone.
+                </p>
+                <button
+                    onClick={handleReset}
+                    className="px-4 py-2 rounded-lg border border-destructive/30 text-destructive text-sm font-medium hover:bg-destructive/10 transition-colors flex items-center gap-2"
+                >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Reset All Settings
+                </button>
+            </div>
         </div>
     );
 };
 
-// ---------------------------------------------------------------------------
-// Sub-Components
-// ---------------------------------------------------------------------------
+// ─── Sub-Components ───
 
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const Section = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
     <div>
-        <h2 style={{
-            fontSize: 13, fontWeight: 700, textTransform: 'uppercase',
-            letterSpacing: '0.06em', color: 'var(--text-muted, #666)', marginBottom: 12,
-        }}>
+        <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2 pl-1">
+            {icon}
             {title}
         </h2>
-        <div style={{
-            background: 'var(--bg-card, #191B20)', border: '1px solid var(--border, #2A2D35)',
-            borderRadius: 14, overflow: 'hidden',
-        }}>
+        <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
             {children}
         </div>
     </div>
@@ -239,30 +176,24 @@ const ToggleRow = ({
     label: string; description: string; checked: boolean;
     onChange: (v: boolean) => void; primary?: boolean;
 }) => (
-    <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '16px 20px', borderBottom: '1px solid var(--border, #2A2D35)',
-    }}>
-        <div>
-            <div style={{ fontSize: 14, fontWeight: primary ? 700 : 500 }}>{label}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary, #888)', marginTop: 2 }}>{description}</div>
+    <div className="flex justify-between items-center px-4 py-3.5 border-b border-border last:border-b-0">
+        <div className="mr-4">
+            <div className={clsx("text-sm", primary ? "font-bold text-foreground" : "font-medium text-foreground")}>{label}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{description}</div>
         </div>
         <button
             onClick={() => onChange(!checked)}
-            aria-checked={checked}
             role="switch"
-            style={{
-                width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', padding: 2,
-                background: checked ? 'var(--accent, #D7A65B)' : 'var(--border, #2A2D35)',
-                transition: 'background 0.2s',
-                display: 'flex', alignItems: 'center',
-                justifyContent: checked ? 'flex-end' : 'flex-start',
-            }}
+            aria-checked={checked}
+            className={clsx(
+                "w-11 h-6 rounded-full shrink-0 transition-colors duration-200 relative",
+                checked ? "bg-primary" : "bg-secondary border border-border"
+            )}
         >
-            <div style={{
-                width: 20, height: 20, borderRadius: '50%', background: '#fff',
-                transition: 'transform 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-            }} />
+            <div className={clsx(
+                "w-5 h-5 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform duration-200",
+                checked ? "translate-x-[22px]" : "translate-x-0.5"
+            )} />
         </button>
     </div>
 );
@@ -273,55 +204,30 @@ const SelectRow = <T extends string>({
     label: string; description: string; value: T;
     options: { value: T; label: string }[]; onChange: (v: T) => void;
 }) => (
-    <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '16px 20px', borderBottom: '1px solid var(--border, #2A2D35)',
-    }}>
-        <div>
-            <div style={{ fontSize: 14, fontWeight: 500 }}>{label}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary, #888)', marginTop: 2 }}>{description}</div>
+    <div className="flex justify-between items-center px-4 py-3.5 border-b border-border last:border-b-0">
+        <div className="mr-4">
+            <div className="text-sm font-medium text-foreground">{label}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{description}</div>
         </div>
         <select
             value={value}
             onChange={e => onChange(e.target.value as T)}
-            style={{
-                padding: '6px 12px', borderRadius: 8,
-                background: 'var(--bg-card, #24262D)', border: '1px solid var(--border, #2A2D35)',
-                color: 'var(--text-primary, #EBECEF)', fontSize: 13, fontFamily: 'inherit',
-                cursor: 'pointer', outline: 'none',
-            }}
+            className="h-8 rounded-lg bg-secondary border border-border px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none cursor-pointer"
         >
             {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
     </div>
 );
 
-const StatusBar = ({ saving: _saving, error, success }: { saving: boolean; error: string | null; success: string | null }) => (
-    <div style={{
-        padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500,
-        background: error ? 'rgba(217,96,85,0.1)' : success ? 'rgba(83,138,106,0.1)' : 'rgba(215,166,91,0.1)',
-        color: error ? '#D96055' : success ? '#538A6A' : '#D7A65B',
-        border: `1px solid ${error ? 'rgba(217,96,85,0.2)' : success ? 'rgba(83,138,106,0.2)' : 'rgba(215,166,91,0.2)'}`,
-    }}>
-        {error || success || 'Saving...'}
-    </div>
-);
-
 const SettingsSkeleton = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 20 }}>
+    <div className="max-w-2xl mx-auto py-6 px-4 space-y-4">
         {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} style={{
-                height: 56, borderRadius: 12,
-                background: 'var(--bg-card, #191B20)', opacity: 0.5,
-                animation: 'pulse 1.5s infinite',
-            }} />
+            <div key={i} className="h-14 rounded-xl bg-secondary animate-pulse" />
         ))}
     </div>
 );
 
-// ---------------------------------------------------------------------------
-// Option Constants
-// ---------------------------------------------------------------------------
+// ─── Option Constants ───
 
 const VISIBILITY_OPTIONS: { value: Visibility; label: string }[] = [
     { value: 'PUBLIC', label: 'Everyone' },

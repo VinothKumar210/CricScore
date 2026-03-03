@@ -1,13 +1,14 @@
-// =============================================================================
-// Edit Profile Page — Avatar upload + profile fields
-// =============================================================================
-
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
+import { Container } from '../../components/ui/Container';
+import {
+    ChevronLeft, Camera, Trash2, Loader2, User, AtSign, FileText,
+    Shield, Hand, Target, Hash, MapPin, Save, Check
+} from 'lucide-react';
+import { clsx } from 'clsx';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+// ─── Types ───
 
 interface UserProfile {
     id: string;
@@ -23,11 +24,10 @@ interface UserProfile {
     state: string | null;
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+// ─── Main Component ───
 
 export const EditProfilePage = () => {
+    const navigate = useNavigate();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -35,7 +35,6 @@ export const EditProfilePage = () => {
     const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
-    // Load profile
     useEffect(() => {
         api.get('/profile')
             .then(r => setProfile(r.data.data.user || r.data.data))
@@ -43,7 +42,6 @@ export const EditProfilePage = () => {
             .finally(() => setLoading(false));
     }, []);
 
-    // Save text fields
     const handleSave = async () => {
         if (!profile) return;
         setSaving(true);
@@ -54,7 +52,6 @@ export const EditProfilePage = () => {
                 fullName, description, role, battingHand, bowlingStyle, jerseyNumber, city, state,
             };
             if (username) payload.username = username;
-
             const res = await api.patch('/profile', payload);
             setProfile(res.data.data.user || res.data.data);
             flash('success', 'Profile updated');
@@ -65,18 +62,11 @@ export const EditProfilePage = () => {
         }
     };
 
-    // Avatar upload
     const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
-        // Client-side validation
-        if (file.size > 5 * 1024 * 1024) {
-            return flash('error', 'File must be under 5 MB');
-        }
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-            return flash('error', 'Only JPEG, PNG, or WebP');
-        }
+        if (file.size > 5 * 1024 * 1024) return flash('error', 'File must be under 5 MB');
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) return flash('error', 'Only JPEG, PNG, or WebP');
 
         setUploading(true);
         setStatus(null);
@@ -93,7 +83,6 @@ export const EditProfilePage = () => {
         }
     };
 
-    // Remove avatar
     const handleRemoveAvatar = async () => {
         setUploading(true);
         try {
@@ -117,232 +106,197 @@ export const EditProfilePage = () => {
     };
 
     if (loading) return <LoadingSkeleton />;
-    if (!profile) return <div style={{ padding: 20, textAlign: 'center', color: '#888' }}>Could not load profile</div>;
+    if (!profile) return (
+        <Container className="py-6">
+            <div className="flex flex-col items-center py-16 gap-3">
+                <User className="w-8 h-8 text-muted-foreground" />
+                <p className="text-muted-foreground text-sm">Could not load profile</p>
+            </div>
+        </Container>
+    );
+
+    const getInitial = (name: string) => name.charAt(0).toUpperCase();
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 40 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 800 }}>Edit Profile</h1>
+        <Container className="py-6 pb-24 space-y-6">
+            {/* Header */}
+            <div className="flex items-center gap-3">
+                <button
+                    onClick={() => navigate(-1)}
+                    className="p-2 rounded-lg bg-secondary border border-border hover:bg-card transition-colors"
+                >
+                    <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div>
+                    <h1 className="text-xl font-bold tracking-tight">Edit Profile</h1>
+                    <p className="text-sm text-muted-foreground">Update your info</p>
+                </div>
+            </div>
 
             {/* Status */}
             {status && (
-                <div style={{
-                    padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 500,
-                    background: status.type === 'error' ? 'rgba(217,96,85,0.1)' : 'rgba(83,138,106,0.1)',
-                    color: status.type === 'error' ? '#D96055' : '#538A6A',
-                    border: `1px solid ${status.type === 'error' ? 'rgba(217,96,85,0.2)' : 'rgba(83,138,106,0.2)'}`,
-                }}>
+                <div className={clsx(
+                    "px-4 py-3 rounded-xl text-sm font-medium border flex items-center gap-2",
+                    status.type === 'error'
+                        ? "bg-destructive/10 text-destructive border-destructive/20"
+                        : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                )}>
+                    {status.type === 'success' && <Check className="w-4 h-4" />}
                     {status.msg}
                 </div>
             )}
 
-            {/* Avatar Section */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                <div
-                    onClick={() => fileRef.current?.click()}
-                    style={{
-                        width: 88, height: 88, borderRadius: '50%', cursor: 'pointer',
-                        background: profile.profilePictureUrl
-                            ? `url(${profile.profilePictureUrl}) center/cover`
-                            : 'var(--bg-card, #24262D)',
-                        border: '3px solid var(--border, #2A2D35)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 28, fontWeight: 700, color: 'var(--text-secondary, #888)',
-                        position: 'relative', overflow: 'hidden',
-                    }}
-                >
-                    {!profile.profilePictureUrl && profile.fullName.charAt(0)}
-                    {uploading && (
-                        <div style={{
-                            position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 12, color: '#fff',
-                        }}>
-                            ...
-                        </div>
-                    )}
-                </div>
-                <div>
-                    <button
+            {/* Avatar */}
+            <div className="bg-card rounded-xl border border-border p-5 shadow-sm">
+                <div className="flex items-center gap-5">
+                    <div
                         onClick={() => fileRef.current?.click()}
-                        disabled={uploading}
-                        style={{
-                            padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                            background: 'var(--bg-card, #24262D)', border: '1px solid var(--border, #2A2D35)',
-                            color: 'var(--text-primary, #eee)', cursor: 'pointer', fontFamily: 'inherit',
-                            marginRight: 8,
-                        }}
+                        className="w-20 h-20 rounded-full bg-secondary border-2 border-border flex items-center justify-center text-2xl font-bold text-muted-foreground cursor-pointer relative overflow-hidden shrink-0 group"
                     >
-                        {uploading ? 'Uploading...' : 'Change Photo'}
-                    </button>
-                    {profile.profilePictureUrl && (
-                        <button
-                            onClick={handleRemoveAvatar}
-                            disabled={uploading}
-                            style={{
-                                padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                                background: 'transparent', border: '1px solid rgba(217,96,85,0.3)',
-                                color: '#D96055', cursor: 'pointer', fontFamily: 'inherit',
-                            }}
-                        >
-                            Remove
-                        </button>
-                    )}
-                    <p style={{ fontSize: 11, color: 'var(--text-secondary, #888)', marginTop: 8 }}>
-                        JPG, PNG, or WebP. Max 5 MB.
-                    </p>
+                        {profile.profilePictureUrl ? (
+                            <img src={profile.profilePictureUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                            getInitial(profile.fullName)
+                        )}
+                        {/* Hover overlay */}
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Camera className="w-5 h-5 text-white" />
+                        </div>
+                        {/* Uploading overlay */}
+                        {uploading && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                                <Loader2 className="w-5 h-5 text-white animate-spin" />
+                            </div>
+                        )}
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => fileRef.current?.click()}
+                                disabled={uploading}
+                                className="px-3.5 py-2 rounded-lg bg-secondary border border-border text-sm font-medium text-foreground hover:bg-card transition-colors disabled:opacity-50"
+                            >
+                                {uploading ? 'Uploading...' : 'Change Photo'}
+                            </button>
+                            {profile.profilePictureUrl && (
+                                <button
+                                    onClick={handleRemoveAvatar}
+                                    disabled={uploading}
+                                    className="px-3.5 py-2 rounded-lg border border-destructive/30 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">JPG, PNG, or WebP. Max 5 MB.</p>
+                    </div>
+                    <input
+                        ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp"
+                        onChange={handleAvatarChange} className="hidden"
+                    />
                 </div>
-                <input
-                    ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp"
-                    onChange={handleAvatarChange} style={{ display: 'none' }}
-                />
             </div>
 
-            {/* Form Fields */}
-            <FormSection title="Basic Info">
-                <Field label="Full Name" value={profile.fullName} onChange={v => updateField('fullName', v)} />
-                <Field label="Username" value={profile.username || ''} onChange={v => updateField('username', v)} placeholder="@username" />
-                <Field label="Bio" value={profile.description || ''} onChange={v => updateField('description', v)} multiline />
+            {/* Basic Info */}
+            <FormSection icon={<User className="w-4 h-4 text-primary" />} title="Basic Info">
+                <Field icon={<User className="w-3.5 h-3.5" />} label="Full Name" value={profile.fullName} onChange={v => updateField('fullName', v)} />
+                <Field icon={<AtSign className="w-3.5 h-3.5" />} label="Username" value={profile.username || ''} onChange={v => updateField('username', v)} placeholder="@username" />
+                <Field icon={<FileText className="w-3.5 h-3.5" />} label="Bio" value={profile.description || ''} onChange={v => updateField('description', v)} multiline />
             </FormSection>
 
-            <FormSection title="Cricket Info">
-                <SelectField
-                    label="Playing Role"
-                    value={profile.role || ''}
-                    onChange={v => updateField('role', v || null)}
-                    options={[
-                        { value: '', label: 'Select role...' },
-                        { value: 'BATSMAN', label: 'Batsman' },
-                        { value: 'BOWLER', label: 'Bowler' },
-                        { value: 'ALL_ROUNDER', label: 'All-Rounder' },
-                        { value: 'WICKET_KEEPER_BATSMAN', label: 'Wicket-Keeper Batsman' },
-                    ]}
-                />
-                <SelectField
-                    label="Batting Hand"
-                    value={profile.battingHand || ''}
-                    onChange={v => updateField('battingHand', v || null)}
-                    options={[
-                        { value: '', label: 'Select...' },
-                        { value: 'RIGHT_HANDED', label: 'Right Handed' },
-                        { value: 'LEFT_HANDED', label: 'Left Handed' },
-                    ]}
-                />
-                <SelectField
-                    label="Bowling Style"
-                    value={profile.bowlingStyle || ''}
-                    onChange={v => updateField('bowlingStyle', v || null)}
-                    options={[
-                        { value: '', label: 'Select...' },
-                        { value: 'RIGHT_ARM_FAST', label: 'Right Arm Fast' },
-                        { value: 'RIGHT_ARM_MEDIUM', label: 'Right Arm Medium' },
-                        { value: 'LEFT_ARM_FAST', label: 'Left Arm Fast' },
-                        { value: 'LEFT_ARM_MEDIUM', label: 'Left Arm Medium' },
-                        { value: 'RIGHT_ARM_SPIN', label: 'Right Arm Spin' },
-                        { value: 'LEFT_ARM_SPIN', label: 'Left Arm Spin' },
-                    ]}
-                />
-                <Field
-                    label="Jersey Number" type="number"
-                    value={profile.jerseyNumber?.toString() || ''}
-                    onChange={v => updateField('jerseyNumber', v ? parseInt(v) : null)}
-                />
+            {/* Cricket Info */}
+            <FormSection icon={<Shield className="w-4 h-4 text-primary" />} title="Cricket Info">
+                <SelectField icon={<Shield className="w-3.5 h-3.5" />} label="Playing Role" value={profile.role || ''} onChange={v => updateField('role', v || null)} options={ROLE_OPTIONS} />
+                <SelectField icon={<Hand className="w-3.5 h-3.5" />} label="Batting Hand" value={profile.battingHand || ''} onChange={v => updateField('battingHand', v || null)} options={BATTING_OPTIONS} />
+                <SelectField icon={<Target className="w-3.5 h-3.5" />} label="Bowling Style" value={profile.bowlingStyle || ''} onChange={v => updateField('bowlingStyle', v || null)} options={BOWLING_OPTIONS} />
+                <Field icon={<Hash className="w-3.5 h-3.5" />} label="Jersey Number" type="number" value={profile.jerseyNumber?.toString() || ''} onChange={v => updateField('jerseyNumber', v ? parseInt(v) : null)} />
             </FormSection>
 
-            <FormSection title="Location">
-                <Field label="City" value={profile.city || ''} onChange={v => updateField('city', v || null)} />
-                <Field label="State" value={profile.state || ''} onChange={v => updateField('state', v || null)} />
+            {/* Location */}
+            <FormSection icon={<MapPin className="w-4 h-4 text-primary" />} title="Location">
+                <Field icon={<MapPin className="w-3.5 h-3.5" />} label="City" value={profile.city || ''} onChange={v => updateField('city', v || null)} />
+                <Field icon={<MapPin className="w-3.5 h-3.5" />} label="State" value={profile.state || ''} onChange={v => updateField('state', v || null)} />
             </FormSection>
 
-            {/* Save Button */}
+            {/* Save */}
             <button
                 onClick={handleSave}
                 disabled={saving}
-                style={{
-                    padding: '14px', borderRadius: 12, fontSize: 15, fontWeight: 700,
-                    background: 'var(--accent, #D7A65B)', border: 'none',
-                    color: '#0a0e1a', cursor: 'pointer', fontFamily: 'inherit',
-                    opacity: saving ? 0.6 : 1, transition: 'opacity 0.2s',
-                }}
+                className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors active:scale-[0.98] shadow-sm shadow-primary/20 disabled:opacity-50"
             >
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                    <>
+                        <Save className="w-4 h-4" />
+                        Save Changes
+                    </>
+                )}
             </button>
-        </div>
+        </Container>
     );
 };
 
-// ---------------------------------------------------------------------------
-// Sub-Components
-// ---------------------------------------------------------------------------
+// ─── Sub-Components ───
 
-const FormSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const FormSection = ({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) => (
     <div>
-        <h2 style={{
-            fontSize: 13, fontWeight: 700, textTransform: 'uppercase',
-            letterSpacing: '0.06em', color: 'var(--text-muted, #666)', marginBottom: 12,
-        }}>
+        <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2 pl-1">
+            {icon}
             {title}
         </h2>
-        <div style={{
-            background: 'var(--bg-card, #191B20)', border: '1px solid var(--border, #2A2D35)',
-            borderRadius: 14, overflow: 'hidden',
-        }}>
+        <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
             {children}
         </div>
     </div>
 );
 
-const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '10px 0', fontSize: 14,
-    background: 'transparent', border: 'none', outline: 'none',
-    color: 'var(--text-primary, #EBECEF)', fontFamily: 'inherit',
-};
-
 const Field = ({
-    label, value, onChange, placeholder, multiline, type = 'text',
+    icon, label, value, onChange, placeholder, multiline, type = 'text',
 }: {
-    label: string; value: string; onChange: (v: string) => void;
+    icon: React.ReactNode; label: string; value: string; onChange: (v: string) => void;
     placeholder?: string; multiline?: boolean; type?: string;
 }) => (
-    <div style={{
-        padding: '14px 20px', borderBottom: '1px solid var(--border, #2A2D35)',
-        display: 'flex', flexDirection: 'column', gap: 4,
-    }}>
-        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary, #888)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+    <div className="px-4 py-3 border-b border-border last:border-b-0">
+        <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-1.5">
+            {icon}
             {label}
         </label>
         {multiline ? (
             <textarea
-                value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-                rows={3} style={{ ...inputStyle, resize: 'vertical' }}
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                placeholder={placeholder}
+                rows={3}
+                className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-vertical focus:outline-none"
             />
         ) : (
             <input
-                type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-                style={inputStyle}
+                type={type}
+                value={value}
+                onChange={e => onChange(e.target.value)}
+                placeholder={placeholder}
+                className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
         )}
     </div>
 );
 
 const SelectField = ({
-    label, value, onChange, options,
+    icon, label, value, onChange, options,
 }: {
-    label: string; value: string; onChange: (v: string) => void;
+    icon: React.ReactNode; label: string; value: string; onChange: (v: string) => void;
     options: { value: string; label: string }[];
 }) => (
-    <div style={{
-        padding: '14px 20px', borderBottom: '1px solid var(--border, #2A2D35)',
-        display: 'flex', flexDirection: 'column', gap: 4,
-    }}>
-        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary, #888)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+    <div className="px-4 py-3 border-b border-border last:border-b-0">
+        <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-1.5">
+            {icon}
             {label}
         </label>
         <select
-            value={value} onChange={e => onChange(e.target.value)}
-            style={{
-                ...inputStyle,
-                cursor: 'pointer', padding: '10px 0',
-            }}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            className="w-full bg-transparent text-sm text-foreground cursor-pointer focus:outline-none appearance-none"
         >
             {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
@@ -350,10 +304,36 @@ const SelectField = ({
 );
 
 const LoadingSkeleton = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: 20 }}>
-        <div style={{ width: 88, height: 88, borderRadius: '50%', background: '#191B20' }} />
+    <Container className="py-6 space-y-4">
+        <div className="w-20 h-20 rounded-full bg-secondary animate-pulse mx-auto" />
         {[1, 2, 3, 4].map(i => (
-            <div key={i} style={{ height: 56, borderRadius: 12, background: '#191B20', opacity: 0.5 }} />
+            <div key={i} className="h-14 rounded-xl bg-secondary animate-pulse" />
         ))}
-    </div>
+    </Container>
 );
+
+// ─── Option Constants ───
+
+const ROLE_OPTIONS = [
+    { value: '', label: 'Select role...' },
+    { value: 'BATSMAN', label: 'Batsman' },
+    { value: 'BOWLER', label: 'Bowler' },
+    { value: 'ALL_ROUNDER', label: 'All-Rounder' },
+    { value: 'WICKET_KEEPER_BATSMAN', label: 'Wicket-Keeper Batsman' },
+];
+
+const BATTING_OPTIONS = [
+    { value: '', label: 'Select...' },
+    { value: 'RIGHT_HANDED', label: 'Right Handed' },
+    { value: 'LEFT_HANDED', label: 'Left Handed' },
+];
+
+const BOWLING_OPTIONS = [
+    { value: '', label: 'Select...' },
+    { value: 'RIGHT_ARM_FAST', label: 'Right Arm Fast' },
+    { value: 'RIGHT_ARM_MEDIUM', label: 'Right Arm Medium' },
+    { value: 'LEFT_ARM_FAST', label: 'Left Arm Fast' },
+    { value: 'LEFT_ARM_MEDIUM', label: 'Left Arm Medium' },
+    { value: 'RIGHT_ARM_SPIN', label: 'Right Arm Spin' },
+    { value: 'LEFT_ARM_SPIN', label: 'Left Arm Spin' },
+];
