@@ -140,6 +140,7 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
     updateProfile: async (data: Partial<UserProfile>) => {
         const updated = await updateProfileAPI(data);
+        localStorage.setItem('userProfile', JSON.stringify(updated));
         set({ profile: updated });
     },
 

@@ -40,6 +40,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             console.error('[Auth] Sign-out error:', e);
         }
         localStorage.removeItem('authToken');
+        localStorage.removeItem('userProfile');
         useNotificationStore.getState().reset();
         useInviteStore.getState().reset();
         useMarketStore.getState().reset();
@@ -60,6 +61,7 @@ export const useAuthStore = create<AuthState>((set) => ({
                     const dbUser = res.data?.user || res.user;
 
                     if (dbUser) {
+                        localStorage.setItem('userProfile', JSON.stringify(dbUser));
                         set({
                             user: {
                                 id: dbUser.id,
@@ -73,16 +75,19 @@ export const useAuthStore = create<AuthState>((set) => ({
                         });
                     } else {
                         // Backend didn't return user — clear
+                        localStorage.removeItem('userProfile');
                         set({ user: null, isAuthenticated: false, isLoading: false });
                     }
                 } catch (error) {
                     console.error('[Auth] Failed to fetch user:', error);
                     // Token might be invalid — still mark as not loading
+                    localStorage.removeItem('userProfile');
                     set({ user: null, isAuthenticated: false, isLoading: false });
                 }
             } else {
                 // Not signed in
                 localStorage.removeItem('authToken');
+                localStorage.removeItem('userProfile');
                 set({
                     user: null,
                     role: UserRole.GUEST,
