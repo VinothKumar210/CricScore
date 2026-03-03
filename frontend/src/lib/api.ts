@@ -1,7 +1,27 @@
+import { auth } from './firebase';
+
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-function getAuthHeaders(): Record<string, string> {
-    const token = localStorage.getItem('authToken');
+/**
+ * Get auth headers. Prefers fresh Firebase token (auto-refreshes),
+ * falls back to localStorage token for scenarios where Firebase
+ * hasn't initialized yet.
+ */
+async function getAuthHeaders(): Promise<Record<string, string>> {
+    let token: string | null = null;
+
+    // Try getting fresh token from Firebase (auto-refreshes if expired)
+    if (auth.currentUser) {
+        try {
+            token = await auth.currentUser.getIdToken();
+            localStorage.setItem('authToken', token);
+        } catch {
+            token = localStorage.getItem('authToken');
+        }
+    } else {
+        token = localStorage.getItem('authToken');
+    }
+
     return {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -26,14 +46,14 @@ export const api = {
             if (qs) finalUrl += `?${qs}`;
         }
 
-        const res = await fetch(finalUrl, { headers: getAuthHeaders() });
+        const res = await fetch(finalUrl, { headers: await getAuthHeaders() });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         return res.json();
     },
     post: async (url: string, data?: any) => {
         const res = await fetch(`${API_BASE}${url}`, {
             method: 'POST',
-            headers: getAuthHeaders(),
+            headers: await getAuthHeaders(),
             body: data ? JSON.stringify(data) : undefined,
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -42,7 +62,7 @@ export const api = {
     put: async (url: string, data?: any) => {
         const res = await fetch(`${API_BASE}${url}`, {
             method: 'PUT',
-            headers: getAuthHeaders(),
+            headers: await getAuthHeaders(),
             body: data ? JSON.stringify(data) : undefined,
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -51,7 +71,7 @@ export const api = {
     patch: async (url: string, data?: any) => {
         const res = await fetch(`${API_BASE}${url}`, {
             method: 'PATCH',
-            headers: getAuthHeaders(),
+            headers: await getAuthHeaders(),
             body: data ? JSON.stringify(data) : undefined,
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
@@ -60,7 +80,7 @@ export const api = {
     delete: async (url: string) => {
         const res = await fetch(`${API_BASE}${url}`, {
             method: 'DELETE',
-            headers: getAuthHeaders(),
+            headers: await getAuthHeaders(),
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         return res.json();

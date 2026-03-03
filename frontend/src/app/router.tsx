@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { DashboardLayout } from '../layouts/DashboardLayout';
 import { FullscreenScoringLayout } from '../layouts/FullscreenScoringLayout';
+import { AuthGuard } from '../components/AuthGuard';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { HomePage } from '../pages/home/HomePage';
 import { MarketPage } from '../features/market/MarketPage';
@@ -50,7 +51,7 @@ export const router = createBrowserRouter([
         ],
     },
     {
-        element: <DashboardLayout />,
+        element: <AuthGuard><DashboardLayout /></AuthGuard>,
         children: [
             { path: '/hub', element: <LiveHubPage /> },
             { path: '/home', element: <HomePage /> },
@@ -87,7 +88,7 @@ export const router = createBrowserRouter([
         ],
     },
     {
-        element: <FullscreenScoringLayout />,
+        element: <AuthGuard><FullscreenScoringLayout /></AuthGuard>,
         children: [
             { path: '/match/:id/score', element: <ScoringPage /> },
             { path: '/match/:id/live', element: <LiveMatchPage /> },
