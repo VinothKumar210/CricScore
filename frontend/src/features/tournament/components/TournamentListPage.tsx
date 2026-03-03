@@ -3,17 +3,10 @@ import { useTournamentAdminStore } from '../tournamentAdminStore';
 import { TournamentCard } from './TournamentCard';
 import { TournamentCreateModal } from './TournamentCreateModal';
 import { Container } from '../../../components/ui/Container';
-import { typography } from '../../../constants/typography';
-import { Plus } from 'lucide-react';
+import { Plus, Trophy } from 'lucide-react';
 
 /**
  * TournamentListPage — /tournaments route.
- *
- * PERFORMANCE CONTRACT:
- * - Zero engine selectors
- * - Zero standings computation
- * - All cards render metadata only
- * - resetList() on unmount
  */
 export const TournamentListPage = () => {
     const tournaments = useTournamentAdminStore(s => s.tournaments);
@@ -31,14 +24,17 @@ export const TournamentListPage = () => {
     }, [fetchList, resetList]);
 
     return (
-        <Container className="py-4 space-y-6">
+        <Container className="py-6 pb-24 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h1 className={typography.headingLg}>🏆 Tournaments</h1>
+                <div className="flex items-center gap-2">
+                    <Trophy className="w-6 h-6 text-primary" />
+                    <h1 className="text-2xl font-bold tracking-tight">Tournaments</h1>
+                </div>
                 <button
                     onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-lg
-                               text-sm font-medium hover:bg-primary/90 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl
+                               text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20"
                 >
                     <Plus className="w-4 h-4" />
                     Create
@@ -47,11 +43,14 @@ export const TournamentListPage = () => {
 
             {/* Error */}
             {listError && (
-                <div className="flex flex-col items-center py-8 gap-3">
-                    <p className="text-destructive font-medium">{listError}</p>
+                <div className="flex flex-col items-center py-12 gap-4">
+                    <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
+                        <Trophy className="w-6 h-6 text-destructive" />
+                    </div>
+                    <p className="text-destructive font-medium text-sm">{listError}</p>
                     <button
                         onClick={fetchList}
-                        className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium"
+                        className="px-5 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold"
                     >
                         Retry
                     </button>
@@ -61,15 +60,25 @@ export const TournamentListPage = () => {
             {/* Loading */}
             {isListLoading && tournaments.length === 0 && !listError && (
                 <div className="space-y-3">
-                    <div className="h-24 bg-card rounded-xl animate-pulse" />
-                    <div className="h-24 bg-card rounded-xl animate-pulse" />
-                    <div className="h-24 bg-card rounded-xl animate-pulse" />
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="bg-card rounded-xl border border-border p-4">
+                            <div className="flex justify-between items-start mb-3">
+                                <div className="h-5 w-36 bg-secondary rounded-lg animate-pulse" />
+                                <div className="h-5 w-20 bg-secondary rounded-full animate-pulse" />
+                            </div>
+                            <div className="flex gap-3">
+                                <div className="h-4 w-16 bg-secondary rounded-lg animate-pulse" />
+                                <div className="h-4 w-20 bg-secondary rounded-lg animate-pulse" />
+                                <div className="h-4 w-24 bg-secondary rounded-lg animate-pulse" />
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
 
             {/* Cards */}
             {tournaments.length > 0 && (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-3">
                     {tournaments.map(t => (
                         <TournamentCard key={t.id} tournament={t} />
                     ))}
@@ -78,8 +87,23 @@ export const TournamentListPage = () => {
 
             {/* Empty */}
             {!isListLoading && !listError && tournaments.length === 0 && (
-                <div className="bg-card rounded-xl p-8 text-center border border-dashed border-border">
-                    <p className="text-muted-foreground text-sm">No tournaments yet. Create one to get started.</p>
+                <div className="flex flex-col items-center justify-center py-16 gap-4">
+                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Trophy className="w-9 h-9 text-primary" />
+                    </div>
+                    <div className="text-center">
+                        <h3 className="text-lg font-semibold text-foreground">No Tournaments Yet</h3>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                            Create your first tournament to organize competitive matches
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setIsCreateOpen(true)}
+                        className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20 flex items-center gap-2"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Create Tournament
+                    </button>
                 </div>
             )}
 

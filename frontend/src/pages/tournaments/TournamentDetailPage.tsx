@@ -118,23 +118,20 @@ export const TournamentDetailPage = () => {
             {/* Header */}
             <TournamentHeader tournament={activeTournament} />
 
-            {/* Tab Navigation */}
-            <div className="flex border-b border-border">
+            {/* Tab Navigation — pill-style */}
+            <div className="flex gap-1 p-1 bg-secondary rounded-xl">
                 {tabs.map(tab => (
                     <button
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key)}
                         className={clsx(
-                            'px-4 py-2.5 text-sm font-medium transition-colors relative',
+                            'flex-1 py-2 text-sm font-medium rounded-lg transition-all',
                             activeTab === tab.key
-                                ? 'text-primary'
+                                ? 'bg-card text-foreground shadow-sm'
                                 : 'text-muted-foreground hover:text-foreground',
                         )}
                     >
                         {tab.label}
-                        {activeTab === tab.key && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-                        )}
                     </button>
                 ))}
             </div>
