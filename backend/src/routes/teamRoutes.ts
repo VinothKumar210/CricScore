@@ -32,6 +32,21 @@ router.post('/teams', requireAuth, async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/teams
+ * Get all teams the current user belongs to
+ */
+router.get('/teams', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const userId = req.user!.id;
+        const teams = await teamService.getUserTeams(userId);
+        return sendSuccess(res, { teams });
+    } catch (error: any) {
+        console.error('[TeamRoutes] Get user teams error:', error);
+        return sendError(res, 'Failed to fetch your teams', 500, 'INTERNAL_ERROR');
+    }
+});
+
+/**
  * GET /api/teams/:id
  * Get team details + reliability score
  */

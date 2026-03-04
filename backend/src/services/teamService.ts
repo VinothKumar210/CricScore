@@ -37,6 +37,23 @@ export const teamService = {
     },
 
     /**
+     * Get all teams a user belongs to.
+     */
+    getUserTeams: async (userId: string) => {
+        const memberships = await prisma.teamMember.findMany({
+            where: { userId },
+            include: {
+                team: {
+                    include: {
+                        _count: { select: { members: true } }
+                    }
+                }
+            }
+        });
+        return memberships.map(m => m.team);
+    },
+
+    /**
      * Get team details with members and computed reliability score.
      */
     getTeamDetails: async (teamId: string) => {

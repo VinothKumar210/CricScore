@@ -36,8 +36,8 @@ export const EditProfilePage = () => {
     const fileRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        api.get('/profile')
-            .then(r => setProfile(r.data.data.user || r.data.data))
+        api.get('/api/auth/me')
+            .then(r => setProfile(r.user || r.data?.user))
             .catch(() => setStatus({ type: 'error', msg: 'Failed to load profile' }))
             .finally(() => setLoading(false));
     }, []);
@@ -52,8 +52,10 @@ export const EditProfilePage = () => {
                 fullName, description, role, battingHand, bowlingStyle, jerseyNumber, city, state,
             };
             if (username) payload.username = username;
-            const res = await api.patch('/profile', payload);
-            setProfile(res.data.data.user || res.data.data);
+            const res = await api.patch('/api/profile', payload);
+            const updatedData = res.data?.user || res.user || res;
+            setProfile(updatedData);
+            localStorage.setItem('userProfile', JSON.stringify(updatedData));
             flash('success', 'Profile updated');
         } catch (err: any) {
             flash('error', err?.response?.data?.error?.message || 'Save failed');
@@ -73,8 +75,13 @@ export const EditProfilePage = () => {
         try {
             const form = new FormData();
             form.append('avatar', file);
-            const res = await api.post('/profile/avatar', form);
-            setProfile(prev => prev ? { ...prev, profilePictureUrl: res.data.data.user.profilePictureUrl } : prev);
+            const res = await api.post('/api/profile/avatar', form);
+            const pictureUrl = res.data?.user?.profilePictureUrl || res.user?.profilePictureUrl;
+            setProfile(prev => {
+                const nw = prev ? { ...prev, profilePictureUrl: pictureUrl } : prev;
+                if (nw) localStorage.setItem('userProfile', JSON.stringify(nw));
+                return nw;
+            });
             flash('success', 'Avatar updated');
         } catch (err: any) {
             flash('error', err?.response?.data?.error?.message || 'Upload failed');
@@ -86,8 +93,12 @@ export const EditProfilePage = () => {
     const handleRemoveAvatar = async () => {
         setUploading(true);
         try {
-            await api.delete('/profile/avatar');
-            setProfile(prev => prev ? { ...prev, profilePictureUrl: null } : prev);
+            await api.delete('/api/profile/avatar');
+            setProfile(prev => {
+                const nw = prev ? { ...prev, profilePictureUrl: null } : prev;
+                if (nw) localStorage.setItem('userProfile', JSON.stringify(nw));
+                return nw;
+            });
             flash('success', 'Avatar removed');
         } catch {
             flash('error', 'Failed to remove avatar');

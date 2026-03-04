@@ -51,28 +51,40 @@ export const api = {
         return res.json();
     },
     post: async (url: string, data?: any) => {
+        const isFormData = data instanceof FormData;
+        const headers = await getAuthHeaders();
+        if (isFormData) delete headers['Content-Type'];
+
         const res = await fetch(`${API_BASE}${url}`, {
             method: 'POST',
-            headers: await getAuthHeaders(),
-            body: data ? JSON.stringify(data) : undefined,
+            headers,
+            body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         return res.json();
     },
     put: async (url: string, data?: any) => {
+        const isFormData = data instanceof FormData;
+        const headers = await getAuthHeaders();
+        if (isFormData) delete headers['Content-Type'];
+
         const res = await fetch(`${API_BASE}${url}`, {
             method: 'PUT',
-            headers: await getAuthHeaders(),
-            body: data ? JSON.stringify(data) : undefined,
+            headers,
+            body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         return res.json();
     },
     patch: async (url: string, data?: any) => {
+        const isFormData = data instanceof FormData;
+        const headers = await getAuthHeaders();
+        if (isFormData) delete headers['Content-Type'];
+
         const res = await fetch(`${API_BASE}${url}`, {
             method: 'PATCH',
-            headers: await getAuthHeaders(),
-            body: data ? JSON.stringify(data) : undefined,
+            headers,
+            body: data ? (isFormData ? data : JSON.stringify(data)) : undefined,
         });
         if (!res.ok) throw new Error(`HTTP error ${res.status}`);
         return res.json();

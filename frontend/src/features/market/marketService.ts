@@ -43,8 +43,8 @@ export const marketService = {
         if (filters.overs) params.append('overs', filters.overs.toString());
         if (filters.ballType) params.append('ballType', filters.ballType);
 
-        const { data } = await api.get(`/api/invites/feed?${params.toString()}`, { signal } as any);
-        return data as MarketMatch[];
+        const response = await api.get(`/api/invites/feed?${params.toString()}`, { signal } as any);
+        return response as MarketMatch[];
     },
 
     sendInvite: async (matchId: string, responderTeamId: string, proposal: any = {}) => {
