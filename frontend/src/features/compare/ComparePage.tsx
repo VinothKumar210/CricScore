@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../../lib/api';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -96,6 +97,38 @@ export const ComparePage = () => {
         finally { setLoading(false); }
     };
 
+    let chartData: any[] = [];
+    if (result) {
+        const normalize = (v1: number, v2: number, invert = false) => {
+            const max = Math.max(v1, v2) || 1;
+            if (invert) {
+                return {
+                    raw1: v1, raw2: v2,
+                    n1: v1 === 0 ? 0 : (Math.min(v1, v2) / v1) * 100,
+                    n2: v2 === 0 ? 0 : (Math.min(v1, v2) / v2) * 100
+                };
+            }
+            return { raw1: v1, raw2: v2, n1: (v1 / max) * 100, n2: (v2 / max) * 100 };
+        };
+
+        const m = [
+            { label: 'Bat Avg', ...normalize(result.batting.player1.average, result.batting.player2.average) },
+            { label: 'Strike Rate', ...normalize(result.batting.player1.strikeRate, result.batting.player2.strikeRate) },
+            { label: 'Runs', ...normalize(result.batting.player1.runs, result.batting.player2.runs) },
+            { label: 'Wickets', ...normalize(result.bowling.player1.wickets, result.bowling.player2.wickets) },
+            { label: 'Bowl Avg', ...normalize(result.bowling.player1.average, result.bowling.player2.average, true) },
+            { label: 'Economy', ...normalize(result.bowling.player1.economy, result.bowling.player2.economy, true) },
+        ];
+
+        chartData = m.map(d => ({
+            subject: d.label,
+            P1: d.n1,
+            P2: d.n2,
+            raw1: d.raw1,
+            raw2: d.raw2
+        }));
+    }
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <h1 style={{ fontSize: 22, fontWeight: 800 }}>Head-to-Head</h1>
@@ -154,6 +187,27 @@ export const ComparePage = () => {
             {/* Results */}
             {result && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {/* Radar Chart */}
+                    <StatCard title="🕸️ Head-to-Head Radar">
+                        <div style={{ height: 300, width: '100%' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={chartData}>
+                                    <PolarGrid stroke="#2A2D35" />
+                                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#888', fontSize: 11 }} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#191B20', border: '1px solid #2A2D35', borderRadius: 8 }}
+                                        formatter={(_val: any, name: string | undefined, props: any) => {
+                                            const isP1 = name === 'P1';
+                                            return [isP1 ? props.payload.raw1 : props.payload.raw2, isP1 ? result.player1.fullName : result.player2.fullName];
+                                        }}
+                                    />
+                                    <Radar name="P1" dataKey="P1" stroke="#D7A65B" fill="#D7A65B" fillOpacity={0.4} />
+                                    <Radar name="P2" dataKey="P2" stroke="#63B3ED" fill="#63B3ED" fillOpacity={0.4} />
+                                </RadarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </StatCard>
+
                     {/* Match Overview */}
                     <StatCard title="Matches">
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', textAlign: 'center', gap: 8 }}>
