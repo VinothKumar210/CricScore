@@ -131,7 +131,7 @@ async function searchUsers(q: string, regex: TextFilter, limit: number, offset: 
         title: u.fullName,
         subtitle: u.username ? `@${u.username}` : u.role || null,
         imageUrl: u.profilePictureUrl,
-        metadata: { role: u.role, city: u.city },
+        metadata: { role: u.role, city: u.city, username: u.username },
     }));
 }
 

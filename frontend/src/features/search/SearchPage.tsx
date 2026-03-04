@@ -84,7 +84,13 @@ export const SearchPage = () => {
 
     const handleResultClick = (r: SearchResult) => {
         switch (r.type) {
-            case 'USER': navigate(`/profile/${r.id}`); break;
+            case 'USER':
+                if (r.metadata.username) {
+                    navigate(`/u/${r.metadata.username}`);
+                } else {
+                    navigate(`/u/${r.id}`);
+                }
+                break;
             case 'TEAM': navigate(`/teams/${r.id}`); break;
             case 'MATCH': navigate(`/match/${r.id}`); break;
             case 'TOURNAMENT': navigate(`/tournaments/${r.id}`); break;
