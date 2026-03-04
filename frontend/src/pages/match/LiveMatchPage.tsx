@@ -2,9 +2,18 @@ import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useScoringStore } from '../../features/scoring/scoringStore';
 import { useScoringSocket } from '../../features/scoring/useScoringSocket';
+import type { ConnectionStatus } from '../../features/scoring/useScoringSocket';
 import { MatchLiveShell } from '../../features/scoring/components/MatchLiveShell';
-import { Loader2, Share2, Check, Users } from 'lucide-react';
+import { Loader2, Share2, Check, Users, Wifi, WifiOff } from 'lucide-react';
 import { useState } from 'react';
+
+// Connection status indicator styles
+const CONNECTION_STYLES: Record<ConnectionStatus, { color: string; label: string; pulse: boolean }> = {
+    connected: { color: '#10B981', label: 'LIVE', pulse: false },
+    connecting: { color: '#FBBF24', label: 'Connecting...', pulse: true },
+    reconnecting: { color: '#F59E0B', label: 'Reconnecting...', pulse: true },
+    disconnected: { color: '#EF4444', label: 'Offline', pulse: false },
+};
 
 /**
  * LiveMatchPage — read-only spectator view.
@@ -24,7 +33,8 @@ export const LiveMatchPage = () => {
         }
     }, [matchId, initialize]);
 
-    useScoringSocket(matchId || null);
+    const connectionStatus = useScoringSocket(matchId || null);
+    const connStyle = CONNECTION_STYLES[connectionStatus];
 
     // Loading
     if (!matchState && !error) {
@@ -71,6 +81,33 @@ export const LiveMatchPage = () => {
     return (
         <div className="flex flex-col h-full bg-background max-w-md mx-auto shadow-2xl overflow-hidden relative">
             <MatchLiveShell />
+
+            {/* Connection Status Indicator */}
+            <div
+                style={{
+                    position: 'fixed', top: 12, left: 12, zIndex: 50,
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '4px 10px', borderRadius: 20,
+                    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+                    border: `1px solid ${connStyle.color}44`,
+                }}
+            >
+                <span
+                    style={{
+                        width: 7, height: 7, borderRadius: '50%',
+                        background: connStyle.color,
+                        animation: connStyle.pulse ? 'pulse 1.5s infinite' : 'none',
+                    }}
+                />
+                <span style={{ fontSize: 10, fontWeight: 700, color: connStyle.color, letterSpacing: '0.05em' }}>
+                    {connStyle.label}
+                </span>
+                {connectionStatus === 'disconnected' ? (
+                    <WifiOff size={11} color={connStyle.color} />
+                ) : (
+                    <Wifi size={11} color={connStyle.color} />
+                )}
+            </div>
 
             {/* Share FAB */}
             <button

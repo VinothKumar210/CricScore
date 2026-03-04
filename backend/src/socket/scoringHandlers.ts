@@ -30,6 +30,18 @@ export function broadcastScoreUpdate(matchId: string, update: {
     _io.to(`match:${matchId}`).emit('score:update', update);
 }
 
+/**
+ * Broadcast a match status change (innings break, match completed, etc.)
+ * Called from match lifecycle handlers when status transitions occur.
+ */
+export function broadcastMatchStatus(matchId: string, status: {
+    newStatus: string;
+    message?: string;
+}): void {
+    if (!_io) return;
+    _io.to(`match:${matchId}`).emit('match:status', status);
+}
+
 // ─── Join Rate Limiter ───
 
 const JOIN_RATE_LIMIT = 5;
