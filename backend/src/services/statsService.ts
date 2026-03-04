@@ -315,35 +315,145 @@ export const statsService = {
     /**
      * Get Leaderboard.
      */
-    getLeaderboard: async (category: 'runs' | 'wickets' | 'battingAvg' | 'bowlingAvg', limit: number = 10) => {
+    getLeaderboard: async (
+        category: 'runs' | 'wickets' | 'strikeRate' | 'economy' | 'impact',
+        limit: number = 20,
+        options: { scope?: 'global' | 'city' | 'team'; scopeId?: string; userId?: string } = {},
+    ) => {
+        const { scope = 'global', scopeId, userId } = options;
+
+        // ── Step 1: Get scoped user IDs (if not global) ──
+        let scopedUserIds: string[] | undefined;
+
+        if (scope === 'city' && userId) {
+            // Find the requesting user's city, then find all users in that city
+            const me = await prisma.user.findUnique({ where: { id: userId }, select: { city: true } });
+            if (me?.city) {
+                const cityUsers = await prisma.user.findMany({
+                    where: { city: { equals: me.city, mode: 'insensitive' } },
+                    select: { id: true },
+                });
+                scopedUserIds = cityUsers.map(u => u.id);
+            }
+        } else if (scope === 'team' && scopeId) {
+            // Find all members of the specified team
+            const members = await prisma.teamMember.findMany({
+                where: { teamId: scopeId },
+                select: { userId: true },
+            });
+            scopedUserIds = members.map(m => m.userId);
+        }
+
+        const userFilter: any = { not: null };
+        if (scopedUserIds) {
+            userFilter.in = scopedUserIds;
+        }
+
+        // ── Step 2: Fetch data based on category ──
+
         if (category === 'runs') {
             const result = await prisma.battingPerformance.groupBy({
                 by: ['userId'],
                 _sum: { runs: true, balls: true, fours: true, sixes: true },
                 _count: { id: true },
-                orderBy: {
-                    _sum: { runs: 'desc' }
-                },
+                orderBy: { _sum: { runs: 'desc' } },
                 take: limit,
-                where: { userId: { not: null } }
+                where: { userId: userFilter },
             });
-            // Fetch Names
-            return enrichWithNames(result);
-        } else if (category === 'wickets') {
+            return enrichLeaderboard(result, 'runs');
+        }
+
+        if (category === 'wickets') {
             const result = await prisma.bowlingPerformance.groupBy({
                 by: ['userId'],
                 _sum: { wickets: true, runs: true, overs: true },
-                orderBy: {
-                    _sum: { wickets: 'desc' }
-                },
+                _count: { id: true },
+                orderBy: { _sum: { wickets: 'desc' } },
                 take: limit,
-                where: { userId: { not: null } }
+                where: { userId: userFilter },
             });
-            return enrichWithNames(result);
+            return enrichLeaderboard(result, 'wickets');
         }
-        // Avg requires processing all user groups then sorting JS side (Prisma can't sort by computed avg)
-        // For Scale: This is bad. But for now acceptable.
-        // Implement Runs/Wickets first.
+
+        if (category === 'strikeRate') {
+            // Fetch all batting performances, filter to players with >= 50 balls faced
+            const allBatting = await prisma.battingPerformance.groupBy({
+                by: ['userId'],
+                _sum: { runs: true, balls: true },
+                _count: { id: true },
+                where: { userId: userFilter },
+            });
+
+            const entries = allBatting
+                .filter((b: any) => (b._sum.balls || 0) >= 50) // Min qualification
+                .map((b: any) => ({
+                    userId: b.userId,
+                    _sum: b._sum,
+                    _count: b._count,
+                    strikeRate: parseFloat((((b._sum.runs || 0) / (b._sum.balls || 1)) * 100).toFixed(2)),
+                }))
+                .sort((a, b) => b.strikeRate - a.strikeRate)
+                .slice(0, limit);
+
+            return enrichLeaderboard(entries, 'strikeRate');
+        }
+
+        if (category === 'economy') {
+            // Fetch all bowling performances, filter to players with >= 10 overs bowled
+            const allBowling = await prisma.bowlingPerformance.groupBy({
+                by: ['userId'],
+                _sum: { runs: true, overs: true, wickets: true },
+                _count: { id: true },
+                where: { userId: userFilter },
+            });
+
+            const entries = allBowling
+                .filter((b: any) => (b._sum.overs || 0) >= 10) // Min qualification
+                .map((b: any) => ({
+                    userId: b.userId,
+                    _sum: b._sum,
+                    _count: b._count,
+                    economy: parseFloat(((b._sum.runs || 0) / (b._sum.overs || 1)).toFixed(2)),
+                }))
+                .sort((a, b) => a.economy - b.economy) // Lower is better
+                .slice(0, limit);
+
+            return enrichLeaderboard(entries, 'economy');
+        }
+
+        if (category === 'impact') {
+            // Reuse the impact leaderboard logic but with scope filter
+            const allBatting = await prisma.battingPerformance.groupBy({
+                by: ['userId'],
+                _sum: { runs: true },
+                _count: { id: true },
+                where: { userId: userFilter },
+            });
+
+            const allBowling = await prisma.bowlingPerformance.groupBy({
+                by: ['userId'],
+                _sum: { wickets: true },
+                where: { userId: userFilter },
+            });
+
+            const bowlingMap = new Map(allBowling.map((b: any) => [b.userId, b._sum.wickets || 0]));
+
+            const entries = allBatting
+                .filter((b: any) => b._count.id >= 5) // Min 5 matches
+                .map((b: any) => {
+                    const runs = b._sum.runs || 0;
+                    const wickets = bowlingMap.get(b.userId) || 0;
+                    const matches = b._count.id || 0;
+                    const score = computeImpactScore(runs, wickets, 0);
+                    const rating = computeImpactRating(score, matches);
+                    return { userId: b.userId, _sum: { runs, wickets }, _count: b._count, impactRating: rating };
+                })
+                .sort((a, b) => b.impactRating - a.impactRating)
+                .slice(0, limit);
+
+            return enrichLeaderboard(entries, 'impact');
+        }
+
         return [];
     },
 
@@ -696,16 +806,34 @@ async function getGlobalRank(
     };
 }
 
-async function enrichWithNames(data: any[]) {
+async function enrichLeaderboard(data: any[], category: string) {
     const userIds = data.map((d: any) => d.userId).filter((id: any) => id);
     const users = await prisma.user.findMany({
         where: { id: { in: userIds } },
-        select: { id: true, fullName: true }
+        select: { id: true, fullName: true, username: true, profilePictureUrl: true, city: true },
     });
-    const map = new Map(users.map((u: any) => [u.id, u.fullName]));
+    const map = new Map(users.map((u: any) => [u.id, u]));
 
-    return data.map((d: any) => ({
-        ...d,
-        name: map.get(d.userId) || 'Unknown'
-    }));
+    return data.map((d: any, i: number) => {
+        const user = map.get(d.userId);
+        let value: number | string = 0;
+        if (category === 'runs') value = d._sum?.runs || 0;
+        else if (category === 'wickets') value = d._sum?.wickets || 0;
+        else if (category === 'strikeRate') value = d.strikeRate || 0;
+        else if (category === 'economy') value = d.economy || 0;
+        else if (category === 'impact') value = d.impactRating || 0;
+
+        return {
+            rank: i + 1,
+            userId: d.userId,
+            name: user?.fullName || 'Unknown',
+            username: user?.username || null,
+            profilePictureUrl: user?.profilePictureUrl || null,
+            city: user?.city || null,
+            value,
+            category,
+            matches: d._count?.id || 0,
+            _sum: d._sum,
+        };
+    });
 }

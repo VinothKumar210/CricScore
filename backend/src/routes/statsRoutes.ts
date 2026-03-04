@@ -64,18 +64,31 @@ router.get('/stats/team/:id', requireAuth, async (req: Request, res: Response) =
 
 /**
  * GET /api/stats/leaderboard
- * ?category=runs|wickets&limit=10
+ * ?category=runs|wickets|strikeRate|economy|impact&limit=10&scope=global|city|team&scopeId=xxx
  */
 router.get('/stats/leaderboard', requireAuth, async (req: Request, res: Response) => {
     try {
         const category = req.query.category as any;
-        const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+        const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+        const scope = (req.query.scope as string) || 'global';
+        const scopeId = req.query.scopeId as string | undefined;
+        const userId = req.user?.id;
 
-        if (!['runs', 'wickets'].includes(category)) {
-            return sendError(res, 'Invalid category', 400, 'INVALID_PARAM');
+        const validCategories = ['runs', 'wickets', 'strikeRate', 'economy', 'impact'];
+        if (!validCategories.includes(category)) {
+            return sendError(res, `Invalid category. Must be one of: ${validCategories.join(', ')}`, 400, 'INVALID_PARAM');
         }
 
-        const leaderboard = await statsService.getLeaderboard(category, limit);
+        const validScopes = ['global', 'city', 'team'];
+        if (!validScopes.includes(scope)) {
+            return sendError(res, `Invalid scope. Must be one of: ${validScopes.join(', ')}`, 400, 'INVALID_PARAM');
+        }
+
+        const opts: { scope?: 'global' | 'city' | 'team'; scopeId?: string; userId?: string } = {};
+        opts.scope = scope as 'global' | 'city' | 'team';
+        if (scopeId) opts.scopeId = scopeId;
+        if (userId) opts.userId = userId;
+        const leaderboard = await statsService.getLeaderboard(category, limit, opts);
         return sendSuccess(res, leaderboard);
     } catch (error: any) {
         return sendError(res, 'Failed to fetch leaderboard', 500, 'INTERNAL_ERROR');
