@@ -1,13 +1,34 @@
-import React, { useEffect, useState, useCallback } from 'react';
+// =============================================================================
+// NotificationCenterPage — Full notification feed with date grouping & filters
+// =============================================================================
+
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNotificationStore } from './notificationStore';
 import { notificationService } from './notificationService';
 import type { Notification } from './notificationService';
 import NotificationItem from './components/NotificationItem';
-import { CheckIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { CheckCheck, Loader2, Bell, BellOff } from 'lucide-react';
 import { useNotificationSocket } from './useNotificationSocket';
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type FilterTab = 'all' | 'match' | 'team' | 'social' | 'system';
+
+const FILTER_TABS: { key: FilterTab; label: string; icon: string; types: Notification['type'][] }[] = [
+    { key: 'all', label: 'All', icon: '📋', types: [] },
+    { key: 'match', label: 'Matches', icon: '🏏', types: ['MATCH_MILESTONE', 'MATCH_RESULT'] },
+    { key: 'team', label: 'Teams', icon: '🛡️', types: ['INVITE_RECEIVED', 'TOURNAMENT_WIN', 'TOURNAMENT_QUALIFIED', 'TOURNAMENT_ELIMINATED'] },
+    { key: 'social', label: 'Social', icon: '💬', types: ['MENTION', 'REACTION', 'POLL_CREATED', 'POLL_RESULT'] },
+    { key: 'system', label: 'System', icon: '⚙️', types: ['ACHIEVEMENT_UNLOCKED'] },
+];
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 const NotificationCenterPage: React.FC = () => {
-    // 1. Activate socket/polling at the page level just in case
     useNotificationSocket();
 
     const { markAllRead, lastNotification } = useNotificationStore();
@@ -16,11 +37,12 @@ const NotificationCenterPage: React.FC = () => {
     const [cursor, setCursor] = useState<string | null>(null);
     const [hasMore, setHasMore] = useState(true);
     const [isFetchingMore, setIsFetchingMore] = useState(false);
+    const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
     const fetchInitial = useCallback(async () => {
         setIsLoading(true);
         try {
-            const res = await notificationService.getNotifications(20);
+            const res = await notificationService.getNotifications(30);
             setNotifications(res.notifications);
             setCursor(res.nextCursor);
             setHasMore(!!res.nextCursor);
@@ -31,9 +53,7 @@ const NotificationCenterPage: React.FC = () => {
         }
     }, []);
 
-    useEffect(() => {
-        fetchInitial();
-    }, [fetchInitial]);
+    useEffect(() => { fetchInitial(); }, [fetchInitial]);
 
     const loadMore = async () => {
         if (!cursor || isFetchingMore) return;
@@ -43,14 +63,11 @@ const NotificationCenterPage: React.FC = () => {
             setNotifications(prev => [...prev, ...res.notifications]);
             setCursor(res.nextCursor);
             setHasMore(!!res.nextCursor);
-        } catch (error) {
-            console.error(error);
-        } finally {
-            setIsFetchingMore(false);
-        }
+        } catch (error) { console.error(error); }
+        finally { setIsFetchingMore(false); }
     };
 
-    // Prepend live incoming notifications if we're theoretically on the first page
+    // Prepend live incoming notifications
     useEffect(() => {
         if (lastNotification) {
             setNotifications(prev => {
@@ -62,55 +79,167 @@ const NotificationCenterPage: React.FC = () => {
 
     const handleMarkAllRead = async () => {
         await markAllRead();
-        // Update local state visually
         setNotifications(prev => prev.map(n => ({ ...n, readAt: n.readAt || new Date().toISOString() })));
     };
 
-    if (isLoading) {
-        return (
-            <div className="flex justify-center py-12">
-                <ArrowPathIcon className="h-8 w-8 animate-spin text-primary-500" />
-            </div>
-        );
-    }
+    // Filter notifications
+    const filtered = useMemo(() => {
+        if (activeFilter === 'all') return notifications;
+        const tab = FILTER_TABS.find(t => t.key === activeFilter);
+        if (!tab) return notifications;
+        return notifications.filter(n => tab.types.includes(n.type));
+    }, [notifications, activeFilter]);
+
+    // Group by date
+    const grouped = useMemo(() => {
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const groups: { label: string; items: Notification[] }[] = [];
+        const todayItems: Notification[] = [];
+        const yesterdayItems: Notification[] = [];
+        const olderItems: Notification[] = [];
+
+        for (const n of filtered) {
+            const d = new Date(n.createdAt);
+            if (d.toDateString() === today.toDateString()) todayItems.push(n);
+            else if (d.toDateString() === yesterday.toDateString()) yesterdayItems.push(n);
+            else olderItems.push(n);
+        }
+
+        if (todayItems.length) groups.push({ label: 'Today', items: todayItems });
+        if (yesterdayItems.length) groups.push({ label: 'Yesterday', items: yesterdayItems });
+        if (olderItems.length) groups.push({ label: 'Older', items: olderItems });
+        return groups;
+    }, [filtered]);
+
+    const hasUnread = notifications.some(n => !n.readAt);
+
+    // ---------------------------------------------------------------------------
+    // Render
+    // ---------------------------------------------------------------------------
 
     return (
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-foreground dark:text-white">Notifications</h1>
-                {notifications.length > 0 && notifications.some(n => !n.readAt) && (
+        <div style={{ maxWidth: 640, margin: '0 auto', padding: '16px 16px 80px' }}>
+            {/* Header */}
+            <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                marginBottom: 16,
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Bell size={22} color="var(--accent, #D7A65B)" />
+                    <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-primary, #EBECEF)' }}>
+                        Notifications
+                    </h1>
+                </div>
+                {hasUnread && (
                     <button
                         onClick={handleMarkAllRead}
-                        className="flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 dark:bg-primary-900/20 dark:hover:bg-primary-900/40 px-3 py-1.5 rounded-md transition-colors"
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            padding: '6px 12px', borderRadius: 8, border: 'none',
+                            background: 'rgba(215,166,91,0.1)', color: 'var(--accent, #D7A65B)',
+                            fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                        }}
                     >
-                        <CheckIcon className="h-4 w-4" />
-                        Mark all as read
+                        <CheckCheck size={14} />
+                        Mark all read
                     </button>
                 )}
             </div>
 
-            <div className="bg-card dark:bg-card-900 rounded-lg shadow ring-1 ring-black/5 dark:ring-white/10 overflow-hidden mb-6">
-                {notifications.length > 0 ? (
-                    notifications.map(n => (
-                        <NotificationItem key={n.id} notification={n} />
-                    ))
-                ) : (
-                    <div className="py-12 text-center text-muted-foreground dark:text-gray-400">
-                        <div className="mx-auto h-12 w-12 text-gray-400 mb-3 border-2 border-dashed border-border rounded-full flex items-center justify-center">
-                            <span className="text-xl">📭</span>
-                        </div>
-                        <p>No notifications yet.</p>
-                        <p className="text-sm mt-1">When something happens, it will show up here.</p>
-                    </div>
-                )}
+            {/* Filter Tabs */}
+            <div style={{
+                display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 12,
+                marginBottom: 4,
+            }}>
+                {FILTER_TABS.map(tab => (
+                    <button
+                        key={tab.key}
+                        onClick={() => setActiveFilter(tab.key)}
+                        style={{
+                            padding: '5px 12px', borderRadius: 16, fontSize: 12, fontWeight: 600,
+                            fontFamily: 'inherit', cursor: 'pointer', whiteSpace: 'nowrap',
+                            border: '1px solid',
+                            borderColor: activeFilter === tab.key ? 'var(--accent, #D7A65B)' : 'var(--border, #2A2D35)',
+                            background: activeFilter === tab.key ? 'rgba(215,166,91,0.1)' : 'transparent',
+                            color: activeFilter === tab.key ? 'var(--accent, #D7A65B)' : 'var(--text-secondary, #888)',
+                            transition: 'all 0.15s',
+                        }}
+                    >
+                        {tab.icon} {tab.label}
+                    </button>
+                ))}
             </div>
 
-            {hasMore && notifications.length > 0 && (
-                <div className="flex justify-center">
+            {/* Loading */}
+            {isLoading && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '48px 0', gap: 10 }}>
+                    <Loader2 size={28} className="animate-spin" color="var(--accent, #D7A65B)" />
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary, #888)' }}>Loading notifications...</p>
+                </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoading && filtered.length === 0 && (
+                <div style={{
+                    textAlign: 'center', padding: '48px 20px',
+                    color: 'var(--text-secondary, #888)',
+                }}>
+                    <BellOff size={36} color="var(--text-secondary, #555)" style={{ margin: '0 auto 12px' }} />
+                    <p style={{ fontSize: 14, fontWeight: 500 }}>
+                        {activeFilter === 'all' ? 'No notifications yet' : `No ${activeFilter} notifications`}
+                    </p>
+                    <p style={{ fontSize: 12, marginTop: 4 }}>
+                        When something happens, it will show up here.
+                    </p>
+                </div>
+            )}
+
+            {/* Grouped Notifications */}
+            {!isLoading && grouped.map(group => (
+                <div key={group.label} style={{ marginBottom: 16 }}>
+                    {/* Group Header */}
+                    <div style={{
+                        fontSize: 11, fontWeight: 700, textTransform: 'uppercase',
+                        color: 'var(--text-secondary, #666)', letterSpacing: '0.06em',
+                        padding: '8px 0 6px',
+                    }}>
+                        {group.label}
+                    </div>
+
+                    {/* Notification Cards */}
+                    <div style={{
+                        background: 'var(--bg-card, #191B20)',
+                        border: '1px solid var(--border, #2A2D35)',
+                        borderRadius: 14, overflow: 'hidden',
+                    }}>
+                        {group.items.map((n, idx) => (
+                            <NotificationItem
+                                key={n.id}
+                                notification={n}
+                                isLast={idx === group.items.length - 1}
+                            />
+                        ))}
+                    </div>
+                </div>
+            ))}
+
+            {/* Load More */}
+            {hasMore && filtered.length > 0 && !isLoading && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
                     <button
                         onClick={loadMore}
                         disabled={isFetchingMore}
-                        className="px-4 py-2 text-sm font-medium text-foreground dark:text-gray-200 bg-card dark:bg-card-800 border border-border dark:border-gray-700 rounded-md shadow-sm hover:bg-background dark:hover:bg-card-700 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{
+                            padding: '8px 20px', borderRadius: 10, fontSize: 12,
+                            fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+                            border: '1px solid var(--border, #2A2D35)',
+                            background: 'var(--bg-card, #191B20)',
+                            color: 'var(--text-primary, #EBECEF)',
+                            opacity: isFetchingMore ? 0.5 : 1,
+                        }}
                     >
                         {isFetchingMore ? 'Loading...' : 'Load older notifications'}
                     </button>

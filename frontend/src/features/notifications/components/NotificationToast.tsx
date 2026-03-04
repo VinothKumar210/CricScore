@@ -1,29 +1,33 @@
+// =============================================================================
+// NotificationToast — Non-blocking toast popup (lucide, CSS vars)
+// =============================================================================
+
 import React from 'react';
 import type { Notification } from '../notificationService';
 import { toast } from 'react-hot-toast';
 import type { Toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { BellIcon, TrophyIcon, StarIcon, ChatBubbleLeftIcon, ChartBarIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+import { Bell, Trophy, Star, MessageSquare, BarChart2, Mail } from 'lucide-react';
 
-const getIconForType = (type: Notification['type']) => {
+const getIcon = (type: Notification['type']) => {
     switch (type) {
         case 'TOURNAMENT_WIN':
         case 'TOURNAMENT_QUALIFIED':
         case 'TOURNAMENT_ELIMINATED':
-            return <TrophyIcon className="h-6 w-6 text-primary-500" />;
+            return <Trophy size={18} color="#D7A65B" />;
         case 'MATCH_MILESTONE':
         case 'ACHIEVEMENT_UNLOCKED':
-            return <StarIcon className="h-6 w-6 text-yellow-500" />;
+            return <Star size={18} color="#FBBF24" />;
         case 'REACTION':
         case 'MENTION':
-            return <ChatBubbleLeftIcon className="h-6 w-6 text-blue-500" />;
+            return <MessageSquare size={18} color="#60A5FA" />;
         case 'POLL_CREATED':
         case 'POLL_RESULT':
-            return <ChartBarIcon className="h-6 w-6 text-purple-500" />;
+            return <BarChart2 size={18} color="#A78BFA" />;
         case 'INVITE_RECEIVED':
-            return <EnvelopeIcon className="h-6 w-6 text-green-500" />;
+            return <Mail size={18} color="#10B981" />;
         default:
-            return <BellIcon className="h-6 w-6 text-muted-foreground" />;
+            return <Bell size={18} color="#888" />;
     }
 };
 
@@ -37,35 +41,57 @@ const NotificationToast: React.FC<Props> = ({ t, notification }) => {
 
     const handleClick = () => {
         toast.dismiss(t.id);
-        if (notification.link) {
-            navigate(notification.link);
-        }
+        if (notification.link) navigate(notification.link);
     };
 
     return (
         <div
-            className={`${t.visible ? 'animate-enter' : 'animate-leave'
-                } max-w-sm w-full bg-card dark:bg-card-900 shadow-xl rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 dark:ring-white dark:ring-opacity-10`}
+            style={{
+                maxWidth: 360, width: '100%',
+                background: 'var(--bg-card, #191B20)',
+                border: '1px solid var(--border, #2A2D35)',
+                borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                display: 'flex', overflow: 'hidden',
+                opacity: t.visible ? 1 : 0,
+                transition: 'opacity 0.2s',
+                pointerEvents: 'auto',
+            }}
         >
-            <div className="flex-1 w-0 p-4 cursor-pointer" onClick={handleClick}>
-                <div className="flex items-start">
-                    <div className="flex-shrink-0 pt-0.5">
-                        {getIconForType(notification.type)}
+            <div style={{ flex: 1, padding: 12, cursor: 'pointer' }} onClick={handleClick}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <div style={{ flexShrink: 0, marginTop: 2 }}>
+                        {getIcon(notification.type)}
                     </div>
-                    <div className="ml-3 flex-1">
-                        <p className="text-sm font-medium text-foreground dark:text-gray-100">
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{
+                            fontSize: 13, fontWeight: 600,
+                            color: 'var(--text-primary, #EBECEF)',
+                        }}>
                             {notification.title}
                         </p>
-                        <p className="mt-1 text-sm text-muted-foreground dark:text-gray-400 line-clamp-2">
+                        <p style={{
+                            fontSize: 12, color: 'var(--text-secondary, #888)',
+                            marginTop: 2,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                        }}>
                             {notification.body}
                         </p>
                     </div>
                 </div>
             </div>
-            <div className="flex border-l border-border dark:border-gray-800">
+            <div style={{
+                display: 'flex', borderLeft: '1px solid var(--border, #2A2D35)',
+            }}>
                 <button
                     onClick={() => toast.dismiss(t.id)}
-                    className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-primary-600 hover:text-primary-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    style={{
+                        padding: '0 14px', background: 'none', border: 'none',
+                        cursor: 'pointer', fontSize: 11, fontWeight: 600,
+                        color: 'var(--accent, #D7A65B)', fontFamily: 'inherit',
+                    }}
                 >
                     Close
                 </button>

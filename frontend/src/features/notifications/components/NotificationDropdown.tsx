@@ -1,9 +1,13 @@
+// =============================================================================
+// NotificationDropdown — Portal dropdown from bell (lucide, CSS vars)
+// =============================================================================
+
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, Link } from 'react-router-dom';
 import { useNotificationStore } from '../notificationStore';
 import NotificationItem from './NotificationItem';
-import { ArrowPathIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { Loader2, CheckCheck } from 'lucide-react';
 
 interface Props {
     anchorRect: DOMRect | null;
@@ -16,16 +20,12 @@ const NotificationDropdown: React.FC<Props> = ({ anchorRect, onClose, anchorRef 
     const dropdownRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
 
-    // 1. Fetch on mount
-    useEffect(() => {
-        fetchLatest();
-    }, [fetchLatest]);
+    useEffect(() => { fetchLatest(); }, [fetchLatest]);
 
-    // 2. Click outside logic
+    // Click outside
     useEffect(() => {
         const handleMouseDown = (e: MouseEvent) => {
             if (!dropdownRef.current || !anchorRef.current) return;
-            // If click is not in Dropdown AND not in Bell icon, close
             if (!dropdownRef.current.contains(e.target as Node) && !anchorRef.current.contains(e.target as Node)) {
                 onClose();
             }
@@ -34,75 +34,74 @@ const NotificationDropdown: React.FC<Props> = ({ anchorRect, onClose, anchorRef 
         return () => document.removeEventListener('mousedown', handleMouseDown);
     }, [onClose, anchorRef]);
 
-    // 3. Escape key logic
+    // Escape key
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                onClose();
-            }
-        };
+        const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [onClose]);
 
-    // 4. Auto-closing on route change
-    useEffect(() => {
-        onClose();
-    }, [location.pathname, onClose]);
+    // Close on route change
+    useEffect(() => { onClose(); }, [location.pathname, onClose]);
 
-    // 5. Focus Trap / Initial Focus
-    useEffect(() => {
-        if (dropdownRef.current) {
-            dropdownRef.current.focus();
-        }
-    }, []);
+    // Focus trap
+    useEffect(() => { dropdownRef.current?.focus(); }, []);
 
-    // SSR safety
     if (typeof window === 'undefined' || !anchorRect) return null;
 
-    // Offset math: Position below bell, align right edge linearly with bell right edge.
-    // Ensure it doesn't fall off the window if window is too small.
-    const dropdownWidth = 360; // Max width
+    const dropdownWidth = 360;
     let leftPos = anchorRect.right - dropdownWidth;
-    if (leftPos < 10) leftPos = 10; // Keep at least 10px from screen edge
+    if (leftPos < 10) leftPos = 10;
 
-    const dropdownStyle: React.CSSProperties = {
+    const style: React.CSSProperties = {
         position: 'absolute',
-        top: anchorRect.bottom + 8, // 8px vertical offset
+        top: anchorRect.bottom + 8,
         left: leftPos,
         width: Math.min(dropdownWidth, window.innerWidth - 20),
-        zIndex: 1050, // Between header and modal
-    };
-
-    const handleMarkAllRead = async () => {
-        await markAllRead();
+        zIndex: 1050,
+        background: 'var(--bg-card, #191B20)',
+        border: '1px solid var(--border, #2A2D35)',
+        borderRadius: 14,
+        boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        maxHeight: '85vh',
+        outline: 'none',
     };
 
     return createPortal(
-        <div
-            ref={dropdownRef}
-            style={dropdownStyle}
-            tabIndex={-1}
-            role="dialog"
-            aria-label="Notifications"
-            className="bg-card dark:bg-card-900 rounded-lg shadow-xl ring-1 ring-black/5 dark:ring-white/10 overflow-hidden flex flex-col max-h-[85vh] outline-none animate-dropdown"
-        >
+        <div ref={dropdownRef} style={style} tabIndex={-1} role="dialog" aria-label="Notifications">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 shrink-0">
-                <h3 className="font-semibold text-foreground dark:text-gray-100">Notifications</h3>
-                <div className="flex items-center gap-3">
+            <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 16px',
+                borderBottom: '1px solid var(--border, #2A2D35)',
+            }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary, #EBECEF)' }}>
+                    Notifications
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <button
-                        onClick={handleMarkAllRead}
-                        className="text-xs text-primary-600 hover:text-primary-500 font-medium flex items-center gap-1"
-                        title="Mark all as read"
+                        onClick={() => markAllRead()}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 4,
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            fontSize: 11, fontWeight: 600, color: 'var(--accent, #D7A65B)',
+                            fontFamily: 'inherit',
+                        }}
                     >
-                        <CheckIcon className="h-4 w-4" />
-                        <span className="hidden sm:inline">Mark all read</span>
+                        <CheckCheck size={13} />
+                        Read all
                     </button>
                     <Link
                         to="/notifications"
                         onClick={onClose}
-                        className="text-xs text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white"
+                        style={{
+                            fontSize: 11, fontWeight: 600, fontFamily: 'inherit',
+                            color: 'var(--text-secondary, #888)',
+                            textDecoration: 'none',
+                        }}
                     >
                         View All
                     </Link>
@@ -110,17 +109,25 @@ const NotificationDropdown: React.FC<Props> = ({ anchorRect, onClose, anchorRef 
             </div>
 
             {/* List */}
-            <div className="overflow-y-auto overscroll-contain flex-1">
+            <div style={{ overflowY: 'auto', flex: 1 }}>
                 {isLoading && notifications.length === 0 ? (
-                    <div className="p-6 flex justify-center text-gray-400">
-                        <ArrowPathIcon className="h-6 w-6 animate-spin" />
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}>
+                        <Loader2 size={20} className="animate-spin" color="var(--accent, #D7A65B)" />
                     </div>
                 ) : notifications.length > 0 ? (
-                    notifications.map(n => (
-                        <NotificationItem key={n.id} notification={n} onCloseDropdown={onClose} />
+                    notifications.map((n, i) => (
+                        <NotificationItem
+                            key={n.id}
+                            notification={n}
+                            onCloseDropdown={onClose}
+                            isLast={i === notifications.length - 1}
+                        />
                     ))
                 ) : (
-                    <div className="py-8 px-4 text-center text-sm text-muted-foreground dark:text-gray-400">
+                    <div style={{
+                        padding: '32px 16px', textAlign: 'center',
+                        fontSize: 13, color: 'var(--text-secondary, #888)',
+                    }}>
                         No notifications yet.
                     </div>
                 )}
@@ -128,11 +135,21 @@ const NotificationDropdown: React.FC<Props> = ({ anchorRect, onClose, anchorRef 
 
             {/* Footer */}
             {notifications.length > 0 && (
-                <div className="border-t border-gray-100 dark:border-gray-800 p-2 shrink-0 bg-background dark:bg-card-950">
+                <div style={{
+                    borderTop: '1px solid var(--border, #2A2D35)',
+                    padding: 8,
+                }}>
                     <Link
                         to="/notifications"
                         onClick={onClose}
-                        className="block w-full text-center py-2 text-sm font-medium text-primary-600 hover:text-primary-700 bg-card dark:bg-card-900 rounded-md border border-border dark:border-gray-700"
+                        style={{
+                            display: 'block', textAlign: 'center', padding: '8px 0',
+                            fontSize: 12, fontWeight: 600,
+                            color: 'var(--accent, #D7A65B)',
+                            textDecoration: 'none',
+                            borderRadius: 8,
+                            background: 'rgba(215,166,91,0.06)',
+                        }}
                     >
                         See all activity
                     </Link>

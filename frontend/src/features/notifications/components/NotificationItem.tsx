@@ -1,88 +1,119 @@
+// =============================================================================
+// NotificationItem — Individual notification card (CSS vars, lucide icons)
+// =============================================================================
+
 import React from 'react';
 import type { Notification } from '../notificationService';
 import { formatRelativeTime } from '../../../utils/dateUtils';
-import { Bell, Trophy, Star, MessageSquare, BarChart2, Mail } from 'lucide-react';
+import { Bell, Trophy, Star, MessageSquare, BarChart2, Mail, Swords } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useNotificationStore } from '../notificationStore';
 
-const getIconForType = (type: Notification['type']) => {
-    switch (type) {
-        case 'TOURNAMENT_WIN':
-        case 'TOURNAMENT_QUALIFIED':
-        case 'TOURNAMENT_ELIMINATED':
-            return <Trophy className="h-6 w-6 text-primary-500" />;
-        case 'MATCH_MILESTONE':
-        case 'ACHIEVEMENT_UNLOCKED':
-            return <Star className="h-6 w-6 text-yellow-500" />;
-        case 'REACTION':
-        case 'MENTION':
-            return <MessageSquare className="h-6 w-6 text-blue-500" />;
-        case 'POLL_CREATED':
-        case 'POLL_RESULT':
-            return <BarChart2 className="h-6 w-6 text-purple-500" />;
-        case 'INVITE_RECEIVED':
-            return <Mail className="h-6 w-6 text-green-500" />;
-        default:
-            return <Bell className="h-6 w-6 text-muted-foreground" />;
-    }
+// ---------------------------------------------------------------------------
+// Icon Mapping
+// ---------------------------------------------------------------------------
+
+const ICON_MAP: Record<string, { icon: React.ReactNode; color: string }> = {
+    TOURNAMENT_WIN: { icon: <Trophy size={18} />, color: '#D7A65B' },
+    TOURNAMENT_QUALIFIED: { icon: <Trophy size={18} />, color: '#10B981' },
+    TOURNAMENT_ELIMINATED: { icon: <Trophy size={18} />, color: '#EF4444' },
+    MATCH_MILESTONE: { icon: <Star size={18} />, color: '#FBBF24' },
+    MATCH_RESULT: { icon: <Swords size={18} />, color: '#63B3ED' },
+    ACHIEVEMENT_UNLOCKED: { icon: <Star size={18} />, color: '#A78BFA' },
+    REACTION: { icon: <MessageSquare size={18} />, color: '#60A5FA' },
+    MENTION: { icon: <MessageSquare size={18} />, color: '#34D399' },
+    POLL_CREATED: { icon: <BarChart2 size={18} />, color: '#A78BFA' },
+    POLL_RESULT: { icon: <BarChart2 size={18} />, color: '#F472B6' },
+    INVITE_RECEIVED: { icon: <Mail size={18} />, color: '#10B981' },
 };
+
+const getIcon = (type: string) => ICON_MAP[type] || { icon: <Bell size={18} />, color: '#888' };
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 interface Props {
     notification: Notification;
     onCloseDropdown?: () => void;
+    isLast?: boolean;
 }
 
-const NotificationItem: React.FC<Props> = React.memo(({ notification, onCloseDropdown }) => {
+const NotificationItem: React.FC<Props> = React.memo(({ notification, onCloseDropdown, isLast }) => {
     const { markRead } = useNotificationStore();
-    const [isNew, setIsNew] = React.useState(true);
-
-    React.useEffect(() => {
-        // Unset `isNew` immediately after mount, triggering fade-in naturally
-        const timer = setTimeout(() => setIsNew(false), 300);
-        return () => clearTimeout(timer);
-    }, []);
 
     const handleClick = () => {
-        if (!notification.readAt) {
-            markRead(notification.id);
-        }
+        if (!notification.readAt) markRead(notification.id);
         if (onCloseDropdown) onCloseDropdown();
     };
 
     const isUnread = !notification.readAt;
+    const { icon, color } = getIcon(notification.type);
 
-    const Wrapper = notification.link ? Link : 'div';
-    const wrapperProps = notification.link ? { to: notification.link, onClick: handleClick } : { onClick: handleClick };
-
-    return (
-        <Wrapper
-            {...wrapperProps as any}
-            className={`block px-4 py-3 hover:bg-background dark:hover:bg-card-900 transition-colors cursor-pointer border-b border-gray-100 dark:border-gray-800 last:border-b-0 ${isUnread ? 'bg-primary-50 dark:bg-primary-900/10' : ''
-                } ${isNew ? 'animate-fade-in' : ''}`}
+    const content = (
+        <div
+            onClick={handleClick}
+            style={{
+                display: 'flex', gap: 12, padding: '12px 16px', cursor: 'pointer',
+                borderBottom: isLast ? 'none' : '1px solid var(--border, #2A2D35)',
+                background: isUnread ? 'rgba(215,166,91,0.04)' : 'transparent',
+                transition: 'background 0.15s',
+            }}
         >
-            <div className="flex gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                    {getIconForType(notification.type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className={`text-sm ${isUnread ? 'font-semibold text-foreground dark:text-gray-100' : 'font-medium text-foreground dark:text-gray-300'}`}>
-                        {notification.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground dark:text-gray-400 mt-0.5 line-clamp-2">
-                        {notification.body}
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-muted-foreground mt-1">
-                        {formatRelativeTime(notification.createdAt)}
-                    </p>
-                </div>
-                {isUnread && (
-                    <div className="flex-shrink-0 flex items-center">
-                        <span className="h-2 w-2 bg-primary-500 rounded-full" />
-                    </div>
-                )}
+            {/* Icon */}
+            <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: `${color}15`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, color,
+            }}>
+                {icon}
             </div>
-        </Wrapper>
+
+            {/* Content */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{
+                    fontSize: 13,
+                    fontWeight: isUnread ? 700 : 500,
+                    color: 'var(--text-primary, #EBECEF)',
+                    marginBottom: 2,
+                }}>
+                    {notification.title}
+                </p>
+                <p style={{
+                    fontSize: 12,
+                    color: 'var(--text-secondary, #888)',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                }}>
+                    {notification.body}
+                </p>
+                <p style={{
+                    fontSize: 10, color: 'var(--text-secondary, #555)',
+                    marginTop: 4,
+                }}>
+                    {formatRelativeTime(notification.createdAt)}
+                </p>
+            </div>
+
+            {/* Unread dot */}
+            {isUnread && (
+                <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                    <span style={{
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: 'var(--accent, #D7A65B)',
+                    }} />
+                </div>
+            )}
+        </div>
     );
+
+    if (notification.link) {
+        return <Link to={notification.link} style={{ textDecoration: 'none', color: 'inherit' }}>{content}</Link>;
+    }
+    return content;
 });
 
 export default NotificationItem;

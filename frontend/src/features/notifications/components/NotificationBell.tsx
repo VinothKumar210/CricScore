@@ -1,5 +1,9 @@
+// =============================================================================
+// NotificationBell — Header bell icon with unread badge (lucide, CSS vars)
+// =============================================================================
+
 import React, { useRef, useState, useEffect } from 'react';
-import { BellIcon } from '@heroicons/react/24/outline';
+import { Bell } from 'lucide-react';
 import { useNotificationStore } from '../notificationStore';
 import NotificationDropdown from './NotificationDropdown';
 
@@ -9,28 +13,19 @@ const NotificationBell: React.FC = () => {
     const anchorRef = useRef<HTMLButtonElement>(null);
     const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
 
-    // Initial fetch of unread count
-    useEffect(() => {
-        fetchUnreadCount();
-    }, [fetchUnreadCount]);
+    useEffect(() => { fetchUnreadCount(); }, [fetchUnreadCount]);
 
-    // Update anchor rect on scroll/resize if open
     useEffect(() => {
         if (!isOpen || !anchorRef.current) return;
-
         let rafId: number;
         const updatePos = () => {
             cancelAnimationFrame(rafId);
             rafId = requestAnimationFrame(() => {
-                if (anchorRef.current) {
-                    setAnchorRect(anchorRef.current.getBoundingClientRect());
-                }
+                if (anchorRef.current) setAnchorRect(anchorRef.current.getBoundingClientRect());
             });
         };
-
-        window.addEventListener('scroll', updatePos, true); // true = capture phase for all scrolling containers
+        window.addEventListener('scroll', updatePos, true);
         window.addEventListener('resize', updatePos);
-
         return () => {
             cancelAnimationFrame(rafId);
             window.removeEventListener('scroll', updatePos, true);
@@ -52,16 +47,22 @@ const NotificationBell: React.FC = () => {
             <button
                 ref={anchorRef}
                 onClick={toggleDropdown}
-                className="relative p-2 text-gray-400 hover:text-muted-foreground dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 rounded-full transition-colors"
                 aria-label="Notifications"
                 aria-expanded={isOpen}
+                style={{
+                    position: 'relative', padding: 8, background: 'none', border: 'none',
+                    cursor: 'pointer', borderRadius: '50%', color: 'var(--text-secondary, #888)',
+                    transition: 'color 0.15s',
+                }}
             >
-                <BellIcon className="h-6 w-6" aria-hidden="true" />
+                <Bell size={22} />
                 {unreadCount > 0 && (
-                    <span
-                        key={unreadCount} // strictly forces re-render pulse once on increment
-                        className="absolute top-1.5 right-1.5 block h-2.5 w-2.5 rounded-full bg-destructive/100 ring-2 ring-white dark:ring-gray-900 animate-pulse-once"
-                    />
+                    <span style={{
+                        position: 'absolute', top: 6, right: 6,
+                        width: 9, height: 9, borderRadius: '50%',
+                        background: '#EF4444',
+                        border: '2px solid var(--bg-primary, #0a0e1a)',
+                    }} />
                 )}
             </button>
 
