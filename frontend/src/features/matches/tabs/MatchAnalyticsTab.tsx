@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { useScoringStore } from "../../scoring/scoringStore";
 import { clsx } from "clsx";
-import { TrendingUp, Flame, Target, BarChart3, Percent } from 'lucide-react';
+import { TrendingUp, Flame, Target, BarChart3, Percent, Crosshair, ChevronDown } from 'lucide-react';
+import WagonWheel from '../../wagonWheel/WagonWheel';
 
 // ─── Sections ───
 
@@ -201,6 +202,70 @@ const WinProbabilityBar: React.FC = () => {
     );
 };
 
+// ─── Wagon Wheel Section ───
+
+const WagonWheelSection: React.FC = () => {
+    const matchId = useScoringStore((s) => s.matchId);
+    const matchState = useScoringStore((s) => s.matchState);
+    const [selectedBatsmanId, setSelectedBatsmanId] = useState<string | null>(null);
+
+    // Build batsman list from all innings' batting entries
+    const allBatsmen = useMemo(() => {
+        if (!matchState?.innings) return [];
+        const list: { id: string; name: string; runs: number }[] = [];
+        for (const inn of matchState.innings) {
+            for (const entry of (inn.batting || [])) {
+                if (entry.playerId && !list.find(b => b.id === entry.playerId)) {
+                    list.push({
+                        id: entry.playerId,
+                        name: entry.name || 'Unknown',
+                        runs: entry.runs || 0,
+                    });
+                }
+            }
+        }
+        // Sort by runs descending
+        list.sort((a, b) => b.runs - a.runs);
+        return list;
+    }, [matchState?.innings]);
+
+    // Default to top scorer
+    const effectiveBatsmanId = selectedBatsmanId || allBatsmen[0]?.id;
+
+    if (!matchId || allBatsmen.length === 0) {
+        return <EmptySection label="Wagon Wheel" />;
+    }
+
+    return (
+        <AnalyticsCard icon={<Crosshair className="w-4 h-4 text-primary" />} title="Wagon Wheel">
+            {/* Batsman Selector */}
+            <div className="relative">
+                <select
+                    value={effectiveBatsmanId || ''}
+                    onChange={(e) => setSelectedBatsmanId(e.target.value)}
+                    className="w-full appearance-none bg-secondary text-foreground text-sm font-medium
+                               rounded-lg px-3 py-2 pr-8 border border-border focus:ring-2 focus:ring-primary/40
+                               focus:outline-none cursor-pointer"
+                >
+                    {allBatsmen.map(b => (
+                        <option key={b.id} value={b.id}>
+                            {b.name} ({b.runs} runs)
+                        </option>
+                    ))}
+                </select>
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            </div>
+
+            {/* Wagon Wheel */}
+            {effectiveBatsmanId && (
+                <div className="mt-2">
+                    <WagonWheel matchId={matchId} batsmanId={effectiveBatsmanId} />
+                </div>
+            )}
+        </AnalyticsCard>
+    );
+};
+
 // ─── Shared Components ───
 
 const AnalyticsCard: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
@@ -227,6 +292,7 @@ export const MatchAnalyticsTab = () => {
             <RunRateGraph />
             <MomentumBar />
             <PressureMeter />
+            <WagonWheelSection />
             <PhaseTable />
             <WinProbabilityBar />
         </div>
