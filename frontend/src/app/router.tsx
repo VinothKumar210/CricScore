@@ -1,43 +1,82 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { AuthLayout } from '../layouts/AuthLayout';
 import { DashboardLayout } from '../layouts/DashboardLayout';
 import { FullscreenScoringLayout } from '../layouts/FullscreenScoringLayout';
 import { AuthGuard } from '../components/AuthGuard';
-import { LoginPage } from '../pages/auth/LoginPage';
-import { HomePage } from '../pages/home/HomePage';
-import { MarketPage } from '../features/market/MarketPage';
-import { TeamsPage } from '../pages/teams/TeamsPage';
-import { TeamDetailPage } from '../pages/teams/TeamDetailPage';
-import { TeamCreatePage } from '../pages/teams/TeamCreatePage';
-import { ProfilePage } from '../pages/profile/ProfilePage';
-import { EditProfilePage } from '../features/profile/EditProfilePage';
-import { MatchDetailPage } from '../pages/match/MatchDetailPage';
-import { ScoringPage } from '../pages/match/ScoringPage';
-import { LiveMatchPage } from '../pages/match/LiveMatchPage';
-import { TournamentDetailPage } from '../pages/tournaments/TournamentDetailPage';
-import { MatchCreatePage } from '../pages/match/MatchCreatePage';
-import { LiveHubPage } from '../features/hub/components/LiveHubPage';
-import { SpectatorLivePage } from '../pages/hub/SpectatorLivePage';
 import { PublicLayout } from '../layouts/PublicLayout';
-import { ShareMatchPage } from '../features/share/components/ShareMatchPage';
-import { ArchiveListPage } from '../features/archive/components/ArchiveListPage';
-import { ArchiveDetailPage } from '../features/archive/components/ArchiveDetailPage';
-import { TournamentListPage } from '../features/tournament/components/TournamentListPage';
-import { PublicProfilePage } from '../features/profile/components/PublicProfilePage';
-import { LeaderboardPage } from '../features/profile/components/LeaderboardPage';
-import NotificationCenterPage from '../features/notifications/NotificationCenterPage';
-import { InviteInboxPage } from '../features/invites/InviteInboxPage';
-import { MessageRoomPage } from '../features/messages/pages/MessageRoomPage';
-import { SettingsPage } from '../features/settings/SettingsPage';
-import { InboxPage } from '../features/messages/InboxPage';
-import { SearchPage } from '../features/search/SearchPage';
-import { ComparePage } from '../features/compare/ComparePage';
+import { Loader2 } from 'lucide-react';
 
-// Tab Components
-import { MatchSummaryTab } from '../features/matches/tabs/MatchSummaryTab';
-import { MatchScorecardTab } from '../features/matches/tabs/MatchScorecardTab';
-import { MatchInfoTab } from '../features/matches/tabs/MatchInfoTab';
-import { MatchAnalyticsTab } from '../features/matches/tabs/MatchAnalyticsTab';
+// ─── Route-level lazy imports (code-split per page) ───
+
+// Auth
+const LoginPage = lazy(() => import('../pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
+
+// Core pages (Dashboard tabs)
+const LiveHubPage = lazy(() => import('../features/hub/components/LiveHubPage').then(m => ({ default: m.LiveHubPage })));
+const HomePage = lazy(() => import('../pages/home/HomePage').then(m => ({ default: m.HomePage })));
+const MarketPage = lazy(() => import('../features/market/MarketPage').then(m => ({ default: m.MarketPage })));
+
+// Teams
+const TeamsPage = lazy(() => import('../pages/teams/TeamsPage').then(m => ({ default: m.TeamsPage })));
+const TeamCreatePage = lazy(() => import('../pages/teams/TeamCreatePage').then(m => ({ default: m.TeamCreatePage })));
+const TeamDetailPage = lazy(() => import('../pages/teams/TeamDetailPage').then(m => ({ default: m.TeamDetailPage })));
+
+// Profile
+const ProfilePage = lazy(() => import('../pages/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const EditProfilePage = lazy(() => import('../features/profile/EditProfilePage').then(m => ({ default: m.EditProfilePage })));
+const PublicProfilePage = lazy(() => import('../features/profile/components/PublicProfilePage').then(m => ({ default: m.PublicProfilePage })));
+const LeaderboardPage = lazy(() => import('../features/profile/components/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
+
+// Match
+const MatchDetailPage = lazy(() => import('../pages/match/MatchDetailPage').then(m => ({ default: m.MatchDetailPage })));
+const MatchCreatePage = lazy(() => import('../pages/match/MatchCreatePage').then(m => ({ default: m.MatchCreatePage })));
+const ScoringPage = lazy(() => import('../pages/match/ScoringPage').then(m => ({ default: m.ScoringPage })));
+const LiveMatchPage = lazy(() => import('../pages/match/LiveMatchPage').then(m => ({ default: m.LiveMatchPage })));
+
+// Match Tabs
+const MatchSummaryTab = lazy(() => import('../features/matches/tabs/MatchSummaryTab').then(m => ({ default: m.MatchSummaryTab })));
+const MatchScorecardTab = lazy(() => import('../features/matches/tabs/MatchScorecardTab').then(m => ({ default: m.MatchScorecardTab })));
+const MatchInfoTab = lazy(() => import('../features/matches/tabs/MatchInfoTab').then(m => ({ default: m.MatchInfoTab })));
+const MatchAnalyticsTab = lazy(() => import('../features/matches/tabs/MatchAnalyticsTab').then(m => ({ default: m.MatchAnalyticsTab })));
+
+// Tournaments
+const TournamentListPage = lazy(() => import('../features/tournament/components/TournamentListPage').then(m => ({ default: m.TournamentListPage })));
+const TournamentDetailPage = lazy(() => import('../pages/tournaments/TournamentDetailPage').then(m => ({ default: m.TournamentDetailPage })));
+
+// Archive
+const ArchiveListPage = lazy(() => import('../features/archive/components/ArchiveListPage').then(m => ({ default: m.ArchiveListPage })));
+const ArchiveDetailPage = lazy(() => import('../features/archive/components/ArchiveDetailPage').then(m => ({ default: m.ArchiveDetailPage })));
+
+// Messaging & Notifications
+const InboxPage = lazy(() => import('../features/messages/InboxPage').then(m => ({ default: m.InboxPage })));
+const MessageRoomPage = lazy(() => import('../features/messages/pages/MessageRoomPage').then(m => ({ default: m.MessageRoomPage })));
+const NotificationCenterPage = lazy(() => import('../features/notifications/NotificationCenterPage'));
+const InviteInboxPage = lazy(() => import('../features/invites/InviteInboxPage').then(m => ({ default: m.InviteInboxPage })));
+
+// Settings & Misc
+const SettingsPage = lazy(() => import('../features/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const SearchPage = lazy(() => import('../features/search/SearchPage').then(m => ({ default: m.SearchPage })));
+const ComparePage = lazy(() => import('../features/compare/ComparePage').then(m => ({ default: m.ComparePage })));
+
+// Hub / Spectator / Share
+const SpectatorLivePage = lazy(() => import('../pages/hub/SpectatorLivePage').then(m => ({ default: m.SpectatorLivePage })));
+const ShareMatchPage = lazy(() => import('../features/share/components/ShareMatchPage').then(m => ({ default: m.ShareMatchPage })));
+
+// ─── Loading Fallback ───
+
+const PageLoader = () => (
+    <div className="flex flex-col items-center justify-center h-screen bg-background gap-3">
+        <Loader2 className="w-7 h-7 text-primary animate-spin" />
+        <span className="text-xs text-muted-foreground font-medium">Loading...</span>
+    </div>
+);
+
+const Lazy = ({ children }: { children: React.ReactNode }) => (
+    <Suspense fallback={<PageLoader />}>{children}</Suspense>
+);
+
+// ─── Router ───
 
 export const router = createBrowserRouter([
     {
@@ -47,42 +86,42 @@ export const router = createBrowserRouter([
     {
         element: <AuthLayout />,
         children: [
-            { path: '/login', element: <LoginPage /> },
+            { path: '/login', element: <Lazy><LoginPage /></Lazy> },
         ],
     },
     {
         element: <AuthGuard><DashboardLayout /></AuthGuard>,
         children: [
-            { path: '/hub', element: <LiveHubPage /> },
-            { path: '/home', element: <HomePage /> },
-            { path: '/market', element: <MarketPage /> },
-            { path: '/teams', element: <TeamsPage /> },
-            { path: '/teams/create', element: <TeamCreatePage /> },
-            { path: '/teams/:id', element: <TeamDetailPage /> },
-            { path: '/profile', element: <ProfilePage /> },
-            { path: '/profile/edit', element: <EditProfilePage /> },
-            { path: '/tournaments', element: <TournamentListPage /> },
-            { path: '/tournaments/:id', element: <TournamentDetailPage /> },
-            { path: '/match/create', element: <MatchCreatePage /> },
-            { path: '/archive', element: <ArchiveListPage /> },
-            { path: '/archive/:id', element: <ArchiveDetailPage /> },
-            { path: '/leaderboard', element: <LeaderboardPage /> },
-            { path: '/settings', element: <SettingsPage /> },
-            { path: '/inbox', element: <InboxPage /> },
-            { path: '/search', element: <SearchPage /> },
-            { path: '/compare', element: <ComparePage /> },
-            { path: '/notifications', element: <NotificationCenterPage /> },
-            { path: '/invites', element: <InviteInboxPage /> },
-            { path: '/messages/:roomType/:roomId', element: <MessageRoomPage /> },
-            { path: '/u/:username', element: <PublicProfilePage /> },
+            { path: '/hub', element: <Lazy><LiveHubPage /></Lazy> },
+            { path: '/home', element: <Lazy><HomePage /></Lazy> },
+            { path: '/market', element: <Lazy><MarketPage /></Lazy> },
+            { path: '/teams', element: <Lazy><TeamsPage /></Lazy> },
+            { path: '/teams/create', element: <Lazy><TeamCreatePage /></Lazy> },
+            { path: '/teams/:id', element: <Lazy><TeamDetailPage /></Lazy> },
+            { path: '/profile', element: <Lazy><ProfilePage /></Lazy> },
+            { path: '/profile/edit', element: <Lazy><EditProfilePage /></Lazy> },
+            { path: '/tournaments', element: <Lazy><TournamentListPage /></Lazy> },
+            { path: '/tournaments/:id', element: <Lazy><TournamentDetailPage /></Lazy> },
+            { path: '/match/create', element: <Lazy><MatchCreatePage /></Lazy> },
+            { path: '/archive', element: <Lazy><ArchiveListPage /></Lazy> },
+            { path: '/archive/:id', element: <Lazy><ArchiveDetailPage /></Lazy> },
+            { path: '/leaderboard', element: <Lazy><LeaderboardPage /></Lazy> },
+            { path: '/settings', element: <Lazy><SettingsPage /></Lazy> },
+            { path: '/inbox', element: <Lazy><InboxPage /></Lazy> },
+            { path: '/search', element: <Lazy><SearchPage /></Lazy> },
+            { path: '/compare', element: <Lazy><ComparePage /></Lazy> },
+            { path: '/notifications', element: <Lazy><NotificationCenterPage /></Lazy> },
+            { path: '/invites', element: <Lazy><InviteInboxPage /></Lazy> },
+            { path: '/messages/:roomType/:roomId', element: <Lazy><MessageRoomPage /></Lazy> },
+            { path: '/u/:username', element: <Lazy><PublicProfilePage /></Lazy> },
             {
                 path: '/match/:id',
-                element: <MatchDetailPage />,
+                element: <Lazy><MatchDetailPage /></Lazy>,
                 children: [
-                    { index: true, element: <MatchSummaryTab /> },
-                    { path: 'scorecard', element: <MatchScorecardTab /> },
-                    { path: 'analytics', element: <MatchAnalyticsTab /> },
-                    { path: 'info', element: <MatchInfoTab /> },
+                    { index: true, element: <Lazy><MatchSummaryTab /></Lazy> },
+                    { path: 'scorecard', element: <Lazy><MatchScorecardTab /></Lazy> },
+                    { path: 'analytics', element: <Lazy><MatchAnalyticsTab /></Lazy> },
+                    { path: 'info', element: <Lazy><MatchInfoTab /></Lazy> },
                 ]
             },
         ],
@@ -90,15 +129,15 @@ export const router = createBrowserRouter([
     {
         element: <AuthGuard><FullscreenScoringLayout /></AuthGuard>,
         children: [
-            { path: '/match/:id/score', element: <ScoringPage /> },
-            { path: '/match/:id/live', element: <LiveMatchPage /> },
-            { path: '/live/:matchId', element: <SpectatorLivePage /> },
+            { path: '/match/:id/score', element: <Lazy><ScoringPage /></Lazy> },
+            { path: '/match/:id/live', element: <Lazy><LiveMatchPage /></Lazy> },
+            { path: '/live/:matchId', element: <Lazy><SpectatorLivePage /></Lazy> },
         ],
     },
     {
         element: <PublicLayout />,
         children: [
-            { path: '/share/:matchId', element: <ShareMatchPage /> },
+            { path: '/share/:matchId', element: <Lazy><ShareMatchPage /></Lazy> },
         ],
     },
 ]);
