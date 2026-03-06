@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { Search, Loader2, Users, MessageSquarePlus, Sheet } from 'lucide-react';
+import { Search, Loader2, Users, MessageSquarePlus } from 'lucide-react';
 import { api } from '../../../lib/api';
 import { messageService } from '../messageService';
 import { useAuthStore } from '../../../store/authStore';

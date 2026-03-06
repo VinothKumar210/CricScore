@@ -9,14 +9,6 @@ const makeRun = (runs: number): BallEvent => ({
     runs
 } as any);
 
-const makeWicket = (): BallEvent => ({
-    type: 'WICKET',
-    batsmanId: 'p1',
-    bowlerId: 'b1',
-    dismissalType: 'CAUGHT',
-    runs: 0
-} as any);
-
 describe('deriveRunRateProgression', () => {
 
     it('calculates per-over runs and cumulative run rate correctly', () => {

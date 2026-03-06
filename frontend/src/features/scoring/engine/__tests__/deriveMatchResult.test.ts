@@ -6,14 +6,13 @@ import type { MatchState } from '../../types/matchStateTypes';
 const makeState = (firstTotal: number, firstWickets: number, firstBalls: number, firstCompleted: boolean,
     secondTotal: number, secondWickets: number, secondBalls: number, secondCompleted: boolean,
     overs: number = 20): MatchState => ({
-        id: 'test',
         version: 1,
         status: 'LIVE',
         matchPhase: 'REGULAR',
         config: {
             matchId: 'test',
-            teamA: { id: 'teamA', name: 'Team Alpha', players: [] },
-            teamB: { id: 'teamB', name: 'Team Beta', players: [] },
+            teamA: { name: 'Team Alpha', players: [] },
+            teamB: { name: 'Team Beta', players: [] },
             oversPerInnings: overs,
             initialStrikerId: 'a1',
             initialNonStrikerId: 'a2',
@@ -112,7 +111,7 @@ describe('deriveMatchResult', () => {
         // Interruption sets revised target to 80.
         // Second innings scores 81 runs.
         const s = makeState(100, 10, 120, true, 81, 2, 60, false);
-        s.interruption = { phase: '2nd', reason: 'RAIN', id: '1', timestamp: 1, revisedOvers: 10, revisedTarget: 80 };
+        s.interruption = { isRainActive: true, revisedOvers: 10, revisedTarget: 80 };
 
         const res = deriveMatchResult(s);
         expect(res).toBeDefined();
@@ -125,7 +124,7 @@ describe('deriveMatchResult', () => {
         // Revised target 80.
         // Second innings 70 runs, 10 wickets.
         const s = makeState(100, 10, 120, true, 70, 10, 60, true);
-        s.interruption = { phase: '2nd', reason: 'RAIN', id: '1', timestamp: 1, revisedOvers: 10, revisedTarget: 80 };
+        s.interruption = { isRainActive: true, revisedOvers: 10, revisedTarget: 80 };
 
         const res = deriveMatchResult(s);
         expect(res).toBeDefined();

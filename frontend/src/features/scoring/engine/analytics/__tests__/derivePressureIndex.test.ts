@@ -3,9 +3,8 @@ import { derivePressureIndex } from '../derivePressureIndex';
 import type { MatchState } from '../../../types/matchStateTypes';
 
 const makeState = (firstRuns: number, firstCompleted: boolean, firstWickets: number, secondRuns: number, secondBalls: number, overs: number = 20): MatchState => ({
-    id: '1', version: 1, status: 'LIVE', matchPhase: 'REGULAR',
-    config: { matchId: '1', teamA: { id: 'A', name: 'A', players: [] }, teamB: { id: 'B', name: 'B', players: [] }, oversPerInnings: overs, initialStrikerId: 'p1', initialNonStrikerId: 'p2', initialBowlerId: 'b1' },
-    teams: { teamA: { id: 'A', name: 'A', players: [] }, teamB: { id: 'B', name: 'B', players: [] } },
+    matchId: '1', version: 1, status: 'LIVE', matchPhase: 'REGULAR',
+    teams: { teamA: { name: 'A', players: [] }, teamB: { name: 'B', players: [] } },
     totalMatchOvers: overs,
     currentInningsIndex: 1,
     innings: [
