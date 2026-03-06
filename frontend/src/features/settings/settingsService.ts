@@ -40,16 +40,16 @@ export type UpdateSettingsPayload = Partial<UserSettings>;
 // ---------------------------------------------------------------------------
 
 export async function fetchSettings(): Promise<UserSettings> {
-    const res = await api.get('/settings');
+    const res = await api.get('/api/settings');
     return res.data.data;
 }
 
 export async function updateSettings(payload: UpdateSettingsPayload): Promise<UserSettings> {
-    const res = await api.patch('/settings', payload);
+    const res = await api.patch('/api/settings', payload);
     return res.data.data;
 }
 
 export async function resetSettings(): Promise<UserSettings> {
-    const res = await api.post('/settings/reset');
+    const res = await api.post('/api/settings/reset');
     return res.data.data;
 }

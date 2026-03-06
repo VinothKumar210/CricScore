@@ -11,12 +11,12 @@ export function applyEvent(originalState: MatchState, event: BallEvent): MatchSt
     const state = cloneState(originalState);
 
     // 🛑 STOP: If match is already decided (Terminal State)
-    if (state.matchResult && event.type !== "PHASE_CHANGE") {
-        if (state.matchResult.resultType === "WIN") {
-            return state;
+    if (originalState.matchResult && event.type !== "PHASE_CHANGE") {
+        if (originalState.matchResult.resultType === "WIN") {
+            return originalState;
         }
-        if (state.matchResult.resultType === "TIE" && state.matchPhase === "SUPER_OVER") {
-            return state; // Lock after a tied super over
+        if (originalState.matchResult.resultType === "TIE" && originalState.matchPhase === "SUPER_OVER") {
+            return originalState; // Lock after a tied super over
         }
     }
 
@@ -33,6 +33,7 @@ export function applyEvent(originalState: MatchState, event: BallEvent): MatchSt
                     totalWickets: 0,
                     totalBalls: 0,
                     isCompleted: false,
+                    isFreeHit: false,
                     extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0, penalty: 0 },
                     batters: {},
                     bowlers: {},
@@ -114,6 +115,9 @@ export function applyEvent(originalState: MatchState, event: BallEvent): MatchSt
             innings.extras.noBalls += 1;
             innings.totalRuns += runsScored;
 
+            // Set free hit flag for next delivery
+            innings.isFreeHit = true;
+
             // Runs off bat logic: credited to batter
             if (innings.strikerId && batRuns > 0) {
                 updateBatterStats(innings, innings.strikerId, batRuns, 1); // 1 ball faced (NB counts as faced usually? rules vary. Standard: Yes)
@@ -150,6 +154,20 @@ export function applyEvent(originalState: MatchState, event: BallEvent): MatchSt
         batter.bowlerId = innings.currentBowlerId || undefined;
     }
 
+    // --- Free Hit Protection ---
+    // On a free hit delivery, only RUN_OUT is a valid dismissal.
+    // All other dismissals (BOWLED, CAUGHT, LBW, STUMPED, HIT_WICKET) are reversed.
+    if (innings.isFreeHit && event.type === "WICKET" && event.dismissalType !== "RUN_OUT") {
+        innings.totalWickets -= 1;
+        if (innings.strikerId) {
+            const batter = getOrCreateBatter(innings, innings.strikerId);
+            batter.isOut = false;
+            batter.dismissal = undefined;
+            batter.fielderId = undefined;
+            batter.bowlerId = undefined;
+        }
+    }
+
     // --- Bowler Stats ---
     if (innings.currentBowlerId) {
         const bowler = getOrCreateBowler(innings, innings.currentBowlerId);
@@ -161,7 +179,7 @@ export function applyEvent(originalState: MatchState, event: BallEvent): MatchSt
         // Wides properties?
         if (event.type === "RUN") bowler.runsConceded += event.runs;
         if (isWide || isNoBall) bowler.runsConceded += runsScored; // Simplified
-        if (event.type === "WICKET" && event.dismissalType !== "RUN_OUT") {
+        if (event.type === "WICKET" && event.dismissalType !== "RUN_OUT" && !innings.isFreeHit) {
             bowler.wickets += 1;
         }
     }
@@ -216,6 +234,13 @@ export function applyEvent(originalState: MatchState, event: BallEvent): MatchSt
         swapBatsmen(innings);
     }
 
+    // --- Clear Free Hit flag after legal delivery ---
+    // The free hit applies to ONE delivery. After a legal ball is bowled, clear it.
+    // (If the free hit ball is itself a NB, the flag stays set from the new NB above)
+    if (isLegal) {
+        innings.isFreeHit = false;
+    }
+
     // --- Innings Completion Check ---
     const effectiveOvers = state.interruption?.revisedOvers ?? state.totalMatchOvers;
     const totalMatchBalls = state.matchPhase === "SUPER_OVER" ? 6 : effectiveOvers * 6;
@@ -240,6 +265,7 @@ export function applyEvent(originalState: MatchState, event: BallEvent): MatchSt
                     totalWickets: 0,
                     totalBalls: 0,
                     isCompleted: false,
+                    isFreeHit: false,
                     extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0, penalty: 0 },
                     batters: {},
                     bowlers: {},

@@ -53,7 +53,7 @@ export const MatchCreatePage = () => {
         setIsSubmitting(true);
         setError('');
         try {
-            const res = await api.post('/matches', {
+            const res = await api.post('/api/matches', {
                 matchType: form.matchType,
                 homeTeamId: form.homeTeamId,
                 awayTeamId: form.awayTeamId,

@@ -31,7 +31,8 @@ export interface InningsState {
     totalRuns: number;
     totalWickets: number;
     totalBalls: number; // Legal deliveries
-    isCompleted: boolean; // Added
+    isCompleted: boolean;
+    isFreeHit: boolean;  // True if next delivery is a free hit (after no ball)
     extras: {
         wides: number;
         noBalls: number;

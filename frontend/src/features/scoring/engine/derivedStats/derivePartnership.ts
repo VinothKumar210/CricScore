@@ -43,8 +43,8 @@ function processEvents(events: BallEvent[], targetInningsIndex: number, totalOve
         if (currentInnings === targetInningsIndex) {
             processEventForPartnership(event, currentStats);
 
-            // Update highest if current > highest
-            if (currentStats.runs > highestStats.runs) {
+            // Update highest if current > highest, or if runs are equal but balls are higher
+            if (currentStats.runs > highestStats.runs || (currentStats.runs === highestStats.runs && currentStats.balls > highestStats.balls)) {
                 highestStats = { ...currentStats };
             }
         }
@@ -53,10 +53,6 @@ function processEvents(events: BallEvent[], targetInningsIndex: number, totalOve
         // Uses simplified logic matching `applyEvent` roughly
         if (event.type === "WICKET") {
             innWickets++;
-            if (currentInnings === targetInningsIndex) {
-                // Reset current partnership
-                currentStats = createEmptyStats();
-            }
         }
 
         if (isLegalDelivery(event)) {
@@ -71,6 +67,12 @@ function processEvents(events: BallEvent[], targetInningsIndex: number, totalOve
             innBalls = 0;
             // If we just finished the target innings, we can break?
             if (currentInnings > targetInningsIndex) break;
+        }
+
+        // After processing the event and updating the highest stats,
+        // if this was a wicket in the target innings, reset the current partnership for the next ball
+        if (event.type === "WICKET" && currentInnings === targetInningsIndex) {
+            currentStats = createEmptyStats();
         }
     }
 
@@ -103,9 +105,8 @@ function processEventForPartnership(event: BallEvent, stats: PartnershipStats) {
             // Runs included
         }
     } else if (event.type === "WICKET") {
-        // Wicket doesn't add runs usually (unless run out + runs?)
-        // BallEvent doesn't support runs on wicket explicitly yet?
-        // Checking usage... `applyEvent` doesn't handle runs on wicket.
+        // Wickets don't typically add runs unless modelled specifically (like run out with runs completed)
+        // But we DO need to make sure the ball counts. That's handled below by isLegalDelivery.
     }
 
     stats.runs += totalRuns;

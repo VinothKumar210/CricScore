@@ -150,6 +150,11 @@ export const matchFinalizationService = {
             };
         });
 
+        // Early exit if match was already finalized (idempotency)
+        if ((txResult as any).message === 'Match already finalized') {
+            return txResult;
+        }
+
         // 7. Post-Transaction: Cache Invalidation
         // This is safe because if transaction failed, we threw error and didn't reach here.
         if ((txResult as any).tournamentIdToInvalidate) {

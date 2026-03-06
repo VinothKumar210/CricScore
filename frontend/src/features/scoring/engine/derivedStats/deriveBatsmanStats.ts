@@ -115,7 +115,8 @@ function processEvent(event: BallEvent, getStats: (id: string) => BatsmanStats) 
     }
 
     // 2. Balls
-    if (isLegalDelivery(event)) {
+    // A No Ball counts as a ball faced for the batsman, even though it's not a legal delivery for the bowler.
+    if (isLegalDelivery(event) || (event.type === "EXTRA" && event.extraType === "NO_BALL")) {
         stats.balls++;
     }
 

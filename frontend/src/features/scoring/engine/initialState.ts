@@ -19,6 +19,7 @@ export function createInitialMatchState(config: MatchConfig): MatchState {
         totalWickets: 0,
         totalBalls: 0,
         isCompleted: false,
+        isFreeHit: false,
         extras: {
             wides: 0,
             noBalls: 0,

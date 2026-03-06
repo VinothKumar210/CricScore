@@ -22,6 +22,7 @@ const config = {
                     declaration: false,
                     declarationMap: false,
                     sourceMap: false,
+                    esModuleInterop: true,
                 },
             },
         ],
