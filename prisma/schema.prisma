@@ -564,12 +564,18 @@ model Conversation {
   isAnnouncementOnly Boolean   @default(false)
   isArchived         Boolean   @default(false)
   pinnedMessageIds   String[]
+  lastMessageAt      DateTime?
   
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   
   members            ConversationMember[]
+  messages           Message[]
   polls              ChatPoll[]
+
+  @@index([type])
+  @@index([entityId])
+  @@index([lastMessageAt])
 }
 
 model ConversationMember {
@@ -592,17 +598,19 @@ model ConversationMember {
 }
 
 model Message {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  roomType      RoomType
-  roomId        String
-  senderId      String   @db.ObjectId
-  content       String
-  clientNonce   String?
-  createdAt     DateTime @default(now())
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId  String       @db.ObjectId
+  senderId        String       @db.ObjectId
+  content         String
+  type            MessageType  @default(TEXT)
+  clientNonce     String?
+  createdAt       DateTime     @default(now())
 
-  sender        User     @relation("Sender", fields: [senderId], references: [id])
+  sender          User         @relation("Sender", fields: [senderId], references: [id])
+  conversation    Conversation @relation(fields: [conversationId], references: [id])
 
-  @@index([roomType, roomId, createdAt])
+  @@index([conversationId, createdAt])
+  @@index([senderId])
 }
 
 model ChatPoll {
@@ -947,9 +955,4 @@ enum AchievementType {
   GOLDEN_DUCK
   CAPTAIN
   TOURNAMENT_WINNER
-}
-
-enum RoomType {
-  TEAM
-  MATCH
 }

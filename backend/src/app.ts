@@ -38,6 +38,7 @@ import archiveRoutes from './routes/archiveRoutes.js';
 import deviceRoutes from './routes/deviceRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
+import conversationRoutes from './routes/conversationRoutes.js';
 import inboxRoutes from './routes/inboxRoutes.js';
 import searchRoutes from './routes/searchRoutes.js';
 import comparisonRoutes from './routes/comparisonRoutes.js';

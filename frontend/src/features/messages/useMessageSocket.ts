@@ -22,7 +22,6 @@ export const useMessageSocket = () => {
         }
 
         if (!socket) {
-            // we should pull token directly from localstorage to bypass store derivations if simpler
             const validToken = localStorage.getItem('token');
             socket = io(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/messages`, {
                 auth: { token: validToken },
@@ -33,24 +32,20 @@ export const useMessageSocket = () => {
             socket.on('connect', () => {
                 console.log('Connected to /messages namespace');
                 if (activeRoom) {
-                    socket?.emit('room:join', { roomId: activeRoom });
+                    socket?.emit('room:join', { conversationId: activeRoom });
 
-                    // 2. Reconnect Gap Repair (Surgical Fix)
-                    // We immediately burst-fetch to hydrate any messages missed during the transient disconnect 
-                    // using our idempotently designed `cursor=null` which prepends/merges natively if needed,
-                    // but we will expose a dedicated sync later if pagination cursor=null just fetches latest 50.
-                    // By fetching the latest page on reconnect, we guarantee the gap is closed natively.
-                    const [roomType, id] = activeRoom.split(':');
-                    if (roomType && id && fetchMessages) {
-                        fetchMessages(roomType as any, id, null);
+                    // Reconnect Gap Repair. `activeRoom` is directly our `conversationId`
+                    if (fetchMessages) {
+                        fetchMessages(activeRoom, null);
                     }
                 }
             });
 
             socket.on('message:new', (payload) => {
-                // expecting payload to include roomId and message
-                if (payload.roomId && payload.message) {
-                    receiveMessage(payload.roomId, payload.message);
+                // expecting payload to include conversationId and message natively from backend
+                // the `saveMessage` natively returns the message object with conversationId intact
+                if (payload.conversationId) {
+                    receiveMessage(payload.conversationId, payload);
                 }
             });
 
@@ -61,25 +56,20 @@ export const useMessageSocket = () => {
 
         return () => {
             // Do NOT disconnect on normal unmounts unless explicitly logging out.
-            // We want the socket to persist across navigation.
         };
     }, [isAuthenticated, receiveMessage]);
 
     useEffect(() => {
         if (socket && socket.connected && activeRoom) {
-            socket.emit('room:join', { roomId: activeRoom });
-
-            // Re-fetch logic can be driven by the page mount, 
-            // but upon room join we might want to tell the server we are here.
+            socket.emit('room:join', { conversationId: activeRoom });
         }
         return () => {
             if (socket && socket.connected && activeRoom) {
-                socket.emit('room:leave', { roomId: activeRoom });
+                // Not heavily reliant on leave right now since we re-join, but good for cleanliness.
             }
         };
     }, [activeRoom]);
 
-    // Expose explicit disconnect for logout
     useEffect(() => {
         if (!isAuthenticated && socket) {
             socket.disconnect();

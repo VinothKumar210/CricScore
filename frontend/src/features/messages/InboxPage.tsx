@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { Container } from '../../components/ui/Container';
-import { MessageSquare, Users, Swords, VolumeX, Loader2 } from 'lucide-react';
+import { MessageSquare, Users, Swords, VolumeX, Loader2, MessageSquarePlus } from 'lucide-react';
 import { clsx } from 'clsx';
+import { NewChatSheet } from './components/NewChatSheet';
 
 // ─── Types ───
 
@@ -30,6 +31,7 @@ interface ConversationPreview {
 // ─── Inbox Page ───
 
 export const InboxPage = () => {
+    const [activeTab, setActiveTab] = useState<'ALL' | 'TEAM' | 'MATCH' | 'DIRECT'>('ALL');
     const [conversations, setConversations] = useState<ConversationPreview[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -37,12 +39,14 @@ export const InboxPage = () => {
     const [totalUnread, setTotalUnread] = useState(0);
     const navigate = useNavigate();
 
-    const fetchInbox = useCallback(async (cursor?: string) => {
+    const fetchInbox = useCallback(async (cursor?: string, type?: string) => {
         try {
             const isLoadMore = !!cursor;
             if (isLoadMore) setLoadingMore(true); else setLoading(true);
             const params: Record<string, string> = {};
             if (cursor) params.cursor = cursor;
+            if (type && type !== 'ALL') params.type = type;
+
             const { data } = await api.get('/api/inbox', { params } as any);
             const result = data.data || data;
             if (isLoadMore) {
@@ -67,9 +71,11 @@ export const InboxPage = () => {
     }, []);
 
     useEffect(() => {
-        fetchInbox();
+        // Reset when tab changes
+        setConversations([]);
+        fetchInbox(undefined, activeTab);
         fetchUnreadCount();
-    }, [fetchInbox, fetchUnreadCount]);
+    }, [fetchInbox, fetchUnreadCount, activeTab]);
 
     const handleConversationClick = async (conv: ConversationPreview) => {
         if (conv.unreadCount > 0) {
@@ -79,12 +85,15 @@ export const InboxPage = () => {
             setTotalUnread(prev => Math.max(0, prev - conv.unreadCount));
             api.patch(`/api/inbox/${conv.id}/read`).catch(() => { });
         }
-        const roomType = conv.type.toLowerCase();
-        const roomId = conv.entityId || conv.id;
-        navigate(`/messages/${roomType}/${roomId}`);
+        navigate(`/messages/${conv.id}`);
     };
 
-    if (loading) return <InboxSkeleton />;
+    const TABS = [
+        { id: 'ALL', label: 'All' },
+        { id: 'TEAM', label: 'Teams' },
+        { id: 'MATCH', label: 'Matches' },
+        { id: 'DIRECT', label: 'Direct' }
+    ] as const;
 
     return (
         <Container className="py-6 pb-24 space-y-4">
@@ -103,8 +112,28 @@ export const InboxPage = () => {
                 </div>
             </div>
 
+            {/* Filter Tabs */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+                {TABS.map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={clsx(
+                            "px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
+                            activeTab === tab.id
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+                        )}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
             {/* List */}
-            {conversations.length === 0 ? (
+            {loading ? (
+                <InboxSkeleton />
+            ) : conversations.length === 0 ? (
                 <EmptyState />
             ) : (
                 <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
@@ -122,7 +151,7 @@ export const InboxPage = () => {
             {/* Load More */}
             {nextCursor && (
                 <button
-                    onClick={() => fetchInbox(nextCursor)}
+                    onClick={() => fetchInbox(nextCursor, activeTab)}
                     disabled={loadingMore}
                     className="w-full py-3 rounded-xl bg-secondary border border-border text-sm font-medium text-muted-foreground hover:bg-card transition-colors flex items-center justify-center gap-2"
                 >
@@ -130,6 +159,13 @@ export const InboxPage = () => {
                     {loadingMore ? 'Loading...' : 'Load More'}
                 </button>
             )}
+
+            {/* FAB for New Chat */}
+            <NewChatSheet>
+                <button className="fixed bottom-20 right-4 lg:right-auto lg:ml-[calc(100%-4rem)] w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors z-40">
+                    <MessageSquarePlus className="w-6 h-6" />
+                </button>
+            </NewChatSheet>
         </Container>
     );
 };

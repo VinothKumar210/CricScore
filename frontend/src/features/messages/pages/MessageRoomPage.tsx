@@ -2,7 +2,6 @@ import React, { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMessageStore } from '../messageStore';
 import { messageService } from '../messageService';
-import type { RoomType } from '../messageService';
 import { useMessageSocket } from '../useMessageSocket';
 import { MessageList } from '../components/MessageList';
 import { MessageInput } from '../components/MessageInput';
@@ -10,7 +9,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { ArrowLeft } from 'lucide-react';
 
 export const MessageRoomPage: React.FC = () => {
-    const { roomType, roomId } = useParams<{ roomType: string; roomId: string }>();
+    const { conversationId } = useParams<{ conversationId: string }>();
     const navigate = useNavigate();
     const currentUser = useAuthStore(state => state.user);
 
@@ -25,36 +24,35 @@ export const MessageRoomPage: React.FC = () => {
 
     useMessageSocket();
 
-    const fullRoomId = `${roomType}:${roomId}`;
-    const currentRoom = rooms[fullRoomId] || { messages: [], isLoading: false, hasMore: true, cursor: null };
+    const currentRoom = conversationId ? (rooms[conversationId] || { messages: [], isLoading: false, hasMore: true, cursor: null }) : { messages: [], isLoading: false, hasMore: true, cursor: null };
 
     useEffect(() => {
-        if (!roomType || !roomId) return;
-        setActiveRoom(fullRoomId);
+        if (!conversationId) return;
+        setActiveRoom(conversationId);
         if (currentRoom.messages.length === 0) {
-            fetchMessages(roomType as RoomType, roomId);
+            fetchMessages(conversationId);
         }
         return () => {
             setActiveRoom('');
         };
-    }, [fullRoomId, roomType, roomId, setActiveRoom, fetchMessages]);
+    }, [conversationId, setActiveRoom, fetchMessages]);
 
     const handleLoadMore = useCallback(() => {
-        if (!currentRoom.isLoading && currentRoom.hasMore && roomType && roomId) {
-            fetchMessages(roomType as RoomType, roomId, currentRoom.cursor);
+        if (!currentRoom.isLoading && currentRoom.hasMore && conversationId) {
+            fetchMessages(conversationId, currentRoom.cursor);
         }
-    }, [currentRoom, roomType, roomId, fetchMessages]);
+    }, [currentRoom, conversationId, fetchMessages]);
 
     const handleSend = useCallback(async (content: string, overrideTempId?: string, overrideNonce?: string) => {
-        if (!currentUser || !roomType || !roomId) return;
+        if (!currentUser || !conversationId) return;
 
         const tempId = overrideTempId || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const clientNonce = overrideNonce || crypto.randomUUID();
 
         if (!overrideTempId) {
-            addOptimisticMessage(fullRoomId, {
+            addOptimisticMessage(conversationId, {
                 id: tempId,
-                roomId: fullRoomId,
+                conversationId,
                 senderId: currentUser.id,
                 content,
                 tempId,
@@ -69,13 +67,13 @@ export const MessageRoomPage: React.FC = () => {
         }
 
         try {
-            const serverMessage = await messageService.sendMessage(roomType as RoomType, roomId, content, clientNonce);
-            reconcileMessage(fullRoomId, tempId, serverMessage);
+            const serverMessage = await messageService.sendMessage(conversationId, content, clientNonce);
+            reconcileMessage(conversationId, tempId, serverMessage);
         } catch (error) {
             console.error('Failed to send message:', error);
-            markMessageFailed(fullRoomId, tempId);
+            markMessageFailed(conversationId, tempId);
         }
-    }, [currentUser, roomType, roomId, fullRoomId, addOptimisticMessage, reconcileMessage, markMessageFailed]);
+    }, [currentUser, conversationId, addOptimisticMessage, reconcileMessage, markMessageFailed]);
 
     const handleRetry = useCallback((message: any) => {
         if (message.status === 'failed' && message.tempId) {
@@ -83,7 +81,7 @@ export const MessageRoomPage: React.FC = () => {
         }
     }, [handleSend]);
 
-    if (!roomType || !roomId) return null;
+    if (!conversationId) return null;
 
     return (
         <div className="flex flex-col h-[calc(100vh-64px)] bg-background">
@@ -97,11 +95,9 @@ export const MessageRoomPage: React.FC = () => {
                 </button>
                 <div>
                     <h1 className="text-lg font-bold text-foreground capitalize">
-                        {roomType} Chat
+                        Chat
                     </h1>
-                    <p className="text-[10px] text-muted-foreground font-mono">
-                        {roomId}
-                    </p>
+                    {/* Could potentially fetch conversation header info like name hereafter */}
                 </div>
             </header>
 

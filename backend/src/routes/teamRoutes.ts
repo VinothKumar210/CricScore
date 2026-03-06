@@ -5,6 +5,7 @@ import { requireTeamRole } from '../middlewares/permission.js';
 import { teamService } from '../services/teamService.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import { generateQRCode } from '../utils/joinCodeGenerator.js';
+import { conversationService } from '../services/conversationService.js';
 
 const router = Router();
 
@@ -24,6 +25,10 @@ router.post('/teams', requireAuth, async (req: Request, res: Response) => {
         }
 
         const team = await teamService.createTeam(userId, { name, city, shortName });
+
+        // M1 Hook: Auto-create team chat
+        await conversationService.createTeamConversation(team.id, team.name, userId);
+
         return sendSuccess(res, { team }, 201);
     } catch (error: any) {
         console.error('[TeamRoutes] Create error:', error);
@@ -133,6 +138,10 @@ router.post('/teams/:id/members', requireAuth, requireTeamRole(['OWNER', 'CAPTAI
         // Improvement: Check if `req.user` role >= newRole hierarchy
 
         const member = await teamService.addMember(teamId, userId, role);
+
+        // M1 Hook: Add member to main team chat
+        await conversationService.addMemberToTeamConversations(teamId, userId, role);
+
         return sendSuccess(res, { member }, 201);
     } catch (error: any) {
         if (error.statusCode) return sendError(res, error.message, error.statusCode, error.code);
@@ -158,6 +167,10 @@ router.delete('/teams/:id/members/:memberId', requireAuth, requireTeamRole(['OWN
         // For now, relying on basic role check + service logic.
 
         await teamService.removeMember(teamId, memberId);
+
+        // M1 Hook: Remove member from all team and sub-group chats
+        await conversationService.removeMemberFromTeamConversations(teamId, memberId);
+
         return sendSuccess(res, { message: 'Member removed' });
     } catch (error: any) {
         if (error.statusCode) return sendError(res, error.message, error.statusCode, error.code);
@@ -204,6 +217,10 @@ router.post('/teams/join', requireAuth, async (req: Request, res: Response) => {
         }
 
         const member = await teamService.joinTeamByCode(userId, joinCode);
+
+        // M1 Hook: Add member to main team chat
+        await conversationService.addMemberToTeamConversations(member.teamId, userId, member.role);
+
         return sendSuccess(res, { member });
     } catch (error: any) {
         if (error.statusCode) return sendError(res, error.message, error.statusCode, error.code);

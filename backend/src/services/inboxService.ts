@@ -50,12 +50,19 @@ export async function getUserInbox(
             conversation: {
                 include: {
                     members: {
-                        select: { userId: true },
+                        include: { user: { select: { id: true, fullName: true, profilePictureUrl: true } } }
                     },
+                    messages: {
+                        orderBy: { createdAt: 'desc' },
+                        take: 1,
+                        include: {
+                            sender: { select: { id: true, fullName: true, profilePictureUrl: true } }
+                        }
+                    }
                 },
             },
         },
-        orderBy: { conversation: { updatedAt: 'desc' } },
+        orderBy: { conversation: { lastMessageAt: 'desc' } }, // Sort globally via DB now
         ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
         take: limit + 1, // fetch one extra to detect next page
     });
@@ -63,43 +70,27 @@ export async function getUserInbox(
     const hasMore = memberships.length > limit;
     const page = hasMore ? memberships.slice(0, limit) : memberships;
 
-    // 2. For each conversation, fetch last message + unread count
+    // 2. Map to previews and calculate unread counts (which require counted queries)
     const conversations: ConversationPreview[] = await Promise.all(
         page.map(async (membership: any) => {
             const conv = membership.conversation;
-            const roomKey = resolveRoomKey(conv);
+            const msg = conv.messages[0];
 
-            // Last message in this room
             let lastMessage: ConversationPreview['lastMessage'] = null;
-            if (roomKey) {
-                const msg = await prisma.message.findFirst({
-                    where: {
-                        roomType: roomKey.roomType as any,
-                        roomId: roomKey.roomId,
-                    },
-                    orderBy: { createdAt: 'desc' },
-                    include: {
-                        sender: {
-                            select: { id: true, fullName: true, profilePictureUrl: true },
-                        },
-                    },
-                });
-
-                if (msg) {
-                    lastMessage = {
-                        id: msg.id,
-                        content: truncate(msg.content, 80),
-                        senderId: msg.senderId,
-                        senderName: (msg as any).sender?.fullName || 'Unknown',
-                        senderAvatar: (msg as any).sender?.profilePictureUrl || null,
-                        createdAt: msg.createdAt.toISOString(),
-                    };
-                }
+            if (msg) {
+                lastMessage = {
+                    id: msg.id,
+                    content: truncate(msg.content, 80),
+                    senderId: msg.senderId,
+                    senderName: msg.sender?.fullName || 'Unknown',
+                    senderAvatar: msg.sender?.profilePictureUrl || null,
+                    createdAt: msg.createdAt.toISOString(),
+                };
             }
 
-            // Unread count: messages after lastReadMessageId
+            // Unread count
             let unreadCount = 0;
-            if (roomKey && membership.lastReadMessageId) {
+            if (membership.lastReadMessageId) {
                 const lastRead = await prisma.message.findUnique({
                     where: { id: membership.lastReadMessageId },
                     select: { createdAt: true },
@@ -107,43 +98,41 @@ export async function getUserInbox(
                 if (lastRead) {
                     unreadCount = await prisma.message.count({
                         where: {
-                            roomType: roomKey.roomType as any,
-                            roomId: roomKey.roomId,
+                            conversationId: conv.id,
                             createdAt: { gt: lastRead.createdAt },
                         },
                     });
                 }
-            } else if (roomKey && !membership.lastReadMessageId) {
+            } else {
                 // Never read — all messages are unread
                 unreadCount = await prisma.message.count({
-                    where: {
-                        roomType: roomKey.roomType as any,
-                        roomId: roomKey.roomId,
-                    },
+                    where: { conversationId: conv.id },
                 });
+            }
+
+            // Determine display name (e.g., for DIRECT chats, show the other user's name)
+            let displayName = conv.name;
+            if (conv.type === 'DIRECT') {
+                const otherMember = conv.members.find((m: any) => m.userId !== userId);
+                if (otherMember) {
+                    displayName = otherMember.user.fullName;
+                }
             }
 
             return {
                 id: conv.id,
                 type: conv.type,
-                name: conv.name,
+                name: displayName,
                 entityId: conv.entityId,
                 isArchived: conv.isArchived,
                 isMuted: membership.mutedUntil ? new Date(membership.mutedUntil) > new Date() : false,
                 unreadCount,
                 lastMessage,
-                memberCount: conv.members?.length || 0,
+                memberCount: conv.members.length,
                 updatedAt: conv.updatedAt.toISOString(),
             };
         }),
     );
-
-    // Sort by last message time (most recent first)
-    conversations.sort((a, b) => {
-        const timeA = a.lastMessage?.createdAt || a.updatedAt;
-        const timeB = b.lastMessage?.createdAt || b.updatedAt;
-        return new Date(timeB).getTime() - new Date(timeA).getTime();
-    });
 
     return {
         conversations,
@@ -159,15 +148,9 @@ export async function markConversationRead(
     userId: string,
     conversationId: string,
 ): Promise<void> {
-    const roomKey = await getConversationRoomKey(conversationId);
-    if (!roomKey) return;
-
-    // Find the latest message in the room
+    // Find the latest message directly by conversationId
     const latestMessage = await prisma.message.findFirst({
-        where: {
-            roomType: roomKey.roomType as any,
-            roomId: roomKey.roomId,
-        },
+        where: { conversationId },
         orderBy: { createdAt: 'desc' },
         select: { id: true },
     });
@@ -197,30 +180,6 @@ export async function getTotalUnreadCount(userId: string): Promise<number> {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function resolveRoomKey(conv: any): { roomType: string; roomId: string } | null {
-    if (!conv) return null;
-
-    if (conv.type === 'TEAM' && conv.entityId) {
-        return { roomType: 'TEAM', roomId: conv.entityId };
-    }
-    if (conv.type === 'MATCH' && conv.entityId) {
-        return { roomType: 'MATCH', roomId: conv.entityId };
-    }
-    // For DIRECT / GROUP, use conversation ID itself
-    if (conv.type === 'DIRECT' || conv.type === 'GROUP') {
-        return { roomType: conv.type, roomId: conv.id };
-    }
-    return null;
-}
-
-async function getConversationRoomKey(conversationId: string) {
-    const conv = await db.conversation.findUnique({
-        where: { id: conversationId },
-        select: { type: true, entityId: true, id: true },
-    });
-    return conv ? resolveRoomKey(conv) : null;
-}
 
 function truncate(str: string, max: number): string {
     if (str.length <= max) return str;

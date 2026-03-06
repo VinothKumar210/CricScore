@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { messageService } from './messageService';
-import type { Message, RoomType } from './messageService';
+import type { Message } from './messageService';
 
 interface RoomState {
     messages: Message[];
@@ -13,12 +13,12 @@ interface MessageState {
     rooms: Record<string, RoomState>;
     activeRoom: string | null;
 
-    setActiveRoom: (roomId: string) => void;
-    fetchMessages: (roomType: RoomType, roomId: string, cursor?: string | null) => Promise<void>;
-    addOptimisticMessage: (roomId: string, message: Message) => void;
-    reconcileMessage: (roomId: string, tempId: string, serverMessage: Message) => void;
-    markMessageFailed: (roomId: string, tempId: string) => void;
-    receiveMessage: (roomId: string, message: Message) => void;
+    setActiveRoom: (conversationId: string) => void;
+    fetchMessages: (conversationId: string, cursor?: string | null) => Promise<void>;
+    addOptimisticMessage: (conversationId: string, message: Message) => void;
+    reconcileMessage: (conversationId: string, tempId: string, serverMessage: Message) => void;
+    markMessageFailed: (conversationId: string, tempId: string) => void;
+    receiveMessage: (conversationId: string, message: Message) => void;
     reset: () => void;
 }
 
@@ -33,10 +33,10 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     rooms: {},
     activeRoom: null,
 
-    setActiveRoom: (roomId) => set({ activeRoom: roomId }),
+    setActiveRoom: (conversationId) => set({ activeRoom: conversationId }),
 
-    fetchMessages: async (roomType, roomId, cursor = null) => {
-        const roomKey = roomId;
+    fetchMessages: async (conversationId, cursor = null) => {
+        const roomKey = conversationId;
         const room = get().rooms[roomKey] || initialRoomState;
 
         if (room.isLoading || (!cursor && room.messages.length > 0)) return;
@@ -49,19 +49,16 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         }));
 
         try {
-            const { messages, nextCursor } = await messageService.getMessages(roomType, roomId, cursor);
+            const { messages, nextCursor } = await messageService.getMessages(conversationId, cursor);
 
             set((state) => {
                 const currentRoom = state.rooms[roomKey] || initialRoomState;
 
                 if (!cursor) {
-                    // Reconnect Gap Healing (Cursor = null means we requested the latest page)
-                    // We must selectively MERGE these into our existing array, in case we just reconnected
-                    // and missed 3 messages at the end. We do NOT want to overwrite or duplicate.
+                    // Reconnect Gap Healing
                     const existingIds = new Set(currentRoom.messages.map(m => m.id));
                     const newUniqueMessages = messages.filter(m => m.id && !existingIds.has(m.id));
 
-                    // If we have local messages, we append the missed ones to the bottom
                     const mergedMessages = currentRoom.messages.length > 0
                         ? [...currentRoom.messages, ...newUniqueMessages].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
                         : messages;
@@ -72,7 +69,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
                             [roomKey]: {
                                 ...currentRoom,
                                 messages: mergedMessages,
-                                cursor: currentRoom.cursor || nextCursor, // Preserve older pagination cursor if it existed
+                                cursor: currentRoom.cursor || nextCursor,
                                 hasMore: currentRoom.messages.length > 0 ? currentRoom.hasMore : !!nextCursor,
                                 isLoading: false,
                             },
@@ -81,7 +78,6 @@ export const useMessageStore = create<MessageState>((set, get) => ({
                 }
 
                 // Normal pagination (Cursor provided means we are scrolling UP for older messages)
-                // We prepend them.
                 const newMessages = [...messages, ...currentRoom.messages];
 
                 return {
@@ -108,13 +104,13 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         }
     },
 
-    addOptimisticMessage: (roomId, message) => {
+    addOptimisticMessage: (conversationId, message) => {
         set((state) => {
-            const room = state.rooms[roomId] || initialRoomState;
+            const room = state.rooms[conversationId] || initialRoomState;
             return {
                 rooms: {
                     ...state.rooms,
-                    [roomId]: {
+                    [conversationId]: {
                         ...room,
                         messages: [...room.messages, message], // append to bottom
                     },
@@ -123,15 +119,15 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         });
     },
 
-    reconcileMessage: (roomId, tempId, serverMessage) => {
+    reconcileMessage: (conversationId, tempId, serverMessage) => {
         set((state) => {
-            const room = state.rooms[roomId];
+            const room = state.rooms[conversationId];
             if (!room) return state;
 
             return {
                 rooms: {
                     ...state.rooms,
-                    [roomId]: {
+                    [conversationId]: {
                         ...room,
                         messages: room.messages.map((m) =>
                             m.tempId === tempId ? serverMessage : m
@@ -142,15 +138,15 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         });
     },
 
-    markMessageFailed: (roomId, tempId) => {
+    markMessageFailed: (conversationId, tempId) => {
         set((state) => {
-            const room = state.rooms[roomId];
+            const room = state.rooms[conversationId];
             if (!room) return state;
 
             return {
                 rooms: {
                     ...state.rooms,
-                    [roomId]: {
+                    [conversationId]: {
                         ...room,
                         messages: room.messages.map((m) =>
                             m.tempId === tempId ? { ...m, status: 'failed' } : m
@@ -161,11 +157,11 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         });
     },
 
-    receiveMessage: (roomId, message) => {
+    receiveMessage: (conversationId, message) => {
         set((state) => {
-            const room = state.rooms[roomId] || initialRoomState;
+            const room = state.rooms[conversationId] || initialRoomState;
 
-            // 1. Precise Optimistic Race Reconciliation (Surgical Fix)
+            // 1. Precise Optimistic Race Reconciliation
             if (message.clientNonce) {
                 const raceIndex = room.messages.findIndex(m => m.clientNonce === message.clientNonce && m.status === 'sending');
                 if (raceIndex !== -1) {
@@ -174,7 +170,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
                     return {
                         rooms: {
                             ...state.rooms,
-                            [roomId]: { ...room, messages: newMessages }
+                            [conversationId]: { ...room, messages: newMessages }
                         }
                     };
                 }
@@ -193,7 +189,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
                     return {
                         rooms: {
                             ...state.rooms,
-                            [roomId]: { ...room, messages: newMessages }
+                            [conversationId]: { ...room, messages: newMessages }
                         }
                     };
                 }
@@ -208,7 +204,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
             return {
                 rooms: {
                     ...state.rooms,
-                    [roomId]: {
+                    [conversationId]: {
                         ...room,
                         messages: [...room.messages, message],
                     },

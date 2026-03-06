@@ -3,61 +3,36 @@ import { prisma } from '../utils/db.js';
 export const messageService = {
 
     /**
-     * Validate Room Membership dynamically
+     * Validate Conversation Membership dynamically
      */
-    validateRoomMembership: async (userId: string, roomType: 'TEAM' | 'MATCH', roomId: string): Promise<boolean> => {
-        if (!userId || !roomId) return false;
+    validateConversationMembership: async (userId: string, conversationId: string): Promise<boolean> => {
+        if (!userId || !conversationId) return false;
 
-        if (roomType === 'TEAM') {
-            const member = await prisma.teamMember.findUnique({
-                where: {
-                    teamId_userId: {
-                        teamId: roomId,
-                        userId
-                    }
+        const member = await prisma.conversationMember.findUnique({
+            where: {
+                conversationId_userId: {
+                    conversationId,
+                    userId
                 }
-            });
-            return !!member;
-        }
+            }
+        });
 
-        if (roomType === 'MATCH') {
-            const match = await prisma.matchSummary.findUnique({
-                where: { id: roomId },
-                select: { homeTeamId: true, awayTeamId: true }
-            });
-
-            if (!match) return false;
-
-            const validTeamIds = [match.homeTeamId, match.awayTeamId].filter(Boolean) as string[];
-            if (validTeamIds.length === 0) return false;
-
-            const member = await prisma.teamMember.findFirst({
-                where: {
-                    userId,
-                    teamId: { in: validTeamIds }
-                }
-            });
-
-            return !!member;
-        }
-
-        return false;
+        return !!member;
     },
 
     /**
      * Save Message with Client Nonce Idempotency Guard
      */
-    saveRoomMessage: async (
+    saveMessage: async (
         senderId: string,
-        roomType: 'TEAM' | 'MATCH',
-        roomId: string,
+        conversationId: string,
         content: string,
         clientNonce?: string
     ) => {
         // 1. Validate Membership
-        const isMember = await messageService.validateRoomMembership(senderId, roomType, roomId);
+        const isMember = await messageService.validateConversationMembership(senderId, conversationId);
         if (!isMember) {
-            throw new Error('User is not authorized for this room');
+            throw new Error('User is not authorized for this conversation');
         }
 
         // 2. Idempotent POST Check via clientNonce
@@ -68,7 +43,8 @@ export const messageService = {
                     clientNonce
                 } as any,
                 include: {
-                    sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } }
+                    sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } },
+                    conversation: { select: { type: true, entityId: true } }
                 }
             });
 
@@ -80,33 +56,37 @@ export const messageService = {
         // 3. Persist natively bypassing in-memory race risks
         const message = await prisma.message.create({
             data: {
-                roomType,
-                roomId,
+                conversationId,
                 senderId,
                 content,
                 clientNonce: clientNonce ?? null
             } as any,
             include: {
-                sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } }
+                sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } },
+                conversation: { select: { type: true, entityId: true } }
             }
+        });
+
+        // 4. Update conversation lastMessageAt
+        await prisma.conversation.update({
+            where: { id: conversationId },
+            data: { lastMessageAt: message.createdAt }
         });
 
         return message;
     },
 
     /**
-     * Fetch Room History via Dual Pagination (Cursor or After Timestamp)
+     * Fetch Conversation History via Dual Pagination (Cursor or After Timestamp)
      */
-    getRoomHistory: async (
-        roomType: 'TEAM' | 'MATCH',
-        roomId: string,
+    getHistory: async (
+        conversationId: string,
         limit = 50,
         cursor?: string,
         after?: string
     ) => {
         const whereClause: any = {
-            roomType,
-            roomId
+            conversationId
         };
 
         // Dual Pagination Logic
@@ -124,10 +104,10 @@ export const messageService = {
             take: limit,
             orderBy: { createdAt: 'asc' }, // RULE 5: Deterministic ASC sorting
             include: {
-                sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } }
+                sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } },
+                conversation: { select: { type: true, entityId: true } }
             }
         });
     }
 
 };
-

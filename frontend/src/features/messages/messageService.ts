@@ -1,10 +1,10 @@
 import { api } from '../../lib/api';
 
-export type RoomType = 'match' | 'team';
+export type ConversationType = 'DIRECT' | 'TEAM' | 'MATCH' | 'GROUP';
 
 export interface Message {
     id: string;
-    roomId: string; // match:{id} or team:{id}
+    conversationId: string;
     senderId: string;
     content: string;
     clientNonce?: string; // Optimistic Race identifier
@@ -14,28 +14,49 @@ export interface Message {
     sender: {
         id: string;
         name: string;
+        fullName?: string;
         avatarUrl?: string;
+        profilePictureUrl?: string;
     }
 }
 
 interface MessagesResponse {
-    messages: Message[];
-    nextCursor: string | null;
+    data?: Message[]; // Backend often wraps success in data property via sendSuccess
+    messages?: Message[];
+    nextCursor?: string | null;
 }
 
 export const messageService = {
-    getMessages: async (roomType: RoomType, roomId: string, cursor?: string | null): Promise<MessagesResponse> => {
-        const { data } = await api.get(`/api/messages/${roomType}/${roomId}`, {
+    getMessages: async (conversationId: string, cursor?: string | null): Promise<{ messages: Message[], nextCursor: string | null }> => {
+        const { data } = await api.get(`/api/messages/${conversationId}`, {
             params: { cursor }
         });
-        return data; // Expected { messages: Message[], nextCursor: string | null }
+
+        // Handle standard backend sendSuccess wrapper if present
+        const result = data.data || data;
+        const messages = Array.isArray(result) ? result : (result.messages || []);
+
+        return {
+            messages,
+            nextCursor: result.nextCursor || null
+        };
     },
 
-    sendMessage: async (roomType: RoomType, roomId: string, content: string, clientNonce?: string): Promise<Message> => {
-        const { data } = await api.post(`/api/messages/${roomType}/${roomId}`, {
+    sendMessage: async (conversationId: string, content: string, clientNonce?: string): Promise<Message> => {
+        const { data } = await api.post(`/api/messages/${conversationId}`, {
             content,
             clientNonce
         });
-        return data;
+        return data.data || data;
+    },
+
+    createDirectConversation: async (targetUserId: string) => {
+        const { data } = await api.post('/api/conversations/direct', { targetUserId });
+        return data.data || data;
+    },
+
+    createSubGroup: async (name: string, teamId: string, memberIds: string[]) => {
+        const { data } = await api.post('/api/conversations/group', { name, teamId, memberIds });
+        return data.data || data;
     }
 };

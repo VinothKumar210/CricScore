@@ -112,7 +112,7 @@ export const router = createBrowserRouter([
             { path: '/compare', element: <Lazy><ComparePage /></Lazy> },
             { path: '/notifications', element: <Lazy><NotificationCenterPage /></Lazy> },
             { path: '/invites', element: <Lazy><InviteInboxPage /></Lazy> },
-            { path: '/messages/:roomType/:roomId', element: <Lazy><MessageRoomPage /></Lazy> },
+            { path: '/messages/:conversationId', element: <Lazy><MessageRoomPage /></Lazy> },
             { path: '/u/:username', element: <Lazy><PublicProfilePage /></Lazy> },
             {
                 path: '/match/:id',

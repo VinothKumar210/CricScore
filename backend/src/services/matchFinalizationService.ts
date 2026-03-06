@@ -186,6 +186,14 @@ export const matchFinalizationService = {
             )).catch(err => console.error('[MatchFinalization] Failed to send notifications', err));
         }
 
+        // 9. Auto-archive Match Conversation (M7)
+        try {
+            const { conversationService } = await import('./conversationService.js');
+            await conversationService.archiveMatchConversation(matchId);
+        } catch (error) {
+            console.error('[MatchFinalization] Failed to archive match conversation', error);
+        }
+
         return { message: 'Match finalized successfully' };
     }
 };

@@ -26,25 +26,25 @@ const enforceRateLimit = async (userId: string): Promise<boolean> => {
 };
 
 /**
- * GET /api/messages/:roomType/:roomId
+ * GET /api/messages/:conversationId
  * Fetch history — dual pagination support, requires membership
  */
-router.get('/:roomType/:roomId', requireAuth, async (req: Request, res: Response) => {
+router.get('/:conversationId', requireAuth, async (req: Request, res: Response) => {
     try {
-        const { roomType, roomId } = req.params;
+        const { conversationId } = req.params;
         const userId = req.user?.id;
 
         if (!userId) return sendError(res, 'Unauthorized', 401, 'UNAUTHORIZED');
 
         // RULE 3: Validate Membership
-        const isMember = await messageService.validateRoomMembership(userId, roomType as 'TEAM' | 'MATCH', roomId as string);
-        if (!isMember) return sendError(res, 'Not authorized for this room', 403, 'FORBIDDEN');
+        const isMember = await messageService.validateConversationMembership(userId, conversationId as string);
+        if (!isMember) return sendError(res, 'Not authorized for this conversation', 403, 'FORBIDDEN');
 
         const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
         const cursor = req.query.cursor as string | undefined;
         const after = req.query.after as string | undefined; // RULE 4: Dual Pagination
 
-        const messages = await messageService.getRoomHistory(roomType as 'TEAM' | 'MATCH', roomId as string, limit, cursor, after);
+        const messages = await messageService.getHistory(conversationId as string, limit, cursor, after);
         return sendSuccess(res, messages);
     } catch (error: any) {
         return sendError(res, 'Failed to fetch messages', 500, 'INTERNAL_ERROR');
@@ -52,12 +52,12 @@ router.get('/:roomType/:roomId', requireAuth, async (req: Request, res: Response
 });
 
 /**
- * POST /api/messages/:roomType/:roomId
+ * POST /api/messages/:conversationId
  * Send message — strict idempotency, rate limits, broadcasts
  */
-router.post('/:roomType/:roomId', requireAuth, async (req: Request, res: Response) => {
+router.post('/:conversationId', requireAuth, async (req: Request, res: Response) => {
     try {
-        const { roomType, roomId } = req.params;
+        const { conversationId } = req.params;
         const userId = req.user?.id;
         const { content, clientNonce } = req.body;
 
@@ -72,17 +72,16 @@ router.post('/:roomType/:roomId', requireAuth, async (req: Request, res: Respons
 
         // Save natively (handles Membership validation internally, throws if unauthorized)
         // Also checks idempotency via clientNonce
-        const message = await messageService.saveRoomMessage(
+        const message = await messageService.saveMessage(
             userId,
-            roomType as 'TEAM' | 'MATCH',
-            roomId as string,
+            conversationId as string,
             content,
             clientNonce as string | undefined
         );
 
         // RULE 1: Server Emitted Broadcasts (Authoritative Layer)
-        // The `/messages` namespace will handle room isolation
-        io.of('/messages').to(`${roomType}:${roomId}`).emit('message:new', message);
+        // Emit to the conversation room. The type/entityId are attached to the message object.
+        io.of('/messages').to(`conversation:${conversationId}`).emit('message:new', message);
 
         // RULE 2: clientNonce Echo Contract
         return sendSuccess(res, message, 201);

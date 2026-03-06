@@ -10,33 +10,34 @@ export const registerMessageHandlers = (io: Server, socket: Socket, user: any) =
     // RULE 7: Socket Join Protocol
     socket.on('room:join', async (payload) => {
         try {
-            const { roomType, roomId } = payload;
+            const { conversationId } = payload;
 
-            if (!roomType || !roomId) {
-                return socket.emit('error', { message: 'roomType and roomId required' });
+            if (!conversationId) {
+                return socket.emit('error', { message: 'conversationId required' });
             }
 
             // Server statically validates membership directly against Database
-            const isMember = await messageService.validateRoomMembership(user.id, roomType, roomId);
+            const isMember = await messageService.validateConversationMembership(user.id, conversationId);
 
             if (isMember) {
-                const roomKey = `${roomType}:${roomId}`;
+                const roomKey = `conversation:${conversationId}`;
                 await socket.join(roomKey);
-                socket.emit('room:joined', { roomType, roomId });
+                socket.emit('room:joined', { conversationId });
             } else {
                 // Reject unauthorized bounds
-                socket.emit('error', { message: 'Not authorized to join this room' });
+                socket.emit('error', { message: 'Not authorized to join this conversation' });
             }
         } catch (error) {
-            socket.emit('error', { message: 'Failed to join room' });
+            socket.emit('error', { message: 'Failed to join conversation' });
         }
     });
 
     // 2. Typing Indicators
     socket.on('typing:start', async (payload) => {
         try {
-            const { roomType, roomId } = payload;
-            const roomKey = `${roomType}:${roomId}`;
+            const { conversationId } = payload;
+            if (!conversationId) return;
+            const roomKey = `conversation:${conversationId}`;
 
             await redisClient.setex(
                 `${TYPING_PREFIX}${roomKey}:${user.id}`,
@@ -45,8 +46,7 @@ export const registerMessageHandlers = (io: Server, socket: Socket, user: any) =
             );
 
             socket.to(roomKey).emit('typing:start', {
-                roomType,
-                roomId,
+                conversationId,
                 userId: user.id,
                 name: user.fullName || user.username
             });
@@ -57,14 +57,14 @@ export const registerMessageHandlers = (io: Server, socket: Socket, user: any) =
 
     socket.on('typing:stop', async (payload) => {
         try {
-            const { roomType, roomId } = payload;
-            const roomKey = `${roomType}:${roomId}`;
+            const { conversationId } = payload;
+            if (!conversationId) return;
+            const roomKey = `conversation:${conversationId}`;
 
             await redisClient.del(`${TYPING_PREFIX}${roomKey}:${user.id}`);
 
             socket.to(roomKey).emit('typing:stop', {
-                roomType,
-                roomId,
+                conversationId,
                 userId: user.id
             });
         } catch (e) {
