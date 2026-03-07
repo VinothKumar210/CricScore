@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../../store/authStore';
 import { useMessageStore } from './messageStore';
@@ -6,11 +6,20 @@ import { useMessageStore } from './messageStore';
 let socket: Socket | null = null;
 
 export const useMessageSocket = () => {
-    const { isAuthenticated } = useAuthStore(state => ({
-        isAuthenticated: state.isAuthenticated
-    }));
+    // Use individual selectors to avoid re-rendering on every store change
+    const isAuthenticated = useAuthStore(state => state.isAuthenticated);
 
-    const { activeRoom, receiveMessage, fetchMessages } = useMessageStore();
+    const activeRoom = useMessageStore(state => state.activeRoom);
+    const receiveMessage = useMessageStore(state => state.receiveMessage);
+    const fetchMessages = useMessageStore(state => state.fetchMessages);
+
+    // Use refs to hold latest values for socket callbacks without causing effect re-runs
+    const activeRoomRef = useRef(activeRoom);
+    activeRoomRef.current = activeRoom;
+    const fetchMessagesRef = useRef(fetchMessages);
+    fetchMessagesRef.current = fetchMessages;
+    const receiveMessageRef = useRef(receiveMessage);
+    receiveMessageRef.current = receiveMessage;
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -31,21 +40,16 @@ export const useMessageSocket = () => {
 
             socket.on('connect', () => {
                 console.log('Connected to /messages namespace');
-                if (activeRoom) {
-                    socket?.emit('room:join', { conversationId: activeRoom });
-
-                    // Reconnect Gap Repair. `activeRoom` is directly our `conversationId`
-                    if (fetchMessages) {
-                        fetchMessages(activeRoom, null);
-                    }
+                const room = activeRoomRef.current;
+                if (room) {
+                    socket?.emit('room:join', { conversationId: room });
+                    fetchMessagesRef.current(room, null);
                 }
             });
 
             socket.on('message:new', (payload) => {
-                // expecting payload to include conversationId and message natively from backend
-                // the `saveMessage` natively returns the message object with conversationId intact
                 if (payload.conversationId) {
-                    receiveMessage(payload.conversationId, payload);
+                    receiveMessageRef.current(payload.conversationId, payload);
                 }
             });
 
@@ -57,17 +61,12 @@ export const useMessageSocket = () => {
         return () => {
             // Do NOT disconnect on normal unmounts unless explicitly logging out.
         };
-    }, [isAuthenticated, receiveMessage]);
+    }, [isAuthenticated]);
 
     useEffect(() => {
         if (socket && socket.connected && activeRoom) {
             socket.emit('room:join', { conversationId: activeRoom });
         }
-        return () => {
-            if (socket && socket.connected && activeRoom) {
-                // Not heavily reliant on leave right now since we re-join, but good for cleanliness.
-            }
-        };
     }, [activeRoom]);
 
     useEffect(() => {

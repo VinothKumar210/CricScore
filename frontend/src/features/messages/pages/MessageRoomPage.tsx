@@ -8,25 +8,24 @@ import { MessageInput } from '../components/MessageInput';
 import { useAuthStore } from '../../../store/authStore';
 import { ArrowLeft } from 'lucide-react';
 
-const EMPTY_ROOM = { messages: [], isLoading: false, hasMore: true, cursor: null };
+const EMPTY_ROOM = { messages: [] as any[], isLoading: false, hasMore: true, cursor: null as string | null };
 
 export const MessageRoomPage: React.FC = () => {
     const { conversationId } = useParams<{ conversationId: string }>();
     const navigate = useNavigate();
     const currentUser = useAuthStore(state => state.user);
 
-    const {
-        rooms,
-        setActiveRoom,
-        fetchMessages,
-        addOptimisticMessage,
-        reconcileMessage,
-        markMessageFailed,
-    } = useMessageStore();
+    // Use individual selectors to prevent full-store subscription
+    const currentRoom = useMessageStore(state =>
+        conversationId ? (state.rooms[conversationId] || EMPTY_ROOM) : EMPTY_ROOM
+    );
+    const setActiveRoom = useMessageStore(state => state.setActiveRoom);
+    const fetchMessages = useMessageStore(state => state.fetchMessages);
+    const addOptimisticMessage = useMessageStore(state => state.addOptimisticMessage);
+    const reconcileMessage = useMessageStore(state => state.reconcileMessage);
+    const markMessageFailed = useMessageStore(state => state.markMessageFailed);
 
     useMessageSocket();
-
-    const currentRoom = conversationId ? (rooms[conversationId] || EMPTY_ROOM) : EMPTY_ROOM;
 
     // We only want to fetch once when the room changes
     useEffect(() => {
