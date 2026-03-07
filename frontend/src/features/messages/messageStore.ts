@@ -12,6 +12,8 @@ interface RoomState {
 interface MessageState {
     rooms: Record<string, RoomState>;
     activeRoom: string | null;
+    unreadCounts: Record<string, number>;
+    totalUnread: number;
 
     setActiveRoom: (conversationId: string) => void;
     fetchMessages: (conversationId: string, cursor?: string | null) => Promise<void>;
@@ -19,6 +21,9 @@ interface MessageState {
     reconcileMessage: (conversationId: string, tempId: string, serverMessage: Message) => void;
     markMessageFailed: (conversationId: string, tempId: string) => void;
     receiveMessage: (conversationId: string, message: Message) => void;
+    fetchUnreadCounts: () => Promise<void>;
+    markConversationRead: (conversationId: string) => Promise<void>;
+    handleInboxUpdate: (payload: { conversationId: string; lastMessage: any }) => void;
     reset: () => void;
 }
 
@@ -32,6 +37,8 @@ const initialRoomState: RoomState = {
 export const useMessageStore = create<MessageState>((set, get) => ({
     rooms: {},
     activeRoom: null,
+    unreadCounts: {},
+    totalUnread: 0,
 
     setActiveRoom: (conversationId) => set({ activeRoom: conversationId }),
 
@@ -214,6 +221,49 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     },
 
     reset: () => {
-        set({ rooms: {}, activeRoom: null });
+        set({ rooms: {}, activeRoom: null, unreadCounts: {}, totalUnread: 0 });
+    },
+
+    fetchUnreadCounts: async () => {
+        try {
+            const { total, perConversation } = await messageService.getUnreadCounts();
+            set({ totalUnread: total, unreadCounts: perConversation });
+        } catch (error) {
+            console.error('Failed to fetch unread counts:', error);
+        }
+    },
+
+    markConversationRead: async (conversationId: string) => {
+        try {
+            await messageService.markAsRead(conversationId);
+            set(state => {
+                const newCounts = { ...state.unreadCounts };
+                const removedCount = newCounts[conversationId] || 0;
+                delete newCounts[conversationId];
+                return {
+                    unreadCounts: newCounts,
+                    totalUnread: Math.max(0, state.totalUnread - removedCount)
+                };
+            });
+        } catch (error) {
+            console.error('Failed to mark as read:', error);
+        }
+    },
+
+    handleInboxUpdate: (payload: { conversationId: string; lastMessage: any }) => {
+        const { activeRoom } = get();
+        // Don't increment unread if we're currently viewing this conversation
+        if (activeRoom === payload.conversationId) return;
+
+        set(state => {
+            const currentCount = state.unreadCounts[payload.conversationId] || 0;
+            return {
+                unreadCounts: {
+                    ...state.unreadCounts,
+                    [payload.conversationId]: currentCount + 1
+                },
+                totalUnread: state.totalUnread + 1
+            };
+        });
     },
 }));

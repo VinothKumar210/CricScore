@@ -59,5 +59,15 @@ export const messageService = {
     createSubGroup: async (name: string, teamId: string, memberIds: string[]) => {
         const { data } = await api.post('/api/conversations/group', { name, teamId, memberIds });
         return data.data || data;
+    },
+
+    markAsRead: async (conversationId: string) => {
+        const { data } = await api.post(`/api/messages/${conversationId}/read`);
+        return data.data || data;
+    },
+
+    getUnreadCounts: async (): Promise<{ total: number; perConversation: Record<string, number> }> => {
+        const { data } = await api.get('/api/messages/unread-counts');
+        return data.data || data;
     }
 };

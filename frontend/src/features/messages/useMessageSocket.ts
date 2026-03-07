@@ -1,9 +1,26 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { getAuth } from 'firebase/auth';
 import { useAuthStore } from '../../store/authStore';
 import { useMessageStore } from './messageStore';
 
 let socket: Socket | null = null;
+
+/**
+ * Get a fresh Firebase ID token (auto-refreshes if expired)
+ */
+const getFreshToken = async (): Promise<string | null> => {
+    try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) return localStorage.getItem('authToken');
+        const token = await user.getIdToken(true); // force refresh
+        localStorage.setItem('authToken', token);
+        return token;
+    } catch {
+        return localStorage.getItem('authToken');
+    }
+};
 
 export const useMessageSocket = () => {
     // Use individual selectors to avoid re-rendering on every store change
@@ -11,15 +28,15 @@ export const useMessageSocket = () => {
 
     const activeRoom = useMessageStore(state => state.activeRoom);
     const receiveMessage = useMessageStore(state => state.receiveMessage);
-    const fetchMessages = useMessageStore(state => state.fetchMessages);
+    const handleInboxUpdate = useMessageStore(state => state.handleInboxUpdate);
 
     // Use refs to hold latest values for socket callbacks without causing effect re-runs
     const activeRoomRef = useRef(activeRoom);
     activeRoomRef.current = activeRoom;
-    const fetchMessagesRef = useRef(fetchMessages);
-    fetchMessagesRef.current = fetchMessages;
     const receiveMessageRef = useRef(receiveMessage);
     receiveMessageRef.current = receiveMessage;
+    const handleInboxUpdateRef = useRef(handleInboxUpdate);
+    handleInboxUpdateRef.current = handleInboxUpdate;
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -30,8 +47,10 @@ export const useMessageSocket = () => {
             return;
         }
 
-        if (!socket) {
-            const validToken = localStorage.getItem('authToken');
+        const initSocket = async () => {
+            if (socket) return;
+
+            const validToken = await getFreshToken();
             if (!validToken) {
                 console.warn('[MessageSocket] No auth token found, skipping connection');
                 return;
@@ -41,8 +60,9 @@ export const useMessageSocket = () => {
                 auth: { token: validToken },
                 transports: ['websocket'],
                 reconnection: true,
-                reconnectionAttempts: 10,
+                reconnectionAttempts: Infinity,
                 reconnectionDelay: 2000,
+                reconnectionDelayMax: 30000,
             });
 
             socket.on('connect', () => {
@@ -53,32 +73,49 @@ export const useMessageSocket = () => {
                 }
             });
 
+            // Real-time message delivery for the active chat
             socket.on('message:new', (payload) => {
                 if (payload.conversationId) {
                     receiveMessageRef.current(payload.conversationId, payload);
                 }
             });
 
-            socket.on('connect_error', (err) => {
+            // Real-time inbox updates for ALL conversations (WhatsApp-style)
+            socket.on('inbox:update', (payload) => {
+                handleInboxUpdateRef.current(payload);
+            });
+
+            socket.on('connect_error', async (err) => {
                 console.error('[MessageSocket] Connection error:', err.message);
+                // If auth error, try refreshing the token
+                if (err.message.includes('Authentication')) {
+                    const freshToken = await getFreshToken();
+                    if (freshToken && socket) {
+                        socket.auth = { token: freshToken };
+                    }
+                }
             });
 
             socket.on('disconnect', (reason) => {
                 console.log('[MessageSocket] Disconnected:', reason);
             });
-        }
+        };
+
+        initSocket();
 
         return () => {
             // Do NOT disconnect on normal unmounts unless explicitly logging out.
         };
     }, [isAuthenticated]);
 
+    // Join the active conversation room
     useEffect(() => {
         if (socket && socket.connected && activeRoom) {
             socket.emit('room:join', { conversationId: activeRoom });
         }
     }, [activeRoom]);
 
+    // Cleanup on logout
     useEffect(() => {
         if (!isAuthenticated && socket) {
             socket.disconnect();

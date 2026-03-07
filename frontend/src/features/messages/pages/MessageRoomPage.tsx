@@ -24,6 +24,7 @@ export const MessageRoomPage: React.FC = () => {
     const addOptimisticMessage = useMessageStore(state => state.addOptimisticMessage);
     const reconcileMessage = useMessageStore(state => state.reconcileMessage);
     const markMessageFailed = useMessageStore(state => state.markMessageFailed);
+    const markConversationRead = useMessageStore(state => state.markConversationRead);
 
     useMessageSocket();
 
@@ -31,6 +32,7 @@ export const MessageRoomPage: React.FC = () => {
     useEffect(() => {
         if (!conversationId) return;
         setActiveRoom(conversationId);
+        markConversationRead(conversationId);
 
         // Since currentRoom is derived from zustand state, we should check its contents directly here
         const roomState = useMessageStore.getState().rooms[conversationId];
@@ -41,7 +43,7 @@ export const MessageRoomPage: React.FC = () => {
         return () => {
             setActiveRoom('');
         };
-    }, [conversationId, setActiveRoom, fetchMessages]);
+    }, [conversationId, setActiveRoom, fetchMessages, markConversationRead]);
 
     const handleLoadMore = useCallback(() => {
         // Use getState to avoid capturing stale closures or triggering renders

@@ -18,6 +18,7 @@ export interface ConversationPreview {
     isArchived: boolean;
     isMuted: boolean;
     unreadCount: number;
+    avatarUrl: string | null;
     lastMessage: {
         id: string;
         content: string;
@@ -70,6 +71,20 @@ export async function getUserInbox(
     const hasMore = memberships.length > limit;
     const page = hasMore ? memberships.slice(0, limit) : memberships;
 
+    // Fetch team logos if needed
+    const teamIds = page
+        .filter((m: any) => m.conversation.type === 'TEAM' && m.conversation.entityId)
+        .map((m: any) => m.conversation.entityId as string);
+
+    let teamLogos: Record<string, string | null> = {};
+    if (teamIds.length > 0) {
+        const teams = await db.team.findMany({
+            where: { id: { in: teamIds } },
+            select: { id: true, logoUrl: true }
+        });
+        teams.forEach((t: any) => teamLogos[t.id] = t.logoUrl);
+    }
+
     // 2. Map to previews and calculate unread counts (which require counted queries)
     const conversations: ConversationPreview[] = await Promise.all(
         page.map(async (membership: any) => {
@@ -112,10 +127,16 @@ export async function getUserInbox(
 
             // Determine display name (e.g., for DIRECT chats, show the other user's name)
             let displayName = conv.name;
+            let avatarUrl = null;
             if (conv.type === 'DIRECT') {
                 const otherMember = conv.members.find((m: any) => m.userId !== userId);
                 if (otherMember) {
                     displayName = otherMember.user.fullName;
+                    avatarUrl = otherMember.user.profilePictureUrl || null;
+                }
+            } else if (conv.type === 'TEAM') {
+                if (conv.entityId && teamLogos[conv.entityId]) {
+                    avatarUrl = teamLogos[conv.entityId];
                 }
             }
 
@@ -127,6 +148,7 @@ export async function getUserInbox(
                 isArchived: conv.isArchived,
                 isMuted: membership.mutedUntil ? new Date(membership.mutedUntil) > new Date() : false,
                 unreadCount,
+                avatarUrl,
                 lastMessage,
                 memberCount: conv.members.length,
                 updatedAt: conv.updatedAt.toISOString(),

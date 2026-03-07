@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { MessageSquare, Search } from 'lucide-react';
-import { useUiStore } from '../../store/uiStore';
+import { useMessageStore } from '../../features/messages/messageStore';
 import NotificationBell from '../../features/notifications/components/NotificationBell';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -32,11 +33,16 @@ const getPageTitle = (pathname: string): string => {
 };
 
 export const TopBar = () => {
-    const { unreadMessages } = useUiStore();
+    const totalUnread = useMessageStore(state => state.totalUnread);
     const location = useLocation();
     const navigate = useNavigate();
     const title = getPageTitle(location.pathname);
     const isHub = location.pathname === '/hub';
+
+    // Fetch unread counts once when the app loads (or topbar mounts)
+    useEffect(() => {
+        useMessageStore.getState().fetchUnreadCounts();
+    }, []);
 
     return (
         <header className="fixed top-0 left-0 right-0 h-14 bg-background/80 backdrop-blur-xl border-b border-border flex items-center justify-between px-4 z-50">
@@ -62,9 +68,9 @@ export const TopBar = () => {
                     className="relative p-2 rounded-lg hover:bg-secondary transition-colors"
                 >
                     <MessageSquare className="w-5 h-5 text-muted-foreground" />
-                    {unreadMessages > 0 && (
+                    {totalUnread > 0 && (
                         <span className="absolute top-1 right-1 bg-primary text-primary-foreground text-[10px] min-w-4 h-4 flex items-center justify-center rounded-full px-1 font-bold">
-                            {unreadMessages}
+                            {totalUnread}
                         </span>
                     )}
                 </button>

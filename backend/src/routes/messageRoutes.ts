@@ -26,6 +26,23 @@ const enforceRateLimit = async (userId: string): Promise<boolean> => {
 };
 
 /**
+ * GET /api/messages/unread-counts
+ * Get unread message counts for all conversations
+ * NOTE: This must be placed BEFORE the /:conversationId routes to avoid param conflicts
+ */
+router.get('/unread-counts', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) return sendError(res, 'Unauthorized', 401, 'UNAUTHORIZED');
+
+        const counts = await messageService.getUnreadCounts(userId);
+        return sendSuccess(res, counts);
+    } catch (error: any) {
+        return sendError(res, 'Failed to fetch unread counts', 500, 'INTERNAL_ERROR');
+    }
+});
+
+/**
  * GET /api/messages/:conversationId
  * Fetch history — dual pagination support, requires membership
  */
@@ -48,6 +65,24 @@ router.get('/:conversationId', requireAuth, async (req: Request, res: Response) 
         return sendSuccess(res, messages);
     } catch (error: any) {
         return sendError(res, 'Failed to fetch messages', 500, 'INTERNAL_ERROR');
+    }
+});
+
+/**
+ * POST /api/messages/:conversationId/read
+ * Mark all messages in a conversation as read
+ */
+router.post('/:conversationId/read', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const { conversationId } = req.params;
+        const userId = req.user?.id;
+
+        if (!userId) return sendError(res, 'Unauthorized', 401, 'UNAUTHORIZED');
+
+        await messageService.markAsRead(userId, conversationId as string);
+        return sendSuccess(res, { success: true });
+    } catch (error: any) {
+        return sendError(res, 'Failed to mark as read', 500, 'INTERNAL_ERROR');
     }
 });
 
@@ -80,8 +115,29 @@ router.post('/:conversationId', requireAuth, async (req: Request, res: Response)
         );
 
         // RULE 1: Server Emitted Broadcasts (Authoritative Layer)
-        // Emit to the conversation room. The type/entityId are attached to the message object.
+        // Emit to the conversation room for real-time chat updates
         io.of('/messages').to(`conversation:${conversationId}`).emit('message:new', message);
+
+        // RULE 8: Inbox Update — Emit to each member's personal room
+        // This allows the inbox to update in real-time for ALL conversations
+        messageService.getConversationMembers(conversationId as string).then(memberIds => {
+            for (const memberId of memberIds) {
+                if (memberId !== userId) {
+                    io.of('/messages').to(`user:${memberId}`).emit('inbox:update', {
+                        conversationId,
+                        lastMessage: {
+                            id: message.id,
+                            content: message.content,
+                            senderId: message.senderId,
+                            sender: (message as any).sender,
+                            createdAt: message.createdAt
+                        }
+                    });
+                }
+            }
+        }).catch(err => {
+            console.error('[inbox:update] Failed to broadcast:', err);
+        });
 
         // RULE 2: clientNonce Echo Contract
         return sendSuccess(res, message, 201);

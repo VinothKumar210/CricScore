@@ -108,6 +108,98 @@ export const messageService = {
                 conversation: { select: { type: true, entityId: true } }
             }
         });
+    },
+
+    /**
+     * Get all member userIds for a conversation (for broadcasting)
+     */
+    getConversationMembers: async (conversationId: string): Promise<string[]> => {
+        const members = await prisma.conversationMember.findMany({
+            where: { conversationId },
+            select: { userId: true }
+        });
+        return members.map(m => m.userId);
+    },
+
+    /**
+     * Mark a conversation as read by updating lastReadMessageId
+     */
+    markAsRead: async (userId: string, conversationId: string) => {
+        // Find the latest message in the conversation
+        const latestMessage = await prisma.message.findFirst({
+            where: { conversationId },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true }
+        });
+
+        if (!latestMessage) return;
+
+        await prisma.conversationMember.updateMany({
+            where: {
+                conversationId,
+                userId
+            },
+            data: {
+                lastReadMessageId: latestMessage.id
+            }
+        });
+    },
+
+    /**
+     * Get unread counts for all conversations a user belongs to
+     */
+    getUnreadCounts: async (userId: string) => {
+        // Get all conversations the user is a member of
+        const memberships = await prisma.conversationMember.findMany({
+            where: { userId },
+            select: {
+                conversationId: true,
+                lastReadMessageId: true,
+                conversation: {
+                    select: { lastMessageAt: true }
+                }
+            }
+        });
+
+        const perConversation: Record<string, number> = {};
+        let total = 0;
+
+        for (const membership of memberships) {
+            let count = 0;
+
+            if (!membership.lastReadMessageId) {
+                // Never read — count ALL messages not sent by the user
+                count = await prisma.message.count({
+                    where: {
+                        conversationId: membership.conversationId,
+                        senderId: { not: userId }
+                    }
+                });
+            } else {
+                // Count messages created AFTER the last-read message
+                const lastReadMessage = await prisma.message.findUnique({
+                    where: { id: membership.lastReadMessageId },
+                    select: { createdAt: true }
+                });
+
+                if (lastReadMessage) {
+                    count = await prisma.message.count({
+                        where: {
+                            conversationId: membership.conversationId,
+                            senderId: { not: userId },
+                            createdAt: { gt: lastReadMessage.createdAt }
+                        }
+                    });
+                }
+            }
+
+            if (count > 0) {
+                perConversation[membership.conversationId] = count;
+                total += count;
+            }
+        }
+
+        return { total, perConversation };
     }
 
 };

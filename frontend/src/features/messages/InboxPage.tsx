@@ -5,6 +5,7 @@ import { Container } from '../../components/ui/Container';
 import { MessageSquare, Users, Swords, VolumeX, Loader2, MessageSquarePlus } from 'lucide-react';
 import { clsx } from 'clsx';
 import { NewChatSheet } from './components/NewChatSheet';
+import { useMessageStore } from './messageStore';
 
 // ─── Types ───
 
@@ -16,6 +17,7 @@ interface ConversationPreview {
     isArchived: boolean;
     isMuted: boolean;
     unreadCount: number;
+    avatarUrl: string | null;
     lastMessage: {
         id: string;
         content: string;
@@ -36,8 +38,9 @@ export const InboxPage = () => {
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [nextCursor, setNextCursor] = useState<string | null>(null);
-    const [totalUnread, setTotalUnread] = useState(0);
     const navigate = useNavigate();
+
+    const { totalUnread, unreadCounts, fetchUnreadCounts, markConversationRead } = useMessageStore();
 
     const fetchInbox = useCallback(async (cursor?: string, type?: string) => {
         try {
@@ -63,27 +66,17 @@ export const InboxPage = () => {
         }
     }, []);
 
-    const fetchUnreadCount = useCallback(async () => {
-        try {
-            const { data } = await api.get('/api/inbox/unread-count');
-            setTotalUnread((data.data || data).count || 0);
-        } catch { /* silent */ }
-    }, []);
-
     useEffect(() => {
         // Reset when tab changes
         setConversations([]);
         fetchInbox(undefined, activeTab);
-        fetchUnreadCount();
-    }, [fetchInbox, fetchUnreadCount, activeTab]);
+        fetchUnreadCounts();
+    }, [fetchInbox, fetchUnreadCounts, activeTab]);
 
     const handleConversationClick = async (conv: ConversationPreview) => {
-        if (conv.unreadCount > 0) {
-            setConversations(prev =>
-                prev.map(c => c.id === conv.id ? { ...c, unreadCount: 0 } : c),
-            );
-            setTotalUnread(prev => Math.max(0, prev - conv.unreadCount));
-            api.patch(`/api/inbox/${conv.id}/read`).catch(() => { });
+        const currentUnread = unreadCounts[conv.id] ?? conv.unreadCount;
+        if (currentUnread > 0) {
+            markConversationRead(conv.id);
         }
         navigate(`/messages/${conv.id}`);
     };
@@ -137,14 +130,17 @@ export const InboxPage = () => {
                 <EmptyState />
             ) : (
                 <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-                    {conversations.map((conv, idx) => (
-                        <ConversationRow
-                            key={conv.id}
-                            conversation={conv}
-                            onClick={() => handleConversationClick(conv)}
-                            isLast={idx === conversations.length - 1}
-                        />
-                    ))}
+                    {conversations.map((conversation, index) => {
+                        const currentUnreadCount = unreadCounts[conversation.id] ?? conversation.unreadCount;
+                        return (
+                            <ConversationRow
+                                key={conversation.id}
+                                conversation={{ ...conversation, unreadCount: currentUnreadCount }}
+                                onClick={() => handleConversationClick(conversation)}
+                                isLast={index === conversations.length - 1}
+                            />
+                        );
+                    })}
                 </div>
             )}
 
@@ -203,8 +199,8 @@ const ConversationRow = ({
         >
             {/* Avatar */}
             <div className="w-11 h-11 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 relative">
-                {conv.lastMessage?.senderAvatar ? (
-                    <img src={conv.lastMessage.senderAvatar} alt="" className="w-full h-full rounded-full object-cover" />
+                {conv.avatarUrl ? (
+                    <img src={conv.avatarUrl} alt="" className="w-full h-full rounded-full object-cover" />
                 ) : (
                     TYPE_ICONS[conv.type] || <MessageSquare className="w-5 h-5 text-muted-foreground" />
                 )}
