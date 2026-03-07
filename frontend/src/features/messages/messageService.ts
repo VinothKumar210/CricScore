@@ -25,16 +25,21 @@ export interface Message {
 export const messageService = {
     getMessages: async (conversationId: string, cursor?: string | null): Promise<{ messages: Message[], nextCursor: string | null }> => {
         const { data } = await api.get(`/api/messages/${conversationId}`, {
-            params: { cursor }
+            params: { cursor, limit: 50 }
         });
 
         // Handle standard backend sendSuccess wrapper if present
         const result = data.data || data;
-        const messages = Array.isArray(result) ? result : (result.messages || []);
+        // Backend getHistory returns a flat array of messages
+        const messages: Message[] = Array.isArray(result) ? result : (result.messages || []);
+
+        // Derive nextCursor from the oldest message ID for cursor-based pagination
+        // Backend returns messages in ASC order, so first message is the oldest
+        const nextCursor = messages.length >= 50 ? messages[0]?.id || null : null;
 
         return {
             messages,
-            nextCursor: result.nextCursor || null
+            nextCursor
         };
     },
 

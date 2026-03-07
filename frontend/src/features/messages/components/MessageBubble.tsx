@@ -20,7 +20,7 @@ export const MessageBubble: React.FC<Props> = React.memo(({ message, onRetry }) 
                 {/* Sender Name */}
                 {!isMine && (
                     <span className="text-[10px] text-muted-foreground mb-1 ml-1 font-medium">
-                        {message.sender.name}
+                        {message.sender?.fullName || message.sender?.name || 'Unknown'}
                     </span>
                 )}
 
