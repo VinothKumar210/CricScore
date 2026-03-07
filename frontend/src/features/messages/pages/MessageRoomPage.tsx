@@ -8,6 +8,8 @@ import { MessageInput } from '../components/MessageInput';
 import { useAuthStore } from '../../../store/authStore';
 import { ArrowLeft } from 'lucide-react';
 
+const EMPTY_ROOM = { messages: [], isLoading: false, hasMore: true, cursor: null };
+
 export const MessageRoomPage: React.FC = () => {
     const { conversationId } = useParams<{ conversationId: string }>();
     const navigate = useNavigate();
@@ -24,24 +26,31 @@ export const MessageRoomPage: React.FC = () => {
 
     useMessageSocket();
 
-    const currentRoom = conversationId ? (rooms[conversationId] || { messages: [], isLoading: false, hasMore: true, cursor: null }) : { messages: [], isLoading: false, hasMore: true, cursor: null };
+    const currentRoom = conversationId ? (rooms[conversationId] || EMPTY_ROOM) : EMPTY_ROOM;
 
+    // We only want to fetch once when the room changes
     useEffect(() => {
         if (!conversationId) return;
         setActiveRoom(conversationId);
-        if (currentRoom.messages.length === 0) {
+
+        // Since currentRoom is derived from zustand state, we should check its contents directly here
+        const roomState = useMessageStore.getState().rooms[conversationId];
+        if (!roomState || roomState.messages.length === 0) {
             fetchMessages(conversationId);
         }
+
         return () => {
             setActiveRoom('');
         };
     }, [conversationId, setActiveRoom, fetchMessages]);
 
     const handleLoadMore = useCallback(() => {
-        if (!currentRoom.isLoading && currentRoom.hasMore && conversationId) {
-            fetchMessages(conversationId, currentRoom.cursor);
+        // Use getState to avoid capturing stale closures or triggering renders
+        const roomState = useMessageStore.getState().rooms[conversationId || ''] || EMPTY_ROOM;
+        if (!roomState.isLoading && roomState.hasMore && conversationId) {
+            fetchMessages(conversationId, roomState.cursor);
         }
-    }, [currentRoom, conversationId, fetchMessages]);
+    }, [conversationId, fetchMessages]);
 
     const handleSend = useCallback(async (content: string, overrideTempId?: string, overrideNonce?: string) => {
         if (!currentUser || !conversationId) return;

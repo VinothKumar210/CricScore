@@ -23,7 +23,7 @@ export const MessageList: React.FC<Props> = ({ messages, isLoading, hasMore, onL
         const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 50;
         setIsAutoScrolling(isAtBottom);
 
-        if (scrollTop === 0 && hasMore && !isLoading) {
+        if (scrollTop === 0 && scrollHeight > clientHeight && hasMore && !isLoading && messages.length > 0) {
             setPrevScrollHeight(scrollHeight);
             onLoadMore();
         }
@@ -31,14 +31,16 @@ export const MessageList: React.FC<Props> = ({ messages, isLoading, hasMore, onL
 
     useLayoutEffect(() => {
         if (!listRef.current) return;
+
         if (prevScrollHeight > 0 && messages.length > 0) {
             const { scrollHeight } = listRef.current;
             listRef.current.scrollTop = scrollHeight - prevScrollHeight;
+            // Only clear prevScrollHeight after we've successfully restored scroll position
             setPrevScrollHeight(0);
-        } else if (isAutoScrolling) {
+        } else if (isAutoScrolling && messages.length > 0) {
             listRef.current.scrollTop = listRef.current.scrollHeight;
         }
-    }, [messages.length, prevScrollHeight, isAutoScrolling]);
+    }, [messages, prevScrollHeight, isAutoScrolling]);
 
     return (
         <div
