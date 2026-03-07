@@ -8,7 +8,8 @@ import { ImpactRatingCard } from '../../features/profile/components/ImpactRating
 import { PrestigeProgress } from '../../features/profile/components/PrestigeProgress';
 import { BestPerformanceCard } from '../../features/profile/components/BestPerformanceCard';
 import { Container } from '../../components/ui/Container';
-import { Loader2 } from 'lucide-react';
+import { Loader2, UserPlus, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 /**
  * ProfilePage — /profile route
@@ -83,6 +84,22 @@ export const ProfilePage = () => {
                 prestigeTier={competitive?.prestigeTier}
                 tournamentWins={competitive?.tournamentWins}
             />
+
+            {/* Follow Requests Link (Phase H2) */}
+            {(profile as any).isPrivate && (
+                <Link to="/profile/requests" className="flex items-center justify-between bg-cardAlt p-4 rounded-xl border border-border shadow-[0_4px_12px_-4px_rgba(0,0,0,0.1)] active:scale-95 transition-transform group">
+                    <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <UserPlus className="w-5 h-5 text-primary group-hover:scale-110 transition-transform" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-[15px] text-foreground">Follow Requests</h3>
+                            <p className="text-xs font-medium text-muted-foreground mt-0.5">Approve or ignore followers</p>
+                        </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground mr-1" />
+                </Link>
+            )}
 
             {/* Impact Rating (Phase 12A+) */}
             {competitive && <ImpactRatingCard competitive={competitive} />}

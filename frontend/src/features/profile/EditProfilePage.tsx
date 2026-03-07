@@ -22,6 +22,7 @@ interface UserProfile {
     jerseyNumber: number | null;
     city: string | null;
     state: string | null;
+    isPrivate: boolean;
 }
 
 // ─── Main Component ───
@@ -47,9 +48,9 @@ export const EditProfilePage = () => {
         setSaving(true);
         setStatus(null);
         try {
-            const { fullName, username, description, role, battingHand, bowlingStyle, jerseyNumber, city, state } = profile;
+            const { fullName, username, description, role, battingHand, bowlingStyle, jerseyNumber, city, state, isPrivate } = profile;
             const payload: Record<string, unknown> = {
-                fullName, description, role, battingHand, bowlingStyle, jerseyNumber, city, state,
+                fullName, description, role, battingHand, bowlingStyle, jerseyNumber, city, state, isPrivate
             };
             if (username) payload.username = username;
             const res = await api.patch('/api/profile', payload);
@@ -229,6 +230,16 @@ export const EditProfilePage = () => {
                 <Field icon={<MapPin className="w-3.5 h-3.5" />} label="State" value={profile.state || ''} onChange={v => updateField('state', v || null)} />
             </FormSection>
 
+            {/* Privacy */}
+            <FormSection icon={<Shield className="w-4 h-4 text-primary" />} title="Privacy">
+                <ToggleField
+                    label="Private Account"
+                    description="Only approved followers can see your detailed activity"
+                    checked={profile.isPrivate || false}
+                    onChange={v => updateField('isPrivate', v)}
+                />
+            </FormSection>
+
             {/* Save */}
             <button
                 onClick={handleSave}
@@ -311,6 +322,33 @@ const SelectField = ({
         >
             {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
+    </div>
+);
+
+const ToggleField = ({
+    label, description, checked, onChange
+}: {
+    label: string; description: string; checked: boolean; onChange: (v: boolean) => void;
+}) => (
+    <div className="flex justify-between items-center px-4 py-3.5 border-b border-border last:border-b-0">
+        <div className="mr-4">
+            <div className="text-sm font-semibold text-foreground">{label}</div>
+            <div className="text-xs text-muted-foreground mt-0.5">{description}</div>
+        </div>
+        <button
+            onClick={() => onChange(!checked)}
+            role="switch"
+            aria-checked={checked}
+            className={clsx(
+                "w-11 h-6 rounded-full shrink-0 transition-colors duration-200 relative",
+                checked ? "bg-primary" : "bg-secondary border border-border"
+            )}
+        >
+            <div className={clsx(
+                "w-5 h-5 rounded-full bg-white shadow-sm absolute top-0.5 transition-transform duration-200",
+                checked ? "translate-x-[22px]" : "translate-x-0.5"
+            )} />
+        </button>
     </div>
 );
 

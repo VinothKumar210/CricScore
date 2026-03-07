@@ -6,7 +6,7 @@ import { clsx } from 'clsx';
 export const BottomNav = () => {
     const navItems = [
         { label: 'Home', icon: Home, path: '/hub' },
-        { label: 'Explore', icon: Compass, path: '/market' },
+        { label: 'Feed', icon: Compass, path: '/feed' },
         { label: 'Play', icon: null, path: '/match/create' },
         { label: 'Teams', icon: Users, path: '/teams' },
         { label: 'Profile', icon: User, path: '/profile' },

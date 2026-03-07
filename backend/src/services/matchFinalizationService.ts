@@ -241,8 +241,10 @@ async function createInningsRecord(tx: any, matchId: string, inningsNumber: numb
         // Highlights (Batting)
         if (pState.runs >= 100) {
             await createHighlight(tx, matchId, 'CENTURY', 0, `${getName(playerId)} scored a Century! (${pState.runs})`, getName(playerId), `${pState.runs}`);
+            await createAutoPost(tx, playerId, matchId, 'CENTURY', `${getName(playerId)} scored a magnificent Century! (${pState.runs} runs)`);
         } else if (pState.runs >= 50) {
             await createHighlight(tx, matchId, 'FIFTY', 0, `${getName(playerId)} scored a Fifty! (${pState.runs})`, getName(playerId), `${pState.runs}`);
+            await createAutoPost(tx, playerId, matchId, 'FIFTY', `${getName(playerId)} scored a brilliant Fifty! (${pState.runs} runs)`);
         }
     }
 
@@ -267,6 +269,7 @@ async function createInningsRecord(tx: any, matchId: string, inningsNumber: numb
         // Highlights (Bowling)
         if (bState.wickets >= 5) {
             await createHighlight(tx, matchId, 'FIVE_WICKET_HAUL', 0, `${getName(playerId)} took 5 wickets!`, getName(playerId), `${bState.wickets}/${bState.runsConceded}`);
+            await createAutoPost(tx, playerId, matchId, 'FIVE_WICKET', `${getName(playerId)} took a spectacular 5-wicket haul! (${bState.wickets}/${bState.runsConceded})`);
         }
     }
 
@@ -364,4 +367,16 @@ async function createHighlight(tx: any, matchSummaryId: string, type: string, ov
             score
         }
     });
+}
+
+async function createAutoPost(tx: any, authorId: string, matchId: string, eventType: string, content: string) {
+    if (!authorId || !authorId.match(/^[0-9a-fA-F]{24}$/)) return;
+    const existing = await tx.post.findFirst({
+        where: { authorId, matchId, eventType, type: 'AUTO_MILESTONE' }
+    });
+    if (!existing) {
+        await tx.post.create({
+            data: { authorId, type: 'AUTO_MILESTONE', eventType, matchId, content, visibility: 'PUBLIC' }
+        });
+    }
 }

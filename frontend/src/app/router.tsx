@@ -16,6 +16,7 @@ const LoginPage = lazy(() => import('../pages/auth/LoginPage').then(m => ({ defa
 const LiveHubPage = lazy(() => import('../features/hub/components/LiveHubPage').then(m => ({ default: m.LiveHubPage })));
 const HomePage = lazy(() => import('../pages/home/HomePage').then(m => ({ default: m.HomePage })));
 const MarketPage = lazy(() => import('../features/market/MarketPage').then(m => ({ default: m.MarketPage })));
+const FeedPage = lazy(() => import('../features/social/components/FeedPage').then(m => ({ default: m.FeedPage })));
 
 // Teams
 const TeamsPage = lazy(() => import('../pages/teams/TeamsPage').then(m => ({ default: m.TeamsPage })));
@@ -27,6 +28,7 @@ const ProfilePage = lazy(() => import('../pages/profile/ProfilePage').then(m => 
 const EditProfilePage = lazy(() => import('../features/profile/EditProfilePage').then(m => ({ default: m.EditProfilePage })));
 const PublicProfilePage = lazy(() => import('../features/profile/components/PublicProfilePage').then(m => ({ default: m.PublicProfilePage })));
 const LeaderboardPage = lazy(() => import('../features/profile/components/LeaderboardPage').then(m => ({ default: m.LeaderboardPage })));
+const FollowRequestsPage = lazy(() => import('../features/social/components/FollowRequestsPage').then(m => ({ default: m.FollowRequestsPage })));
 
 // Match
 const MatchDetailPage = lazy(() => import('../pages/match/MatchDetailPage').then(m => ({ default: m.MatchDetailPage })));
@@ -93,6 +95,7 @@ export const router = createBrowserRouter([
         element: <AuthGuard><DashboardLayout /></AuthGuard>,
         children: [
             { path: '/hub', element: <Lazy><LiveHubPage /></Lazy> },
+            { path: '/feed', element: <Lazy><FeedPage /></Lazy> },
             { path: '/home', element: <Lazy><HomePage /></Lazy> },
             { path: '/market', element: <Lazy><MarketPage /></Lazy> },
             { path: '/teams', element: <Lazy><TeamsPage /></Lazy> },
@@ -100,6 +103,7 @@ export const router = createBrowserRouter([
             { path: '/teams/:id', element: <Lazy><TeamDetailPage /></Lazy> },
             { path: '/profile', element: <Lazy><ProfilePage /></Lazy> },
             { path: '/profile/edit', element: <Lazy><EditProfilePage /></Lazy> },
+            { path: '/profile/requests', element: <Lazy><FollowRequestsPage /></Lazy> },
             { path: '/tournaments', element: <Lazy><TournamentListPage /></Lazy> },
             { path: '/tournaments/:id', element: <Lazy><TournamentDetailPage /></Lazy> },
             { path: '/match/create', element: <Lazy><MatchCreatePage /></Lazy> },

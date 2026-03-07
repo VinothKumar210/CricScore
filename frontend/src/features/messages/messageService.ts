@@ -20,11 +20,7 @@ export interface Message {
     }
 }
 
-interface MessagesResponse {
-    data?: Message[]; // Backend often wraps success in data property via sendSuccess
-    messages?: Message[];
-    nextCursor?: string | null;
-}
+
 
 export const messageService = {
     getMessages: async (conversationId: string, cursor?: string | null): Promise<{ messages: Message[], nextCursor: string | null }> => {

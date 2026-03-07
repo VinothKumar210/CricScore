@@ -45,6 +45,8 @@ import comparisonRoutes from './routes/comparisonRoutes.js';
 import exportRoutes from './routes/exportRoutes.js';
 import batchSyncRoutes from './routes/batchSyncRoutes.js';
 import wagonWheelRoutes from './routes/wagonWheelRoutes.js';
+import followRoutes from './routes/followRoutes.js';
+import postRoutes from './routes/postRoutes.js';
 
 // ---------------------------------------------------------------------------
 // Infrastructure Imports
@@ -122,6 +124,8 @@ app.use('/api', batchSyncRoutes);
 app.use('/api/wagon-wheel', wagonWheelRoutes);
 app.use('/api/share', shareRoutes);
 app.use('/api/archive', archiveRoutes);
+app.use('/api', followRoutes);
+app.use('/api', postRoutes);
 
 // --- User Sub-routes ---
 app.use('/api/user/locations', locationRoutes);
