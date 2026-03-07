@@ -65,6 +65,7 @@ export const MessageRoomPage: React.FC = () => {
                 conversationId,
                 senderId: currentUser.id,
                 content,
+                clientNonce, // Fix for precise deduplication
                 tempId,
                 status: 'sending',
                 createdAt: new Date().toISOString(),
