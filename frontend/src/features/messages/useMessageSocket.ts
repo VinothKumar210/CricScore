@@ -31,19 +31,25 @@ export const useMessageSocket = () => {
         }
 
         if (!socket) {
-            const validToken = localStorage.getItem('token');
+            const validToken = localStorage.getItem('authToken');
+            if (!validToken) {
+                console.warn('[MessageSocket] No auth token found, skipping connection');
+                return;
+            }
+
             socket = io(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/messages`, {
                 auth: { token: validToken },
                 transports: ['websocket'],
                 reconnection: true,
+                reconnectionAttempts: 10,
+                reconnectionDelay: 2000,
             });
 
             socket.on('connect', () => {
-                console.log('Connected to /messages namespace');
+                console.log('[MessageSocket] Connected to /messages namespace');
                 const room = activeRoomRef.current;
                 if (room) {
                     socket?.emit('room:join', { conversationId: room });
-                    fetchMessagesRef.current(room, null);
                 }
             });
 
@@ -53,8 +59,12 @@ export const useMessageSocket = () => {
                 }
             });
 
-            socket.on('disconnect', () => {
-                console.log('Disconnected from /messages namespace');
+            socket.on('connect_error', (err) => {
+                console.error('[MessageSocket] Connection error:', err.message);
+            });
+
+            socket.on('disconnect', (reason) => {
+                console.log('[MessageSocket] Disconnected:', reason);
             });
         }
 
