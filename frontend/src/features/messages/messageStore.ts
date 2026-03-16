@@ -24,6 +24,7 @@ interface MessageState {
     fetchUnreadCounts: () => Promise<void>;
     markConversationRead: (conversationId: string) => Promise<void>;
     handleInboxUpdate: (payload: { conversationId: string; lastMessage: any }) => void;
+    handleReactionUpdate: (conversationId: string, payload: { messageId: string, userId: string, emoji: string, action: 'add' | 'remove', createdAt?: string }) => void;
     reset: () => void;
 }
 
@@ -263,6 +264,46 @@ export const useMessageStore = create<MessageState>((set, get) => ({
                     [payload.conversationId]: currentCount + 1
                 },
                 totalUnread: state.totalUnread + 1
+            };
+        });
+    },
+
+    handleReactionUpdate: (conversationId, payload) => {
+        set(state => {
+            const room = state.rooms[conversationId];
+            if (!room) return state;
+
+            const messageIndex = room.messages.findIndex(m => m.id === payload.messageId);
+            if (messageIndex === -1) return state;
+
+            const message = room.messages[messageIndex];
+            const currentReactions = message.reactions || [];
+
+            let newReactions = [...currentReactions];
+            if (payload.action === 'add') {
+                if (!newReactions.some(r => r.emoji === payload.emoji && r.userId === payload.userId)) {
+                    newReactions.push({
+                        messageId: payload.messageId,
+                        userId: payload.userId,
+                        emoji: payload.emoji,
+                        createdAt: payload.createdAt || new Date().toISOString()
+                    });
+                }
+            } else if (payload.action === 'remove') {
+                newReactions = newReactions.filter(r => !(r.emoji === payload.emoji && r.userId === payload.userId));
+            }
+
+            const newMessages = [...room.messages];
+            newMessages[messageIndex] = { ...message, reactions: newReactions };
+
+            return {
+                rooms: {
+                    ...state.rooms,
+                    [conversationId]: {
+                        ...room,
+                        messages: newMessages
+                    }
+                }
             };
         });
     },

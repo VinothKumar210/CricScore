@@ -1,4 +1,5 @@
 import { prisma } from '../utils/db.js';
+import { notificationService } from './notificationService.js';
 
 export const messageService = {
 
@@ -27,7 +28,15 @@ export const messageService = {
         senderId: string,
         conversationId: string,
         content: string,
-        clientNonce?: string
+        clientNonce?: string,
+        attachments?: Array<{
+            url: string;
+            type: 'IMAGE' | 'VIDEO' | 'DOCUMENT' | 'AUDIO';
+            filename: string;
+            sizeBytes: number;
+            mimeType: string;
+            thumbnailUrl?: string;
+        }>
     ) => {
         // 1. Validate Membership
         const isMember = await messageService.validateConversationMembership(senderId, conversationId);
@@ -54,16 +63,25 @@ export const messageService = {
         }
 
         // 3. Persist natively bypassing in-memory race risks
+        const messageType = attachments && attachments.length > 0 ? attachments[0]!.type : 'TEXT';
+
         const message = await prisma.message.create({
             data: {
                 conversationId,
                 senderId,
                 content,
-                clientNonce: clientNonce ?? null
+                type: messageType,
+                clientNonce: clientNonce ?? null,
+                ...(attachments && attachments.length > 0 && {
+                    attachments: {
+                        create: attachments
+                    }
+                })
             } as any,
             include: {
                 sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } },
-                conversation: { select: { type: true, entityId: true } }
+                conversation: { select: { type: true, entityId: true } },
+                attachments: true
             }
         });
 
@@ -72,6 +90,32 @@ export const messageService = {
             where: { id: conversationId },
             data: { lastMessageAt: message.createdAt }
         });
+
+        // 5. Parse @mentions and notify users
+        const mentions = Array.from(content.matchAll(/@\[([^\]]+)\]\(([^)]+)\)/g));
+        if (mentions.length > 0) {
+            const mentionedUserIds = [...new Set(mentions.map(m => m[2] as string))].filter(id => id && id !== senderId);
+            
+            if (mentionedUserIds.length > 0) {
+                // Ensure they are actually in the conversation
+                const memberIds = await messageService.getConversationMembers(conversationId);
+                const validMentions = mentionedUserIds.filter(id => memberIds.includes(id));
+                const senderName = message.sender?.fullName || message.sender?.phoneNumber || 'Someone';
+                
+                // Fire off notifications async
+                Promise.allSettled(
+                    validMentions.map(userId => 
+                        notificationService.createNotification({
+                            userId,
+                            type: 'MENTION',
+                            title: 'You were mentioned',
+                            body: `${senderName} mentioned you in a message.`,
+                            link: `/messages/${conversationId}?messageId=${message.id}`
+                        })
+                    )
+                ).catch(err => console.error('[MessageService] Failed to send mention notifications', err));
+            }
+        }
 
         return message;
     },
@@ -105,7 +149,9 @@ export const messageService = {
             orderBy: { createdAt: 'asc' }, // RULE 5: Deterministic ASC sorting
             include: {
                 sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } },
-                conversation: { select: { type: true, entityId: true } }
+                conversation: { select: { type: true, entityId: true } },
+                reactions: true,
+                attachments: true
             }
         });
     },

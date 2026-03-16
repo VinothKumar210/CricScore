@@ -47,6 +47,8 @@ import batchSyncRoutes from './routes/batchSyncRoutes.js';
 import wagonWheelRoutes from './routes/wagonWheelRoutes.js';
 import followRoutes from './routes/followRoutes.js';
 import postRoutes from './routes/postRoutes.js';
+import reactionRoutes from './routes/reactionRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 // ---------------------------------------------------------------------------
 // Infrastructure Imports
@@ -108,6 +110,7 @@ app.use('/api', statsRoutes);
 app.use('/api', hubRoutes);
 
 // --- Namespaced API Routes ---
+app.use('/api/messages/:conversationId/:messageId', reactionRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/grounds', groundRoutes);
 app.use('/api/invites', inviteRoutes);
@@ -126,6 +129,7 @@ app.use('/api/share', shareRoutes);
 app.use('/api/archive', archiveRoutes);
 app.use('/api', followRoutes);
 app.use('/api', postRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // --- User Sub-routes ---
 app.use('/api/user/locations', locationRoutes);

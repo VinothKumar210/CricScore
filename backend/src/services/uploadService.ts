@@ -97,3 +97,64 @@ export async function deleteAvatar(publicId: string): Promise<void> {
         // Non-critical — don't throw
     }
 }
+
+// ---------------------------------------------------------------------------
+// Message Attachment Upload
+// ---------------------------------------------------------------------------
+
+export async function uploadAttachment(
+    buffer: Buffer,
+    filename: string,
+    mimeType: string,
+    folder = 'cricscore/attachments',
+): Promise<UploadResult> {
+    try {
+        const isImage = mimeType.startsWith('image/');
+        const isVideo = mimeType.startsWith('video/');
+        
+        let uploadBuffer = buffer;
+        let finalFormat = undefined;
+        
+        // Resize/compress images
+        if (isImage && !mimeType.includes('gif')) {
+             uploadBuffer = await sharp(buffer)
+                .resize(1920, 1080, { fit: 'inside', withoutEnlargement: true })
+                .webp({ quality: 80 })
+                .withMetadata(false as any)
+                .toBuffer();
+             finalFormat = 'webp';
+        }
+
+        const result = await new Promise<any>((resolve, reject) => {
+            const options: any = {
+                folder,
+                public_id: `attach_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+                resource_type: 'auto', // Cloudinary auto-detects standard image/video/raw
+            };
+            if (isImage && finalFormat) {
+                options.format = finalFormat;
+            }
+
+            const stream = cloudinary.uploader.upload_stream(
+                options,
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                },
+            );
+            stream.end(uploadBuffer);
+        });
+
+        return {
+            url: result.secure_url,
+            publicId: result.public_id,
+            width: result.width || 0,
+            height: result.height || 0,
+            format: result.format || 'unknown',
+            bytes: result.bytes || 0,
+        };
+    } catch (err: any) {
+        console.error('[UploadService] Attachment upload failed:', err);
+        throw new AppError('EXTERNAL_SERVICE_ERROR', 'File upload failed. Please try again.');
+    }
+}

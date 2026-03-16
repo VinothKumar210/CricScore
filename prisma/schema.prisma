@@ -63,6 +63,7 @@ model User {
   sentMessages        Message[]          @relation("Sender")
   conversationMembers ConversationMember[]
   chatPollVotes       ChatPollVote[]
+  messageReactions    MessageReaction[]
   
   // Wagon Wheel
   batsmanBalls        BallRecord[]       @relation("BatsmanBalls")
@@ -617,9 +618,41 @@ model Message {
 
   sender          User         @relation("Sender", fields: [senderId], references: [id])
   conversation    Conversation @relation(fields: [conversationId], references: [id])
+  reactions       MessageReaction[]
+  attachments     MessageAttachment[]
 
   @@index([conversationId, createdAt])
   @@index([senderId])
+}
+
+model MessageAttachment {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  messageId    String         @db.ObjectId
+  url          String
+  type         AttachmentType
+  filename     String
+  sizeBytes    Int
+  mimeType     String
+  thumbnailUrl String?
+  createdAt    DateTime       @default(now())
+
+  message      Message        @relation(fields: [messageId], references: [id])
+
+  @@index([messageId])
+}
+
+model MessageReaction {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  messageId   String   @db.ObjectId
+  userId      String   @db.ObjectId
+  emoji       String
+  createdAt   DateTime @default(now())
+
+  message     Message  @relation(fields: [messageId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId, emoji]) // A user can react with a specific emoji only once per message
+  @@index([messageId])
 }
 
 model ChatPoll {
@@ -905,6 +938,8 @@ enum MemberRole {
 enum MessageType {
   TEXT
   IMAGE
+  VIDEO
+  DOCUMENT
   AUDIO
   SYSTEM
   SCORECARD
@@ -1056,4 +1091,11 @@ enum ReactionType {
   CLAP          // 👏
   BEAST         // 💪
   HUNDRED       // 💯
+}
+
+enum AttachmentType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  AUDIO
 }

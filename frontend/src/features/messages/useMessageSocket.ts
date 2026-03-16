@@ -29,6 +29,7 @@ export const useMessageSocket = () => {
     const activeRoom = useMessageStore(state => state.activeRoom);
     const receiveMessage = useMessageStore(state => state.receiveMessage);
     const handleInboxUpdate = useMessageStore(state => state.handleInboxUpdate);
+    const handleReactionUpdate = useMessageStore(state => state.handleReactionUpdate);
 
     // Use refs to hold latest values for socket callbacks without causing effect re-runs
     const activeRoomRef = useRef(activeRoom);
@@ -37,6 +38,8 @@ export const useMessageSocket = () => {
     receiveMessageRef.current = receiveMessage;
     const handleInboxUpdateRef = useRef(handleInboxUpdate);
     handleInboxUpdateRef.current = handleInboxUpdate;
+    const handleReactionUpdateRef = useRef(handleReactionUpdate);
+    handleReactionUpdateRef.current = handleReactionUpdate;
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -83,6 +86,14 @@ export const useMessageSocket = () => {
             // Real-time inbox updates for ALL conversations (WhatsApp-style)
             socket.on('inbox:update', (payload) => {
                 handleInboxUpdateRef.current(payload);
+            });
+
+            // Real-time reactions
+            socket.on('message:reaction', (payload) => {
+                const roomContext = activeRoomRef.current; // Real-time reactions only come to the focused room realistically
+                if (roomContext) {
+                    handleReactionUpdateRef.current(roomContext, payload);
+                }
             });
 
             socket.on('connect_error', async (err) => {

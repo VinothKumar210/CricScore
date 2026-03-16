@@ -53,7 +53,7 @@ export const MessageRoomPage: React.FC = () => {
         }
     }, [conversationId, fetchMessages]);
 
-    const handleSend = useCallback(async (content: string, overrideTempId?: string, overrideNonce?: string) => {
+    const handleSend = useCallback(async (content: string, overrideTempId?: string, overrideNonce?: string, attachments?: any[]) => {
         if (!currentUser || !conversationId) return;
 
         const tempId = overrideTempId || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -68,6 +68,7 @@ export const MessageRoomPage: React.FC = () => {
                 clientNonce, // Fix for precise deduplication
                 tempId,
                 status: 'sending',
+                attachments,
                 createdAt: new Date().toISOString(),
                 sender: {
                     id: currentUser.id,
@@ -78,7 +79,7 @@ export const MessageRoomPage: React.FC = () => {
         }
 
         try {
-            const serverMessage = await messageService.sendMessage(conversationId, content, clientNonce);
+            const serverMessage = await messageService.sendMessage(conversationId, content, clientNonce, attachments);
             reconcileMessage(conversationId, tempId, serverMessage);
         } catch (error) {
             console.error('Failed to send message:', error);
@@ -123,7 +124,7 @@ export const MessageRoomPage: React.FC = () => {
 
             {/* Input */}
             <MessageInput
-                onSend={(content) => handleSend(content)}
+                onSend={(content, attachments) => handleSend(content, undefined, undefined, attachments)}
                 disabled={!currentUser}
             />
         </div>

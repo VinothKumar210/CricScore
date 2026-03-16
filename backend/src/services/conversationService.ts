@@ -208,5 +208,18 @@ export const conversationService = {
                 data: { isArchived: true }
             });
         }
+    },
+
+    /**
+     * Get detailed member list for a conversation (for @mentions autocomplete)
+     */
+    getConversationMembersDetails: async (conversationId: string) => {
+        const members = await prisma.conversationMember.findMany({
+            where: { conversationId },
+            include: {
+                user: { select: { id: true, fullName: true, profilePictureUrl: true } }
+            }
+        });
+        return members.map((m: any) => m.user);
     }
 };

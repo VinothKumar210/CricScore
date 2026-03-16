@@ -94,10 +94,12 @@ router.post('/:conversationId', requireAuth, async (req: Request, res: Response)
     try {
         const { conversationId } = req.params;
         const userId = req.user?.id;
-        const { content, clientNonce } = req.body;
+        const { content, clientNonce, attachments } = req.body;
 
         if (!userId) return sendError(res, 'Unauthorized', 401, 'UNAUTHORIZED');
-        if (!content || !content.trim()) return sendError(res, 'Content required', 400, 'BAD_REQUEST');
+        if ((!content || !content.trim()) && (!attachments || attachments.length === 0)) {
+            return sendError(res, 'Content or an attachment is required', 400, 'BAD_REQUEST');
+        }
 
         // RULE 6: Strict Rate Limiting
         const isAllowed = await enforceRateLimit(userId);
@@ -110,8 +112,9 @@ router.post('/:conversationId', requireAuth, async (req: Request, res: Response)
         const message = await messageService.saveMessage(
             userId,
             conversationId as string,
-            content,
-            clientNonce as string | undefined
+            content || '',
+            clientNonce as string | undefined,
+            attachments
         );
 
         // RULE 1: Server Emitted Broadcasts (Authoritative Layer)

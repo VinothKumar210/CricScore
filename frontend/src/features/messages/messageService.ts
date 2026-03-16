@@ -17,7 +17,22 @@ export interface Message {
         fullName?: string;
         avatarUrl?: string;
         profilePictureUrl?: string;
-    }
+    };
+    reactions?: {
+        messageId: string;
+        userId: string;
+        emoji: string;
+        createdAt: string;
+    }[];
+    attachments?: {
+        id?: string;
+        url: string;
+        type: 'IMAGE' | 'VIDEO' | 'DOCUMENT' | 'AUDIO';
+        filename: string;
+        sizeBytes: number;
+        mimeType: string;
+        thumbnailUrl?: string;
+    }[];
 }
 
 
@@ -43,10 +58,11 @@ export const messageService = {
         };
     },
 
-    sendMessage: async (conversationId: string, content: string, clientNonce?: string): Promise<Message> => {
+    sendMessage: async (conversationId: string, content: string, clientNonce?: string, attachments?: any[]): Promise<Message> => {
         const { data } = await api.post(`/api/messages/${conversationId}`, {
             content,
-            clientNonce
+            clientNonce,
+            attachments
         });
         return data.data || data;
     },
@@ -69,5 +85,18 @@ export const messageService = {
     getUnreadCounts: async (): Promise<{ total: number; perConversation: Record<string, number> }> => {
         const { data } = await api.get('/api/messages/unread-counts');
         return data.data || data;
+    },
+
+    getConversationMembers: async (conversationId: string): Promise<any[]> => {
+        const { data } = await api.get(`/api/conversations/${conversationId}/members`);
+        return data.data || data;
+    },
+
+    addReaction: async (conversationId: string, messageId: string, emoji: string) => {
+        await api.post(`/api/messages/${conversationId}/${messageId}/react`, { emoji });
+    },
+
+    removeReaction: async (conversationId: string, messageId: string, emoji: string) => {
+        await api.delete(`/api/messages/${conversationId}/${messageId}/react?emoji=${encodeURIComponent(emoji)}`);
     }
 };
