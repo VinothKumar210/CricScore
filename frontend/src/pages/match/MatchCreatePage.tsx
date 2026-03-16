@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container } from '../../components/ui/Container';
 import { api } from '../../lib/api';
+import { teamService } from '../../features/teams/teamService';
+import type { TeamListItem } from '../../features/teams/teamService';
 import {
     ChevronLeft, Loader2, Swords, Clock, CircleDot,
     Shield, ScrollText, ArrowRight
@@ -32,6 +34,28 @@ export const MatchCreatePage = () => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+
+    const [myTeams, setMyTeams] = useState<TeamListItem[]>([]);
+    const [isLoadingTeams, setIsLoadingTeams] = useState(false);
+
+    useEffect(() => {
+        const loadTeams = async () => {
+            setIsLoadingTeams(true);
+            try {
+                const teams = await teamService.getUserTeams();
+                setMyTeams(teams);
+                // Auto-select first team if available
+                if (teams.length > 0) {
+                    setForm(prev => ({ ...prev, homeTeamId: teams[0].id }));
+                }
+            } catch (err) {
+                console.error('Failed to load teams:', err);
+            } finally {
+                setIsLoadingTeams(false);
+            }
+        };
+        loadTeams();
+    }, []);
 
     const [form, setForm] = useState<FormData>({
         matchType: 'T20',
@@ -188,15 +212,41 @@ export const MatchCreatePage = () => {
                     <SectionHeader icon={<Shield className="w-5 h-5 text-primary" />} title="Select Teams" />
 
                     <div className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-foreground">Home Team ID</label>
-                            <input
-                                type="text"
-                                value={form.homeTeamId}
-                                onChange={e => updateForm({ homeTeamId: e.target.value })}
-                                placeholder="Enter home team ID"
-                                className="w-full h-12 rounded-xl bg-secondary border border-border px-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                            />
+                        <div className="space-y-2 relative">
+                            <label className="text-sm font-medium text-foreground">Home Team</label>
+                            <div className="relative">
+                                {isLoadingTeams ? (
+                                    <div className="w-full h-12 flex items-center px-4 rounded-xl bg-secondary border border-border text-muted-foreground text-sm cursor-wait">
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Loading your teams...
+                                    </div>
+                                ) : myTeams.length === 0 ? (
+                                    <div className="w-full h-12 flex items-center px-4 rounded-xl bg-secondary/50 border border-border text-muted-foreground text-sm">
+                                        No teams found. Please create or join a team first.
+                                    </div>
+                                ) : (
+                                    <select
+                                        value={form.homeTeamId}
+                                        onChange={e => updateForm({ homeTeamId: e.target.value })}
+                                        className="w-full h-12 rounded-xl bg-secondary border border-border px-4 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary appearance-none pr-10"
+                                    >
+                                        <option value="" disabled>Select your team</option>
+                                        {myTeams.map(team => (
+                                            <option key={team.id} value={team.id}>
+                                                {team.name} {team.shortName ? `(${team.shortName})` : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                                {/* Custom arrow for select */}
+                                {!isLoadingTeams && myTeams.length > 0 && (
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                                        <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        </svg>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="flex items-center justify-center">

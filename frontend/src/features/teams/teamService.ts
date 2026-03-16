@@ -48,6 +48,12 @@ export const teamService = {
         return res.data?.team || res.team;
     },
 
+    /** Get user's teams */
+    getUserTeams: async (): Promise<TeamListItem[]> => {
+        const res = await api.get('/api/teams');
+        return res.data?.teams || res.teams || [];
+    },
+
     /** Create a new team */
     createTeam: async (data: { name: string; city?: string; shortName?: string }): Promise<Team> => {
         const res = await api.post('/api/teams', data);
