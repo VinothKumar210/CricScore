@@ -6,6 +6,9 @@ import { useMessageStore } from './messageStore';
 
 let socket: Socket | null = null;
 
+/** Get the current socket instance for typing emissions */
+export const getMessageSocket = (): Socket | null => socket;
+
 /**
  * Get a fresh Firebase ID token (auto-refreshes if expired)
  */
@@ -30,6 +33,8 @@ export const useMessageSocket = () => {
     const receiveMessage = useMessageStore(state => state.receiveMessage);
     const handleInboxUpdate = useMessageStore(state => state.handleInboxUpdate);
     const handleReactionUpdate = useMessageStore(state => state.handleReactionUpdate);
+    const addTypingUser = useMessageStore(state => state.addTypingUser);
+    const removeTypingUser = useMessageStore(state => state.removeTypingUser);
 
     // Use refs to hold latest values for socket callbacks without causing effect re-runs
     const activeRoomRef = useRef(activeRoom);
@@ -40,6 +45,10 @@ export const useMessageSocket = () => {
     handleInboxUpdateRef.current = handleInboxUpdate;
     const handleReactionUpdateRef = useRef(handleReactionUpdate);
     handleReactionUpdateRef.current = handleReactionUpdate;
+    const addTypingUserRef = useRef(addTypingUser);
+    addTypingUserRef.current = addTypingUser;
+    const removeTypingUserRef = useRef(removeTypingUser);
+    removeTypingUserRef.current = removeTypingUser;
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -109,6 +118,15 @@ export const useMessageSocket = () => {
 
             socket.on('disconnect', (reason) => {
                 console.log('[MessageSocket] Disconnected:', reason);
+            });
+
+            // Typing indicators
+            socket.on('typing:start', (payload: { conversationId: string; userId: string; name: string }) => {
+                addTypingUserRef.current(payload.conversationId, payload.userId, payload.name);
+            });
+
+            socket.on('typing:stop', (payload: { conversationId: string; userId: string }) => {
+                removeTypingUserRef.current(payload.conversationId, payload.userId);
             });
         };
 

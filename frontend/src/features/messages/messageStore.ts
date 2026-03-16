@@ -28,6 +28,9 @@ interface MessageState {
     replyingToMessage: Message | null;
     setReplyingTo: (message: Message | null) => void;
     clearReply: () => void;
+    typingUsers: Record<string, { userId: string; name: string }[]>;
+    addTypingUser: (conversationId: string, userId: string, name: string) => void;
+    removeTypingUser: (conversationId: string, userId: string) => void;
     reset: () => void;
 }
 
@@ -44,9 +47,41 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     unreadCounts: {},
     totalUnread: 0,
     replyingToMessage: null,
+    typingUsers: {},
 
     setReplyingTo: (message) => set({ replyingToMessage: message }),
     clearReply: () => set({ replyingToMessage: null }),
+
+    addTypingUser: (conversationId, userId, name) => {
+        set(state => {
+            const current = state.typingUsers[conversationId] || [];
+            if (current.some(u => u.userId === userId)) return state;
+            return {
+                typingUsers: {
+                    ...state.typingUsers,
+                    [conversationId]: [...current, { userId, name }]
+                }
+            };
+        });
+        // Auto-remove after 4 seconds if no refresh
+        setTimeout(() => {
+            const store = useMessageStore.getState();
+            store.removeTypingUser(conversationId, userId);
+        }, 4000);
+    },
+
+    removeTypingUser: (conversationId, userId) => {
+        set(state => {
+            const current = state.typingUsers[conversationId] || [];
+            const filtered = current.filter(u => u.userId !== userId);
+            return {
+                typingUsers: {
+                    ...state.typingUsers,
+                    [conversationId]: filtered
+                }
+            };
+        });
+    },
 
     setActiveRoom: (conversationId) => set({ activeRoom: conversationId }),
 

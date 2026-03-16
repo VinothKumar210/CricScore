@@ -5,6 +5,7 @@ import { messageService } from '../messageService';
 import { useMessageSocket } from '../useMessageSocket';
 import { MessageList } from '../components/MessageList';
 import { MessageInput } from '../components/MessageInput';
+import TypingIndicator from '../components/TypingIndicator';
 import { useAuthStore } from '../../../store/authStore';
 import { ArrowLeft } from 'lucide-react';
 
@@ -27,6 +28,9 @@ export const MessageRoomPage: React.FC = () => {
     const markConversationRead = useMessageStore(state => state.markConversationRead);
     const replyingToMessage = useMessageStore(state => state.replyingToMessage);
     const clearReply = useMessageStore(state => state.clearReply);
+    const typingUsers = useMessageStore(state =>
+        conversationId ? (state.typingUsers[conversationId] || []).filter(u => u.userId !== currentUser?.id) : []
+    );
 
     useMessageSocket();
 
@@ -135,6 +139,9 @@ export const MessageRoomPage: React.FC = () => {
                 onLoadMore={handleLoadMore}
                 onRetry={handleRetry}
             />
+
+            {/* Typing indicator */}
+            <TypingIndicator typingUsers={typingUsers} />
 
             {/* Input */}
             <MessageInput

@@ -191,7 +191,10 @@ export const MessageBubble: React.FC<Props> = React.memo(({ message, onRetry }) 
                     )}
 
                     {isMine && !message.status && (
-                        <Check className="h-3 w-3 text-emerald-400" />
+                        <span className="flex items-center -space-x-1">
+                            <Check className="h-3 w-3 text-emerald-400" />
+                            <Check className="h-3 w-3 text-emerald-400" />
+                        </span>
                     )}
                 </div>
             </div>

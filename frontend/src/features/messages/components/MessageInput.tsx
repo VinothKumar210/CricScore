@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Smile, X, Loader2 } from 'lucide-react';
 import { EmojiPicker } from './EmojiPicker';
 import { MentionAutocomplete } from './MentionAutocomplete';
 import { AttachmentPicker } from './AttachmentPicker';
 import ReplyPreview from './ReplyPreview';
 import { useMessageStore } from '../messageStore';
+import { getMessageSocket } from '../useMessageSocket';
 import { api } from '../../../lib/api';
 
 interface Props {
@@ -24,6 +25,9 @@ export const MessageInput: React.FC<Props> = ({ onSend, disabled }) => {
     const activeRoom = useMessageStore(state => state.activeRoom);
     const replyingToMessage = useMessageStore(state => state.replyingToMessage);
     const clearReply = useMessageStore(state => state.clearReply);
+
+    const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const lastTypingEmitRef = useRef<number>(0);
 
     useEffect(() => {
         if (textareaRef.current) {
@@ -47,7 +51,35 @@ export const MessageInput: React.FC<Props> = ({ onSend, disabled }) => {
         const newValue = e.target.value;
         setContent(newValue);
         checkMentionPattern(newValue, e.target.selectionStart);
+        emitTypingStart();
     };
+
+    const emitTypingStart = useCallback(() => {
+        const now = Date.now();
+        if (now - lastTypingEmitRef.current < 2000) return;
+        lastTypingEmitRef.current = now;
+
+        const sock = getMessageSocket();
+        if (sock && activeRoom) {
+            sock.emit('typing:start', { conversationId: activeRoom });
+        }
+
+        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+        typingTimerRef.current = setTimeout(() => {
+            const sock2 = getMessageSocket();
+            if (sock2 && activeRoom) {
+                sock2.emit('typing:stop', { conversationId: activeRoom });
+            }
+        }, 3000);
+    }, [activeRoom]);
+
+    const handleBlur = useCallback(() => {
+        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+        const sock = getMessageSocket();
+        if (sock && activeRoom) {
+            sock.emit('typing:stop', { conversationId: activeRoom });
+        }
+    }, [activeRoom]);
 
     const handleMentionSelect = (member: { id: string; fullName: string }) => {
         if (!textareaRef.current || mentionQuery === null) return;
@@ -205,6 +237,7 @@ export const MessageInput: React.FC<Props> = ({ onSend, disabled }) => {
                     value={content}
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
+                    onBlur={handleBlur}
                     onSelect={(e) => checkMentionPattern(e.currentTarget.value, e.currentTarget.selectionStart)}
                     disabled={disabled || isSending || isUploading}
                     placeholder="Type a message..."
