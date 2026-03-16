@@ -15,7 +15,7 @@ const upload = multer({
  * POST /api/upload
  * Upload a file attachment for a message
  */
-router.post('/', requireAuth, upload.single('file'), async (req: Request, res: Response) => {
+router.post('/', requireAuth, upload.single('file'), async (req: Request & { file?: any }, res: Response) => {
     try {
         if (!req.file) {
             return sendError(res, 'No file provided', 400, 'BAD_REQUEST');
