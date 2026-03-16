@@ -27,8 +27,14 @@ router.post('/', requireAuth, upload.single('file'), async (req: Request & { fil
             req.file.mimetype
         );
 
+        let attachmentType: 'IMAGE' | 'VIDEO' | 'AUDIO' | 'DOCUMENT' = 'DOCUMENT';
+        if (req.file.mimetype.startsWith('image/')) attachmentType = 'IMAGE';
+        else if (req.file.mimetype.startsWith('video/')) attachmentType = 'VIDEO';
+        else if (req.file.mimetype.startsWith('audio/')) attachmentType = 'AUDIO';
+
         return sendSuccess(res, { 
             url: result.url,
+            type: attachmentType,
             filename: req.file.originalname,
             sizeBytes: result.bytes,
             mimeType: req.file.mimetype,

@@ -63,7 +63,10 @@ export const messageService = {
         }
 
         // 3. Persist natively bypassing in-memory race risks
-        const messageType = attachments && attachments.length > 0 ? attachments[0]!.type : 'TEXT';
+        let messageType = 'TEXT';
+        if (attachments && attachments.length > 0) {
+            messageType = attachments[0]!.type === 'AUDIO' ? 'DOCUMENT' : attachments[0]!.type;
+        }
 
         const message = await prisma.message.create({
             data: {
