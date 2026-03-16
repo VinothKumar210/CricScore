@@ -33,6 +33,12 @@ export interface Message {
         mimeType: string;
         thumbnailUrl?: string;
     }[];
+    replyTo?: {
+        id: string;
+        content: string;
+        type?: string;
+        sender?: { fullName?: string };
+    } | null;
 }
 
 
@@ -58,11 +64,12 @@ export const messageService = {
         };
     },
 
-    sendMessage: async (conversationId: string, content: string, clientNonce?: string, attachments?: any[]): Promise<Message> => {
+    sendMessage: async (conversationId: string, content: string, clientNonce?: string, attachments?: any[], replyToId?: string): Promise<Message> => {
         const { data } = await api.post(`/api/messages/${conversationId}`, {
             content,
             clientNonce,
-            attachments
+            attachments,
+            replyToId
         });
         return data.data || data;
     },

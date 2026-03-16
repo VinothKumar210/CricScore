@@ -25,6 +25,9 @@ interface MessageState {
     markConversationRead: (conversationId: string) => Promise<void>;
     handleInboxUpdate: (payload: { conversationId: string; lastMessage: any }) => void;
     handleReactionUpdate: (conversationId: string, payload: { messageId: string, userId: string, emoji: string, action: 'add' | 'remove', createdAt?: string }) => void;
+    replyingToMessage: Message | null;
+    setReplyingTo: (message: Message | null) => void;
+    clearReply: () => void;
     reset: () => void;
 }
 
@@ -40,6 +43,10 @@ export const useMessageStore = create<MessageState>((set, get) => ({
     activeRoom: null,
     unreadCounts: {},
     totalUnread: 0,
+    replyingToMessage: null,
+
+    setReplyingTo: (message) => set({ replyingToMessage: message }),
+    clearReply: () => set({ replyingToMessage: null }),
 
     setActiveRoom: (conversationId) => set({ activeRoom: conversationId }),
 

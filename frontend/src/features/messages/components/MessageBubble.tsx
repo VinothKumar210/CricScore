@@ -3,9 +3,11 @@ import type { Message } from '../messageService';
 import { messageService } from '../messageService';
 import { formatRelativeTime } from '../../../utils/dateUtils';
 import { useAuthStore } from '../../../store/authStore';
-import { Check, Clock, AlertCircle } from 'lucide-react';
+import { Check, Clock, AlertCircle, Reply } from 'lucide-react';
 import { clsx } from 'clsx';
 import { MediaPreview } from './MediaPreview';
+import ReplyPreview from './ReplyPreview';
+import { useMessageStore } from '../messageStore';
 
 interface Props {
     message: Message;
@@ -16,6 +18,7 @@ const QUICK_REACTIONS = ['👍', '❤️', '😂', '🔥', '🏏', '🎉'];
 
 export const MessageBubble: React.FC<Props> = React.memo(({ message, onRetry }) => {
     const currentUser = useAuthStore(state => state.user);
+    const setReplyingTo = useMessageStore(state => state.setReplyingTo);
     const isMine = currentUser?.id === message.senderId;
     const [isHovered, setIsHovered] = useState(false);
 
@@ -87,6 +90,14 @@ export const MessageBubble: React.FC<Props> = React.memo(({ message, onRetry }) 
                             {emoji}
                         </button>
                     ))}
+                    <div className="w-px h-5 bg-border mx-0.5" />
+                    <button
+                        onClick={() => setReplyingTo(message)}
+                        className="text-muted-foreground hover:text-foreground hover:scale-110 transition-all px-1 cursor-pointer"
+                        title="Reply"
+                    >
+                        <Reply className="w-4 h-4" />
+                    </button>
                 </div>
             )}
 
@@ -107,6 +118,21 @@ export const MessageBubble: React.FC<Props> = React.memo(({ message, onRetry }) 
                     message.status === 'failed' && "ring-2 ring-destructive/50",
                     message.attachments && message.attachments.length > 0 && !message.content ? "p-1.5" : ""
                 )}>
+                    {/* Reply context */}
+                    {message.replyTo && (
+                        <div className={clsx(
+                            "rounded-lg mb-1 cursor-pointer",
+                            isMine ? "bg-primary-foreground/10" : "bg-secondary"
+                        )}>
+                            <ReplyPreview
+                                senderName={message.replyTo.sender?.fullName || 'Unknown'}
+                                content={message.replyTo.content}
+                                messageType={message.replyTo.type}
+                                compact
+                            />
+                        </div>
+                    )}
+
                     {message.attachments && message.attachments.length > 0 && (
                         <div className="flex flex-col gap-1 mb-1">
                             {message.attachments.map((att: any, i: number) => (

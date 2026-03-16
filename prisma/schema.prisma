@@ -614,10 +614,13 @@ model Message {
   content         String
   type            MessageType  @default(TEXT)
   clientNonce     String?
+  replyToId       String?      @db.ObjectId
   createdAt       DateTime     @default(now())
 
   sender          User         @relation("Sender", fields: [senderId], references: [id])
   conversation    Conversation @relation(fields: [conversationId], references: [id])
+  replyTo         Message?     @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies         Message[]    @relation("MessageReplies")
   reactions       MessageReaction[]
   attachments     MessageAttachment[]
 

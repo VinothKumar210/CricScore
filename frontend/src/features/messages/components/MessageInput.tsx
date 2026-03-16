@@ -3,11 +3,12 @@ import { Send, Smile, X, Loader2 } from 'lucide-react';
 import { EmojiPicker } from './EmojiPicker';
 import { MentionAutocomplete } from './MentionAutocomplete';
 import { AttachmentPicker } from './AttachmentPicker';
+import ReplyPreview from './ReplyPreview';
 import { useMessageStore } from '../messageStore';
 import { api } from '../../../lib/api';
 
 interface Props {
-    onSend: (content: string, attachments?: any[]) => Promise<void>;
+    onSend: (content: string, attachments?: any[], replyToId?: string) => Promise<void>;
     disabled?: boolean;
 }
 
@@ -21,6 +22,8 @@ export const MessageInput: React.FC<Props> = ({ onSend, disabled }) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     
     const activeRoom = useMessageStore(state => state.activeRoom);
+    const replyingToMessage = useMessageStore(state => state.replyingToMessage);
+    const clearReply = useMessageStore(state => state.clearReply);
 
     useEffect(() => {
         if (textareaRef.current) {
@@ -91,9 +94,10 @@ export const MessageInput: React.FC<Props> = ({ onSend, disabled }) => {
                 attachments = [uploadResult];
             }
 
-            await onSend(trimmed, attachments);
+            await onSend(trimmed, attachments, replyingToMessage?.id);
             setContent('');
             setSelectedFile(null);
+            clearReply();
             if (textareaRef.current) {
                 textareaRef.current.style.height = 'auto';
             }
@@ -120,6 +124,18 @@ export const MessageInput: React.FC<Props> = ({ onSend, disabled }) => {
 
     return (
         <div className="p-3 bg-card border-t border-border shrink-0 relative">
+            {/* Reply banner */}
+            {replyingToMessage && (
+                <div className="mb-2 bg-secondary/60 border border-border rounded-xl overflow-hidden">
+                    <ReplyPreview
+                        senderName={replyingToMessage.sender?.fullName || replyingToMessage.sender?.name || 'Unknown'}
+                        content={replyingToMessage.content}
+                        messageType={replyingToMessage.attachments?.[0]?.type}
+                        onCancel={clearReply}
+                    />
+                </div>
+            )}
+
             {showEmojiPicker && (
                 <EmojiPicker 
                     className="absolute bottom-full left-4 mb-2 z-50" 

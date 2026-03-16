@@ -36,7 +36,8 @@ export const messageService = {
             sizeBytes: number;
             mimeType: string;
             thumbnailUrl?: string;
-        }>
+        }>,
+        replyToId?: string
     ) => {
         // 1. Validate Membership
         const isMember = await messageService.validateConversationMembership(senderId, conversationId);
@@ -75,6 +76,7 @@ export const messageService = {
                 content,
                 type: messageType,
                 clientNonce: clientNonce ?? null,
+                replyToId: replyToId ?? null,
                 ...(attachments && attachments.length > 0 && {
                     attachments: {
                         create: attachments
@@ -84,6 +86,7 @@ export const messageService = {
             include: {
                 sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } },
                 conversation: { select: { type: true, entityId: true } },
+                replyTo: { select: { id: true, content: true, type: true, sender: { select: { fullName: true } } } },
                 attachments: true
             }
         });
@@ -153,6 +156,7 @@ export const messageService = {
             include: {
                 sender: { select: { id: true, fullName: true, phoneNumber: true, profilePictureUrl: true } },
                 conversation: { select: { type: true, entityId: true } },
+                replyTo: { select: { id: true, content: true, type: true, sender: { select: { fullName: true } } } },
                 reactions: true,
                 attachments: true
             }

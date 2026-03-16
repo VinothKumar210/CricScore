@@ -25,6 +25,8 @@ export const MessageRoomPage: React.FC = () => {
     const reconcileMessage = useMessageStore(state => state.reconcileMessage);
     const markMessageFailed = useMessageStore(state => state.markMessageFailed);
     const markConversationRead = useMessageStore(state => state.markConversationRead);
+    const replyingToMessage = useMessageStore(state => state.replyingToMessage);
+    const clearReply = useMessageStore(state => state.clearReply);
 
     useMessageSocket();
 
@@ -53,11 +55,19 @@ export const MessageRoomPage: React.FC = () => {
         }
     }, [conversationId, fetchMessages]);
 
-    const handleSend = useCallback(async (content: string, overrideTempId?: string, overrideNonce?: string, attachments?: any[]) => {
+    const handleSend = useCallback(async (content: string, overrideTempId?: string, overrideNonce?: string, attachments?: any[], replyToId?: string) => {
         if (!currentUser || !conversationId) return;
 
         const tempId = overrideTempId || `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const clientNonce = overrideNonce || crypto.randomUUID();
+
+        // Capture reply context for optimistic rendering
+        const replyTo = replyToId && replyingToMessage ? {
+            id: replyingToMessage.id,
+            content: replyingToMessage.content,
+            type: replyingToMessage.attachments?.[0]?.type,
+            sender: { fullName: replyingToMessage.sender?.fullName || replyingToMessage.sender?.name }
+        } : undefined;
 
         if (!overrideTempId) {
             addOptimisticMessage(conversationId, {
@@ -65,10 +75,11 @@ export const MessageRoomPage: React.FC = () => {
                 conversationId,
                 senderId: currentUser.id,
                 content,
-                clientNonce, // Fix for precise deduplication
+                clientNonce,
                 tempId,
                 status: 'sending',
                 attachments,
+                replyTo: replyTo || null,
                 createdAt: new Date().toISOString(),
                 sender: {
                     id: currentUser.id,
@@ -78,14 +89,17 @@ export const MessageRoomPage: React.FC = () => {
             });
         }
 
+        // Clear reply state immediately after capturing context
+        if (replyToId) clearReply();
+
         try {
-            const serverMessage = await messageService.sendMessage(conversationId, content, clientNonce, attachments);
+            const serverMessage = await messageService.sendMessage(conversationId, content, clientNonce, attachments, replyToId);
             reconcileMessage(conversationId, tempId, serverMessage);
         } catch (error) {
             console.error('Failed to send message:', error);
             markMessageFailed(conversationId, tempId);
         }
-    }, [currentUser, conversationId, addOptimisticMessage, reconcileMessage, markMessageFailed]);
+    }, [currentUser, conversationId, addOptimisticMessage, reconcileMessage, markMessageFailed, replyingToMessage, clearReply]);
 
     const handleRetry = useCallback((message: any) => {
         if (message.status === 'failed' && message.tempId) {
@@ -124,7 +138,7 @@ export const MessageRoomPage: React.FC = () => {
 
             {/* Input */}
             <MessageInput
-                onSend={(content, attachments) => handleSend(content, undefined, undefined, attachments)}
+                onSend={(content, attachments, replyToId) => handleSend(content, undefined, undefined, attachments, replyToId)}
                 disabled={!currentUser}
             />
         </div>

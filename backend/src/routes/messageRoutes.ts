@@ -94,7 +94,7 @@ router.post('/:conversationId', requireAuth, async (req: Request, res: Response)
     try {
         const { conversationId } = req.params;
         const userId = req.user?.id;
-        const { content, clientNonce, attachments } = req.body;
+        const { content, clientNonce, attachments, replyToId } = req.body;
 
         if (!userId) return sendError(res, 'Unauthorized', 401, 'UNAUTHORIZED');
         if ((!content || !content.trim()) && (!attachments || attachments.length === 0)) {
@@ -114,7 +114,8 @@ router.post('/:conversationId', requireAuth, async (req: Request, res: Response)
             conversationId as string,
             content || '',
             clientNonce as string | undefined,
-            attachments
+            attachments,
+            replyToId as string | undefined
         );
 
         // RULE 1: Server Emitted Broadcasts (Authoritative Layer)
