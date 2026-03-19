@@ -21,7 +21,13 @@ export function applyEvent(originalState: MatchState, event: BallEvent): MatchSt
     }
 
     if (event.type === "PHASE_CHANGE") {
-        state.matchPhase = event.newPhase;
+        if ((event as any).newPhase === "ABANDONED") {
+            state.status = "ABANDONED";
+            state.matchResult = { resultType: "NO_RESULT", description: "Match abandoned" };
+        } else {
+            state.matchPhase = event.newPhase as any;
+        }
+
         if (event.newPhase === "SUPER_OVER") {
             state.matchResult = undefined;
             if (!state.superOverInnings) {
@@ -133,6 +139,32 @@ export function applyEvent(originalState: MatchState, event: BallEvent): MatchSt
         } else if (event.extraType === "LEG_BYE") {
             innings.extras.legByes += (event.additionalRuns || 0);
             innings.totalRuns += (event.additionalRuns || 0);
+        } else if (event.extraType === "PENALTY") {
+            const pts = event.additionalRuns || 0;
+            // If teamId matches bowling team, we credit it to their batting innings
+            if ((event as any).teamId && (event as any).teamId === innings.bowlingTeamId) {
+                let theirInnings = state.innings.find(i => i.battingTeamId === (event as any).teamId);
+                if (!theirInnings && state.innings.length === 1) {
+                    state.innings.push({
+                        battingTeamId: innings.bowlingTeamId,
+                        bowlingTeamId: innings.battingTeamId,
+                        totalRuns: pts,
+                        totalWickets: 0,
+                        totalBalls: 0,
+                        isCompleted: false,
+                        isFreeHit: false,
+                        extras: { wides: 0, noBalls: 0, byes: 0, legByes: 0, penalty: pts },
+                        batters: {}, bowlers: {},
+                        strikerId: null, nonStrikerId: null, currentBowlerId: null
+                    });
+                } else if (theirInnings) {
+                    theirInnings.extras.penalty += pts;
+                    theirInnings.totalRuns += pts;
+                }
+            } else {
+                innings.extras.penalty += pts;
+                innings.totalRuns += pts;
+            }
         }
     } else if (event.type === "WICKET") {
         innings.totalWickets += 1;

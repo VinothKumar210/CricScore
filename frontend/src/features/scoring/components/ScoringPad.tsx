@@ -5,6 +5,7 @@ import { useScoringStore } from '../scoringStore';
 import { WicketFlowSheet } from './wicket/WicketFlowSheet';
 import { UndoBottomSheet } from './UndoBottomSheet';
 import { ExtraSheet } from './ExtraSheet';
+import { MatchSettingsMenu } from './MatchSettingsMenu';
 
 /**
  * ScoringPad — Premium cricket scoring input grid.
@@ -24,6 +25,7 @@ export const ScoringPad = () => {
     const derivedState = useScoringStore((s) => s.derivedState);
 
     const [showUndo, setShowUndo] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const [activeExtra, setActiveExtra] = useState<'WIDE' | 'NO_BALL' | 'BYE' | 'LEG_BYE' | null>(null);
 
     const isMatchLive = matchState?.status === 'LIVE';
@@ -106,6 +108,7 @@ export const ScoringPad = () => {
                         UNDO
                     </button>
                     <button
+                        onClick={() => setShowSettings(true)}
                         disabled={isDisabled}
                         className="h-12 rounded-xl text-xs font-semibold transition-all active:scale-[0.93] flex items-center justify-center gap-1.5 select-none
                                    bg-secondary border border-border text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
@@ -118,6 +121,7 @@ export const ScoringPad = () => {
             {/* Bottom Sheets */}
             <WicketFlowSheet />
             <UndoBottomSheet isOpen={showUndo} onClose={() => setShowUndo(false)} />
+            <MatchSettingsMenu isOpen={showSettings} onClose={() => setShowSettings(false)} />
             <ExtraSheet extraType={activeExtra} onClose={() => setActiveExtra(null)} />
         </div>
     );

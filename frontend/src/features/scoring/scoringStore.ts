@@ -43,6 +43,27 @@ export interface ScoringState {
     wicketDraft: WicketDraft | null;
     isWicketFlowActive: boolean;
 
+    // Transition States
+    pendingBowlerId: string | null;
+    showNextBowlerSheet: boolean;
+    showOverSummaryToast: boolean;
+    showInningsBreakCard: boolean;
+
+    // UI State Setters
+    setNextBowler: (playerId: string) => void;
+    setShowOverSummaryToast: (show: boolean) => void;
+    setShowNextBowlerSheet: (show: boolean) => void;
+    setShowInningsBreakCard: (show: boolean) => void;
+
+    // Wagon Wheel toggle
+    isWagonWheelEnabled: boolean;
+    toggleWagonWheel: () => void;
+
+    // Edge Cases Actions
+    deductShortRun: () => Promise<void>;
+    addPenalty: (teamId: string, runs: number) => Promise<void>;
+    abandonMatch: () => Promise<void>;
+
     initialize: (matchId: string) => Promise<void>;
     recordBall: (event: BallEventInput) => Promise<void>;
     undo: () => Promise<void>;
@@ -121,6 +142,53 @@ export const useScoringStore = create<ScoringState>((set, get) => {
 
         wicketDraft: null,
         isWicketFlowActive: false,
+
+        // Transition States
+        pendingBowlerId: null,
+        showNextBowlerSheet: false,
+        showOverSummaryToast: false,
+        showInningsBreakCard: false,
+
+        isWagonWheelEnabled: false,
+        toggleWagonWheel: () => set(state => ({ isWagonWheelEnabled: !state.isWagonWheelEnabled })),
+
+        deductShortRun: async () => {
+            const { matchId } = get();
+            if (!matchId) return;
+            const payload = {
+                type: "EXTRA",
+                extraType: "PENALTY",
+                additionalRuns: -1 // Negative run for short run
+            } as any;
+            await get().recordBall(payload);
+        },
+
+        addPenalty: async (teamId: string, runs: number) => {
+            const { matchId } = get();
+            if (!matchId) return;
+            const payload = {
+                type: "EXTRA",
+                extraType: "PENALTY",
+                additionalRuns: runs,
+                teamId // This indicates which team gets it. Needs engine support.
+            } as any;
+            await get().recordBall(payload);
+        },
+
+        abandonMatch: async () => {
+            const { matchId } = get();
+            if (!matchId) return;
+            const payload = {
+                type: "PHASE_CHANGE",
+                newPhase: "ABANDONED"
+            } as any;
+            await get().recordBall(payload);
+        },
+
+        setNextBowler: (playerId: string) => set({ pendingBowlerId: playerId, showNextBowlerSheet: false }),
+        setShowOverSummaryToast: (show: boolean) => set({ showOverSummaryToast: show }),
+        setShowNextBowlerSheet: (show: boolean) => set({ showNextBowlerSheet: show }),
+        setShowInningsBreakCard: (show: boolean) => set({ showInningsBreakCard: show }),
 
         // Replay Timeline State
         replayIndex: null,
@@ -233,11 +301,16 @@ export const useScoringStore = create<ScoringState>((set, get) => {
                 matchId,
                 batsmanId: eventInput.batsmanId || currentInnings?.strikerId || "unknown",
                 nonStrikerId: eventInput.nonStrikerId || currentInnings?.nonStrikerId || "unknown",
-                bowlerId: eventInput.bowlerId || currentInnings?.currentBowlerId || "unknown",
+                bowlerId: eventInput.bowlerId || get().pendingBowlerId || currentInnings?.currentBowlerId || "unknown",
                 overNumber: Math.floor((currentInnings?.totalBalls || 0) / 6),
                 ballNumber: events.length + 1,
                 timestamp: Date.now()
             };
+
+            // Clear pending bowler if used
+            if (get().pendingBowlerId && !eventInput.bowlerId) {
+                set({ pendingBowlerId: null });
+            }
 
             // 1. Save to Dexie
             await matchDB.matchEvents.add({
@@ -254,7 +327,32 @@ export const useScoringStore = create<ScoringState>((set, get) => {
             if (matchConfig && get().matchState) {
                 const newState = reconstructMatchState(matchConfig, newEvents);
                 const mappedState = mapEngineStateToDomain(newState, get().matchState!, newEvents);
-                set({ events: newEvents, derivedState: newState, matchState: mappedState });
+                
+                // --- Transition Detectors ---
+                const newInnings = newState.innings[newState.currentInningsIndex];
+                
+                let showOverSummaryToast = get().showOverSummaryToast;
+                let showNextBowlerSheet = get().showNextBowlerSheet;
+                let showInningsBreakCard = get().showInningsBreakCard;
+
+                // End of innings detection (new innings is marked completed but old wasn't)
+                if (currentInnings && !currentInnings.isCompleted && newInnings && newInnings.isCompleted) {
+                    showInningsBreakCard = true;
+                } 
+                // End of over detection (if we just hit a multiple of 6 balls and it's not the end of the innings)
+                else if (currentInnings && newInnings && currentInnings.totalBalls < newInnings.totalBalls && newInnings.totalBalls % 6 === 0) {
+                    showOverSummaryToast = true;
+                    showNextBowlerSheet = true;
+                }
+
+                set({ 
+                    events: newEvents, 
+                    derivedState: newState, 
+                    matchState: mappedState,
+                    showOverSummaryToast,
+                    showNextBowlerSheet,
+                    showInningsBreakCard
+                });
             }
         },
 

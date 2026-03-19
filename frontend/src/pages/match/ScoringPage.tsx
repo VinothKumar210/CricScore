@@ -10,13 +10,27 @@ import { ScoringPad } from '../../features/scoring/components/ScoringPad';
 import { CommentaryPanel } from '../../features/scoring/components/CommentaryPanel';
 import { MilestoneWatcher } from '../../features/scoring/components/MilestoneWatcher';
 import { EventNotifier } from '../../features/scoring/broadcast/EventNotifier';
+import { NextBowlerSheet } from '../../features/scoring/components/NextBowlerSheet';
+import { OverSummaryToast } from '../../features/scoring/components/OverSummaryToast';
+import { InningsBreakCard } from '../../features/scoring/components/InningsBreakCard';
 import { Loader2 } from 'lucide-react';
 
 export const ScoringPage = () => {
     const { id: matchId } = useParams<{ id: string }>();
     const initialize = useScoringStore((s) => s.initialize);
     const matchState = useScoringStore((s) => s.matchState);
+    const derivedState = useScoringStore((s) => s.derivedState);
     const error = useScoringStore((s) => s.error);
+
+    // Transition States
+    const showNextBowlerSheet = useScoringStore((s) => s.showNextBowlerSheet);
+    const showOverSummaryToast = useScoringStore((s) => s.showOverSummaryToast);
+    const showInningsBreakCard = useScoringStore((s) => s.showInningsBreakCard);
+    
+    const setNextBowler = useScoringStore((s) => s.setNextBowler);
+    const setShowNextBowlerSheet = useScoringStore((s) => s.setShowNextBowlerSheet);
+    const setShowOverSummaryToast = useScoringStore((s) => s.setShowOverSummaryToast);
+    const setShowInningsBreakCard = useScoringStore((s) => s.setShowInningsBreakCard);
 
     // 1. Initialize Store
     useEffect(() => {
@@ -105,6 +119,114 @@ export const ScoringPage = () => {
                         Refresh
                     </button>
                 </div>
+            )}
+
+            {/* Over Transition Modals */}
+            {matchState && derivedState && (
+                <>
+                    {showInningsBreakCard ? (() => {
+                        const previousInningsIndex = Math.max(0, derivedState.currentInningsIndex - 1);
+                        const previousInningsEngine = derivedState.innings[previousInningsIndex];
+                        const battingTeamId = previousInningsEngine.battingTeamId;
+                        const bowlingTeamId = previousInningsEngine.bowlingTeamId;
+                        const getTeam = (id: string | undefined) => {
+                            if (!id) return matchState.teamA;
+                            return id === matchState.teamA.id ? matchState.teamA : matchState.teamB;
+                        };
+
+                        const battingTeam = getTeam(battingTeamId);
+                        const bowlingTeam = getTeam(bowlingTeamId);
+
+                        // Hacky way to get top performers: we just use current stats if it's the 1st innings break
+                        const currentBatStats = useScoringStore.getState().getBatsmanStats().sort((a,b) => b.runs - a.runs).slice(0, 2);
+                        const currentBowlStats = useScoringStore.getState().getBowlingStats().sort((a,b) => b.wickets - a.wickets).slice(0, 2);
+
+                        const formatOvers = (balls: number) => {
+                            const o = Math.floor(balls / 6);
+                            const b = balls % 6;
+                            return b === 0 ? `${o}` : `${o}.${b}`;
+                        };
+
+                        return (
+                            <InningsBreakCard
+                                inningsNumber={previousInningsIndex + 1}
+                                battingTeam={battingTeam}
+                                bowlingTeam={bowlingTeam}
+                                score={{
+                                    runs: previousInningsEngine.totalRuns,
+                                    wickets: previousInningsEngine.totalWickets,
+                                    overs: formatOvers(previousInningsEngine.totalBalls)
+                                }}
+                                target={derivedState.interruption?.revisedTarget ?? (previousInningsEngine.totalRuns + 1)}
+                                topBatsmen={currentBatStats.map(b => ({
+                                    name: battingTeam.players?.find(p => p.id === b.playerId)?.name || 'Unknown',
+                                    runs: b.runs,
+                                    balls: b.balls
+                                }))}
+                                topBowlers={currentBowlStats.map(b => ({
+                                    name: bowlingTeam.players?.find(p => p.id === b.bowlerId)?.name || 'Unknown',
+                                    wickets: b.wickets,
+                                    runs: b.runsConceded,
+                                    overs: b.overs
+                                }))}
+                                onStartNextInnings={() => {
+                                    setShowInningsBreakCard(false);
+                                    // Normally would push user to SelectOpeners screen here!
+                                    // For now, we just close it and let the user select via ScoringPad
+                                }}
+                            />
+                        );
+                    })() : null}
+
+                    {showNextBowlerSheet && (
+                        <NextBowlerSheet
+                            isOpen={showNextBowlerSheet}
+                            team={
+                                derivedState.innings[derivedState.currentInningsIndex]?.bowlingTeamId === matchState.teamA.id 
+                                ? matchState.teamA 
+                                : matchState.teamB
+                            }
+                            bowlerStats={useScoringStore.getState().getBowlingStats() as any}
+                            previousBowlerId={derivedState.innings[derivedState.currentInningsIndex]?.currentBowlerId || null}
+                            onSelect={(playerId) => setNextBowler(playerId)}
+                            onClose={() => setShowNextBowlerSheet(false)}
+                        />
+                    )}
+
+                    {showOverSummaryToast && (() => {
+                        // Quick way to get last 6 legal balls + extras of previous over
+                        // Since we just changed overs, the old over number is Math.floor(totalballs/6) - 1
+                        const engineInnings = derivedState.innings[derivedState.currentInningsIndex];
+                        const overNumber = Math.max(1, Math.floor(engineInnings.totalBalls / 6));
+                        
+                        // We filter events of this innings that match `overNumber - 1`
+                        const events = useScoringStore.getState().events;
+                        const thisInningsEvents = events.filter(e => e.type !== 'PHASE_CHANGE' && e.type !== 'INTERRUPTION'); // crude filter
+                        
+                        // We just grab the last N events roughly.
+                        // For a precise implementation, standard is grouping by over.
+                        const lastOversEvents = thisInningsEvents.slice(-10); // Approximation
+                        const prevBowlerId = engineInnings.currentBowlerId;
+                        const bowlingTeamId = engineInnings.bowlingTeamId;
+                        const bowlingTeam = bowlingTeamId === matchState.teamA.id ? matchState.teamA : matchState.teamB;
+                        const prevBowlerName = bowlingTeam?.players?.find((p: any) => p.id === prevBowlerId)?.name || 'Bowler';
+                        
+                        // Current stats should still reflect their figures well enough!
+                        const bowlStats = useScoringStore.getState().getBowlingStats().find(b => b.bowlerId === prevBowlerId);
+                        
+                        const figures = bowlStats ? `${bowlStats.wickets}-${bowlStats.runsConceded} (${bowlStats.overs})` : '';
+
+                        return (
+                            <OverSummaryToast
+                                overNumber={overNumber}
+                                balls={lastOversEvents as any[]}
+                                bowlerName={prevBowlerName}
+                                bowlerFigures={figures}
+                                onDismiss={() => setShowOverSummaryToast(false)}
+                            />
+                        );
+                    })()}
+                </>
             )}
         </div>
     );
