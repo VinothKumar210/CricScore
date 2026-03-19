@@ -22,10 +22,15 @@ export const requireMatchRole = (allowedRoles: TeamMemberRole[]) => {
 
             const match = await prisma.matchSummary.findUnique({
                 where: { id: matchId },
-                select: { homeTeamId: true, awayTeamId: true },
+                select: { homeTeamId: true, awayTeamId: true, createdById: true },
             });
 
             if (!match) return sendError(res, 'Match not found', 404, 'NOT_FOUND');
+
+            // The user who created the match always has permission to score/manage it
+            if (match.createdById === userId) {
+                return next();
+            }
 
             // Check if user is member of Home OR Away team with required role
             const member = await prisma.teamMember.findFirst({

@@ -1,82 +1,93 @@
+import { api } from '../../lib/api';
 import type { MatchDetail, TeamSummary } from "../matches/types/domainTypes";
 import type { BallEvent } from "./types/ballEventTypes";
 
-// Mock Service — but typed!
-
-// Helper to create mock events
-function createMockEvents(): BallEvent[] {
-    const base = {
-        batsmanId: "p1",
-        nonStrikerId: "p2",
-        bowlerId: "p5",
-        overNumber: 0,
-        ballNumber: 0,
-        matchId: "mock-match"
-    };
-
-    return [
-        { ...base, type: "RUN", runs: 1, ballNumber: 1 },
-        { ...base, type: "RUN", runs: 4, ballNumber: 2 },
-        { ...base, type: "WICKET", dismissalType: "BOWLED", ballNumber: 3, newBatsmanId: "p3" },
-        { ...base, type: "EXTRA", extraType: "WIDE", additionalRuns: 0, ballNumber: 3 }, // Wide keeps ballNum same? Mock implies seq.
-        { ...base, type: "RUN", runs: 6, ballNumber: 4 }
-    ];
-}
-
+/**
+ * Fetch match state + raw operations log from backend.
+ * Maps backend payload back into `BallEvent` for the frontend replay engine.
+ */
 export async function getMatchState(matchId: string): Promise<{ matchState: MatchDetail, events: BallEvent[], version: number }> {
-    // Simulate API delay
-    await new Promise(res => setTimeout(res, 300));
+    // 1. Fetch metadata and operations concurrently
+    const [metaRes, opsRes] = await Promise.all([
+        api.get(`/api/matches/${matchId}`),
+        api.get(`/api/matches/${matchId}/operations`)
+    ]);
 
-    const events = createMockEvents();
+    const backendMatch = metaRes.data?.match || metaRes.match;
+    const backendOps = opsRes.data?.operations || opsRes.operations || [];
 
+    // Map Backend Teams to frontend TeamSummary shape
     const teamA: TeamSummary = {
-        id: "t1",
-        name: "Cric Tigers",
-        shortName: "CT",
-        players: [
-            { id: "p1", name: "Virat K" },
-            { id: "p2", name: "Rohit S" },
-            { id: "p3", name: "Hardik P" },
-            { id: "p4", name: "Jasprit B" },
-        ]
+        id: backendMatch.homeTeam?.id || "home-mock",
+        name: backendMatch.homeTeamName || backendMatch.homeTeam?.name || "Home Team",
+        shortName: backendMatch.homeTeam?.shortName || "",
+        players: [] // Store logic expects this, maybe fetch members? For now, we rely on the backend state logic.
     };
 
     const teamB: TeamSummary = {
-        id: "t2",
-        name: "Green Warriors",
-        shortName: "GW",
-        players: [
-            { id: "p5", name: "Babar A" },
-            { id: "p6", name: "Shaheen A" },
-            { id: "p7", name: "Shadab K" },
-        ]
+        id: backendMatch.awayTeam?.id || "away-mock",
+        name: backendMatch.awayTeamName || backendMatch.awayTeam?.name || "Away Team",
+        shortName: backendMatch.awayTeam?.shortName || "",
+        players: []
     };
 
-    // For now, return a mock object compatible with MatchDetail
-    // This is acting as the "Initial Snapshot" + Metadata
-    const mockMatchState: MatchDetail = {
+    const matchState: MatchDetail = {
         id: matchId,
-        status: "LIVE",
+        status: backendMatch.status,
         teamA,
         teamB,
-        innings: [], // Will be populated by engine in store
-        startTime: new Date().toISOString(),
+        innings: [], // Populated by engine
+        startTime: backendMatch.matchDate,
         isUserInvolved: true,
-        recentOvers: [] // Will be populated by engine in store
+        recentOvers: [], // Populated by engine
+        tossWinnerName: backendMatch.tossWinnerName,
+        tossDecision: backendMatch.tossDecision
     };
 
+    // Extract expected properties back into BallEvent shape
+    const events: BallEvent[] = backendOps.map((op: any) => ({
+        ...op.payload,  // The exact payload frontend had previously sent is preserved
+        _version: op.opIndex // Help tracking if needed
+    }));
+
+    const version = backendOps.length > 0 ? backendOps[backendOps.length - 1].opIndex : 0;
+
     return {
-        matchState: mockMatchState,
-        events, // Return events for replay
-        version: 5 // Mock version
+        matchState,
+        events,
+        version
     };
 }
 
-export async function submitScoreOperation(_matchId: string, _payload: BallEvent | { type: "UNDO" }, expectedVersion: number): Promise<{ version: number }> {
-    // Simulate API delay
-    await new Promise(res => setTimeout(res, 400));
+/**
+ * Map frontend BallEvent schema into strictly allowed Backend MatchOpType
+ */
+function mapFrontendTypeToBackend(type: string): string {
+    if (type === "RUN" || type === "EXTRA") return "DELIVER_BALL";
+    // WICKET, UNDO, PHASE_CHANGE, INTERRUPTION will pass through directly if schema matches,
+    // otherwise fallback/throw. Actually the backend has `WICKET`, `UNDO`.
+    // Let's rely on standard backend ops.
+    return type;
+}
+
+/**
+ * Submit scoring operation (with OCC concurrency control)
+ */
+export async function submitScoreOperation(matchId: string, payload: any, expectedVersion: number): Promise<{ version: number }> {
+    const backendType = mapFrontendTypeToBackend(payload.type);
+
+    // Provide clientOpId for idempotency if it has one, or generate it.
+    // The store should realistically provide this. If not, generate for safety.
+    const clientOpId = payload.id || crypto.randomUUID();
+
+    const res = await api.post(`/api/matches/${matchId}/operations`, {
+        clientOpId,
+        expectedVersion,
+        type: backendType,
+        payload
+    });
 
     return {
-        version: expectedVersion + 1
+        version: res.data?.version || res.version
     };
 }

@@ -124,4 +124,6 @@ export interface MatchDetail {
     startTime: string;
     isUserInvolved: boolean;
     recentOvers: OverSummary[];
+    tossWinnerName?: string;
+    tossDecision?: string;
 }

@@ -2,12 +2,13 @@
 node_modules
 .pnp
 .pnp.js
-
+.github/
 # Testing
 coverage
 __tests__/
 *.test.*
 *.spec.*
+qa/
 # Production
 dist
 build

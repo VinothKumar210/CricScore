@@ -5,20 +5,23 @@ import type { MatchSummary, MatchStatus } from '@prisma/client';
 export const matchService = {
     /**
      * Create a new match.
-     * Validates proper teams and positive overs.
+     * - homeTeamId must be a valid Team ObjectID.
+     * - awayTeamName is a free-text name (no DB lookup).
+     * - matchType/ballType must be valid Prisma enums.
      */
     createMatch: async (userId: string, data: any) => {
         const {
             matchType,
             homeTeamId,
-            awayTeamId,
             overs,
             ballType,
             powerplayEnabled,
             venue,
             matchDate,
-            homeTeamName, // Optional overrides or fetch from DB
-            awayTeamName
+            homeTeamName,
+            awayTeamName,
+            tossWinner,
+            tossDecision,
         } = data;
 
         // RATE LIMIT: Max 5 matches per day per user
@@ -32,43 +35,45 @@ export const matchService = {
         }
 
         // Validation
-        if (homeTeamId === awayTeamId) {
-            throw { statusCode: 400, message: 'Teams cannot play against themselves', code: 'INVALID_TEAMS' };
-        }
         if (overs <= 0) {
             throw { statusCode: 400, message: 'Overs must be positive', code: 'INVALID_OVERS' };
         }
 
-        // Fetch team names if not provided
-        let htName = homeTeamName;
-        let atName = awayTeamName;
-
-        if (!htName || !atName) {
-            const [home, away] = await Promise.all([
-                prisma.team.findUnique({ where: { id: homeTeamId } }),
-                prisma.team.findUnique({ where: { id: awayTeamId } })
-            ]);
-
-            if (!home || !away) throw { statusCode: 404, message: 'Teams not found', code: 'TEAM_NOT_FOUND' };
-            htName = home.name;
-            atName = away.name;
+        // Look up home team — must be a real team in DB
+        const home = await prisma.team.findUnique({ where: { id: homeTeamId } }).catch(() => null);
+        if (!home) {
+            throw { statusCode: 400, message: 'Home team not found. Please select a valid team.', code: 'INVALID_HOME_TEAM' };
         }
+
+        // Verify the user is actually a member of the home team
+        const membership = await prisma.teamMember.findUnique({
+            where: { teamId_userId: { teamId: home.id, userId: userId } }
+        });
+        if (!membership) {
+            throw { statusCode: 403, message: 'You must be a member of the selected home team to create a match.', code: 'NOT_TEAM_MEMBER' };
+        }
+
+        // Away team is name-based (casual/local matches don't require a DB team)
+        const atName = (awayTeamName || '').trim() || 'Opponent';
+        const htName = homeTeamName || home.name;
 
         return prisma.matchSummary.create({
             data: {
                 matchType,
-                homeTeamId,
-                awayTeamId,
+                homeTeamId: home.id,
+                awayTeamId: null,       // No real away team record — name-based
                 homeTeamName: htName,
                 awayTeamName: atName,
                 overs,
                 ballType,
                 powerplayEnabled: !!powerplayEnabled,
-                venue,
+                venue: venue || null,
                 matchDate: new Date(matchDate || Date.now()),
-                status: 'SCHEDULED', // Initial state
-                // Link to fixture if provided (Schema already has this field)
-                tournamentFixtureId: data.tournamentFixtureId || null
+                status: 'SCHEDULED',
+                tossWinnerName: tossWinner || null,
+                tossDecision: tossDecision || null,
+                createdById: userId,
+                tournamentFixtureId: data.tournamentFixtureId || null,
             }
         });
     },
@@ -131,11 +136,6 @@ export const matchService = {
 
         const current = match.status;
 
-        // Simple validation logic for transitions
-        // CREATED -> SCHEDULED (if applicable) or LIVE (skip toss?) or TOSS
-        // Assuming schema has: SCHEDULED, LIVE, COMPLETED, ABANDONED
-        // Let's rely on Prisma enum: SCHEDULED, LIVE, COMPLETED, ABANDONED
-
         if (current === 'COMPLETED' && newStatus === 'LIVE') {
             throw { statusCode: 400, message: 'Cannot re-open completed match', code: 'INVALID_TRANSITION' };
         }
@@ -147,8 +147,28 @@ export const matchService = {
     },
 
     /**
+     * Complete pre-match setup (e.g. toss details) and start match.
+     */
+    updateMatchSetup: async (matchId: string, tossWinnerName: string, tossDecision: string) => {
+        const match = await prisma.matchSummary.findUnique({ where: { id: matchId } });
+        if (!match) throw { statusCode: 404, message: 'Match not found', code: 'NOT_FOUND' };
+
+        if (match.status !== 'SCHEDULED') {
+            throw { statusCode: 400, message: 'Match is already started or complete', code: 'INVALID_TRANSITION' };
+        }
+
+        return prisma.matchSummary.update({
+            where: { id: matchId },
+            data: { 
+                tossWinnerName, 
+                tossDecision,
+                status: 'LIVE' 
+            }
+        });
+    },
+
+    /**
      * Cancel match with attribution.
-     * Updates status to ABANDONED and increments cancelling team's cancellation count.
      */
     cancelMatch: async (matchId: string, cancellingTeamId: string) => {
         const match = await prisma.matchSummary.findUnique({ where: { id: matchId } });
@@ -165,7 +185,7 @@ export const matchService = {
         return prisma.$transaction([
             prisma.matchSummary.update({
                 where: { id: matchId },
-                data: { status: 'ABANDONED', result: 'MATCH_ABANDONED' } // using ABANDONED as per schema
+                data: { status: 'ABANDONED', result: 'MATCH_ABANDONED' }
             }),
             prisma.team.update({
                 where: { id: cancellingTeamId },

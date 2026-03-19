@@ -338,6 +338,13 @@ model MatchSummary {
   ballType          BallType?
   powerplayEnabled  Boolean     @default(false)
   
+  // Toss
+  tossWinnerName    String?
+  tossDecision      String?     // BAT or BOWL
+  
+  // Creator (for RBAC — who created this match)
+  createdById       String?     @db.ObjectId
+  
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   

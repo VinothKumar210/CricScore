@@ -16,7 +16,7 @@ const router = Router();
 router.post('/matches', requireAuth, async (req: Request, res: Response) => {
     try {
         const userId = req.user!.id;
-        const required = ['matchType', 'homeTeamId', 'awayTeamId', 'overs', 'ballType'];
+        const required = ['matchType', 'homeTeamId', 'awayTeamName', 'overs', 'ballType'];
         const missing = required.filter(f => !req.body[f]);
 
         if (missing.length > 0) {
@@ -87,6 +87,30 @@ router.patch('/matches/:id/status', requireAuth, requireMatchRole(['OWNER', 'CAP
         if (error.statusCode) return sendError(res, error.message, error.statusCode, error.code);
         console.error('[MatchRoutes] Status update error:', error);
         return sendError(res, 'Failed to update status', 500, 'INTERNAL_ERROR');
+    }
+});
+
+/**
+ * PATCH /api/matches/:id/setup
+ * Finalize pre-match setup (Toss & Decision) and move match to LIVE.
+ * Requires Match Role (Owner/Captain or Match Creator)
+ */
+router.patch('/matches/:id/setup', requireAuth, requireMatchRole(['OWNER', 'CAPTAIN', 'VICE_CAPTAIN']), async (req: Request, res: Response) => {
+    try {
+        const matchId = req.params.id as string;
+        if (!matchId) return sendError(res, 'Match ID required', 400, 'MISSING_PARAM');
+
+        const { tossWinnerName, tossDecision } = req.body;
+        if (!tossWinnerName || !tossDecision) {
+            return sendError(res, 'Toss winner and decision are required', 400, 'MISSING_PARAM');
+        }
+
+        const match = await matchService.updateMatchSetup(matchId, tossWinnerName, tossDecision);
+        return sendSuccess(res, { match });
+    } catch (error: any) {
+        if (error.statusCode) return sendError(res, error.message, error.statusCode, error.code);
+        console.error('[MatchRoutes] Setup error:', error);
+        return sendError(res, 'Failed to complete match setup', 500, 'INTERNAL_ERROR');
     }
 });
 
