@@ -1,7 +1,7 @@
-import { prisma } from '../lib/prisma';
+import { prisma } from '../utils/db.js';
 
 export const aggregateMatchStats = async (matchId: string) => {
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: any) => {
         const match = await tx.matchSummary.findUnique({
             where: { id: matchId },
             include: {
@@ -227,7 +227,7 @@ export const aggregateMatchStats = async (matchId: string) => {
 
         // 4. Venue Stats
         if (match.venue) {
-            const totalRuns = match.innings.reduce((acc, inn) => acc + inn.totalRuns, 0);
+            const totalRuns = match.innings.reduce((acc: number, inn: any) => acc + inn.totalRuns, 0);
             
             await tx.venueStats.upsert({
                 where: { venueName: match.venue },

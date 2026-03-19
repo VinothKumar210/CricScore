@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { clsx } from 'clsx';
 
 interface SparklineProps {
@@ -12,7 +12,7 @@ export const FormSparkline = ({ data, type }: SparklineProps) => {
     // Fixed height for relative scaling
     const containerHeight = 24;
     const maxVal = Math.max(...data, 1);
-    const minVal = 0;
+
 
     return (
         <div className="flex items-end gap-1" style={{ height: containerHeight }}>

@@ -10,7 +10,7 @@ export const PlayerComparisonPage = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     
-    const [player1Id, setPlayer1Id] = useState(searchParams.get('player1') || '');
+    const [player1Id, _setPlayer1Id] = useState(searchParams.get('player1') || '');
     const [player2Id, setPlayer2Id] = useState(searchParams.get('player2') || '');
     
     const [player1Stats, setPlayer1Stats] = useState<any>(null);

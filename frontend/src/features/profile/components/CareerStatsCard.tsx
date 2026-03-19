@@ -1,5 +1,4 @@
-import React from 'react';
-import { Target, Trophy, Swords, Zap } from 'lucide-react';
+import { Target, Swords } from 'lucide-react';
 import { clsx } from 'clsx';
 import { FormSparkline } from './FormSparkline';
 

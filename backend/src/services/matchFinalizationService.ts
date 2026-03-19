@@ -88,15 +88,14 @@ export const matchFinalizationService = {
             }
 
             if (score2 > score1) {
-                winnerId = isSuperOver ? state4?.battingTeamId : state2.battingTeamId; // state4 used below to get battingTeamId requires it exists => we can use ops inspection or assume 2nd team is team 2.
                 winnerId = isSuperOver 
-                    ? (ops.reverse().find(o => (o.payload as any).type === 'START_INNINGS' && (o.payload as any).inningsNumber === 4) as any)?.payload?.battingTeamId || state2.battingTeamId
+                    ? (ops.reverse().find((o: any) => (o.payload as any).type === 'START_INNINGS' && (o.payload as any).inningsNumber === 4) as any)?.payload?.battingTeamId || state2.battingTeamId
                     : state2.battingTeamId;
                 winMargin = isSuperOver ? 'Super Over' : `${10 - wickets2} wickets`;
                 result = 'WIN';
             } else if (score1 > score2) {
                 winnerId = isSuperOver 
-                    ? (ops.reverse().find(o => (o.payload as any).type === 'START_INNINGS' && (o.payload as any).inningsNumber === 3) as any)?.payload?.battingTeamId || state1.battingTeamId
+                    ? (ops.reverse().find((o: any) => (o.payload as any).type === 'START_INNINGS' && (o.payload as any).inningsNumber === 3) as any)?.payload?.battingTeamId || state1.battingTeamId
                     : state1.battingTeamId;
                 winMargin = isSuperOver ? 'Super Over' : `${score1 - score2} runs`;
                 result = 'WIN';

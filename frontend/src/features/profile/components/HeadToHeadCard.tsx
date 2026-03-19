@@ -1,4 +1,3 @@
-import React from 'react';
 import { Target, Shield } from 'lucide-react';
 import { clsx } from 'clsx';
 

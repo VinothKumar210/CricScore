@@ -3,7 +3,7 @@ import { useMatchDetailStore } from "../matchDetailStore";
 import { clsx } from "clsx";
 import { Trophy, Clock, BarChart3, Target } from 'lucide-react';
 import type { MatchDetail, Innings } from "../types/domainTypes";
-import { PostMatchInsight } from "./PostMatchInsight";
+import { PostMatchInsight } from "../components/PostMatchInsight";
 import { ShareButtons } from "../../share/components/ShareButtons";
 import { api } from "../../../lib/api";
 

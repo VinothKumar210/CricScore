@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prisma';
+import { prisma } from '../utils/db.js';
 
 export const aiNarrativeService = {
     async generateMatchRecap(matchId: string): Promise<string> {
@@ -33,7 +33,7 @@ export const aiNarrativeService = {
                  let allBatsmen: any[] = [];
                  let allBowlers: any[] = [];
                  
-                 match.innings.forEach(inn => {
+                 match.innings.forEach((inn: any) => {
                      allBatsmen = [...allBatsmen, ...inn.battingPerformances];
                      allBowlers = [...allBowlers, ...inn.bowlingPerformances];
                  });

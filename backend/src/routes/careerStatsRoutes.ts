@@ -1,21 +1,21 @@
 import { Router } from 'express';
-import { prisma } from '../../lib/prisma';
-import { requireAuth } from '../middleware/auth';
+import { prisma } from '../utils/db.js';
+import { requireAuth } from '../middlewares/auth.js';
 
 const router = Router();
 
 // GET /api/stats/career/:userId
 router.get('/career/:userId', requireAuth, async (req, res) => {
     try {
-        const { userId } = req.params;
+        const userId = String(req.params.userId);
         const career = await prisma.playerCareerStats.findUnique({
             where: { playerType_playerId: { playerType: 'REGISTERED', playerId: userId } }
         });
         const formatStats = await prisma.playerFormatStats.findMany({
-            where: { playerType: 'REGISTERED', playerId: userId }
+            where: { playerType: 'REGISTERED', playerId: String(userId) }
         });
         const seasonStats = await prisma.playerSeasonStats.findMany({
-            where: { playerType: 'REGISTERED', playerId: userId },
+            where: { playerType: 'REGISTERED', playerId: String(userId) },
             orderBy: { season: 'desc' }
         });
         
@@ -57,7 +57,7 @@ router.get('/team-record', requireAuth, async (req, res) => {
         const ids = [String(teamAId), String(teamBId)].sort();
         const record = await prisma.teamRecord.findUnique({
              where: {
-                 teamAId_teamBId: { teamAId: ids[0], teamBId: ids[1] }
+                 teamAId_teamBId: { teamAId: String(ids[0]), teamBId: String(ids[1]) }
              }
         });
         
@@ -70,7 +70,7 @@ router.get('/team-record', requireAuth, async (req, res) => {
 // GET /api/stats/venue/:venue
 router.get('/venue/:venue', requireAuth, async (req, res) => {
     try {
-        const { venue } = req.params;
+        const venue = String(req.params.venue);
         const venueStats = await prisma.venueStats.findUnique({
             where: { venueName: venue }
         });
