@@ -1,7 +1,11 @@
+import { useEffect, useState } from "react";
 import { useMatchDetailStore } from "../matchDetailStore";
 import { clsx } from "clsx";
 import { Trophy, Clock, BarChart3, Target } from 'lucide-react';
 import type { MatchDetail, Innings } from "../types/domainTypes";
+import { PostMatchInsight } from "./PostMatchInsight";
+import { ShareButtons } from "../../share/components/ShareButtons";
+import { api } from "../../../lib/api";
 
 /**
  * MatchSummaryTab — Match overview with key highlights.
@@ -9,11 +13,31 @@ import type { MatchDetail, Innings } from "../types/domainTypes";
  */
 export const MatchSummaryTab = () => {
     const { match } = useMatchDetailStore();
+    const [insight, setInsight] = useState<string | undefined>();
+    const [isLoadingInsight, setIsLoadingInsight] = useState(false);
+
+    useEffect(() => {
+        const fetchInsight = async () => {
+            if (!match || match.status !== 'COMPLETED') return;
+            setIsLoadingInsight(true);
+            try {
+                const res = await api.get(`/matches/${match.id}/insight`);
+                setInsight(res.data.narrative);
+            } catch (err) {
+                console.error("Failed to load insight", err);
+            } finally {
+                setIsLoadingInsight(false);
+            }
+        };
+        fetchInsight();
+    }, [match?.id, match?.status]);
+
     if (!match) return null;
 
     return (
         <div className="py-4 space-y-4">
-            {/* Result Banner */}
+            <div id="match-summary-capture" className="space-y-4 bg-background p-2 -m-2 rounded-xl">
+                {/* Result Banner */}
             {match.status === 'COMPLETED' && match.result && (
                 <div className="bg-primary/10 border border-primary/20 rounded-xl p-4 text-center">
                     <Trophy className="w-6 h-6 text-primary mx-auto mb-2" />
@@ -84,6 +108,23 @@ export const MatchSummaryTab = () => {
                         Best Performance
                     </h3>
                     <BestPerformers match={match} />
+                </div>
+            )}
+            
+            {/* AI Narrative */}
+            {match.status === 'COMPLETED' && (
+                <PostMatchInsight narrative={insight} isLoading={isLoadingInsight} />
+            )}
+            </div>
+
+            {/* Share / Export */}
+            {match.status === 'COMPLETED' && (
+                <div className="pt-4 mt-4 border-t border-border">
+                    <ShareButtons 
+                        matchId={match.id} 
+                        captureElementId="match-summary-capture" 
+                        matchTitle={`${match.teamA.name} vs ${match.teamB.name}`} 
+                    />
                 </div>
             )}
         </div>

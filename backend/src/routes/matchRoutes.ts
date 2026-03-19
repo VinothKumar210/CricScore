@@ -3,6 +3,7 @@ import type { Request, Response } from 'express';
 import { requireAuth } from '../middlewares/auth.js';
 import { requireMatchRole } from '../middlewares/matchPermission.js';
 import { matchService } from '../services/matchService.js';
+import { aiNarrativeService } from '../services/aiNarrativeService.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 
 const router = Router();
@@ -47,6 +48,22 @@ router.get('/matches/:id', requireAuth, async (req: Request, res: Response) => {
         return sendSuccess(res, { match });
     } catch (error: any) {
         return sendError(res, 'Failed to fetch match', 500, 'INTERNAL_ERROR');
+    }
+});
+
+/**
+ * GET /api/matches/:id/insight
+ * Get AI-generated Narrative (Recap)
+ */
+router.get('/matches/:id/insight', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const matchId = req.params.id as string;
+        if (!matchId) return sendError(res, 'Match ID required', 400, 'MISSING_PARAM');
+
+        const narrative = await aiNarrativeService.generateMatchRecap(matchId);
+        return sendSuccess(res, { narrative });
+    } catch (error: any) {
+        return sendError(res, 'Failed to fetch match insight', 500, 'INTERNAL_ERROR');
     }
 });
 
