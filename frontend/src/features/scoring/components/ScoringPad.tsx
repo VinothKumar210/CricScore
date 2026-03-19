@@ -6,6 +6,9 @@ import { WicketFlowSheet } from './wicket/WicketFlowSheet';
 import { UndoBottomSheet } from './UndoBottomSheet';
 import { ExtraSheet } from './ExtraSheet';
 import { MatchSettingsMenu } from './MatchSettingsMenu';
+import { WagonWheelInput } from './WagonWheelInput';
+import { RainBreakSheet } from './RainBreakSheet';
+import { SuperOverFlow } from './SuperOverFlow';
 
 /**
  * ScoringPad — Premium cricket scoring input grid.
@@ -24,16 +27,24 @@ export const ScoringPad = () => {
     const startWicketFlow = useScoringStore((s) => s.startWicketFlow);
     const derivedState = useScoringStore((s) => s.derivedState);
 
+    const isWagonWheelEnabled = useScoringStore((s) => s.isWagonWheelEnabled);
+    const recordWagonWheel = useScoringStore((s) => s.recordWagonWheel);
+
     const [showUndo, setShowUndo] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
+    const [showWagonWheel, setShowWagonWheel] = useState(false);
+    const [showRainBreak, setShowRainBreak] = useState(false);
     const [activeExtra, setActiveExtra] = useState<'WIDE' | 'NO_BALL' | 'BYE' | 'LEG_BYE' | null>(null);
 
     const isMatchLive = matchState?.status === 'LIVE';
     const isComplete = !!derivedState?.matchResult;
     const isDisabled = !isMatchLive || isComplete;
 
-    const handleRun = (runs: 0 | 1 | 2 | 3 | 4 | 6) => {
-        recordBall({ type: 'RUN', runs });
+    const handleRun = async (runs: 0 | 1 | 2 | 3 | 4 | 6) => {
+        await recordBall({ type: 'RUN', runs });
+        if (isWagonWheelEnabled && runs > 0) {
+            setShowWagonWheel(true);
+        }
     };
 
     return (
@@ -121,8 +132,27 @@ export const ScoringPad = () => {
             {/* Bottom Sheets */}
             <WicketFlowSheet />
             <UndoBottomSheet isOpen={showUndo} onClose={() => setShowUndo(false)} />
-            <MatchSettingsMenu isOpen={showSettings} onClose={() => setShowSettings(false)} />
+            <MatchSettingsMenu isOpen={showSettings} onClose={() => setShowSettings(false)} onRainBreak={() => setShowRainBreak(true)} />
             <ExtraSheet extraType={activeExtra} onClose={() => setActiveExtra(null)} />
+            <RainBreakSheet isOpen={showRainBreak} onClose={() => setShowRainBreak(false)} />
+            <SuperOverFlow />
+
+            {/* Wagon Wheel Overlay */}
+            {showWagonWheel && (
+                <WagonWheelInput 
+                    batsmanName={
+                        derivedState?.innings[derivedState.currentInningsIndex]?.strikerId
+                            ? matchState?.teamA?.players?.find(p => p.id === derivedState.innings[derivedState.currentInningsIndex].strikerId)?.name 
+                              || matchState?.teamB?.players?.find(p => p.id === derivedState.innings[derivedState.currentInningsIndex].strikerId)?.name
+                            : "Batsman"
+                    }
+                    onSave={(angle, dist) => {
+                        recordWagonWheel(angle, dist);
+                        setShowWagonWheel(false);
+                    }}
+                    onSkip={() => setShowWagonWheel(false)}
+                />
+            )}
         </div>
     );
 };

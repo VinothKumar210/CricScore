@@ -6,9 +6,10 @@ import { useScoringStore } from '../scoringStore';
 interface MatchSettingsMenuProps {
     isOpen: boolean;
     onClose: () => void;
+    onRainBreak?: () => void;
 }
 
-export const MatchSettingsMenu = ({ isOpen, onClose }: MatchSettingsMenuProps) => {
+export const MatchSettingsMenu = ({ isOpen, onClose, onRainBreak }: MatchSettingsMenuProps) => {
     const isWagonWheelEnabled = useScoringStore(s => s.isWagonWheelEnabled);
     const toggleWagonWheel = useScoringStore(s => s.toggleWagonWheel);
     const deductShortRun = useScoringStore(s => s.deductShortRun);
@@ -43,8 +44,7 @@ export const MatchSettingsMenu = ({ isOpen, onClose }: MatchSettingsMenuProps) =
     };
 
     const handleRainBreak = () => {
-        // Placeholder for DLS logic in R2
-        alert("Rain Break / DLS feature will be enabled in Release 2.");
+        if (onRainBreak) onRainBreak();
         onClose();
     };
 

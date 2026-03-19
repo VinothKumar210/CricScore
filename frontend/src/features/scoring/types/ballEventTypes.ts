@@ -1,5 +1,10 @@
 import type { DismissalType, MatchPhase } from "../../matches/types/domainTypes";
 
+export interface WagonWheelData {
+    angle: number;    // 0 to 360 degrees (0 = straight down ground, 90 = deep mid wicket, etc)
+    distance: number; // 0 to 100 percentage of boundary
+}
+
 export interface BallEventBase {
     matchId?: string;
     overNumber?: number;
@@ -8,6 +13,7 @@ export interface BallEventBase {
     nonStrikerId: string;
     bowlerId: string;
     timestamp?: number;
+    wagonWheel?: WagonWheelData; // Optional shot data
 }
 
 // Input type for UI/actions (context inferred by store)

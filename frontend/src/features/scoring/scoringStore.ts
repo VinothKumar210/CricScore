@@ -55,9 +55,10 @@ export interface ScoringState {
     setShowNextBowlerSheet: (show: boolean) => void;
     setShowInningsBreakCard: (show: boolean) => void;
 
-    // Wagon Wheel toggle
+    // Wagon Wheel 
     isWagonWheelEnabled: boolean;
     toggleWagonWheel: () => void;
+    recordWagonWheel: (angle: number, distance: number) => Promise<void>;
 
     // Edge Cases Actions
     deductShortRun: () => Promise<void>;
@@ -151,6 +152,31 @@ export const useScoringStore = create<ScoringState>((set, get) => {
 
         isWagonWheelEnabled: false,
         toggleWagonWheel: () => set(state => ({ isWagonWheelEnabled: !state.isWagonWheelEnabled })),
+
+        recordWagonWheel: async (angle: number, distance: number) => {
+            const { matchId, events, matchConfig } = get();
+            if (!matchId || events.length === 0) return;
+
+            const newEvents = [...events];
+            const lastEventIndex = newEvents.length - 1;
+            const lastEvent = { ...newEvents[lastEventIndex], shotAngle: angle, shotDistance: distance };
+            newEvents[lastEventIndex] = lastEvent as any;
+
+            // Update DB
+            const dbEvent = await matchDB.matchEvents.where({ matchId, ballNumber: lastEvent.ballNumber }).first();
+            if (dbEvent) {
+                 await matchDB.matchEvents.put({ ...dbEvent, shotAngle: angle, shotDistance: distance, syncStatus: 'PENDING' });
+            }
+
+            syncManager.triggerSync().finally(() => get().updateSyncStatus());
+
+            // Optimistic Store Update
+            if (matchConfig && get().matchState) {
+                const newState = reconstructMatchState(matchConfig, newEvents);
+                const mappedState = mapEngineStateToDomain(newState, get().matchState!, newEvents);
+                set({ events: newEvents, derivedState: newState, matchState: mappedState });
+            }
+        },
 
         deductShortRun: async () => {
             const { matchId } = get();

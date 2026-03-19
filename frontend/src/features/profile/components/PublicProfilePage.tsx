@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useProfileStore } from '../profileStore';
 import { ProfileHeader } from './ProfileHeader';
 import { CareerStatsGrid } from './CareerStatsGrid';
@@ -9,7 +9,7 @@ import { ImpactRatingCard } from './ImpactRatingCard';
 import { PrestigeProgress } from './PrestigeProgress';
 import { BestPerformanceCard } from './BestPerformanceCard';
 import { Container } from '../../../components/ui/Container';
-import { Loader2, ShieldX, UserPlus, UserCheck } from 'lucide-react';
+import { Loader2, ShieldX, UserPlus, UserCheck, BarChart2, ArrowRightLeft } from 'lucide-react';
 import { socialService } from '../../social/socialService';
 import { clsx } from 'clsx';
 
@@ -24,6 +24,7 @@ import { clsx } from 'clsx';
  */
 export const PublicProfilePage = () => {
     const { username } = useParams<{ username: string }>();
+    const navigate = useNavigate();
     const publicProfile = useProfileStore(s => s.publicProfile);
     const isPublicLoading = useProfileStore(s => s.isPublicLoading);
     const publicError = useProfileStore(s => s.publicError);
@@ -134,6 +135,22 @@ export const PublicProfilePage = () => {
                             Follow {profile.fullName.split(' ')[0]}
                         </>
                     )}
+                </button>
+            </div>
+
+            {/* Deep Links */}
+            <div className="flex gap-3 px-4">
+                <button 
+                    onClick={() => navigate(`/stats/career/${profile.id}`)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary text-primary text-sm font-semibold transition-colors active:bg-primary/10"
+                >
+                    <BarChart2 className="w-4 h-4" /> Full Stats
+                </button>
+                <button 
+                    onClick={() => navigate(`/stats/compare?player1=${profile.id}`)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-amber-500 text-amber-500 text-sm font-semibold transition-colors active:bg-amber-500/10"
+                >
+                    <ArrowRightLeft className="w-4 h-4" /> Compare
                 </button>
             </div>
 

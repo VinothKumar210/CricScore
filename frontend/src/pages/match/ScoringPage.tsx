@@ -14,6 +14,23 @@ import { NextBowlerSheet } from '../../features/scoring/components/NextBowlerShe
 import { OverSummaryToast } from '../../features/scoring/components/OverSummaryToast';
 import { InningsBreakCard } from '../../features/scoring/components/InningsBreakCard';
 import { Loader2 } from 'lucide-react';
+import { SwipeableStatsContainer } from '../../features/scoring/panels/SwipeableStatsContainer';
+import { ScorecardPanel } from '../../features/scoring/panels/ScorecardPanel';
+import { WormChartPanel } from '../../features/scoring/panels/WormChartPanel';
+import { ManhattanPanel } from '../../features/scoring/panels/ManhattanPanel';
+import { OverComparisonPanel } from '../../features/scoring/panels/OverComparisonPanel';
+import { WagonWheelPanel } from '../../features/scoring/panels/WagonWheelPanel';
+import { PhaseRadarPanel } from '../../features/scoring/panels/PhaseRadarPanel';
+import { WinProbPanel } from '../../features/scoring/panels/WinProbPanel';
+import { RequiredRatePanel } from '../../features/scoring/panels/RequiredRatePanel';
+import { MomentumPanel } from '../../features/scoring/panels/MomentumPanel';
+import { PressureTimelinePanel } from '../../features/scoring/panels/PressureTimelinePanel';
+import { MatchupGridPanel } from '../../features/scoring/panels/MatchupGridPanel';
+import { ExtrasAnalysisPanel } from '../../features/scoring/panels/ExtrasAnalysisPanel';
+import { BoundaryPercentPanel } from '../../features/scoring/panels/BoundaryPercentPanel';
+import { EconomyProgressionPanel } from '../../features/scoring/panels/EconomyProgressionPanel';
+import { BatsmanPhasePanel } from '../../features/scoring/panels/BatsmanPhasePanel';
+import { ConfidencePanel } from '../../features/scoring/panels/ConfidencePanel';
 
 export const ScoringPage = () => {
     const { id: matchId } = useParams<{ id: string }>();
@@ -104,8 +121,32 @@ export const ScoringPage = () => {
             </div>
 
             {/* Footer: Scoring Pad */}
-            <div className="flex-none pb-safe-area">
+            <div className="flex-none pb-2">
                 <ScoringPad />
+            </div>
+
+            {/* Advanced Stats Container (Below Scoring Pad) */}
+            <div className="flex-none pb-safe-area mt-4">
+                <SwipeableStatsContainer 
+                    panels={[
+                        <ScorecardPanel key="1" />,
+                        <WormChartPanel key="2" />,
+                        <ManhattanPanel key="3" />,
+                        <OverComparisonPanel key="4" />,
+                        <WagonWheelPanel key="5" />,
+                        <PhaseRadarPanel key="6" />,
+                        <WinProbPanel key="7" />,
+                        <RequiredRatePanel key="8" />,
+                        <MomentumPanel key="9" />,
+                        <PressureTimelinePanel key="10" />,
+                        <MatchupGridPanel key="11" />,
+                        <ExtrasAnalysisPanel key="12" />,
+                        <BoundaryPercentPanel key="13" />,
+                        <EconomyProgressionPanel key="14" />,
+                        <BatsmanPhasePanel key="15" />,
+                        <ConfidencePanel key="16" />
+                    ]}
+                />
             </div>
 
             {/* Global Error Toast */}

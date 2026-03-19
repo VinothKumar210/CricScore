@@ -64,6 +64,10 @@ const SettingsPage = lazy(() => import('../features/settings/SettingsPage').then
 const SearchPage = lazy(() => import('../features/search/SearchPage').then(m => ({ default: m.SearchPage })));
 const ComparePage = lazy(() => import('../features/compare/ComparePage').then(m => ({ default: m.ComparePage })));
 
+// Stats
+const PlayerStatsPage = lazy(() => import('../pages/stats/PlayerStatsPage').then(m => ({ default: m.PlayerStatsPage })));
+const PlayerComparisonPage = lazy(() => import('../pages/stats/PlayerComparisonPage').then(m => ({ default: m.PlayerComparisonPage })));
+
 // Hub / Spectator / Share
 const SpectatorLivePage = lazy(() => import('../pages/hub/SpectatorLivePage').then(m => ({ default: m.SpectatorLivePage })));
 const ShareMatchPage = lazy(() => import('../features/share/components/ShareMatchPage').then(m => ({ default: m.ShareMatchPage })));
@@ -124,6 +128,8 @@ export const router = createBrowserRouter([
             { path: '/invites', element: <Lazy><InviteInboxPage /></Lazy> },
             { path: '/messages/:conversationId', element: <Lazy><MessageRoomPage /></Lazy> },
             { path: '/u/:username', element: <Lazy><PublicProfilePage /></Lazy> },
+            { path: '/stats/career/:userId', element: <Lazy><PlayerStatsPage /></Lazy> },
+            { path: '/stats/compare', element: <Lazy><PlayerComparisonPage /></Lazy> },
             {
                 path: '/match/:id',
                 element: <Lazy><MatchDetailPage /></Lazy>,

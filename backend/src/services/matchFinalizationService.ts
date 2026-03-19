@@ -2,6 +2,7 @@ import { prisma } from '../utils/db.js';
 import type { MatchState, MatchOpPayload } from '../types/scoringTypes.js';
 import type { MatchOp } from '@prisma/client';
 import { notificationService } from './notificationService.js';
+import { aggregateMatchStats } from './statsAggregationService.js';
 
 export const matchFinalizationService = {
     /**
@@ -29,6 +30,8 @@ export const matchFinalizationService = {
 
             const inningsOpsv1: MatchOp[] = [];
             const inningsOpsv2: MatchOp[] = [];
+            const inningsOpsv3: MatchOp[] = []; // Super Over 1st Inns
+            const inningsOpsv4: MatchOp[] = []; // Super Over 2nd Inns
             let currentInn = 0;
             const playerIds = new Set<string>();
 
@@ -45,6 +48,8 @@ export const matchFinalizationService = {
 
                 if (currentInn === 1) inningsOpsv1.push(op);
                 else if (currentInn === 2) inningsOpsv2.push(op);
+                else if (currentInn === 3) inningsOpsv3.push(op);
+                else if (currentInn === 4) inningsOpsv4.push(op);
             }
 
             // Fetch User Names
@@ -66,18 +71,34 @@ export const matchFinalizationService = {
             let result = 'MATCH_TIED';
             let winnerId: string | null = null;
             let winMargin = 'Tie';
+            let isSuperOver = false;
 
-            const score1 = state1.totalRuns;
-            const score2 = state2.totalRuns;
-            const wickets2 = state2.wickets;
+            let score1 = state1.totalRuns;
+            let score2 = state2.totalRuns;
+            let wickets2 = state2.wickets;
+
+            // Super Over Override
+            if (inningsOpsv3.length > 0 && inningsOpsv4.length > 0) {
+                const state3 = reconstructMatchState(matchId, inningsOpsv3);
+                const state4 = reconstructMatchState(matchId, inningsOpsv4);
+                score1 = state3.totalRuns;
+                score2 = state4.totalRuns;
+                wickets2 = state4.wickets;
+                isSuperOver = true;
+            }
 
             if (score2 > score1) {
-                winnerId = state2.battingTeamId;
-                winMargin = `${10 - wickets2} wickets`;
+                winnerId = isSuperOver ? state4?.battingTeamId : state2.battingTeamId; // state4 used below to get battingTeamId requires it exists => we can use ops inspection or assume 2nd team is team 2.
+                winnerId = isSuperOver 
+                    ? (ops.reverse().find(o => (o.payload as any).type === 'START_INNINGS' && (o.payload as any).inningsNumber === 4) as any)?.payload?.battingTeamId || state2.battingTeamId
+                    : state2.battingTeamId;
+                winMargin = isSuperOver ? 'Super Over' : `${10 - wickets2} wickets`;
                 result = 'WIN';
             } else if (score1 > score2) {
-                winnerId = state1.battingTeamId;
-                winMargin = `${score1 - score2} runs`;
+                winnerId = isSuperOver 
+                    ? (ops.reverse().find(o => (o.payload as any).type === 'START_INNINGS' && (o.payload as any).inningsNumber === 3) as any)?.payload?.battingTeamId || state1.battingTeamId
+                    : state1.battingTeamId;
+                winMargin = isSuperOver ? 'Super Over' : `${score1 - score2} runs`;
                 result = 'WIN';
             } else {
                 result = 'TIE';
@@ -94,6 +115,7 @@ export const matchFinalizationService = {
                     result,
                     winningTeamName: result === 'WIN' ? winningTeamName : null,
                     winMargin,
+                    superOver: isSuperOver,
                 }
             });
 
@@ -107,6 +129,14 @@ export const matchFinalizationService = {
             await createInningsRecord(tx, matchId, 1, state1, inningsOpsv1, getName);
             if (inningsOpsv2.length > 0) {
                 await createInningsRecord(tx, matchId, 2, state2, inningsOpsv2, getName);
+            }
+            if (inningsOpsv3.length > 0) {
+                const state3 = reconstructMatchState(matchId, inningsOpsv3);
+                await createInningsRecord(tx, matchId, 3, state3, inningsOpsv3, getName);
+            }
+            if (inningsOpsv4.length > 0) {
+                const state4 = reconstructMatchState(matchId, inningsOpsv4);
+                await createInningsRecord(tx, matchId, 4, state4, inningsOpsv4, getName);
             }
 
             // 6. Tournament Fixture Linking & Advancement
@@ -154,6 +184,13 @@ export const matchFinalizationService = {
         if ((txResult as any).message === 'Match already finalized') {
             return txResult;
         }
+
+        // Trigger Stats Aggregation Asynchronously
+        setTimeout(() => {
+            aggregateMatchStats(matchId).catch(err => {
+                console.error('Stat aggregation failed:', err);
+            });
+        }, 100);
 
         // 7. Post-Transaction: Cache Invalidation
         // This is safe because if transaction failed, we threw error and didn't reach here.

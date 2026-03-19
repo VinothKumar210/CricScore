@@ -1252,3 +1252,103 @@ model TeamRecord {
 
   @@unique([teamAId, teamBId])
 }
+
+// -----------------------------------------------------------------------------
+// 11. Phase 7: Advanced Stats Models
+// -----------------------------------------------------------------------------
+
+model VenueStats {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  venueName       String   @unique
+  matchesPlayed   Int      @default(0)
+  highestScore    Int      @default(0)
+  lowestScore     Int?
+  averageScore    Float    @default(0)
+  batFirstWins    Int      @default(0)
+  bowlFirstWins   Int      @default(0)
+  updatedAt       DateTime @updatedAt
+}
+
+model PlayerFormatStats {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  playerType      String   // REGISTERED | GUEST
+  playerId        String   @db.ObjectId
+  format          String   // e.g. T20, CUSTOM
+  
+  matchesPlayed   Int      @default(0)
+  runs            Int      @default(0)
+  wickets         Int      @default(0)
+  highestScore    Int      @default(0)
+  bestBowling     String?
+  battingAverage  Float    @default(0.0)
+  battingSR       Float    @default(0.0)
+  bowlingAverage  Float    @default(0.0)
+  bowlingEconomy  Float    @default(0.0)
+  
+  updatedAt       DateTime @updatedAt
+
+  @@unique([playerType, playerId, format])
+}
+
+model PlayerSeasonStats {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  playerType      String   
+  playerId        String   @db.ObjectId
+  season          String   // e.g. 2026
+  
+  matchesPlayed   Int      @default(0)
+  runs            Int      @default(0)
+  wickets         Int      @default(0)
+  highestScore    Int      @default(0)
+  bestBowling     String?
+  
+  updatedAt       DateTime @updatedAt
+
+  @@unique([playerType, playerId, season])
+}
+
+model PlayerPositionStats {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  playerType      String   
+  playerId        String   @db.ObjectId
+  position        Int      // 1 to 11
+  
+  inningsPlayed   Int      @default(0)
+  runs            Int      @default(0)
+  highestScore    Int      @default(0)
+  battingAverage  Float    @default(0.0)
+  battingSR       Float    @default(0.0)
+  
+  updatedAt       DateTime @updatedAt
+
+  @@unique([playerType, playerId, position])
+}
+
+model PlayerVsTeam {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  playerType      String   
+  playerId        String   @db.ObjectId
+  opponentTeamId  String   @db.ObjectId
+  
+  matchesPlayed   Int      @default(0)
+  runs            Int      @default(0)
+  wickets         Int      @default(0)
+  
+  updatedAt       DateTime @updatedAt
+
+  @@unique([playerType, playerId, opponentTeamId])
+}
+
+model TeamTossRecord {
+  id                      String   @id @default(auto()) @map("_id") @db.ObjectId
+  teamId                  String   @unique @db.ObjectId
+  
+  tossesWon               Int      @default(0)
+  tossesLost              Int      @default(0)
+  electedToBat            Int      @default(0)
+  electedToBowl           Int      @default(0)
+  matchWinsWhenTossWon    Int      @default(0)
+  matchWinsWhenTossLost   Int      @default(0)
+  
+  updatedAt               DateTime @updatedAt
+}
