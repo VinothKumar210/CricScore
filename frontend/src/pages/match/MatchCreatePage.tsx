@@ -109,8 +109,6 @@ export const MatchCreatePage = () => {
                 awayTeamName: form.awayTeamName.trim(),
                 overs: form.overs,
                 ballType: BALL_TYPE_MAP[form.ballType],
-                tossWinner: form.tossWinner === 'HOME' ? getHomeTeamName() : getAwayTeamName(),
-                tossDecision: form.tossDecision,
                 venue: form.venue,
             });
             const matchId = res.data?.match?.id ?? res.match?.id;

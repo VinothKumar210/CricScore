@@ -17,7 +17,7 @@ router.post('/matches', requireAuth, async (req: Request, res: Response) => {
     try {
         const userId = req.user!.id;
         const required = ['matchType', 'homeTeamId', 'awayTeamName', 'overs', 'ballType'];
-        const missing = required.filter(f => !req.body[f]);
+        const missing = required.filter(f => req.body[f] === undefined || req.body[f] === null || req.body[f] === '');
 
         if (missing.length > 0) {
             return sendError(res, `Missing fields: ${missing.join(', ')}`, 400, 'MISSING_PARAM');
