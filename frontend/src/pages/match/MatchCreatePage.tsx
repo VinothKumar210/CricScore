@@ -88,7 +88,7 @@ export const MatchCreatePage = () => {
         setError('');
     };
 
-    // Derived helpers for Toss UI
+    // Derived helpers
     const getHomeTeamName = () => {
         const team = myTeams.find(t => t.id === form.homeTeamId);
         return team ? (team.shortName || team.name) : 'Home Team';
@@ -302,6 +302,40 @@ export const MatchCreatePage = () => {
                             />
                         </div>
                     </div>
+
+                    {/* Match Summary Card */}
+                    {form.homeTeamId && form.awayTeamName.trim() && (
+                        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+                            <h3 className="text-sm font-semibold text-foreground">Match Summary</h3>
+                            <div className="flex items-center justify-between">
+                                <div className="text-center flex-1">
+                                    <p className="font-bold text-foreground text-lg">{getHomeTeamName()}</p>
+                                    <span className="text-xs text-muted-foreground">Home</span>
+                                </div>
+                                <div className="px-3">
+                                    <Swords className="w-5 h-5 text-muted-foreground" />
+                                </div>
+                                <div className="text-center flex-1">
+                                    <p className="font-bold text-foreground text-lg">{getAwayTeamName()}</p>
+                                    <span className="text-xs text-muted-foreground">Away</span>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 text-sm pt-2 border-t border-border">
+                                <div>
+                                    <span className="text-xs text-muted-foreground">Format</span>
+                                    <p className="font-medium text-foreground">{form.matchFormat}</p>
+                                </div>
+                                <div>
+                                    <span className="text-xs text-muted-foreground">Overs</span>
+                                    <p className="font-medium text-foreground">{form.overs}</p>
+                                </div>
+                                <div>
+                                    <span className="text-xs text-muted-foreground">Ball</span>
+                                    <p className="font-medium text-foreground">{form.ballType}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {error && (
                         <p className="text-destructive text-sm text-center font-medium">{error}</p>
