@@ -219,6 +219,7 @@ model GuestPlayer {
   phoneNumber String?
   profileUrl  String?  @unique // slug
   addedDuring GuestAddContext @default(TEAM_MANAGEMENT)
+  role        Role?    // Cricket role: BATSMAN, BOWLER, ALL_ROUNDER, WICKET_KEEPER_BATSMAN
   
   battingStyle BattingHand?
   bowlingStyle BowlingStyle?
@@ -342,6 +343,15 @@ model MatchSummary {
   tossWinnerName    String?
   tossDecision      String?     // BAT or BOWL
   
+  // Advanced Match Features (Added in R1)
+  playingXIHome     Json?       // [{playerId, name, role, isCaptain, isWK}]
+  playingXIAway     Json?
+  isSuperOver       Boolean     @default(false)
+  superOverResult   Json?       // {teamAScore, teamBScore, winner}
+  isRainAffected    Boolean     @default(false)
+  revisedTarget     Int?
+  revisedOvers      Int?        // Stored as balls (Int), display derived
+
   // Creator (for RBAC — who created this match)
   createdById       String?     @db.ObjectId
   
@@ -381,7 +391,6 @@ model Innings {
   totalRuns           Int                @default(0)
   totalWickets        Int                @default(0)
   totalBalls          Int                @default(0)
-  overs               Float              @default(0.0) // 10.2
   
   extras              Json               // {wides, noBalls, byes, legByes, penalty}
   fallOfWickets       Json               // [{wicket, score, over, batsman}]
@@ -429,7 +438,7 @@ model BowlingPerformance {
   guestPlayerId   String?  @db.ObjectId
   playerName      String
   
-  overs           Float    @default(0.0)
+  totalBalls      Int      @default(0)
   maidens         Int      @default(0)
   runs            Int      @default(0)
   wickets         Int      @default(0)
@@ -483,6 +492,19 @@ model BallRecord {
   extraType       String?
   extraRuns       Int       @default(0)
   
+  // Advanced Scoring Tracking (Added in R1)
+  bowlerId        String?   @db.ObjectId
+  nonStrikerId    String?   @db.ObjectId
+  nonStrikerName  String?
+  isFreeHit       Boolean   @default(false)
+  fielderId       String?   @db.ObjectId
+  fielderName     String?
+  dismissedBatsman String?  // For run-outs (might be non-striker)
+  isOverthrow     Boolean   @default(false)
+  isShortRun      Boolean   @default(false)
+  runsBatsman     Int       @default(0)   // Runs credited to batsman
+  runsExtras      Int       @default(0)   // Runs credited to extras
+
   isWicket        Boolean   @default(false)
   wicketType      String?
   isBoundary      Boolean   @default(false)
@@ -1108,4 +1130,125 @@ enum AttachmentType {
   VIDEO
   DOCUMENT
   AUDIO
+}
+
+// -----------------------------------------------------------------------------
+// 10. Advanced Match Centre — New Models
+// -----------------------------------------------------------------------------
+
+// Selected Playing XI per match per team
+model PlayingXI {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  matchId         String   @db.ObjectId
+  teamId          String?  @db.ObjectId
+  teamName        String
+
+  // Array of: { playerId, playerName, playerType: "REGISTERED"|"GUEST",
+  //   role?, isCaptain, isWicketKeeper, battingOrder? }
+  players         Json
+
+  createdAt       DateTime @default(now())
+
+  @@unique([matchId, teamName])
+  @@index([matchId])
+}
+
+// Career stats aggregated after each match
+// Uses discriminator pattern: playerType + playerId compound unique
+// Registered users: playerType="REGISTERED", playerId=userId
+// Guest players:    playerType="GUEST",      playerId=guestPlayerId
+model PlayerCareerStats {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  playerType      String   // "REGISTERED" | "GUEST"
+  playerId        String   @db.ObjectId
+  playerName      String   // Denormalized for display
+
+  // Batting career
+  matchesBatted   Int      @default(0)
+  totalRuns       Int      @default(0)
+  totalBallsFaced Int      @default(0)  // Stored as balls (Int), derive overs for display
+  totalFours      Int      @default(0)
+  totalSixes      Int      @default(0)
+  highestScore    Int      @default(0)
+  fifties         Int      @default(0)
+  hundreds        Int      @default(0)
+  ducks           Int      @default(0)
+  notOuts         Int      @default(0)
+  battingAverage  Float    @default(0.0)  // runs / (innings - notOuts)
+  battingSR       Float    @default(0.0)  // (runs / balls) x 100
+
+  // Bowling career
+  matchesBowled   Int      @default(0)
+  totalBallsBowled Int     @default(0)  // Stored as balls (Int), derive overs for display
+  totalRunsGiven  Int      @default(0)
+  totalWickets    Int      @default(0)
+  totalMaidens    Int      @default(0)
+  bestBowling     String?  // "3-12"
+  bowlingAverage  Float    @default(0.0)  // runs / wickets
+  bowlingEconomy  Float    @default(0.0)
+  bowlingSR       Float    @default(0.0)  // balls / wickets
+  fiveWickets     Int      @default(0)
+
+  // Fielding
+  catches         Int      @default(0)
+  runOuts         Int      @default(0)
+  stumpings       Int      @default(0)
+
+  // Recent form (last 5 matches)
+  recentScores    Json?    // [45, 12, 78, 0, 33]
+  recentWickets   Json?    // [2, 0, 3, 1, 0]
+
+  updatedAt       DateTime @updatedAt
+
+  @@unique([playerType, playerId])
+  @@index([totalRuns])
+  @@index([totalWickets])
+}
+
+// Batsman vs Bowler head-to-head across all matches
+// Uses ID-based compound unique (no name-based collision risk)
+model HeadToHead {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  batsmanType     String   // "REGISTERED" | "GUEST"
+  batsmanId       String   @db.ObjectId
+  batsmanName     String   // Denormalized for display
+  bowlerType      String   // "REGISTERED" | "GUEST"
+  bowlerId        String   @db.ObjectId
+  bowlerName      String   // Denormalized for display
+
+  balls           Int      @default(0)
+  runs            Int      @default(0)
+  fours           Int      @default(0)
+  sixes           Int      @default(0)
+  dotBalls        Int      @default(0)
+  dismissals      Int      @default(0)
+  dismissalTypes  Json?    // ["CAUGHT", "BOWLED"]
+
+  updatedAt       DateTime @updatedAt
+
+  @@unique([batsmanType, batsmanId, bowlerType, bowlerId])
+  @@index([batsmanId])
+  @@index([bowlerId])
+}
+
+// Team vs Team history
+// Canonical ordering: teamAId is always the lexicographically smaller ObjectId
+// Service layer enforces: if (id1 > id2) swap(id1, id2) before upsert
+model TeamRecord {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  teamAId         String   @db.ObjectId   // Always the smaller ObjectId
+  teamAName       String   // Denormalized for display
+  teamBId         String   @db.ObjectId   // Always the larger ObjectId
+  teamBName       String   // Denormalized for display
+
+  matchesPlayed   Int      @default(0)
+  teamAWins       Int      @default(0)
+  teamBWins       Int      @default(0)
+  ties            Int      @default(0)
+  noResults       Int      @default(0)
+
+  lastPlayedAt    DateTime?
+  updatedAt       DateTime @updatedAt
+
+  @@unique([teamAId, teamBId])
 }

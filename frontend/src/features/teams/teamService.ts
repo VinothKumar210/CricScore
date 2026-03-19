@@ -96,4 +96,10 @@ export const teamService = {
         const res = await api.get(`/api/teams/${teamId}/qr`);
         return res.data || res;
     },
+
+    /** Look up a team by invite code */
+    getTeamByCode: async (code: string): Promise<any> => {
+        const res = await api.get(`/api/teams/code/${code}`);
+        return res.data?.team || res.team || res;
+    },
 };

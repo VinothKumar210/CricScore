@@ -137,7 +137,7 @@ export const statsService = {
                 wickets: true,
                 runs: true,
                 maidens: true,
-                overs: true,
+                totalBalls: true as any,
                 dotBalls: true,
                 wides: true,
                 noBalls: true
@@ -178,21 +178,8 @@ export const statsService = {
 
         const totalWickets = bowling._sum.wickets || 0;
         const runsConceded = bowling._sum.runs || 0;
-        // Fix Overs Sum (e.g. 10.2 + 5.5 = 15.7 -> 16.1)
-        // Only feasible if we fetch all. aggregate sum returns float.
-        // Let's accept float sum for MVP or fetch distinct?
-        // Actually, economy = runs / overs.
-        const rawOversSum = bowling._sum.overs || 0;
-        // Convert .1, .2... to balls? 
-        // 0.1 = 1 ball. 0.5 = 5 balls.
-        // But 10.2 + 10.4 = 20.6? No, 20.6 is not valid cricket.
-        // DB Sum treats it as decimal.
-        // Since schema is frozen and I defined it as Float, I have to deal with it.
-        // If I assume `overs` is just a number, aggregate is inaccurate.
-        // REAL FIX: Stats Engine usually needs `balls`.
-        // If query is huge, this is bad.
-        // But for MVP, let's use `rawOversSum` as approximation for Economy.
-        // `runs / rawOversSum`. 
+        const totalBallsBowled = (bowling as any)._sum.totalBalls || 0;
+        const rawOversSum = totalBallsBowled / 6;
 
         const bowlingAvg = totalWickets > 0 ? runsConceded / totalWickets : 0;
         const economy = rawOversSum > 0 ? runsConceded / rawOversSum : 0;
@@ -366,7 +353,7 @@ export const statsService = {
         if (category === 'wickets') {
             const result = await prisma.bowlingPerformance.groupBy({
                 by: ['userId'],
-                _sum: { wickets: true, runs: true, overs: true },
+                _sum: { wickets: true, runs: true, totalBalls: true as any },
                 _count: { id: true },
                 orderBy: { _sum: { wickets: 'desc' } },
                 take: limit,
@@ -399,22 +386,25 @@ export const statsService = {
         }
 
         if (category === 'economy') {
-            // Fetch all bowling performances, filter to players with >= 10 overs bowled
+            // Fetch all bowling performances, filter to players with >= 10 overs bowled (60 balls)
             const allBowling = await prisma.bowlingPerformance.groupBy({
                 by: ['userId'],
-                _sum: { runs: true, overs: true, wickets: true },
+                _sum: { runs: true, totalBalls: true as any, wickets: true },
                 _count: { id: true },
                 where: { userId: userFilter },
             });
 
             const entries = allBowling
-                .filter((b: any) => (b._sum.overs || 0) >= 10) // Min qualification
-                .map((b: any) => ({
-                    userId: b.userId,
-                    _sum: b._sum,
-                    _count: b._count,
-                    economy: parseFloat(((b._sum.runs || 0) / (b._sum.overs || 1)).toFixed(2)),
-                }))
+                .filter((b: any) => (b._sum.totalBalls || 0) >= 60) // Min qualification: 60 balls (10 overs)
+                .map((b: any) => {
+                    const mathOvers = (b._sum.totalBalls || 0) / 6 || 1;
+                    return {
+                        userId: b.userId,
+                        _sum: b._sum,
+                        _count: b._count,
+                        economy: parseFloat(((b._sum.runs || 0) / mathOvers).toFixed(2)),
+                    };
+                })
                 .sort((a, b) => a.economy - b.economy) // Lower is better
                 .slice(0, limit);
 

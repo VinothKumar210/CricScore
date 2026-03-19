@@ -147,9 +147,9 @@ export const matchService = {
     },
 
     /**
-     * Complete pre-match setup (e.g. toss details) and start match.
+     * Step 2: Toss
      */
-    updateMatchSetup: async (matchId: string, tossWinnerName: string, tossDecision: string) => {
+    updateMatchToss: async (matchId: string, tossWinnerName: string, tossDecision: string) => {
         const match = await prisma.matchSummary.findUnique({ where: { id: matchId } });
         if (!match) throw { statusCode: 404, message: 'Match not found', code: 'NOT_FOUND' };
 
@@ -161,9 +161,79 @@ export const matchService = {
             where: { id: matchId },
             data: { 
                 tossWinnerName, 
-                tossDecision,
-                status: 'LIVE' 
+                tossDecision
             }
+        });
+    },
+
+    /**
+     * Step 3: Playing XI
+     */
+    updatePlayingXI: async (matchId: string, homeXI: any[], awayXI: any[]) => {
+        const match = await prisma.matchSummary.findUnique({ where: { id: matchId } });
+        if (!match) throw { statusCode: 404, message: 'Match not found', code: 'NOT_FOUND' };
+
+        return prisma.$transaction(async (tx) => {
+            // Upsert Home XI
+            await tx.playingXI.upsert({
+                where: { matchId_teamName: { matchId, teamName: match.homeTeamName } },
+                update: { players: homeXI },
+                create: { matchId, teamId: match.homeTeamId, teamName: match.homeTeamName, players: homeXI }
+            });
+
+            // Upsert Away XI
+            await tx.playingXI.upsert({
+                where: { matchId_teamName: { matchId, teamName: match.awayTeamName } },
+                update: { players: awayXI },
+                create: { matchId, teamId: match.awayTeamId, teamName: match.awayTeamName, players: awayXI }
+            });
+
+            // Update MatchSummary
+            return tx.matchSummary.update({
+                where: { id: matchId },
+                data: { playingXIHome: homeXI as any, playingXIAway: awayXI as any }
+            });
+        });
+    },
+
+    /**
+     * Step 4: Openers & Start Match
+     */
+    updateOpeners: async (matchId: string, strikerId: string, nonStrikerId: string, bowlerId: string) => {
+        const match = await prisma.matchSummary.findUnique({ where: { id: matchId } });
+        if (!match) throw { statusCode: 404, message: 'Match not found', code: 'NOT_FOUND' };
+
+        if (match.status !== 'SCHEDULED') {
+            throw { statusCode: 400, message: 'Match already started', code: 'INVALID_TRANSITION' };
+        }
+
+        return prisma.matchSummary.update({
+            where: { id: matchId },
+            data: { status: 'LIVE' }
+        });
+    },
+
+    /**
+     * POST /complete: Idempotent Match Completion
+     */
+    completeMatch: async (matchId: string, resultString: string) => {
+        const match = await prisma.matchSummary.findUnique({ where: { id: matchId } });
+        if (!match) throw { statusCode: 404, message: 'Match not found', code: 'NOT_FOUND' };
+
+        // Idempotency guard
+        if (match.status === 'COMPLETED') {
+            return match; 
+        }
+
+        if (match.status !== 'LIVE') {
+            throw { statusCode: 400, message: 'Match is not LIVE', code: 'INVALID_TRANSITION' };
+        }
+
+        // TODO in Phase 7/R3: Full Stats Aggregation Pipeline happens here
+
+        return prisma.matchSummary.update({
+            where: { id: matchId },
+            data: { status: 'COMPLETED', result: resultString }
         });
     },
 

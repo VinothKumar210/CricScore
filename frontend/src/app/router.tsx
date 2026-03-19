@@ -33,7 +33,9 @@ const FollowRequestsPage = lazy(() => import('../features/social/components/Foll
 // Match
 const MatchDetailPage = lazy(() => import('../pages/match/MatchDetailPage').then(m => ({ default: m.MatchDetailPage })));
 const MatchCreatePage = lazy(() => import('../pages/match/MatchCreatePage').then(m => ({ default: m.MatchCreatePage })));
-const MatchSetupPage = lazy(() => import('../pages/match/MatchSetupPage').then(m => ({ default: m.MatchSetupPage })));
+const TossPage = lazy(() => import('../pages/match/TossPage').then(m => ({ default: m.TossPage })));
+const SelectPlayingXIPage = lazy(() => import('../pages/match/SelectPlayingXIPage').then(m => ({ default: m.SelectPlayingXIPage })));
+const SelectOpenersPage = lazy(() => import('../pages/match/SelectOpenersPage').then(m => ({ default: m.SelectOpenersPage })));
 const ScoringPage = lazy(() => import('../pages/match/ScoringPage').then(m => ({ default: m.ScoringPage })));
 const LiveMatchPage = lazy(() => import('../pages/match/LiveMatchPage').then(m => ({ default: m.LiveMatchPage })));
 
@@ -108,7 +110,9 @@ export const router = createBrowserRouter([
             { path: '/tournaments', element: <Lazy><TournamentListPage /></Lazy> },
             { path: '/tournaments/:id', element: <Lazy><TournamentDetailPage /></Lazy> },
             { path: '/match/create', element: <Lazy><MatchCreatePage /></Lazy> },
-            { path: '/match/:id/setup', element: <Lazy><MatchSetupPage /></Lazy> },
+            { path: '/match/:id/toss', element: <Lazy><TossPage /></Lazy> },
+            { path: '/match/:id/select-xi', element: <Lazy><SelectPlayingXIPage /></Lazy> },
+            { path: '/match/:id/openers', element: <Lazy><SelectOpenersPage /></Lazy> },
             { path: '/archive', element: <Lazy><ArchiveListPage /></Lazy> },
             { path: '/archive/:id', element: <Lazy><ArchiveDetailPage /></Lazy> },
             { path: '/leaderboard', element: <Lazy><LeaderboardPage /></Lazy> },

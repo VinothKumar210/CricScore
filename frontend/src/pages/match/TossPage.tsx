@@ -5,7 +5,7 @@ import { api } from '../../lib/api';
 import { Loader2, Swords, Clock, ArrowRight } from 'lucide-react';
 import { clsx } from 'clsx';
 
-export const MatchSetupPage = () => {
+export const TossPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     
@@ -66,12 +66,12 @@ export const MatchSetupPage = () => {
         setIsSubmitting(true);
         setError('');
         try {
-            await api.patch(`/api/matches/${id}/setup`, {
+            await api.patch(`/api/matches/${id}/toss`, {
                 tossWinnerName: getSelectedTossWinnerName(),
                 tossDecision
             });
-            // Complete! Redirect to scoring
-            navigate(`/match/${id}/score`, { replace: true });
+            // Complete! Redirect to select XI
+            navigate(`/match/${id}/select-xi`, { replace: true });
         } catch (err: any) {
             setError(err?.data?.message || err.message || 'Failed to start match');
         } finally {
@@ -161,7 +161,7 @@ export const MatchSetupPage = () => {
                         ) : (
                             <>
                                 <Swords className="w-5 h-5" />
-                                Start Match Scoring
+                                Next: Select Playing XI
                                 <ArrowRight className="w-4 h-4 ml-1" />
                             </>
                         )}

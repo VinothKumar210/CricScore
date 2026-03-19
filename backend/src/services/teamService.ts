@@ -87,6 +87,20 @@ export const teamService = {
     },
 
     /**
+     * Get team details by invite code (public lookup for match creation).
+     */
+    getTeamByInviteCode: async (inviteCode: string) => {
+        return prisma.team.findUnique({
+            where: { inviteCode },
+            include: {
+                _count: {
+                    select: { members: true }
+                }
+            }
+        });
+    },
+
+    /**
      * Delete team (Owner only).
      * Cascading delete handled by Prisma schema if relations configured, otherwise need manual cleanup.
      * Here we rely on explicit deletion or Prisma cascade.
@@ -160,6 +174,20 @@ export const teamService = {
                 teamId,
                 userId,
                 role: role as any,
+            },
+        });
+    },
+
+    /**
+     * Add a guest player to the team.
+     */
+    addGuestPlayer: async (teamId: string, data: { name: string; phone?: string; role?: string }) => {
+        return prisma.guestPlayer.create({
+            data: {
+                teamId,
+                name: data.name,
+                phoneNumber: data.phone || null,
+                role: data.role as any,
             },
         });
     },

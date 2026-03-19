@@ -130,7 +130,7 @@ export async function compareHeadToHead(
         prisma.bowlingPerformance.findMany({
             where: { userId: player1Id, innings: inningsWhere },
             select: {
-                overs: true, maidens: true, runs: true, wickets: true,
+                totalBalls: true as any, maidens: true, runs: true, wickets: true,
                 economy: true, dotBalls: true,
                 innings: { select: { matchSummaryId: true } },
             },
@@ -138,7 +138,7 @@ export async function compareHeadToHead(
         prisma.bowlingPerformance.findMany({
             where: { userId: player2Id, innings: inningsWhere },
             select: {
-                overs: true, maidens: true, runs: true, wickets: true,
+                totalBalls: true as any, maidens: true, runs: true, wickets: true,
                 economy: true, dotBalls: true,
                 innings: { select: { matchSummaryId: true } },
             },
@@ -210,7 +210,8 @@ function aggregateBowling(perfs: any[]): BowlingStats {
     if (perfs.length === 0) return zeroBowling();
 
     const innings = perfs.length;
-    const overs = round(sum(perfs, 'overs'));
+    const totalBalls = sum(perfs, 'totalBalls');
+    const overs = round(totalBalls / 6, 1); // rough float representation for sorting/calc
     const maidens = sum(perfs, 'maidens');
     const runs = sum(perfs, 'runs');
     const wickets = sum(perfs, 'wickets');

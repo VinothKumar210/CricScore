@@ -37,6 +37,38 @@ router.post('/teams', requireAuth, async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/teams/code/:inviteCode
+ * Look up team by inviteCode (Public route for match creation)
+ */
+router.get('/teams/code/:inviteCode', async (req: Request, res: Response) => {
+    try {
+        const inviteCode = req.params.inviteCode as string;
+        if (!inviteCode) return sendError(res, 'Invite code is required', 400, 'MISSING_PARAM');
+
+        const team = await teamService.getTeamByInviteCode(inviteCode);
+
+        if (!team) {
+            return sendError(res, 'No team found with this invite code', 404, 'NOT_FOUND');
+        }
+
+        // Return only public info needed for match creation
+        return sendSuccess(res, {
+            team: {
+                id: team.id,
+                name: team.name,
+                shortName: team.shortName,
+                logoUrl: team.logoUrl,
+                city: team.city,
+                memberCount: team._count?.members || 0
+            }
+        });
+    } catch (error: any) {
+        console.error('[TeamRoutes] Get by code error:', error);
+        return sendError(res, 'Failed to find team', 500, 'INTERNAL_ERROR');
+    }
+});
+
+/**
  * GET /api/teams
  * Get all teams the current user belongs to
  */
@@ -146,6 +178,37 @@ router.post('/teams/:id/members', requireAuth, requireTeamRole(['OWNER', 'CAPTAI
     } catch (error: any) {
         if (error.statusCode) return sendError(res, error.message, error.statusCode, error.code);
         return sendError(res, 'Failed to add member', 500, 'INTERNAL_ERROR');
+    }
+});
+
+/**
+ * POST /api/teams/:id/guest-players
+ * Add a guest player to the team (Owner/Captain/Vice Captain)
+ */
+router.post('/teams/:id/guest-players', requireAuth, requireTeamRole(['OWNER', 'CAPTAIN', 'VICE_CAPTAIN']), async (req: Request, res: Response) => {
+    try {
+        const teamId = req.params.id as string;
+        if (!teamId) return sendError(res, 'Team ID required', 400, 'MISSING_PARAM');
+
+        const { name, phone, role } = req.body;
+        if (!name) return sendError(res, 'Guest player name is required', 400, 'MISSING_PARAM');
+
+        const player = await teamService.addGuestPlayer(teamId, { name, phone, role });
+        
+        // Return a payload formatted similarly to how team members are returned
+        const formattedPlayer = {
+            id: player.id,
+            name: player.name,
+            role: 'GUEST',
+            cricketRole: player.role,
+            phone: player.phoneNumber,
+            isGuest: true,
+        };
+
+        return sendSuccess(res, { player: formattedPlayer }, 201);
+    } catch (error: any) {
+        console.error('[TeamRoutes] Add guest player error:', error);
+        return sendError(res, 'Failed to add guest player', 500, 'INTERNAL_ERROR');
     }
 });
 

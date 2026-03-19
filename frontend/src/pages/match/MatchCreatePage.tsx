@@ -32,6 +32,7 @@ const BALL_TYPE_MAP: Record<UIBallType, string> = {
 interface FormData {
     matchFormat: MatchFormat;
     homeTeamId: string;
+    awayTeamId: string;
     awayTeamName: string;
     overs: number;
     ballType: UIBallType;
@@ -52,6 +53,13 @@ export const MatchCreatePage = () => {
 
     const [myTeams, setMyTeams] = useState<TeamListItem[]>([]);
     const [isLoadingTeams, setIsLoadingTeams] = useState(false);
+
+    // Away Team Lookup State
+    const [awayCode, setAwayCode] = useState('');
+    const [isCheckingCode, setIsCheckingCode] = useState(false);
+    const [awayTeamDetails, setAwayTeamDetails] = useState<any>(null);
+    const [awayCodeError, setAwayCodeError] = useState('');
+    const [isManualAway, setIsManualAway] = useState(false);
 
     useEffect(() => {
         const loadTeams = async () => {
@@ -75,6 +83,7 @@ export const MatchCreatePage = () => {
     const [form, setForm] = useState<FormData>({
         matchFormat: 'T20',
         homeTeamId: '',
+        awayTeamId: '',
         awayTeamName: '',
         overs: 20,
         ballType: 'LEATHER',
@@ -98,6 +107,30 @@ export const MatchCreatePage = () => {
         return form.awayTeamName.trim() || 'Away Team';
     };
 
+    const handleCheckCode = async (code: string) => {
+        if (!code.trim()) {
+            setAwayTeamDetails(null);
+            setAwayCodeError('');
+            updateForm({ awayTeamId: '', awayTeamName: '' });
+            return;
+        }
+        setIsCheckingCode(true);
+        setAwayCodeError('');
+        try {
+            const team = await teamService.getTeamByCode(code.trim());
+            setAwayTeamDetails(team);
+            updateForm({ awayTeamId: team.id, awayTeamName: team.name });
+            setAwayCodeError('');
+        } catch (err: any) {
+            console.error('Code check error:', err);
+            setAwayTeamDetails(null);
+            setAwayCodeError('Invalid invite code. Try manual entry.');
+            updateForm({ awayTeamId: '', awayTeamName: '' });
+        } finally {
+            setIsCheckingCode(false);
+        }
+    };
+
     const handleSubmit = async () => {
         setIsSubmitting(true);
         setError('');
@@ -106,6 +139,7 @@ export const MatchCreatePage = () => {
                 matchType: MATCH_TYPE_MAP[form.matchFormat],
                 homeTeamId: form.homeTeamId,
                 homeTeamName: getHomeTeamName(),
+                awayTeamId: form.awayTeamId || undefined,
                 awayTeamName: form.awayTeamName.trim(),
                 overs: form.overs,
                 ballType: BALL_TYPE_MAP[form.ballType],
@@ -113,7 +147,7 @@ export const MatchCreatePage = () => {
             });
             const matchId = res.data?.match?.id ?? res.match?.id;
             if (matchId) {
-                navigate(`/match/${matchId}/setup`);
+                navigate(`/match/${matchId}/toss`);
             } else {
                 navigate('/hub');
             }
@@ -280,15 +314,73 @@ export const MatchCreatePage = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-foreground">Away Team (Opponent)</label>
-                            <input
-                                type="text"
-                                value={form.awayTeamName}
-                                onChange={e => updateForm({ awayTeamName: e.target.value })}
-                                placeholder="Enter opponent team name"
-                                className="w-full h-12 rounded-xl bg-secondary border border-border px-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                            />
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium text-foreground">Away Team (Opponent)</label>
+                                <button
+                                    onClick={() => {
+                                        setIsManualAway(!isManualAway);
+                                        setAwayCode('');
+                                        setAwayTeamDetails(null);
+                                        setAwayCodeError('');
+                                        updateForm({ awayTeamId: '', awayTeamName: '' });
+                                    }}
+                                    className="text-xs text-primary font-medium hover:underline"
+                                >
+                                    {isManualAway ? 'Use Invite Code' : 'Enter Manually'}
+                                </button>
+                            </div>
+
+                            {isManualAway ? (
+                                <input
+                                    type="text"
+                                    value={form.awayTeamName}
+                                    onChange={e => updateForm({ awayTeamName: e.target.value, awayTeamId: '' })}
+                                    placeholder="Enter opponent team name"
+                                    className="w-full h-12 rounded-xl bg-secondary border border-border px-4 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                                />
+                            ) : (
+                                <div className="space-y-2">
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={awayCode}
+                                            onChange={e => {
+                                                setAwayCode(e.target.value.toUpperCase());
+                                                setAwayCodeError('');
+                                            }}
+                                            onBlur={() => handleCheckCode(awayCode)}
+                                            placeholder="Enter 6-digit invite code"
+                                            className={clsx(
+                                                "w-full h-12 rounded-xl bg-secondary border px-4 font-mono uppercase focus:outline-none focus:ring-2",
+                                                awayCodeError ? "border-destructive focus:ring-destructive/30" : "border-border focus:ring-primary/30 focus:border-primary"
+                                            )}
+                                            maxLength={6}
+                                        />
+                                        {isCheckingCode && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    {awayCodeError && (
+                                        <p className="text-xs font-medium text-destructive">{awayCodeError}</p>
+                                    )}
+
+                                    {awayTeamDetails && (
+                                        <div className="p-3 bg-secondary/50 rounded-xl border border-border flex items-center gap-3 animate-in fade-in duration-200">
+                                            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                                                {awayTeamDetails.name.substring(0, 2).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-sm text-foreground">{awayTeamDetails.name}</p>
+                                                <p className="text-xs text-muted-foreground">{awayTeamDetails.memberCount || 0} members</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="space-y-2">
@@ -350,7 +442,7 @@ export const MatchCreatePage = () => {
                             <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
                             <>
-                                Next: Pre-Match Setup
+                                Next: Toss
                                 <ArrowRight className="w-4 h-4" />
                             </>
                         )}
