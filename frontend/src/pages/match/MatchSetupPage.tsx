@@ -21,9 +21,10 @@ export const MatchSetupPage = () => {
         const fetchMatch = async () => {
             try {
                 const res = await api.get(`/api/matches/${id}`);
-                setMatch(res.match);
+                const matchData = res.data?.match || res.match;
+                setMatch(matchData);
                 // If match is already LIVE, redirect to score
-                if (res.match.status !== 'SCHEDULED') {
+                if (matchData?.status !== 'SCHEDULED') {
                     navigate(`/match/${id}/score`, { replace: true });
                 }
             } catch (err: any) {
