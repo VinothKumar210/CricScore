@@ -4,7 +4,8 @@ import { Loader2 } from 'lucide-react';
 import { useScoringStore } from '../../scoringStore';
 import { DismissalTypeStep } from './DismissalTypeStep';
 import { FielderSelectStep } from './FielderSelectStep';
-import { NewBatsmanStep } from './NewBatsmanStep';
+import { RunOutStep } from './RunOutStep';
+import { NextBatsmanSheet } from '../NextBatsmanSheet';
 import type { DismissalType, TeamSummary } from '../../../matches/types/domainTypes';
 
 export const WicketFlowSheet = () => {
@@ -12,17 +13,27 @@ export const WicketFlowSheet = () => {
     const wicketDraft = useScoringStore((s) => s.wicketDraft);
     const matchState = useScoringStore((s) => s.matchState);
     const isSubmitting = useScoringStore((s) => s.isSubmitting);
-    const syncState = useScoringStore((s) => s.syncState);
+    const syncStatus = useScoringStore((s) => s.syncStatus);
 
     // Actions
     const cancelWicketFlow = useScoringStore((s) => s.cancelWicketFlow);
     const setDismissalType = useScoringStore((s) => s.setDismissalType);
     const setFielder = useScoringStore((s) => s.setFielder);
+    const setRunOutData = useScoringStore((s) => s.setRunOutData);
     const setNewBatsman = useScoringStore((s) => s.setNewBatsman);
     const commitWicket = useScoringStore((s) => s.commitWicket);
 
+    // Derived states
+    const derivedState = useScoringStore((s) => s.derivedState);
+    const currentInnings = derivedState?.innings[derivedState.currentInningsIndex];
+    const isFreeHit = currentInnings?.isFreeHit || false;
+    
+    const currentBatsmen = useScoringStore((s) => s.getBatsmanStats()).filter(b => !b.isOut);
+    const striker = currentBatsmen.find(b => b.playerId === currentInnings?.strikerId);
+    const nonStriker = currentBatsmen.find(b => b.playerId === currentInnings?.nonStrikerId);
+
     // Local Step Management
-    const [step, setStep] = useState<'TYPE' | 'FIELDER' | 'BATSMAN'>('TYPE');
+    const [step, setStep] = useState<'TYPE' | 'FIELDER' | 'RUN_OUT' | 'BATSMAN'>('TYPE');
 
     // Helper to check if fielder is required
     const dismissalRequiresFielder = (type: DismissalType): boolean => {
@@ -53,7 +64,24 @@ export const WicketFlowSheet = () => {
 
     const handleFielderSelect = (playerId: string) => {
         setFielder(playerId);
+        
+        // Auto Caught & Bowled logic?
+        // Let's just do standard transitions here:
+        if (wicketDraft?.dismissalType === 'RUN_OUT') {
+            setStep('RUN_OUT');
+        } else {
+            setStep('BATSMAN');
+        }
+    };
+
+    const handleRunOutSelect = (data: { playerOutId: string, completedRuns: number }) => {
+        setRunOutData(data);
         setStep('BATSMAN');
+    };
+
+    const handleBatsmanSelect = (playerId: string) => {
+        setNewBatsman(playerId);
+        commitWicket();
     };
 
     const handleClose = () => {
@@ -64,7 +92,7 @@ export const WicketFlowSheet = () => {
     // Render Content
     const renderContent = () => {
         if (step === 'TYPE') {
-            return <DismissalTypeStep onSelect={handleDismissalSelect} />;
+            return <DismissalTypeStep onSelect={handleDismissalSelect} isFreeHit={isFreeHit} />;
         }
         if (step === 'FIELDER') {
             return (
@@ -75,43 +103,35 @@ export const WicketFlowSheet = () => {
                 />
             );
         }
-        if (step === 'BATSMAN') {
-            // We need to pass the currently selected batsman if any, or handling it here.
-            // For simplicity: The step just lists players. 
-            // Logic: User taps player -> we set it -> and we show a "Confirm" button overlay or similar.
-            // Or, we pass a wrapper that handles the "Select + Commit" flow?
-
-            // Let's wrap NewBatsmanStep to handle the "Confirm" UI part here for now
+        if (step === 'RUN_OUT') {
             return (
-                <div className="flex flex-col h-full relative">
-                    <NewBatsmanStep
-                        players={teams.batting?.players || []} // TODO: Filter out current/out players in real app
-                        onSelect={(id) => {
-                            setNewBatsman(id);
-                            commitWicket(); // Auto-commit on tap for speed? Or specific confirm? 
-                            // Requirement said "Confirm button calls commitWicket".
-                            // Let's stick to auto-commit for flow smoothness unless user specified explicit button separate from list.
-                            // "Confirm button: Calls commitWicket()" - implied explicit action.
-                            // BUT, NewBatsmanStep usually is the last action.
-                            // Refined flow: Tap Player -> updates draft -> UI shows "Confirm Done"?
-                            // Let's make `NewBatsmanStep` taking an `onConfirm` prop?
-                            // No, let's just do: Tap -> Commit. It's faster. 
-                            // If explicit confirm is needed, I'd split it. 
-                            // Re-reading: "Select New Batsman ... Tap -> setNewBatsman ... Confirm button calls commitWicket"
-                            // This implies the user selects, SEES the selection, then hits confirm.
-                            // OK, I will assume NewBatsmanStep should look like a list, allowing selection, then a big button at bottom.
-                        }}
-                        onBack={() => {
-                            // Go back to Fielder if required, else Type
-                            if (wicketDraft?.dismissalType && dismissalRequiresFielder(wicketDraft.dismissalType)) {
-                                setStep('FIELDER');
-                            } else {
-                                setStep('TYPE');
-                            }
-                        }}
-                        isSubmitting={isSubmitting}
-                    />
-                </div>
+                <RunOutStep
+                    striker={striker ? { id: striker.playerId, name: striker.playerId } : { id: 's', name: 'Striker' }}
+                    nonStriker={nonStriker ? { id: nonStriker.playerId, name: nonStriker.playerId } : { id: 'ns', name: 'Non-Striker' }}
+                    onSelect={handleRunOutSelect}
+                    onBack={() => setStep('FIELDER')}
+                />
+            );
+        }
+        if (step === 'BATSMAN') {
+            // Check if 10 wickets are down
+            const totalWickets = matchState?.innings[matchState.innings.length - 1]?.totalWickets || 0;
+            if (totalWickets >= 9) { // 9 wickets down + this one = 10 (innings over)
+                // Just commit immediately, no next batsman needed
+                commitWicket();
+                return <div className="p-8 text-center text-muted-foreground">Innings Over...</div>;
+            }
+
+            const alreadyBatted = useScoringStore.getState().getBatsmanStats().map(b => b.playerId);
+            
+            return (
+                <NextBatsmanSheet
+                    isOpen={true}
+                    players={teams.batting?.players || []}
+                    alreadyBatted={alreadyBatted}
+                    onSelect={handleBatsmanSelect}
+                    onClose={handleClose}
+                />
             );
         }
     };
@@ -131,7 +151,10 @@ export const WicketFlowSheet = () => {
                 {/* Header */}
                 <div className="p-4 border-b border-border flex justify-between items-center bg-background/50">
                     <h2 className={clsx("font-bold", "text-lg")}>
-                        {step === 'TYPE' ? 'Wicket: Dismissal Method' : step === 'FIELDER' ? 'Wicket: Fielder' : 'Wicket: New Batsman'}
+                        {step === 'TYPE' ? 'Wicket: Dismissal Method' 
+                         : step === 'FIELDER' ? 'Wicket: Fielder' 
+                         : step === 'RUN_OUT' ? 'Wicket: Run Out Details'
+                         : 'Wicket: New Batsman'}
                     </h2>
                     <button onClick={handleClose} className="p-2 -mr-2 text-muted-foreground hover:text-foreground">
                         ✕
@@ -144,7 +167,7 @@ export const WicketFlowSheet = () => {
                 </div>
 
                 {/* Footer / Loading Overlay */}
-                {(isSubmitting || syncState === 'CONFLICT') && (
+                {(isSubmitting || syncStatus === 'SYNCING') && (
                     <div className="absolute inset-0 bg-card/50 z-50 flex items-center justify-center">
                         <Loader2 className="animate-spin text-primary" />
                     </div>

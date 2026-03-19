@@ -14,15 +14,15 @@ interface UndoBottomSheetProps {
  * Dark backdrop + slide-up card with ball preview.
  */
 export const UndoBottomSheet = ({ isOpen, onClose }: UndoBottomSheetProps) => {
-    const { undo, isSubmitting, syncState, lastBall } = useScoringStore(
+    const { undo, isSubmitting, syncStatus, lastBall } = useScoringStore(
         useShallow((s) => ({
             undo: s.undo,
             isSubmitting: s.isSubmitting,
-            syncState: s.syncState,
+            syncStatus: s.syncStatus,
             lastBall: s.getLastBall(),
         }))
     );
-    const canUndo = !!lastBall && !isSubmitting && syncState === 'IDLE';
+    const canUndo = !!lastBall && !isSubmitting && syncStatus !== 'SYNCING';
 
     const handleConfirm = async () => {
         if (!canUndo) return;

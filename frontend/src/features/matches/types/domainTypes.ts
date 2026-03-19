@@ -79,6 +79,10 @@ export interface WicketDraft {
     dismissalType: DismissalType | null;
     fielderId?: string;
     newBatsmanId?: string;
+    runOutData?: {
+        playerOutId: string;
+        completedRuns: number;
+    };
 }
 
 export interface ScoreSummary {

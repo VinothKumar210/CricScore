@@ -70,10 +70,10 @@ export const ScorePanel = React.memo(() => {
             </h2>
 
             {/* Banners */}
-            {useScoringStore(s => s.isOffline) && (
+            {useScoringStore(s => s.syncStatus) === "OFFLINE" && (
                 <div className="bg-amber-500/10 text-amber-400 text-xs px-3 py-1.5 text-center font-medium rounded-lg mt-2 border border-amber-500/20 flex items-center justify-center gap-2">
                     <Radio className="w-3 h-3" />
-                    Offline Mode — {useScoringStore(s => s.unsyncedCount)} unsynced balls
+                    Offline Mode — {useScoringStore(s => s.pendingSyncCount)} unsynced balls
                 </div>
             )}
 
@@ -88,9 +88,9 @@ export const ScorePanel = React.memo(() => {
                 </div>
             )}
 
-            {useScoringStore(s => s.syncState) === "CONFLICT" && !useScoringStore.getState().isOffline && (
-                <div className="bg-destructive/10 text-destructive text-xs px-3 py-1.5 text-center font-medium rounded-lg mt-2 border border-destructive/20">
-                    State updated by another scorer. Syncing...
+            {useScoringStore(s => s.syncStatus) === "SYNCING" && useScoringStore(s => s.pendingSyncCount) > 0 && (
+                <div className="bg-primary/10 text-primary text-xs px-3 py-1.5 text-center font-medium rounded-lg mt-2 border border-primary/20">
+                    Syncing {useScoringStore(s => s.pendingSyncCount)} events...
                 </div>
             )}
 

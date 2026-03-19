@@ -2,8 +2,14 @@ import { useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useScoringStore } from '../../features/scoring/scoringStore';
 import { useScoringSocket } from '../../features/scoring/useScoringSocket';
-import { MatchLiveShell } from '../../features/scoring/components/MatchLiveShell';
-import { ControlPad } from '../../features/scoring/components/ControlPad';
+import { ScoreHeader } from '../../features/scoring/components/ScoreHeader';
+import { BatsmanCard } from '../../features/scoring/components/BatsmanCard';
+import { BowlerCard } from '../../features/scoring/components/BowlerCard';
+import { CurrentOverDots } from '../../features/scoring/components/CurrentOverDots';
+import { ScoringPad } from '../../features/scoring/components/ScoringPad';
+import { CommentaryPanel } from '../../features/scoring/components/CommentaryPanel';
+import { MilestoneWatcher } from '../../features/scoring/components/MilestoneWatcher';
+import { EventNotifier } from '../../features/scoring/broadcast/EventNotifier';
 import { Loader2 } from 'lucide-react';
 
 export const ScoringPage = () => {
@@ -57,13 +63,35 @@ export const ScoringPage = () => {
     if (!matchId) return <Navigate to="/home" />;
 
     return (
-        <div className="flex flex-col h-full bg-background max-w-md mx-auto shadow-2xl overflow-hidden relative">
-            {/* Shared Shell: ScorePanel + OverTimeline + Stats */}
-            <MatchLiveShell />
+        <div className="flex flex-col h-[100dvh] bg-background max-w-md mx-auto shadow-2xl overflow-hidden relative">
+            {/* Broadcast Layer */}
+            <EventNotifier />
+            <MilestoneWatcher />
 
-            {/* Footer: Scorer Control Pad */}
-            <div className="flex-none p-2 bg-card/80 backdrop-blur-xl border-t border-border pb-safe-area">
-                <ControlPad />
+            {/* Header: Score + Team + Rates */}
+            <div className="flex-none">
+                <ScoreHeader />
+            </div>
+
+            {/* Current Over Dots */}
+            <div className="flex-none">
+                <CurrentOverDots />
+            </div>
+
+            {/* Batting & Bowling Cards */}
+            <div className="flex-none px-3 py-2 space-y-2">
+                <BatsmanCard />
+                <BowlerCard />
+            </div>
+
+            {/* Commentary (scrollable) */}
+            <div className="flex-1 overflow-y-auto px-3 pb-2">
+                <CommentaryPanel />
+            </div>
+
+            {/* Footer: Scoring Pad */}
+            <div className="flex-none pb-safe-area">
+                <ScoringPad />
             </div>
 
             {/* Global Error Toast */}
