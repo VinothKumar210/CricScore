@@ -116,7 +116,7 @@ export const SelectPlayingXIPage = () => {
     };
 
     return (
-        <Container className="py-6 pb-24">
+        <Container className="py-6 pb-40">
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
                 <button
@@ -156,7 +156,7 @@ export const SelectPlayingXIPage = () => {
             )}
 
             {/* Fixed Bottom Action Bar */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t border-border z-10 max-w-md mx-auto">
+            <div className="fixed bottom-16 left-0 right-0 p-4 bg-background/95 backdrop-blur-xl border-t border-border z-40 max-w-md mx-auto">
                 <button
                     onClick={handleNext}
                     disabled={isSubmitting}
