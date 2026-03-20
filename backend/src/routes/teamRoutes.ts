@@ -241,9 +241,9 @@ router.post('/teams/:id/members', requireAuth, requireTeamRole(['OWNER', 'CAPTAI
 
 /**
  * POST /api/teams/:id/guest-players
- * Add a guest player to the team (Owner/Captain/Vice Captain)
+ * Add a guest player to the team (Allows match creators to add to opponents)
  */
-router.post('/teams/:id/guest-players', requireAuth, requireTeamRole(['OWNER', 'CAPTAIN', 'VICE_CAPTAIN']), async (req: Request, res: Response) => {
+router.post('/teams/:id/guest-players', requireAuth, async (req: Request, res: Response) => {
     try {
         const teamId = req.params.id as string;
         if (!teamId) return sendError(res, 'Team ID required', 400, 'MISSING_PARAM');
