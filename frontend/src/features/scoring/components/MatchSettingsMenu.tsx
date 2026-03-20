@@ -91,9 +91,9 @@ export const MatchSettingsMenu = ({ isOpen, onClose, onRainBreak }: MatchSetting
                             <ActionRow icon={<ShieldAlert size={18} />} title="Penalty Runs" desc="Award 5 penalty runs to a specific team" onClick={() => setView('PENALTY')} />
                             <ActionRow icon={<UserMinus size={18} />} title="Substitute Player" desc="Swap out an injured player for a sub" onClick={handleSubstitute} />
                             <ActionRow icon={<CloudRain size={18} />} title="Rain Break / DLS" desc="Revise overs and targets due to rain" onClick={handleRainBreak} />
-                            
+
                             <div className="h-px bg-border/50 my-1" />
-                            
+
                             {/* Toggle Wagon Wheel */}
                             <div className="flex items-center justify-between p-3 rounded-xl border border-border bg-card">
                                 <div className="flex items-center gap-3">
@@ -138,8 +138,8 @@ export const MatchSettingsMenu = ({ isOpen, onClose, onRainBreak }: MatchSetting
     );
 };
 
-const ActionRow = ({ icon, title, desc, onClick, variant = 'default' }: { icon: React.ReactNode, title: string, desc: string, onClick: () => void, variant?: 'default'|'destructive' }) => (
-    <button 
+const ActionRow = ({ icon, title, desc, onClick, variant = 'default' }: { icon: React.ReactNode, title: string, desc: string, onClick: () => void, variant?: 'default' | 'destructive' }) => (
+    <button
         onClick={onClick}
         className="w-full flex items-center p-3 rounded-xl border border-transparent transition-all active:scale-[0.98] text-left hover:bg-secondary hover:border-border"
     >
