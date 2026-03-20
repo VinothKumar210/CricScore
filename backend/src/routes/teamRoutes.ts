@@ -4,6 +4,7 @@ import { requireAuth } from '../middlewares/auth.js';
 import { requireTeamRole } from '../middlewares/permission.js';
 import { teamService } from '../services/teamService.js';
 import { sendSuccess, sendError } from '../utils/response.js';
+import { prisma } from '../utils/db.js';
 import { generateQRCode } from '../utils/joinCodeGenerator.js';
 import { conversationService } from '../services/conversationService.js';
 
@@ -149,6 +150,63 @@ router.delete('/teams/:id', requireAuth, requireTeamRole(['OWNER']), async (req:
 });
 
 // --- Member Management ---
+
+/**
+ * GET /api/teams/:id/members
+ * Get all members (registered + guest) for a team
+ */
+router.get('/teams/:id/members', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const teamId = req.params.id as string;
+        if (!teamId) return sendError(res, 'Team ID required', 400, 'MISSING_PARAM');
+
+        const team = await teamService.getTeamDetails(teamId);
+        if (!team) return sendError(res, 'Team not found', 404, 'NOT_FOUND');
+
+        // Compile registered members
+        const registeredMembers = (team.members || []).map((m: any) => ({
+            id: m.id,
+            userId: m.userId,
+            name: m.user?.fullName || 'Unknown',
+            role: m.role,
+            cricketRole: m.user?.role || null,
+            phone: m.user?.phoneNumber || null,
+            profilePictureUrl: m.user?.profilePictureUrl || null,
+            isGuest: false,
+            user: {
+                name: m.user?.fullName || 'Unknown',
+                phone: m.user?.phoneNumber || null,
+            }
+        }));
+
+        // Fetch guest players for this team
+        const guestPlayers = await prisma.guestPlayer.findMany({
+            where: { teamId }
+        });
+
+        const guestMembers = guestPlayers.map((g: any) => ({
+            id: g.id,
+            userId: null,
+            name: g.name,
+            role: 'GUEST',
+            cricketRole: g.role || null,
+            phone: g.phoneNumber || null,
+            profilePictureUrl: null,
+            isGuest: true,
+            user: {
+                name: g.name,
+                phone: g.phoneNumber || null,
+            }
+        }));
+
+        const members = [...registeredMembers, ...guestMembers];
+
+        return sendSuccess(res, { members });
+    } catch (error: any) {
+        console.error('[TeamRoutes] Get members error:', error);
+        return sendError(res, 'Failed to fetch team members', 500, 'INTERNAL_ERROR');
+    }
+});
 
 /**
  * POST /api/teams/:id/members

@@ -2,12 +2,12 @@ import QRCode from 'qrcode';
 import crypto from 'crypto';
 
 /**
- * Generate a random 8-character alphanumeric join code.
- * Example: A7B2-9XZ1
+ * Generate a random 6-character hex invite code.
+ * Example: 3F86A7
  */
 export const generateJoinCode = (): string => {
-    // Generate 4 bytes -> hex string (8 chars) -> uppercase
-    return crypto.randomBytes(4).toString('hex').toUpperCase();
+    // Generate 3 bytes -> hex string (6 chars) -> uppercase
+    return crypto.randomBytes(3).toString('hex').toUpperCase();
 };
 
 /**
