@@ -61,7 +61,7 @@ export const matchService = {
             data: {
                 matchType,
                 homeTeamId: home.id,
-                awayTeamId: null,       // No real away team record — name-based
+                awayTeamId: data.awayTeamId || null,
                 homeTeamName: htName,
                 awayTeamName: atName,
                 overs,
